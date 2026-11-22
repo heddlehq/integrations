@@ -1,8 +1,19 @@
 # Heddle integrations
 
-Integrations for [Heddle](https://github.com/heddlehq/Heddle) written by the community,
-as manifests: YAML files that describe a service's credential and its actions as HTTP
-requests. Each action becomes a node, with a `success` and an `error` output.
+Every integration of [Heddle](https://github.com/heddlehq/Heddle) with an outside
+service lives here, so Heddle itself ships only its core. There are two kinds:
+
+- **Manifests**: `integrations/<id>/integration.yaml`, a YAML file that describes a
+  service's credential, its actions and its triggers as HTTP requests. Heddle
+  downloads one when a workspace installs it. Anyone can add one; the ones Heddle pins
+  by hash, like Notion, show as official.
+- **Packages**: `integrations/<id>/` holding a Mix project, for what needs a driver or
+  code, like SQL, MongoDB or email. They are written with
+  [Bobbin](https://github.com/heddlehq/Bobbin) (`Bobbin.Service`) and enter Heddle when
+  it is built, as git dependencies: list them in `HEDDLE_INTEGRATIONS`. A package
+  names its nodes in its app env, `bobbin_nodes`.
+
+Each action becomes a node, with a `success` and an `error` output.
 
 Heddle reads the index at **https://heddlehq.github.io/integrations/index.json** and
 lists these integrations on its Integrations page, marked as community integrations.

@@ -5,7 +5,7 @@
 # Each integration lives in integrations/<id>/integration.yaml, and its folder must be
 # named after its id. The index holds the manifest itself, so an installed version
 # stays the same even after the folder changes.
-Mix.install([{:bobbin, "~> 0.3.0"}])
+Mix.install([{:bobbin, "~> 0.5"}])
 
 out = List.first(System.argv()) || "_site"
 paths = Path.wildcard("integrations/*/integration.yaml") |> Enum.sort()
@@ -28,6 +28,7 @@ paths = Path.wildcard("integrations/*/integration.yaml") |> Enum.sort()
           author: map["author"],
           homepage: map["homepage"],
           actions: Enum.map(integration.actions, & &1.name),
+          triggers: Enum.map(integration.triggers, & &1.name),
           sha256: :crypto.hash(:sha256, yaml) |> Base.encode16(case: :lower),
           manifest: yaml
         }
