@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+id: resend
+name: Resend
+version: 1.0.0
+description: Send email through Resend's API.
+icon: hero-paper-airplane
+author: heddlehq
+homepage: https://resend.com/docs/api-reference
+base_url: https://api.resend.com/
+
+credential:
+  label: Resend
+  fields:
+    - name: api_key
+      label: API key
+      secret: true
+      required: true
+  auth:
+    type: bearer
+    token: "{{credential.api_key}}"
+
+errors:
+  message_path: message
+
+actions:
+  - name: Send Email
+    description: Sends an email from a domain verified in Resend.
+    fields:
+      - {name: from, label: "From, like Ana <ana@example.com>"}
+      - {name: to, label: To}
+      - {name: subject, label: Subject}
+      - {name: html, label: Body (HTML), type: textarea}
+    request:
+      method: POST
+      path: emails
+      body:
+        from: "{{fields.from}}"
+        to: "{{fields.to}}"
+        subject: "{{fields.subject}}"
+        html: "{{fields.html}}"
+    output:
+      pick: [id]
+
+  - name: Get Email
+    description: Returns an email that was sent, with its status.
+    fields:
+      - {name: id, label: Email ID, default: "{{result.id}}"}
+    request:
+      method: GET
+      path: "emails/{{fields.id}}"
+    output:
+      pick: [id, to, subject, last_event, created_at]

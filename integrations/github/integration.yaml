@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+id: github
+name: GitHub
+version: 1.0.0
+description: Issues and comments in GitHub repositories.
+icon: hero-code-bracket
+author: heddlehq
+homepage: https://docs.github.com/rest
+base_url: https://api.github.com/
+
+credential:
+  label: GitHub
+  fields:
+    - name: token
+      label: Personal access token
+      secret: true
+      required: true
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+actions:
+  - name: Create Issue
+    description: Opens an issue in a repository.
+    fields:
+      - {name: repo, label: "Repository, like owner/name"}
+      - {name: title, label: Title}
+      - {name: body, label: Body, type: textarea}
+    request:
+      method: POST
+      path: "repos/{{fields.repo}}/issues"
+      headers:
+        Accept: application/vnd.github+json
+      body:
+        title: "{{fields.title}}"
+        body: "{{fields.body}}"
+    output:
+      pick: [number, html_url, state]
+
+  - name: List Issues
+    description: Returns the issues of a repository, every page.
+    fields:
+      - {name: repo, label: "Repository, like owner/name"}
+      - name: state
+        label: State
+        type: select
+        default: open
+        options:
+          - {label: Open, value: open}
+          - {label: Closed, value: closed}
+          - {label: All, value: all}
+    request:
+      method: GET
+      path: "repos/{{fields.repo}}/issues"
+      query:
+        state: "{{fields.state}}"
+    output:
+      pick: [number, title, html_url, state]
+    pagination:
+      type: link
+      items_path: ""
+      limit_param: per_page
+      page_size: 100
+
+  - name: Comment on Issue
+    description: Adds a comment to an issue or pull request.
+    fields:
+      - {name: repo, label: "Repository, like owner/name"}
+      - {name: number, label: Issue number, default: "{{result.number}}"}
+      - {name: body, label: Comment, type: textarea}
+    request:
+      method: POST
+      path: "repos/{{fields.repo}}/issues/{{fields.number}}/comments"
+      body:
+        body: "{{fields.body}}"
+    output:
+      pick: [id, html_url]
