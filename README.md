@@ -11,7 +11,9 @@ service lives here, so Heddle itself ships only its core. There are two kinds:
   code, like SQL, MongoDB or email. They are written with
   [Bobbin](https://github.com/heddlehq/Bobbin) (`Bobbin.Service`) and enter Heddle when
   it is built, as git dependencies: list them in `HEDDLE_INTEGRATIONS`. A package
-  names its nodes in its app env, `bobbin_nodes`.
+  names its nodes in its app env, `bobbin_nodes`, and documents them in
+  `priv/docs.json`: for each node, an example of what it leaves in `result` and notes
+  in English and Portuguese, which Heddle's documentation site shows.
 
 Each action becomes a node, with a `success` and an `error` output.
 
@@ -25,7 +27,7 @@ version until someone updates it.
 1. Write the manifest with [Bobbin](https://github.com/heddlehq/Bobbin):
 
    ```bash
-   mix new tools && cd tools        # any Mix project with {:bobbin, "~> 0.3"} in deps
+   mix new tools && cd tools        # any Mix project with {:bobbin, "~> 0.5"} in deps
    mix deps.get
    mix bobbin.new acme_crm --path ../integrations/acme_crm/integration.yaml
    ```

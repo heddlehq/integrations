@@ -1,0 +1,133 @@
+{
+  "SQL: Run Query": {
+    "result": {
+      "rows": [
+        {
+          "id": 4411,
+          "customer": "ana@example.com",
+          "total": "129.90"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs any statement, on PostgreSQL, MySQL, MariaDB, SQL Server, Oracle or SQLite, depending on the credential.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` is a list of objects and `result.count` how many. Statements that change rows return the changed ones where the engine can (PostgreSQL with `RETURNING`), and MySQL returns `result.last_id` after an insert. Decimal numbers come as text, like `\"129.90\"`, so no cent is lost. A query that returns more than 10,000 rows fails: use `LIMIT`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda qualquer comando, no PostgreSQL, MySQL, MariaDB, SQL Server, Oracle ou SQLite, conforme a credencial.\n\n```sql\nSELECT id, total FROM orders WHERE customer = {{body.email}} AND status = 'open'\n```\n\n`result.rows` é uma lista de objetos e `result.count` quantos são. Comandos que alteram linhas devolvem as alteradas quando o banco permite (PostgreSQL com `RETURNING`), e o MySQL devolve `result.last_id` depois de um insert. Números decimais vêm como texto, como `\"129.90\"`, para nenhum centavo se perder. Uma consulta que devolve mais de 10.000 linhas falha: use `LIMIT`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Select Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 4411,
+          "customer": "ana@example.com",
+          "total": "129.90"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads rows without writing SQL. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`. **Columns** is a list with commas, and blank reads them all. **Where** and **Order by** are SQL, with placeholders as parameters: `status = 'open' AND total > {{min}}`, `created_at DESC`. **Limit** is 100 by default, and **Offset** skips rows, for pages.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê linhas sem escrever SQL. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`. **Columns** é uma lista com vírgulas, e em branco lê todas. **Where** e **Order by** são SQL, com placeholders como parâmetros: `status = 'open' AND total > {{minimo}}`, `created_at DESC`. **Limit** é 100 por padrão, e **Offset** pula linhas, para paginar.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Insert Rows": {
+    "result": {
+      "rows": [
+        {
+          "id": 4412,
+          "customer": "bruno@example.com",
+          "total": "89.00"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "**Rows** is one object or a list of them, from column to value, like `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. It is `{{result}}` by default, so it inserts what the previous node returned, a **Select Rows** included. Many rows go in batches, all or none. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Rows** é um objeto ou uma lista deles, de coluna para valor, como `{\"customer\": \"{{body.email}}\", \"total\": {{body.total}}}`. O padrão é `{{result}}`, então insere o que o nó anterior devolveu, inclusive um **Select Rows**. Muitas linhas vão em lotes, todas ou nenhuma. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Update Rows": {
+    "result": {
+      "rows": [],
+      "count": 3
+    },
+    "notes": {
+      "en": "**New values** is an object from column to value, like `{\"status\": \"shipped\"}`. **Where** is SQL, and can't be empty: to change every row on purpose, write `1 = 1`. `result.count` is how many rows changed. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "**New values** é um objeto de coluna para valor, como `{\"status\": \"shipped\"}`. **Where** é SQL e não pode ficar vazio: para alterar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas linhas mudaram. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Upsert Rows": {
+    "result": {
+      "rows": [],
+      "count": 2
+    },
+    "notes": {
+      "en": "Inserts the rows, or updates the ones that already exist. **Key columns** say which columns identify a row, like `email`, and need a unique index on them. **Rows** works as in **Insert Rows**. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Insere as linhas, ou atualiza as que já existem. **Key columns** dizem quais colunas identificam uma linha, como `email`, e precisam de um índice único nelas. **Rows** funciona como no **Insert Rows**. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Delete Rows": {
+    "result": {
+      "rows": [],
+      "count": 12
+    },
+    "notes": {
+      "en": "**Where** is SQL, and can't be empty: to delete every row on purpose, write `1 = 1`. `result.count` is how many were deleted. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.\n\nA `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "**Where** é SQL e não pode ficar vazio: para apagar todas as linhas de propósito, escreva `1 = 1`. `result.count` é quantas foram apagadas. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`.\n\nUm `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: Run Transaction": {
+    "result": {
+      "results": [
+        {
+          "rows": [],
+          "count": 1
+        },
+        {
+          "rows": [],
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    "notes": {
+      "en": "Runs **Statements**, separated by `;`, all or none: if one fails, none of them is applied. `result.results` has what each returned, in order.\n\n```sql\nUPDATE accounts SET balance = balance - {{amount}} WHERE id = {{from}};\nUPDATE accounts SET balance = balance + {{amount}} WHERE id = {{to}}\n```\n\nA transaction can't span several nodes. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda **Statements**, separados por `;`, todos ou nenhum: se um falha, nenhum é aplicado. `result.results` tem o que cada um devolveu, em ordem.\n\n```sql\nUPDATE accounts SET balance = balance - {{valor}} WHERE id = {{origem}};\nUPDATE accounts SET balance = balance + {{valor}} WHERE id = {{destino}}\n```\n\nUma transação não atravessa vários nós. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "SQL: List Tables": {
+    "result": {
+      "tables": [
+        "public.customers",
+        "public.orders"
+      ]
+    },
+    "notes": {
+      "en": "Lists the tables the credential's user sees. Useful as a tool of an AI Agent, so it finds out what the database holds before querying it.",
+      "pt": "Lista as tabelas que o usuário da credencial enxerga. Útil como ferramenta de um AI Agent, para ele descobrir o que o banco tem antes de consultar."
+    }
+  },
+  "SQL: Describe Table": {
+    "result": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "default": "nextval('orders_id_seq'::regclass)"
+        },
+        {
+          "name": "total",
+          "type": "numeric",
+          "nullable": true,
+          "default": null
+        }
+      ]
+    },
+    "notes": {
+      "en": "Lists the columns of **Table**, with type, whether they take null, and default. **Table** is a name, quoted for the engine, and may have a schema: `sales.orders`.",
+      "pt": "Lista as colunas de **Table**, com tipo, se aceitam nulo e o valor padrão. **Table** é um nome, citado do jeito do banco, e pode ter um schema: `vendas.pedidos`."
+    }
+  }
+}

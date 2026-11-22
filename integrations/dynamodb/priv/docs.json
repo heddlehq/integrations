@@ -1,0 +1,90 @@
+{
+  "DynamoDB: Get Item": {
+    "result": {
+      "item": {
+        "id": "42",
+        "name": "Ana",
+        "plan": "pro"
+      },
+      "found": true
+    },
+    "notes": {
+      "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. `result.found` is false, and `item` null, when there is none. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. `result.found` é falso, e `item` nulo, quando não existe. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Put Item": {
+    "result": {
+      "saved": true
+    },
+    "notes": {
+      "en": "Saves **Item**, an object with the primary key, `{{result}}` by default. An item with the same key is replaced. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "Salva **Item**, um objeto com a chave primária, `{{result}}` por padrão. Um item com a mesma chave é substituído. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Update Item": {
+    "result": {
+      "item": {
+        "id": "42",
+        "name": "Ana",
+        "plan": "business"
+      }
+    },
+    "notes": {
+      "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Sets the attributes of **New values**, an object, keeps the others, and returns the whole item. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Define os atributos de **New values**, um objeto, mantém os outros e devolve o item inteiro. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Delete Item": {
+    "result": {
+      "deleted": true
+    },
+    "notes": {
+      "en": "**Key** is the item's primary key, like `{\"id\": \"{{id}}\"}`, with the sort key too when the table has one. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "**Key** é a chave primária do item, como `{\"id\": \"{{id}}\"}`, com a chave de ordenação também quando a tabela tem. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Query Items": {
+    "result": {
+      "items": [
+        {
+          "customer": "42",
+          "order": "4411",
+          "total": 129.9
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads the items of one partition. **Condition** is a key condition, like `customer = :pk AND begins_with(order, :prefix)`, and **Condition values** gives its values, like `{\":pk\": \"{{id}}\"}`. **Index** queries a secondary index instead of the table. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê os itens de uma partição. **Condition** é uma condição de chave, como `customer = :pk AND begins_with(order, :prefix)`, e **Condition values** dá os valores, como `{\":pk\": \"{{id}}\"}`. **Index** consulta um índice secundário em vez da tabela. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: Scan Items": {
+    "result": {
+      "items": [
+        {
+          "id": "42",
+          "name": "Ana"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Reads items across the whole table, up to **Limit**. It reads every item to find them, so prefer **Query Items** on big tables. Items are plain JSON: the node converts them to DynamoDB's types and back. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê itens da tabela inteira, até **Limit**. Ele lê todos os itens para achar, então prefira **Query Items** em tabelas grandes. Os itens são JSON comum: o nó converte para os tipos do DynamoDB e de volta. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "DynamoDB: List Tables": {
+    "result": {
+      "tables": [
+        "customers",
+        "orders"
+      ]
+    },
+    "notes": {
+      "en": "Lists the tables of the credential's region.",
+      "pt": "Lista as tabelas da região da credencial."
+    }
+  }
+}

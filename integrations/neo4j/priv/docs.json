@@ -1,0 +1,17 @@
+{
+  "Neo4j: Run Query": {
+    "result": {
+      "rows": [
+        {
+          "name": "Ana",
+          "friends": 12
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs a Cypher query on Neo4j or Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Each row is an object by the names in `RETURN`. A `{{placeholder}}` goes to the database as a parameter, never into the query text, so a value from a webhook can't change what the query does. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda uma consulta Cypher no Neo4j ou Aura: `MATCH (p:Person {email: {{body.email}}})-[:KNOWS]->(f) RETURN p.name AS name, count(f) AS friends`. Cada linha é um objeto com os nomes do `RETURN`. Um `{{placeholder}}` vai para o banco como parâmetro, nunca no texto da consulta, então um valor que veio de um webhook não muda o que a consulta faz. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  }
+}

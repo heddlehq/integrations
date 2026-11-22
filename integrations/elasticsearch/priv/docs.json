@@ -1,0 +1,68 @@
+{
+  "Elasticsearch: Search": {
+    "result": {
+      "documents": [
+        {
+          "_id": "p-1",
+          "_score": 3.2,
+          "name": "Blue mug"
+        }
+      ],
+      "total": 1
+    },
+    "notes": {
+      "en": "**Search** is the query part of the search, like `{\"match\": {\"name\": \"{{term}}\"}}`. Each document comes with its `_id` and `_score`. **Limit** and **Offset** page through the hits. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Search** é a parte `query` da busca, como `{\"match\": {\"name\": \"{{termo}}\"}}`. Cada documento vem com `_id` e `_score`. **Limit** e **Offset** paginam os resultados. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Get Document": {
+    "result": {
+      "_id": "p-1",
+      "name": "Blue mug",
+      "price": 39.9
+    },
+    "notes": {
+      "en": "Returns the document with its `_id`. It goes down `error` when it doesn't exist. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+      "pt": "Devolve o documento com o `_id` dele. Sai por `error` quando não existe. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Index Document": {
+    "result": {
+      "id": "p-1",
+      "outcome": "created"
+    },
+    "notes": {
+      "en": "Saves **Document**, an object. With **Document ID**, it creates or replaces that one; blank lets the server pick an ID. `result.outcome` is `created` or `updated`. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Salva **Document**, um objeto. Com **Document ID**, cria ou substitui aquele; em branco o servidor escolhe um ID. `result.outcome` é `created` ou `updated`. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Update Document": {
+    "result": {
+      "id": "p-1",
+      "outcome": "updated"
+    },
+    "notes": {
+      "en": "Changes only the fields in **New values**, an object, and keeps the others. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Altera só os campos de **New values**, um objeto, e mantém os outros. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Delete Document": {
+    "result": {
+      "id": "p-1",
+      "outcome": "deleted"
+    },
+    "notes": {
+      "en": "It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).",
+      "pt": "Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Elasticsearch: Run Request": {
+    "result": {
+      "acknowledged": true
+    },
+    "notes": {
+      "en": "Calls any endpoint, like `GET /_cat/indices?format=json` or `POST /products/_bulk`, and `result` is what it answered. It works with Elasticsearch and OpenSearch. **Index** is the index name. See [Databases](/docs/guides/databases/).\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Chama qualquer endpoint, como `GET /_cat/indices?format=json` ou `POST /products/_bulk`, e `result` é o que ele respondeu. Funciona com Elasticsearch e OpenSearch. **Index** é o nome do índice. Veja [Bancos de dados](/pt/docs/guides/databases/).\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  }
+}

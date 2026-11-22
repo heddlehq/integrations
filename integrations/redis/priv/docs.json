@@ -1,0 +1,119 @@
+{
+  "Redis: Get Value": {
+    "result": {
+      "key": "session:ana",
+      "value": "{\"cart\":3}",
+      "found": true
+    },
+    "notes": {
+      "en": "`result.found` is false when the key doesn't exist, and `value` is then `null`. Values come as text. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "`result.found` é falso quando a chave não existe, e `value` vem `null`. Os valores vêm como texto. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Set Value": {
+    "result": {
+      "key": "session:ana"
+    },
+    "notes": {
+      "en": "Saves **Value** in **Key**. Objects and lists are saved as JSON. With **Expires after (seconds)**, the key goes away on its own, which suits caches and locks. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Salva **Value** em **Key**. Objetos e listas são salvos como JSON. Com **Expires after (seconds)**, a chave some sozinha, o que serve para cache e travas. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Delete Keys": {
+    "result": {
+      "count": 2
+    },
+    "notes": {
+      "en": "**Keys** is a list with commas. `result.count` is how many existed. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "**Keys** é uma lista com vírgulas. `result.count` é quantas existiam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Increment": {
+    "result": {
+      "key": "visits:2026-05-12",
+      "value": 18
+    },
+    "notes": {
+      "en": "Adds **Amount** to the number in **Key**, 1 by default, and returns the new value. A key that doesn't exist starts at 0, so it counts things and limits rates. A negative amount subtracts. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Soma **Amount** ao número em **Key**, 1 por padrão, e devolve o novo valor. Uma chave que não existe começa em 0, então serve para contar e limitar taxa. Um valor negativo subtrai. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Find Keys": {
+    "result": {
+      "keys": [
+        "session:ana",
+        "session:bruno"
+      ],
+      "count": 2
+    },
+    "notes": {
+      "en": "Finds the keys that match **Pattern**, like `session:*`, without blocking the server, up to **Limit**. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Encontra as chaves que batem com **Pattern**, como `session:*`, sem travar o servidor, até **Limit**. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Read Hash": {
+    "result": {
+      "key": "customer:42",
+      "fields": {
+        "name": "Ana",
+        "plan": "pro"
+      }
+    },
+    "notes": {
+      "en": "Returns every field of the hash. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Devolve todos os campos do hash. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Write Hash": {
+    "result": {
+      "key": "customer:42",
+      "added": 1
+    },
+    "notes": {
+      "en": "**Fields** is an object from field to value, `{{result}}` by default. `result.added` counts the fields that are new. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "**Fields** é um objeto de campo para valor, `{{result}}` por padrão. `result.added` conta os campos que são novos. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Push to List": {
+    "result": {
+      "key": "queue:emails",
+      "length": 4
+    },
+    "notes": {
+      "en": "Adds **Value** at the end or the start of the list, and returns its new length. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Adiciona **Value** no fim ou no começo da lista, e devolve o novo tamanho. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Read List": {
+    "result": {
+      "key": "queue:emails",
+      "items": [
+        "a@example.com",
+        "b@example.com"
+      ],
+      "count": 2
+    },
+    "notes": {
+      "en": "Reads the list from its start, up to **Limit** items, without removing them. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Lê a lista desde o começo, até **Limit** itens, sem remover. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Publish Message": {
+    "result": {
+      "subscribers": 3
+    },
+    "notes": {
+      "en": "Publishes **Value** on **Channel**. `result.subscribers` is how many got it. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Publica **Value** em **Channel**. `result.subscribers` é quantos receberam. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "Redis: Run Command": {
+    "result": {
+      "reply": 1
+    },
+    "notes": {
+      "en": "Runs any command, written as a JSON list: `[\"EXPIRE\", \"session:{{id}}\", 60]`. Each item is one argument, so a value can't add others. It works with Redis, Valkey, KeyDB, Dragonfly and Upstash. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda qualquer comando, escrito como uma lista JSON: `[\"EXPIRE\", \"session:{{id}}\", 60]`. Cada item é um argumento, então um valor não consegue acrescentar outros. Funciona com Redis, Valkey, KeyDB, Dragonfly e Upstash. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  }
+}
