@@ -2,6 +2,8 @@ defmodule HeddleIntegrations.Services.Cassandra.Values do
   @moduledoc false
   # Turns what a field holds into the type a column takes.
 
+  @decimal ~r/\A-?\d{1,100}(\.\d{1,100})?\z/
+
   def to_text(value) when is_binary(value), do: value
   def to_text(value) when is_map(value) or is_list(value), do: Jason.encode!(value)
   def to_text(value), do: to_string(value)
