@@ -1,0 +1,86 @@
+{
+  "MongoDB: Find Documents": {
+    "result": {
+      "documents": [
+        {
+          "_id": "6650f1c2a1b2c3d4e5f60718",
+          "email": "ana@example.com",
+          "plan": "pro"
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "**Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. **Fields** picks what comes back, like `{\"email\": 1}`, and **Sort** orders it, like `{\"created_at\": -1}`. **Limit** is 100 by default. IDs come as text.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. **Fields** escolhe o que volta, como `{\"email\": 1}`, e **Sort** ordena, como `{\"created_at\": -1}`. **Limit** é 100 por padrão. Os IDs vêm como texto.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Insert Documents": {
+    "result": {
+      "ids": [
+        "6650f1c2a1b2c3d4e5f60718"
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "**Documents** is one object or a list of them, `{{result}}` by default.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Documents** é um objeto ou uma lista deles, `{{result}}` por padrão.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Update Documents": {
+    "result": {
+      "matched": 1,
+      "modified": 1,
+      "upserted_ids": []
+    },
+    "notes": {
+      "en": "**Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty. **Update** uses operators, like `{\"$set\": {\"status\": \"done\"}}`. **Which** is the first match or all of them, and **Upsert** `yes` inserts when nothing matches.\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "**Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio. **Update** usa operadores, como `{\"$set\": {\"status\": \"done\"}}`. **Which** é o primeiro que bater ou todos, e **Upsert** `yes` insere quando nada bate.\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Delete Documents": {
+    "result": {
+      "count": 3
+    },
+    "notes": {
+      "en": "Deletes every document that matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. It can't be empty: to delete everything on purpose, use `{\"_id\": {\"$exists\": true}}`.",
+      "pt": "Apaga todos os documentos que batem. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. Não pode ficar vazio: para apagar tudo de propósito, use `{\"_id\": {\"$exists\": true}}`."
+    }
+  },
+  "MongoDB: Aggregate": {
+    "result": {
+      "documents": [
+        {
+          "_id": "pro",
+          "customers": 41
+        }
+      ],
+      "count": 1
+    },
+    "notes": {
+      "en": "Runs **Pipeline**, a list of stages:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nJSON fields take placeholders: outside quotes a value keeps its type, and inside quotes it's written into the text. A field that is a single placeholder, like `{{result}}`, takes what another node returned. See [Databases](/docs/guides/databases/).",
+      "pt": "Roda **Pipeline**, uma lista de estágios:\n\n```json\n[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$plan\", \"customers\": {\"$sum\": 1}}}]\n```\n\nOs campos JSON aceitam placeholders: fora de aspas o valor mantém o tipo, e dentro de aspas é escrito no texto. Um campo que é um único placeholder, como `{{result}}`, pega o que outro nó devolveu. Veja [Bancos de dados](/pt/docs/guides/databases/)."
+    }
+  },
+  "MongoDB: Count Documents": {
+    "result": {
+      "count": 42
+    },
+    "notes": {
+      "en": "Counts what matches. **Filter** is a MongoDB query, like `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. A value that comes from the run can't hold an operator, so `{\"$ne\": null}` sent as a password is refused. `{}` counts everything.",
+      "pt": "Conta o que bate. **Filter** é uma consulta do MongoDB, como `{\"status\": \"open\", \"total\": {\"$gt\": 100}}`. Um valor que vem da execução não pode conter um operador, então `{\"$ne\": null}` enviado como senha é recusado. `{}` conta tudo."
+    }
+  },
+  "MongoDB: List Collections": {
+    "result": {
+      "collections": [
+        "customers",
+        "orders"
+      ]
+    },
+    "notes": {
+      "en": "Lists the collections of the credential's database, in order.",
+      "pt": "Lista as coleções do banco da credencial, em ordem."
+    }
+  }
+}
