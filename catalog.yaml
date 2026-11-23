@@ -39,7 +39,7 @@ integrations:
   - {id: instagram, name: Instagram, category: social, phase: 1, origin: extra, auth: oauth2, kind: manifest, status: planned}
   - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: draft}
   - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: draft}
-  - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Linear, kind: manifest, status: planned}
+  - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: header, n8n: Linear, kind: manifest, status: draft}
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
   - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: Mailchimp, kind: manifest, status: planned}
   - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}

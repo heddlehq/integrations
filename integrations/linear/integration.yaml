@@ -1,0 +1,457 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Linear's GraphQL API. Each action sends a fixed query; what people fill goes in its
+# variables, never in the query. The API key is made in Linear, under
+# Settings > Account > Security & access.
+id: linear
+name: Linear
+version: 1.0.0
+description: Issues, their comments and links, projects, teams, users and workflow states in Linear.
+icon: hero-bolt
+category: project
+author: Heddle
+homepage: https://linear.app/developers/graphql
+base_url: https://api.linear.app/
+
+credential:
+  label: Linear
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true, description: "Starts with lin_api_"}
+  auth:
+    type: header
+    name: Authorization
+    value: "{{credential.api_key}}"
+
+errors:
+  error_path: errors
+  message_path: errors.0.message
+
+triggers:
+  - name: Event
+    description: Starts the flow when issues, comments, projects or other things you choose change in a team.
+    fields:
+      - {name: team, label: Team, type: select, required: true, options_from: {request: {method: POST, path: graphql, body: {query: "{ teams(first: 250) { nodes { id name } } }"}}, path: data.teams.nodes, label: name, value: id}}
+      - name: resource_types
+        label: Resources
+        type: multiselect
+        required: true
+        options:
+          - {label: Issues, value: Issue}
+          - {label: Comments, value: Comment}
+          - {label: Issue labels, value: IssueLabel}
+          - {label: Attachments, value: Attachment}
+          - {label: Reactions, value: Reaction}
+          - {label: Projects, value: Project}
+          - {label: Project updates, value: ProjectUpdate}
+          - {label: Cycles, value: Cycle}
+          - {label: Documents, value: Document}
+          - {label: Users, value: User}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: graphql
+          body:
+            query: "mutation($input: WebhookCreateInput!) { webhookCreate(input: $input) { success webhook { id } } }"
+            variables:
+              input:
+                url: "{{webhook.url}}"
+                teamId: "{{fields.team}}"
+                resourceTypes: "{{fields.resource_types}}"
+                secret: "{{webhook.secret}}"
+                label: Heddle
+        id_path: data.webhookCreate.webhook.id
+      unregister:
+        request:
+          method: POST
+          path: graphql
+          body:
+            query: "mutation($id: String!) { webhookDelete(id: $id) { success } }"
+            variables: {id: "{{webhook.id}}"}
+      signature:
+        header: Linear-Signature
+        secret: "{{webhook.secret}}"
+
+actions:
+  # Issues
+  - name: Create Issue
+    resource: Issue
+    description: Creates an issue in a team.
+    fields:
+      - {name: team, label: Team, type: select, required: true, options_from: {request: {method: POST, path: graphql, body: {query: "{ teams(first: 250) { nodes { id name } } }"}}, path: data.teams.nodes, label: name, value: id}}
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea, description: Markdown is fine.}
+      - {name: assignee, label: Assignee, type: select, options_from: {request: {method: POST, path: graphql, body: {query: "{ users(first: 250) { nodes { id name } } }"}}, path: data.users.nodes, label: name, value: id}}
+      - {name: priority, label: Priority, type: select, options: [{label: No priority, value: 0}, {label: Urgent, value: 1}, {label: High, value: 2}, {label: Medium, value: 3}, {label: Low, value: 4}]}
+      - {name: state, label: State, type: select, options_from: {request: {method: POST, path: graphql, body: {query: "query($team: ID) { workflowStates(first: 250, filter: {team: {id: {eq: $team}}}) { nodes { id name } } }", variables: {team: "{{fields.team}}"}}}, path: data.workflowStates.nodes, label: name, value: id}}
+      - {name: labels, label: Label IDs, type: json, description: "Like [\"a1b2\"]"}
+      - {name: project, label: Project ID}
+      - {name: cycle, label: Cycle ID}
+      - {name: parent, label: Parent issue ID}
+      - {name: estimate, label: Estimate, type: number}
+      - {name: due_date, label: Due date, type: datetime}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id identifier title url priority description dueDate estimate createdAt state { id name } assignee { id name email } team { id key name } project { id name } labels { nodes { id name } } } } }"
+        variables:
+          input:
+            teamId: "{{fields.team}}"
+            title: "{{fields.title}}"
+            description: "{{fields.description}}"
+            assigneeId: "{{fields.assignee}}"
+            priority: "{{fields.priority}}"
+            stateId: "{{fields.state}}"
+            labelIds: "{{fields.labels}}"
+            projectId: "{{fields.project}}"
+            cycleId: "{{fields.cycle}}"
+            parentId: "{{fields.parent}}"
+            estimate: "{{fields.estimate}}"
+            dueDate: "{{fields.due_date}}"
+    output: {path: data.issueCreate.issue}
+
+  - name: Get Issue
+    resource: Issue
+    description: Reads an issue by its ID or its key, like ENG-123.
+    fields:
+      - {name: issue, label: Issue ID or key, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($id: String!) { issue(id: $id) { id identifier title url priority description dueDate estimate createdAt updatedAt completedAt archivedAt state { id name type } assignee { id name email } creator { id name email } team { id key name } project { id name } cycle { id name number } parent { id identifier } labels { nodes { id name } } } }"
+        variables: {id: "{{fields.issue}}"}
+    output: {path: data.issue}
+
+  - name: Get Issues
+    resource: Issue
+    description: Lists issues, all of them or those that match a filter.
+    fields:
+      - {name: filter, label: Filter, type: json, description: "Linear's IssueFilter, like {\"team\": {\"key\": {\"eq\": \"ENG\"}}, \"state\": {\"type\": {\"eq\": \"started\"}}}"}
+      - {name: include_archived, label: Include archived, type: boolean}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($first: Int, $after: String, $filter: IssueFilter, $archived: Boolean) { issues(first: $first, after: $after, filter: $filter, includeArchived: $archived) { nodes { id identifier title url priority description dueDate estimate createdAt updatedAt completedAt state { id name type } assignee { id name email } team { id key name } project { id name } labels { nodes { id name } } } pageInfo { hasNextPage endCursor } } }"
+        variables: {filter: "{{fields.filter}}", archived: "{{fields.include_archived}}"}
+    pagination:
+      type: cursor
+      in: body
+      items_path: data.issues.nodes
+      limit_param: variables.first
+      cursor_param: variables.after
+      next_path: data.issues.pageInfo.endCursor
+      has_more_path: data.issues.pageInfo.hasNextPage
+      page_size: 100
+
+  - name: Search Issues
+    resource: Issue
+    description: Finds issues by text.
+    fields:
+      - {name: term, label: Text, required: true}
+      - {name: team, label: Only in team ID}
+      - {name: include_comments, label: Search comments too, type: boolean}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($first: Int, $after: String, $term: String!, $team: String, $comments: Boolean) { searchIssues(first: $first, after: $after, term: $term, teamId: $team, includeComments: $comments) { nodes { id identifier title url priority state { id name } assignee { id name } team { id key } } pageInfo { hasNextPage endCursor } } }"
+        variables: {term: "{{fields.term}}", team: "{{fields.team}}", comments: "{{fields.include_comments}}"}
+    pagination:
+      type: cursor
+      in: body
+      items_path: data.searchIssues.nodes
+      limit_param: variables.first
+      cursor_param: variables.after
+      next_path: data.searchIssues.pageInfo.endCursor
+      has_more_path: data.searchIssues.pageInfo.hasNextPage
+      page_size: 100
+
+  - name: Update Issue
+    resource: Issue
+    description: Changes an issue. Empty fields stay as they are.
+    fields:
+      - {name: issue, label: Issue ID or key, required: true}
+      - {name: title, label: Title}
+      - {name: description, label: Description, type: textarea}
+      - {name: team, label: Move to team ID}
+      - {name: assignee, label: Assignee ID}
+      - {name: priority, label: Priority, type: select, options: [{label: No priority, value: 0}, {label: Urgent, value: 1}, {label: High, value: 2}, {label: Medium, value: 3}, {label: Low, value: 4}]}
+      - {name: state, label: State ID}
+      - {name: labels, label: Label IDs, type: json, description: "Replaces them, like [\"a1b2\"]"}
+      - {name: project, label: Project ID}
+      - {name: cycle, label: Cycle ID}
+      - {name: parent, label: Parent issue ID}
+      - {name: estimate, label: Estimate, type: number}
+      - {name: due_date, label: Due date, type: datetime}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success issue { id identifier title url priority description dueDate estimate updatedAt state { id name } assignee { id name email } team { id key name } labels { nodes { id name } } } } }"
+        variables:
+          id: "{{fields.issue}}"
+          input:
+            title: "{{fields.title}}"
+            description: "{{fields.description}}"
+            teamId: "{{fields.team}}"
+            assigneeId: "{{fields.assignee}}"
+            priority: "{{fields.priority}}"
+            stateId: "{{fields.state}}"
+            labelIds: "{{fields.labels}}"
+            projectId: "{{fields.project}}"
+            cycleId: "{{fields.cycle}}"
+            parentId: "{{fields.parent}}"
+            estimate: "{{fields.estimate}}"
+            dueDate: "{{fields.due_date}}"
+    output: {path: data.issueUpdate.issue}
+
+  - name: Archive Issue
+    resource: Issue
+    description: Archives an issue.
+    fields:
+      - {name: issue, label: Issue ID or key, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: String!) { issueArchive(id: $id) { success } }"
+        variables: {id: "{{fields.issue}}"}
+    output:
+      value: {issue: "{{fields.issue}}", archived: true}
+
+  - name: Delete Issue
+    resource: Issue
+    description: Moves an issue to the trash.
+    fields:
+      - {name: issue, label: Issue ID or key, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: String!) { issueDelete(id: $id) { success } }"
+        variables: {id: "{{fields.issue}}"}
+    output:
+      value: {issue: "{{fields.issue}}", deleted: true}
+
+  - name: Add Link
+    resource: Issue
+    description: Attaches a link to an issue.
+    fields:
+      - {name: issue, label: Issue ID or key, required: true}
+      - {name: url, label: Link, required: true}
+      - {name: title, label: Title}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($issue: String!, $url: String!, $title: String) { attachmentLinkURL(issueId: $issue, url: $url, title: $title) { success attachment { id url title } } }"
+        variables: {issue: "{{fields.issue}}", url: "{{fields.url}}", title: "{{fields.title}}"}
+    output: {path: data.attachmentLinkURL.attachment}
+
+  # Comments
+  - name: Add Comment
+    resource: Comment
+    description: Comments on an issue, or answers a comment.
+    fields:
+      - {name: issue, label: Issue ID, required: true}
+      - {name: body, label: Comment, type: textarea, required: true, description: Markdown is fine.}
+      - {name: parent, label: Answer comment ID}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($input: CommentCreateInput!) { commentCreate(input: $input) { success comment { id body url createdAt user { id name } } } }"
+        variables:
+          input: {issueId: "{{fields.issue}}", body: "{{fields.body}}", parentId: "{{fields.parent}}"}
+    output: {path: data.commentCreate.comment}
+
+  - name: Get Comments
+    resource: Comment
+    description: Lists the comments of an issue.
+    fields:
+      - {name: issue, label: Issue ID or key, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($id: String!, $first: Int, $after: String) { issue(id: $id) { comments(first: $first, after: $after) { nodes { id body url createdAt updatedAt user { id name } parent { id } } pageInfo { hasNextPage endCursor } } } }"
+        variables: {id: "{{fields.issue}}"}
+    pagination:
+      type: cursor
+      in: body
+      items_path: data.issue.comments.nodes
+      limit_param: variables.first
+      cursor_param: variables.after
+      next_path: data.issue.comments.pageInfo.endCursor
+      has_more_path: data.issue.comments.pageInfo.hasNextPage
+      page_size: 100
+
+  - name: Update Comment
+    resource: Comment
+    description: Changes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+      - {name: body, label: Comment, type: textarea, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: String!, $input: CommentUpdateInput!) { commentUpdate(id: $id, input: $input) { success comment { id body url updatedAt } } }"
+        variables: {id: "{{fields.comment}}", input: {body: "{{fields.body}}"}}
+    output: {path: data.commentUpdate.comment}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: String!) { commentDelete(id: $id) { success } }"
+        variables: {id: "{{fields.comment}}"}
+    output:
+      value: {comment: "{{fields.comment}}", deleted: true}
+
+  # Projects
+  - name: Create Project
+    resource: Project
+    description: Creates a project for one or more teams.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: teams, label: Team IDs, type: json, required: true, description: "Like [\"9cfb...\"]"}
+      - {name: description, label: Summary}
+      - {name: content, label: Description, type: textarea, description: Markdown is fine.}
+      - {name: lead, label: Lead user ID}
+      - {name: start_date, label: Starts on, type: datetime}
+      - {name: target_date, label: Target date, type: datetime}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($input: ProjectCreateInput!) { projectCreate(input: $input) { success project { id name url description startDate targetDate state } } }"
+        variables:
+          input:
+            name: "{{fields.name}}"
+            teamIds: "{{fields.teams}}"
+            description: "{{fields.description}}"
+            content: "{{fields.content}}"
+            leadId: "{{fields.lead}}"
+            startDate: "{{fields.start_date}}"
+            targetDate: "{{fields.target_date}}"
+    output: {path: data.projectCreate.project}
+
+  - name: Get Projects
+    resource: Project
+    description: Lists projects.
+    fields:
+      - {name: include_archived, label: Include archived, type: boolean}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($first: Int, $after: String, $archived: Boolean) { projects(first: $first, after: $after, includeArchived: $archived) { nodes { id name url description state progress startDate targetDate lead { id name } teams { nodes { id key name } } } pageInfo { hasNextPage endCursor } } }"
+        variables: {archived: "{{fields.include_archived}}"}
+    pagination:
+      type: cursor
+      in: body
+      items_path: data.projects.nodes
+      limit_param: variables.first
+      cursor_param: variables.after
+      next_path: data.projects.pageInfo.endCursor
+      has_more_path: data.projects.pageInfo.hasNextPage
+      page_size: 100
+
+  # Teams, users and states
+  - name: Get Teams
+    resource: Team
+    description: Lists the teams.
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($first: Int, $after: String) { teams(first: $first, after: $after) { nodes { id key name description } pageInfo { hasNextPage endCursor } } }"
+    pagination:
+      type: cursor
+      in: body
+      items_path: data.teams.nodes
+      limit_param: variables.first
+      cursor_param: variables.after
+      next_path: data.teams.pageInfo.endCursor
+      has_more_path: data.teams.pageInfo.hasNextPage
+      page_size: 100
+
+  - name: Get Workflow States
+    resource: Team
+    description: Lists the states issues of a team can be in.
+    fields:
+      - {name: team, label: Team, type: select, required: true, options_from: {request: {method: POST, path: graphql, body: {query: "{ teams(first: 250) { nodes { id name } } }"}}, path: data.teams.nodes, label: name, value: id}}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($team: ID) { workflowStates(first: 250, filter: {team: {id: {eq: $team}}}) { nodes { id name type color position } } }"
+        variables: {team: "{{fields.team}}"}
+    output: {path: data.workflowStates.nodes}
+
+  - name: Get Users
+    resource: User
+    description: Lists the users of the workspace.
+    fields:
+      - {name: include_disabled, label: Include disabled, type: boolean}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($first: Int, $after: String, $disabled: Boolean) { users(first: $first, after: $after, includeDisabled: $disabled) { nodes { id name displayName email active admin } pageInfo { hasNextPage endCursor } } }"
+        variables: {disabled: "{{fields.include_disabled}}"}
+    pagination:
+      type: cursor
+      in: body
+      items_path: data.users.nodes
+      limit_param: variables.first
+      cursor_param: variables.after
+      next_path: data.users.pageInfo.endCursor
+      has_more_path: data.users.pageInfo.hasNextPage
+      page_size: 100
+
+  - name: Run Query
+    resource: GraphQL
+    description: Sends a GraphQL query or mutation of your own.
+    fields:
+      - {name: query, label: Query, type: textarea, required: true}
+      - {name: variables, label: Variables, type: json}
+    request:
+      method: POST
+      path: graphql
+      body: {query: "{{fields.query}}", variables: "{{fields.variables}}"}
+    output: {path: data}
+
+i18n:
+  pt-BR:
+    description: "Issues, seus comentários e links, projetos, times, usuários e estados de fluxo no Linear."
+    triggers:
+      Event: {name: Evento, description: "Inicia o fluxo quando issues, comentários, projetos ou outras coisas que você escolher mudam num time.", fields: {team: Time, resource_types: Recursos}}
+    actions:
+      Create Issue: {name: Criar issue, description: Cria uma issue num time., fields: {team: Time, title: Título, description: Descrição, assignee: Responsável, priority: Prioridade, state: Estado, labels: IDs dos rótulos, project: ID do projeto, cycle: ID do ciclo, parent: ID da issue pai, estimate: Estimativa, due_date: Prazo}}
+      Get Issue: {name: Ler issue, description: "Lê uma issue pelo ID ou pela chave, como ENG-123.", fields: {issue: ID ou chave da issue}}
+      Get Issues: {name: Listar issues, description: "Lista issues, todas ou as que batem com um filtro.", fields: {filter: Filtro, include_archived: Incluir arquivadas}}
+      Search Issues: {name: Buscar issues, description: Encontra issues por texto., fields: {term: Texto, team: Só no time (ID), include_comments: Buscar nos comentários também}}
+      Update Issue: {name: Atualizar issue, description: Muda uma issue. Campos vazios ficam como estão., fields: {issue: ID ou chave da issue, title: Título, description: Descrição, team: Mover para o time (ID), assignee: ID do responsável, priority: Prioridade, state: ID do estado, labels: IDs dos rótulos, project: ID do projeto, cycle: ID do ciclo, parent: ID da issue pai, estimate: Estimativa, due_date: Prazo}}
+      Archive Issue: {name: Arquivar issue, description: Arquiva uma issue., fields: {issue: ID ou chave da issue}}
+      Delete Issue: {name: Excluir issue, description: Manda uma issue para a lixeira., fields: {issue: ID ou chave da issue}}
+      Add Link: {name: Adicionar link, description: Anexa um link a uma issue., fields: {issue: ID ou chave da issue, url: Link, title: Título}}
+      Add Comment: {name: Comentar, description: "Comenta numa issue, ou responde um comentário.", fields: {issue: ID da issue, body: Comentário, parent: Responder ao comentário (ID)}}
+      Get Comments: {name: Listar comentários, description: Lista os comentários de uma issue., fields: {issue: ID ou chave da issue}}
+      Update Comment: {name: Atualizar comentário, description: Muda um comentário., fields: {comment: ID do comentário, body: Comentário}}
+      Delete Comment: {name: Excluir comentário, description: Exclui um comentário., fields: {comment: ID do comentário}}
+      Create Project: {name: Criar projeto, description: Cria um projeto para um ou mais times., fields: {name: Nome, teams: IDs dos times, description: Resumo, content: Descrição, lead: ID do líder, start_date: Começa em, target_date: Data alvo}}
+      Get Projects: {name: Listar projetos, description: Lista projetos., fields: {include_archived: Incluir arquivados}}
+      Get Teams: {name: Listar times, description: Lista os times.}
+      Get Workflow States: {name: Listar estados, description: Lista os estados em que as issues de um time podem estar., fields: {team: Time}}
+      Get Users: {name: Listar usuários, description: Lista os usuários do espaço de trabalho., fields: {include_disabled: Incluir desativados}}
+      Run Query: {name: Rodar consulta, description: Manda uma consulta ou mutação GraphQL sua., fields: {query: Consulta, variables: Variáveis}}
