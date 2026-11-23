@@ -13,7 +13,7 @@ integrations:
   - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: planned}
   - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Calendly, kind: manifest, status: planned}
-  - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: ClickUp, kind: manifest, status: planned}
+  - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: header, n8n: ClickUp, kind: manifest, status: draft}
   - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: planned}
   - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: Discord, kind: package, lib: {name: nostrum, version: 0.10.4, released: 2025-03-02}, status: planned}
   - {id: dropbox, name: Dropbox, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Dropbox, kind: manifest, status: planned}
