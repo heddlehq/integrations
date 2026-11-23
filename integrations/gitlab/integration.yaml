@@ -1,0 +1,768 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# GitLab's REST API v4, in gitlab.com or a server of your own. Make a personal access
+# token in GitLab, under Preferences > Access tokens, with the api scope.
+id: gitlab
+name: GitLab
+version: 1.0.0
+description: Issues, merge requests, files, releases and pipelines of GitLab projects.
+icon: hero-code-bracket
+category: dev
+author: Heddle
+homepage: https://docs.gitlab.com/api/rest/
+base_url: "{{credential.url}}/api/v4/"
+
+credential:
+  label: GitLab
+  fields:
+    - {name: url, label: Address, required: true, default: "https://gitlab.com", description: "https://gitlab.com, or your server's address"}
+    - {name: token, label: Personal access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+actions:
+  # Issues
+  - name: Create Issue
+    resource: Issue
+    description: Opens an issue in a project.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: "A project, or its path like group/name", options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: labels, label: Labels, description: Separated by commas.}
+      - {name: assignee_ids, label: Assignee IDs, type: json, description: "A list like [12, 34]"}
+      - {name: milestone_id, label: Milestone ID}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: confidential, label: Confidential, type: boolean}
+      - {name: issue_type, label: Type, type: select, options: [{label: Issue, value: issue}, {label: Incident, value: incident}, {label: Test case, value: test_case}, {label: Task, value: task}]}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/issues"
+      body:
+        title: "{{fields.title}}"
+        description: "{{fields.description}}"
+        labels: "{{fields.labels}}"
+        assignee_ids: "{{fields.assignee_ids}}"
+        milestone_id: "{{fields.milestone_id}}"
+        due_date: "{{fields.due_date}}"
+        confidential: "{{fields.confidential}}"
+        issue_type: "{{fields.issue_type}}"
+
+  - name: Get Issue
+    resource: Issue
+    description: Reads an issue.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: issue_iid, label: Issue number, required: true}
+    request: {method: GET, path: "projects/{{fields.project}}/issues/{{fields.issue_iid}}"}
+
+  - name: Get Issues
+    resource: Issue
+    description: Lists the issues of a project, all of them or those that match.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: state, label: State, type: select, options: [{label: Opened, value: opened}, {label: Closed, value: closed}]}
+      - {name: labels, label: Labels, description: Separated by commas. Issues with all of them.}
+      - {name: search, label: Search, description: In the title and description.}
+      - {name: assignee_username, label: Assignee username}
+      - {name: author_username, label: Author username}
+      - {name: milestone, label: Milestone title}
+      - {name: created_after, label: Created after, type: datetime}
+      - {name: updated_after, label: Updated after, type: datetime}
+      - {name: order_by, label: Order by, type: select, options: [{label: Created, value: created_at}, {label: Updated, value: updated_at}]}
+      - {name: sort, label: Direction, type: select, options: [{label: Descending, value: desc}, {label: Ascending, value: asc}]}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/issues"
+      query:
+        state: "{{fields.state}}"
+        labels: "{{fields.labels}}"
+        search: "{{fields.search}}"
+        assignee_username: "{{fields.assignee_username}}"
+        author_username: "{{fields.author_username}}"
+        milestone: "{{fields.milestone}}"
+        created_after: "{{fields.created_after}}"
+        updated_after: "{{fields.updated_after}}"
+        order_by: "{{fields.order_by}}"
+        sort: "{{fields.sort}}"
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  - name: Update Issue
+    resource: Issue
+    description: Changes an issue. Empty fields stay as they are.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: issue_iid, label: Issue number, required: true}
+      - {name: title, label: Title}
+      - {name: description, label: Description, type: textarea}
+      - {name: labels, label: Labels, description: Separated by commas.}
+      - {name: add_labels, label: Add labels, description: Separated by commas.}
+      - {name: remove_labels, label: Remove labels, description: Separated by commas.}
+      - {name: assignee_ids, label: Assignee IDs, type: json, description: 'A list like [12, 34]'}
+      - {name: milestone_id, label: Milestone ID}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: state_event, label: Close or reopen, type: select, options: [{label: Close, value: close}, {label: Reopen, value: reopen}]}
+      - {name: confidential, label: Confidential, type: boolean}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}/issues/{{fields.issue_iid}}"
+      body:
+        title: "{{fields.title}}"
+        description: "{{fields.description}}"
+        labels: "{{fields.labels}}"
+        add_labels: "{{fields.add_labels}}"
+        remove_labels: "{{fields.remove_labels}}"
+        assignee_ids: "{{fields.assignee_ids}}"
+        milestone_id: "{{fields.milestone_id}}"
+        due_date: "{{fields.due_date}}"
+        state_event: "{{fields.state_event}}"
+        confidential: "{{fields.confidential}}"
+
+  - name: Lock Issue
+    resource: Issue
+    description: Locks the discussion of an issue, so only members comment, or unlocks it.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: issue_iid, label: Issue number, required: true}
+      - {name: locked, label: Locked, type: boolean, default: true}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}/issues/{{fields.issue_iid}}"
+      body: {discussion_locked: "{{fields.locked}}"}
+
+  - name: Comment on Issue
+    resource: Issue
+    description: Comments on an issue.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: issue_iid, label: Issue number, required: true}
+      - {name: body, label: Comment, type: textarea, required: true}
+      - {name: internal, label: Internal, type: boolean, description: Only members see it.}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/issues/{{fields.issue_iid}}/notes"
+      body: {body: "{{fields.body}}", internal: "{{fields.internal}}"}
+
+  - name: Get Issue Comments
+    resource: Issue
+    description: Lists the comments of an issue.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: issue_iid, label: Issue number, required: true}
+    request: {method: GET, path: "projects/{{fields.project}}/issues/{{fields.issue_iid}}/notes"}
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  # Merge requests
+  - name: Create Merge Request
+    resource: Merge Request
+    description: Opens a merge request.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: source_branch, label: Source branch, required: true}
+      - {name: target_branch, label: Target branch, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: labels, label: Labels, description: Separated by commas.}
+      - {name: assignee_ids, label: Assignee IDs, type: json, description: 'A list like [12, 34]'}
+      - {name: reviewer_ids, label: Reviewer IDs, type: json, description: "A list like [12, 34]"}
+      - {name: remove_source_branch, label: Delete the source branch when merged, type: boolean}
+      - {name: squash, label: Squash commits, type: boolean}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/merge_requests"
+      body:
+        source_branch: "{{fields.source_branch}}"
+        target_branch: "{{fields.target_branch}}"
+        title: "{{fields.title}}"
+        description: "{{fields.description}}"
+        labels: "{{fields.labels}}"
+        assignee_ids: "{{fields.assignee_ids}}"
+        reviewer_ids: "{{fields.reviewer_ids}}"
+        remove_source_branch: "{{fields.remove_source_branch}}"
+        squash: "{{fields.squash}}"
+
+  - name: Get Merge Request
+    resource: Merge Request
+    description: Reads a merge request.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: mr_iid, label: Merge request number, required: true}
+    request: {method: GET, path: "projects/{{fields.project}}/merge_requests/{{fields.mr_iid}}"}
+
+  - name: Get Merge Requests
+    resource: Merge Request
+    description: Lists the merge requests of a project, all of them or those that match.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: state, label: State, type: select, options: [{label: Opened, value: opened}, {label: Closed, value: closed}, {label: Merged, value: merged}, {label: Locked, value: locked}]}
+      - {name: labels, label: Labels, description: Separated by commas.}
+      - {name: search, label: Search}
+      - {name: source_branch, label: Source branch}
+      - {name: target_branch, label: Target branch}
+      - {name: order_by, label: Order by, type: select, options: [{label: Created, value: created_at}, {label: Updated, value: updated_at}]}
+      - {name: sort, label: Direction, type: select, options: [{label: Descending, value: desc}, {label: Ascending, value: asc}]}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/merge_requests"
+      query:
+        state: "{{fields.state}}"
+        labels: "{{fields.labels}}"
+        search: "{{fields.search}}"
+        source_branch: "{{fields.source_branch}}"
+        target_branch: "{{fields.target_branch}}"
+        order_by: "{{fields.order_by}}"
+        sort: "{{fields.sort}}"
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  - name: Update Merge Request
+    resource: Merge Request
+    description: Changes a merge request. Empty fields stay as they are.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: mr_iid, label: Merge request number, required: true}
+      - {name: title, label: Title}
+      - {name: description, label: Description, type: textarea}
+      - {name: target_branch, label: Target branch}
+      - {name: labels, label: Labels, description: Separated by commas.}
+      - {name: assignee_ids, label: Assignee IDs, type: json, description: 'A list like [12, 34]'}
+      - {name: state_event, label: Close or reopen, type: select, options: [{label: Close, value: close}, {label: Reopen, value: reopen}]}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}/merge_requests/{{fields.mr_iid}}"
+      body:
+        title: "{{fields.title}}"
+        description: "{{fields.description}}"
+        target_branch: "{{fields.target_branch}}"
+        labels: "{{fields.labels}}"
+        assignee_ids: "{{fields.assignee_ids}}"
+        state_event: "{{fields.state_event}}"
+
+  - name: Merge Merge Request
+    resource: Merge Request
+    description: Merges a merge request.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: mr_iid, label: Merge request number, required: true}
+      - {name: merge_commit_message, label: Commit message}
+      - {name: squash, label: Squash commits, type: boolean}
+      - {name: should_remove_source_branch, label: Delete the source branch, type: boolean}
+      - {name: merge_when_pipeline_succeeds, label: When the pipeline succeeds, type: boolean}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}/merge_requests/{{fields.mr_iid}}/merge"
+      body:
+        merge_commit_message: "{{fields.merge_commit_message}}"
+        squash: "{{fields.squash}}"
+        should_remove_source_branch: "{{fields.should_remove_source_branch}}"
+        merge_when_pipeline_succeeds: "{{fields.merge_when_pipeline_succeeds}}"
+
+  - name: Comment on Merge Request
+    resource: Merge Request
+    description: Comments on a merge request.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: mr_iid, label: Merge request number, required: true}
+      - {name: body, label: Comment, type: textarea, required: true}
+      - {name: internal, label: Internal, type: boolean, description: Only members see it.}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/merge_requests/{{fields.mr_iid}}/notes"
+      body: {body: "{{fields.body}}", internal: "{{fields.internal}}"}
+
+  # Projects
+  - name: Get Project
+    resource: Project
+    description: Reads a project.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    request: {method: GET, path: "projects/{{fields.project}}"}
+
+  - name: Get Projects
+    resource: Project
+    description: Lists the projects you're a member of.
+    fields:
+      - {name: search, label: Search}
+      - {name: owned, label: Only the ones I own, type: boolean}
+    request:
+      method: GET
+      path: projects
+      query: {membership: true, search: "{{fields.search}}", owned: "{{fields.owned}}"}
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  - name: Get User Projects
+    resource: Project
+    description: Lists the projects a user owns.
+    fields:
+      - {name: username, label: Username, required: true}
+    request: {method: GET, path: "users/{{fields.username}}/projects"}
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  # Files
+  - name: Create File
+    resource: File
+    description: Adds a file to a branch, in a commit of its own.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: file_path, label: File path, required: true, description: Like docs/readme.md}
+      - {name: branch, label: Branch, required: true}
+      - {name: content, label: Content, type: textarea, required: true}
+      - {name: commit_message, label: Commit message, required: true}
+      - {name: encoding, label: Encoding, type: select, default: text, options: [{label: Text, value: text}, {label: Base64, value: base64}]}
+      - {name: author_email, label: Author email}
+      - {name: author_name, label: Author name}
+      - {name: start_branch, label: Start from branch, description: Makes the branch from this one when it doesn't exist.}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/repository/files/{{fields.file_path}}"
+      body:
+        branch: "{{fields.branch}}"
+        content: "{{fields.content}}"
+        commit_message: "{{fields.commit_message}}"
+        encoding: "{{fields.encoding}}"
+        author_email: "{{fields.author_email}}"
+        author_name: "{{fields.author_name}}"
+        start_branch: "{{fields.start_branch}}"
+
+  - name: Get File
+    resource: File
+    description: Reads a file, with its content in base64.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: file_path, label: File path, required: true, description: Like docs/readme.md}
+      - {name: ref, label: "Branch, tag or commit", required: true, default: main}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/repository/files/{{fields.file_path}}"
+      query: {ref: "{{fields.ref}}"}
+
+  - name: Download File
+    resource: File
+    description: Downloads a file as it is in the repository.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: file_path, label: File path, required: true, description: Like docs/readme.md}
+      - {name: ref, label: "Branch, tag or commit", required: true, default: main}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/repository/files/{{fields.file_path}}/raw"
+      query: {ref: "{{fields.ref}}"}
+    output:
+      file: true
+
+  - name: Update File
+    resource: File
+    description: Changes a file in a branch, in a commit of its own.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: file_path, label: File path, required: true, description: Like docs/readme.md}
+      - {name: branch, label: Branch, required: true}
+      - {name: content, label: Content, type: textarea, required: true}
+      - {name: commit_message, label: Commit message, required: true}
+      - {name: encoding, label: Encoding, type: select, default: text, options: [{label: Text, value: text}, {label: Base64, value: base64}]}
+      - {name: author_email, label: Author email}
+      - {name: author_name, label: Author name}
+      - {name: last_commit_id, label: Last commit ID, description: Fails when the file changed after this commit.}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}/repository/files/{{fields.file_path}}"
+      body:
+        branch: "{{fields.branch}}"
+        content: "{{fields.content}}"
+        commit_message: "{{fields.commit_message}}"
+        encoding: "{{fields.encoding}}"
+        author_email: "{{fields.author_email}}"
+        author_name: "{{fields.author_name}}"
+        last_commit_id: "{{fields.last_commit_id}}"
+
+  - name: Delete File
+    resource: File
+    description: Deletes a file from a branch, in a commit of its own.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: file_path, label: File path, required: true, description: Like docs/readme.md}
+      - {name: branch, label: Branch, required: true}
+      - {name: commit_message, label: Commit message, required: true}
+      - {name: author_email, label: Author email}
+      - {name: author_name, label: Author name}
+    request:
+      method: DELETE
+      path: "projects/{{fields.project}}/repository/files/{{fields.file_path}}"
+      body:
+        branch: "{{fields.branch}}"
+        commit_message: "{{fields.commit_message}}"
+        author_email: "{{fields.author_email}}"
+        author_name: "{{fields.author_name}}"
+    output: {value: {file_path: "{{fields.file_path}}", deleted: true}}
+
+  - name: List Files
+    resource: File
+    description: Lists the files and folders of a folder.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: path, label: Folder, description: The root when left empty.}
+      - {name: ref, label: "Branch, tag or commit"}
+      - {name: recursive, label: With subfolders, type: boolean}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/repository/tree"
+      query: {path: "{{fields.path}}", ref: "{{fields.ref}}", recursive: "{{fields.recursive}}"}
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  # Releases
+  - name: Create Release
+    resource: Release
+    description: Makes a release of a tag, making the tag from a ref when it doesn't exist.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: tag_name, label: Tag, required: true}
+      - {name: name, label: Name}
+      - {name: description, label: Description, type: textarea}
+      - {name: ref, label: Make the tag from, description: "A branch or commit, when the tag doesn't exist."}
+      - {name: milestones, label: Milestones, type: json, description: "A list of titles, like [\"v1.0\"]"}
+      - {name: released_at, label: Released at, type: datetime}
+      - {name: assets, label: Asset links, type: json, description: "Like {\"links\": [{\"name\": \"Binary\", \"url\": \"https://...\"}]}"}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/releases"
+      body:
+        tag_name: "{{fields.tag_name}}"
+        name: "{{fields.name}}"
+        description: "{{fields.description}}"
+        ref: "{{fields.ref}}"
+        milestones: "{{fields.milestones}}"
+        released_at: "{{fields.released_at}}"
+        assets: "{{fields.assets}}"
+
+  - name: Get Release
+    resource: Release
+    description: Reads a release.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: tag_name, label: Tag, required: true}
+    request: {method: GET, path: "projects/{{fields.project}}/releases/{{fields.tag_name}}"}
+
+  - name: Get Releases
+    resource: Release
+    description: Lists the releases of a project.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: order_by, label: Order by, type: select, options: [{label: Released, value: released_at}, {label: Created, value: created_at}]}
+      - {name: sort, label: Direction, type: select, options: [{label: Descending, value: desc}, {label: Ascending, value: asc}]}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/releases"
+      query: {order_by: "{{fields.order_by}}", sort: "{{fields.sort}}"}
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  - name: Update Release
+    resource: Release
+    description: Changes a release. Empty fields stay as they are.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: tag_name, label: Tag, required: true}
+      - {name: name, label: Name}
+      - {name: description, label: Description, type: textarea}
+      - {name: milestones, label: Milestones, type: json, description: "A list of titles, like [\"v1.0\"]"}
+      - {name: released_at, label: Released at, type: datetime}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}/releases/{{fields.tag_name}}"
+      body:
+        name: "{{fields.name}}"
+        description: "{{fields.description}}"
+        milestones: "{{fields.milestones}}"
+        released_at: "{{fields.released_at}}"
+
+  - name: Delete Release
+    resource: Release
+    description: Deletes a release. The tag stays.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: tag_name, label: Tag, required: true}
+    request: {method: DELETE, path: "projects/{{fields.project}}/releases/{{fields.tag_name}}"}
+
+  # Pipelines
+  - name: Run Pipeline
+    resource: Pipeline
+    description: Runs a pipeline on a branch or tag.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: ref, label: Branch or tag, required: true}
+      - {name: variables, label: Variables, type: json, description: "A list like [{\"key\": \"ENV\", \"value\": \"prod\"}]"}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/pipeline"
+      body: {ref: "{{fields.ref}}", variables: "{{fields.variables}}"}
+
+  - name: Get Pipeline
+    resource: Pipeline
+    description: Reads a pipeline.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: pipeline_id, label: Pipeline ID, required: true}
+    request: {method: GET, path: "projects/{{fields.project}}/pipelines/{{fields.pipeline_id}}"}
+
+  - name: Get Pipelines
+    resource: Pipeline
+    description: Lists the pipelines of a project, the latest first.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: ref, label: Branch or tag}
+      - {name: status, label: Status, type: select, options: [{label: Running, value: running}, {label: Pending, value: pending}, {label: Success, value: success}, {label: Failed, value: failed}, {label: Canceled, value: canceled}, {label: Skipped, value: skipped}, {label: Manual, value: manual}]}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/pipelines"
+      query: {ref: "{{fields.ref}}", status: "{{fields.status}}"}
+    pagination: {type: link, page_size: 100, limit_param: per_page}
+
+  - name: Cancel Pipeline
+    resource: Pipeline
+    description: Cancels the running jobs of a pipeline.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: pipeline_id, label: Pipeline ID, required: true}
+    request: {method: POST, path: "projects/{{fields.project}}/pipelines/{{fields.pipeline_id}}/cancel"}
+
+  - name: Retry Pipeline
+    resource: Pipeline
+    description: Runs the failed or canceled jobs of a pipeline again.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+      - {name: pipeline_id, label: Pipeline ID, required: true}
+    request: {method: POST, path: "projects/{{fields.project}}/pipelines/{{fields.pipeline_id}}/retry"}
+
+triggers:
+  - name: Push
+    description: Starts the flow for each push to the project.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: true, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Tag Push
+    description: Starts the flow when a tag is made or deleted.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: true, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Issue Event
+    description: Starts the flow when an issue is opened, changed or closed.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: true, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Confidential Issue Event
+    description: Starts the flow when a confidential issue is opened, changed or closed.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: true, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Comment
+    description: Starts the flow for each comment on an issue, merge request, commit or snippet.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: true, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Confidential Comment
+    description: Starts the flow for each confidential comment.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: true, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Merge Request Event
+    description: Starts the flow when a merge request is opened, changed, merged or closed.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: true, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Pipeline Event
+    description: Starts the flow when a pipeline changes status.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: true, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Job Event
+    description: Starts the flow when a job changes status.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: true, deployment_events: false, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Deployment Event
+    description: Starts the flow when a deployment starts, succeeds, fails or is canceled.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: true, releases_events: false, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Release Event
+    description: Starts the flow when a release is made, changed or deleted.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: true, wiki_page_events: false}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+  - name: Wiki Page Event
+    description: Starts the flow when a wiki page is made, changed or deleted.
+    fields:
+      - {name: project, label: Project, type: select, required: true, description: 'A project, or its path like group/name', options_from: {request: {method: GET, path: projects, query: {membership: true, simple: true, order_by: last_activity_at}}, label: path_with_namespace, value: id, pagination: {type: link, page_size: 100, limit_param: per_page}}}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "projects/{{fields.project}}/hooks"
+          body: {url: "{{webhook.url}}", token: "{{webhook.secret}}", enable_ssl_verification: true, push_events: false, tag_push_events: false, issues_events: false, confidential_issues_events: false, note_events: false, confidential_note_events: false, merge_requests_events: false, pipeline_events: false, job_events: false, deployment_events: false, releases_events: false, wiki_page_events: true}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "projects/{{fields.project}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Gitlab-Token, token: "{{webhook.secret}}"}
+
+
+i18n:
+  pt-BR:
+    description: Issues, merge requests, arquivos, releases e pipelines de projetos do GitLab.
+    triggers:
+      Push: {name: Push, description: "Inicia o fluxo para cada push no projeto.", fields: {project: Projeto}}
+      Tag Push: {name: Push de tag, description: "Inicia o fluxo quando uma tag é criada ou apagada.", fields: {project: Projeto}}
+      Issue Event: {name: Evento de issue, description: "Inicia o fluxo quando uma issue é aberta, mudada ou fechada.", fields: {project: Projeto}}
+      Confidential Issue Event: {name: Evento de issue confidencial, description: "Inicia o fluxo quando uma issue confidencial é aberta, mudada ou fechada.", fields: {project: Projeto}}
+      Comment: {name: Comentário, description: "Inicia o fluxo para cada comentário numa issue, merge request, commit ou snippet.", fields: {project: Projeto}}
+      Confidential Comment: {name: Comentário confidencial, description: "Inicia o fluxo para cada comentário confidencial.", fields: {project: Projeto}}
+      Merge Request Event: {name: Evento de merge request, description: "Inicia o fluxo quando um merge request é aberto, mudado, aceito ou fechado.", fields: {project: Projeto}}
+      Pipeline Event: {name: Evento de pipeline, description: "Inicia o fluxo quando um pipeline muda de status.", fields: {project: Projeto}}
+      Job Event: {name: Evento de job, description: "Inicia o fluxo quando um job muda de status.", fields: {project: Projeto}}
+      Deployment Event: {name: Evento de deploy, description: "Inicia o fluxo quando um deploy começa, dá certo, falha ou é cancelado.", fields: {project: Projeto}}
+      Release Event: {name: Evento de release, description: "Inicia o fluxo quando uma release é criada, mudada ou apagada.", fields: {project: Projeto}}
+      Wiki Page Event: {name: Evento de página wiki, description: "Inicia o fluxo quando uma página da wiki é criada, mudada ou apagada.", fields: {project: Projeto}}
+    actions:
+      Create Issue: {name: Criar issue, description: Abre uma issue num projeto., fields: {project: Projeto, title: Título, description: Descrição, labels: Etiquetas, assignee_ids: IDs dos responsáveis, milestone_id: ID do marco, due_date: Prazo, confidential: Confidencial, issue_type: Tipo}}
+      Get Issue: {name: Ler issue, description: Lê uma issue., fields: {project: Projeto, issue_iid: Número da issue}}
+      Get Issues: {name: Listar issues, description: "Lista as issues de um projeto, todas ou as que batem.", fields: {project: Projeto, state: Estado, labels: Etiquetas, search: Busca, assignee_username: Usuário responsável, author_username: Usuário autor, milestone: Título do marco, created_after: Criadas depois de, updated_after: Atualizadas depois de, order_by: Ordenar por, sort: Direção}}
+      Update Issue: {name: Atualizar issue, description: Muda uma issue. Campos vazios ficam como estão., fields: {project: Projeto, issue_iid: Número da issue, title: Título, description: Descrição, labels: Etiquetas, add_labels: Adicionar etiquetas, remove_labels: Tirar etiquetas, assignee_ids: IDs dos responsáveis, milestone_id: ID do marco, due_date: Prazo, state_event: Fechar ou reabrir, confidential: Confidencial}}
+      Lock Issue: {name: Travar issue, description: "Trava a discussão de uma issue, para só membros comentarem, ou destrava.", fields: {project: Projeto, issue_iid: Número da issue, locked: Travada}}
+      Comment on Issue: {name: Comentar na issue, description: Comenta numa issue., fields: {project: Projeto, issue_iid: Número da issue, body: Comentário, internal: Interno}}
+      Get Issue Comments: {name: Listar comentários da issue, description: Lista os comentários de uma issue., fields: {project: Projeto, issue_iid: Número da issue}}
+      Create Merge Request: {name: Criar merge request, description: Abre um merge request., fields: {project: Projeto, source_branch: Branch de origem, target_branch: Branch de destino, title: Título, description: Descrição, labels: Etiquetas, assignee_ids: IDs dos responsáveis, reviewer_ids: IDs dos revisores, remove_source_branch: Apagar a branch de origem ao aceitar, squash: Juntar commits}}
+      Get Merge Request: {name: Ler merge request, description: Lê um merge request., fields: {project: Projeto, mr_iid: Número do merge request}}
+      Get Merge Requests: {name: Listar merge requests, description: "Lista os merge requests de um projeto, todos ou os que batem.", fields: {project: Projeto, state: Estado, labels: Etiquetas, search: Busca, source_branch: Branch de origem, target_branch: Branch de destino, order_by: Ordenar por, sort: Direção}}
+      Update Merge Request: {name: Atualizar merge request, description: Muda um merge request. Campos vazios ficam como estão., fields: {project: Projeto, mr_iid: Número do merge request, title: Título, description: Descrição, target_branch: Branch de destino, labels: Etiquetas, assignee_ids: IDs dos responsáveis, state_event: Fechar ou reabrir}}
+      Merge Merge Request: {name: Aceitar merge request, description: Faz o merge de um merge request., fields: {project: Projeto, mr_iid: Número do merge request, merge_commit_message: Mensagem do commit, squash: Juntar commits, should_remove_source_branch: Apagar a branch de origem, merge_when_pipeline_succeeds: Quando o pipeline passar}}
+      Comment on Merge Request: {name: Comentar no merge request, description: Comenta num merge request., fields: {project: Projeto, mr_iid: Número do merge request, body: Comentário, internal: Interno}}
+      Get Project: {name: Ler projeto, description: Lê um projeto., fields: {project: Projeto}}
+      Get Projects: {name: Listar projetos, description: Lista os projetos de que você é membro., fields: {search: Busca, owned: Só os meus}}
+      Get User Projects: {name: Listar projetos do usuário, description: Lista os projetos de um usuário., fields: {username: Usuário}}
+      Create File: {name: Criar arquivo, description: "Adiciona um arquivo a uma branch, num commit próprio.", fields: {project: Projeto, file_path: Caminho do arquivo, branch: Branch, content: Conteúdo, commit_message: Mensagem do commit, encoding: Codificação, author_email: E-mail do autor, author_name: Nome do autor, start_branch: Partir da branch}}
+      Get File: {name: Ler arquivo, description: "Lê um arquivo, com o conteúdo em base64.", fields: {project: Projeto, file_path: Caminho do arquivo, ref: "Branch, tag ou commit"}}
+      Download File: {name: Baixar arquivo, description: Baixa um arquivo como está no repositório., fields: {project: Projeto, file_path: Caminho do arquivo, ref: "Branch, tag ou commit"}}
+      Update File: {name: Atualizar arquivo, description: "Muda um arquivo numa branch, num commit próprio.", fields: {project: Projeto, file_path: Caminho do arquivo, branch: Branch, content: Conteúdo, commit_message: Mensagem do commit, encoding: Codificação, author_email: E-mail do autor, author_name: Nome do autor, last_commit_id: ID do último commit}}
+      Delete File: {name: Apagar arquivo, description: "Apaga um arquivo de uma branch, num commit próprio.", fields: {project: Projeto, file_path: Caminho do arquivo, branch: Branch, commit_message: Mensagem do commit, author_email: E-mail do autor, author_name: Nome do autor}}
+      List Files: {name: Listar arquivos, description: Lista os arquivos e pastas de uma pasta., fields: {project: Projeto, path: Pasta, ref: "Branch, tag ou commit", recursive: Com subpastas}}
+      Create Release: {name: Criar release, description: "Cria uma release de uma tag, criando a tag quando não existe.", fields: {project: Projeto, tag_name: Tag, name: Nome, description: Descrição, ref: Criar a tag a partir de, milestones: Marcos, released_at: Lançada em, assets: Links de arquivos}}
+      Get Release: {name: Ler release, description: Lê uma release., fields: {project: Projeto, tag_name: Tag}}
+      Get Releases: {name: Listar releases, description: Lista as releases de um projeto., fields: {project: Projeto, order_by: Ordenar por, sort: Direção}}
+      Update Release: {name: Atualizar release, description: Muda uma release. Campos vazios ficam como estão., fields: {project: Projeto, tag_name: Tag, name: Nome, description: Descrição, milestones: Marcos, released_at: Lançada em}}
+      Delete Release: {name: Apagar release, description: Apaga uma release. A tag fica., fields: {project: Projeto, tag_name: Tag}}
+      Run Pipeline: {name: Rodar pipeline, description: Roda um pipeline numa branch ou tag., fields: {project: Projeto, ref: Branch ou tag, variables: Variáveis}}
+      Get Pipeline: {name: Ler pipeline, description: Lê um pipeline., fields: {project: Projeto, pipeline_id: ID do pipeline}}
+      Get Pipelines: {name: Listar pipelines, description: "Lista os pipelines de um projeto, os mais novos primeiro.", fields: {project: Projeto, ref: Branch ou tag, status: Status}}
+      Cancel Pipeline: {name: Cancelar pipeline, description: Cancela os jobs em andamento de um pipeline., fields: {project: Projeto, pipeline_id: ID do pipeline}}
+      Retry Pipeline: {name: Repetir pipeline, description: Roda de novo os jobs que falharam ou foram cancelados., fields: {project: Projeto, pipeline_id: ID do pipeline}}

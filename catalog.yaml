@@ -23,7 +23,7 @@ integrations:
   - {id: freshdesk, name: Freshdesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Freshdesk, host: true, kind: manifest, status: planned}
   - {id: ftp, name: FTP / SFTP, category: files, phase: 1, origin: n8n, auth: basic, n8n: Ftp, kind: package, status: official}
   - {id: github, name: GitHub, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Github, kind: package, lib: {name: tentacat, version: 2.5.0, released: 2024-12-20}, status: community}
-  - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: planned}
+  - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: draft}
   - {id: gmail, name: Gmail, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Gmail, kind: package, lib: {name: google_api_gmail, version: 0.17.0, released: 2025-04-15}, status: planned}
   - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: package, lib: {name: google_api_analytics_admin, version: 0.26.0, released: 2025-04-15}, status: planned}
   - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: package, lib: {name: google_api_big_query, version: 0.88.0, released: 2025-04-15}, status: planned}
