@@ -80,7 +80,7 @@ integrations:
   - {id: x, name: X (Twitter), category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Twitter, kind: manifest, status: planned}
   - {id: xero, name: Xero, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: Xero, kind: manifest, status: planned}
   - {id: youtube, name: YouTube, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Google/YouTube, kind: package, lib: {name: google_api_you_tube, version: 0.54.0, released: 2025-04-15}, status: planned}
-  - {id: zendesk, name: Zendesk, category: support, phase: 1, origin: n8n, auth: oauth2, n8n: Zendesk, host: true, kind: manifest, status: planned}
+  - {id: zendesk, name: Zendesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Zendesk, host: true, kind: manifest, status: draft}
   - {id: zoho_crm, name: Zoho CRM, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Zoho, host: true, kind: manifest, status: planned}
   - {id: zoom, name: Zoom, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Zoom, kind: manifest, status: planned}
 

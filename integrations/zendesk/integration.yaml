@@ -1,0 +1,583 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Zendesk Support's API v2. The API token is made in Zendesk's Admin Center, under
+# Apps and integrations > APIs > Zendesk API.
+id: zendesk
+name: Zendesk
+version: 1.0.0
+description: Tickets, suspended tickets, ticket fields, users and organizations in Zendesk Support.
+icon: hero-lifebuoy
+category: support
+author: Heddle
+homepage: https://developer.zendesk.com/api-reference/ticketing/introduction/
+base_url: "https://{{credential.subdomain}}.zendesk.com/api/v2/"
+
+credential:
+  label: Zendesk
+  fields:
+    - {name: subdomain, label: Subdomain, required: true, description: "acme, for acme.zendesk.com"}
+    - {name: email, label: Agent email, required: true}
+    - {name: api_token, label: API token, secret: true, required: true}
+  auth:
+    type: basic
+    username: "{{credential.email}}/token"
+    password: "{{credential.api_token}}"
+
+errors:
+  message_path: description
+
+triggers:
+  - name: Event
+    description: Starts the flow when tickets, users or organizations change the ways you choose.
+    fields:
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        options:
+          - {label: Ticket created, value: "zen:event-type:ticket.created"}
+          - {label: Ticket status changed, value: "zen:event-type:ticket.status_changed"}
+          - {label: Ticket priority changed, value: "zen:event-type:ticket.priority_changed"}
+          - {label: Ticket comment added, value: "zen:event-type:ticket.comment_added"}
+          - {label: Ticket assignee changed, value: "zen:event-type:ticket.agent_assignment_changed"}
+          - {label: Ticket group changed, value: "zen:event-type:ticket.group_assignment_changed"}
+          - {label: Ticket tags changed, value: "zen:event-type:ticket.tags_changed"}
+          - {label: Ticket subject changed, value: "zen:event-type:ticket.subject_changed"}
+          - {label: Ticket custom field changed, value: "zen:event-type:ticket.custom_field_changed"}
+          - {label: Ticket deleted, value: "zen:event-type:ticket.soft_deleted"}
+          - {label: User created, value: "zen:event-type:user.created"}
+          - {label: User deleted, value: "zen:event-type:user.deleted"}
+          - {label: User email changed, value: "zen:event-type:user.identity_changed"}
+          - {label: User role changed, value: "zen:event-type:user.role_changed"}
+          - {label: Organization created, value: "zen:event-type:organization.created"}
+          - {label: Organization deleted, value: "zen:event-type:organization.deleted"}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body:
+            webhook:
+              name: Heddle
+              endpoint: "{{webhook.url}}"
+              http_method: POST
+              request_format: json
+              status: active
+              subscriptions: "{{fields.events}}"
+              signing_secret: {algorithm: SHA256, secret: "{{webhook.secret}}"}
+        id_path: webhook.id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature:
+        header: X-Zendesk-Webhook-Signature
+        timestamp_header: X-Zendesk-Webhook-Signature-Timestamp
+        message: "{{request.timestamp}}{{request.body}}"
+        encoding: base64
+        secret: "{{webhook.secret}}"
+
+actions:
+  # Tickets
+  - name: Create Ticket
+    resource: Ticket
+    description: Opens a ticket, with its first comment.
+    fields:
+      - {name: comment, label: Description, type: textarea, required: true}
+      - {name: html, label: Description is HTML, type: boolean}
+      - {name: subject, label: Subject}
+      - {name: requester_email, label: Requester email}
+      - {name: requester_name, label: Requester name}
+      - {name: type, label: Type, type: select, options: [{label: Question, value: question}, {label: Incident, value: incident}, {label: Problem, value: problem}, {label: Task, value: task}]}
+      - {name: priority, label: Priority, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}, {label: Urgent, value: urgent}]}
+      - {name: status, label: Status, type: select, options: [{label: New, value: new}, {label: Open, value: open}, {label: Pending, value: pending}, {label: On hold, value: hold}, {label: Solved, value: solved}, {label: Closed, value: closed}]}
+      - {name: group_id, label: Group, type: select, options_from: {request: {method: GET, path: groups}, path: groups}}
+      - {name: assignee_email, label: Assignee email}
+      - {name: tags, label: Tags, type: json, description: "Like [\"vip\", \"billing\"]"}
+      - {name: external_id, label: External ID}
+      - {name: recipient, label: Recipient email, description: The support address the ticket came to.}
+      - {name: due_at, label: Due, type: datetime, description: For tasks.}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like [{\"id\": 25356371, \"value\": \"x\"}]"}
+      - {name: extra, label: Other ticket properties, type: json, description: "Like {\"brand_id\": 123}"}
+    request:
+      method: POST
+      path: tickets
+      body:
+        ticket:
+          comment: {body: "{{fields.comment}}", html: "{{fields.html}}"}
+          subject: "{{fields.subject}}"
+          requester: {email: "{{fields.requester_email}}", name: "{{fields.requester_name}}"}
+          type: "{{fields.type}}"
+          priority: "{{fields.priority}}"
+          status: "{{fields.status}}"
+          group_id: "{{fields.group_id}}"
+          assignee_email: "{{fields.assignee_email}}"
+          tags: "{{fields.tags}}"
+          external_id: "{{fields.external_id}}"
+          recipient: "{{fields.recipient}}"
+          due_at: "{{fields.due_at}}"
+          custom_fields: "{{fields.custom_fields}}"
+          _merge: "{{fields.extra}}"
+    output: {path: ticket}
+
+  - name: Get Ticket
+    resource: Ticket
+    description: Reads a ticket.
+    fields:
+      - {name: id, label: Ticket ID, required: true}
+    request:
+      method: GET
+      path: "tickets/{{fields.id}}"
+    output: {path: ticket}
+
+  - name: Get Tickets
+    resource: Ticket
+    description: Lists every ticket, newest first.
+    request:
+      method: GET
+      path: tickets
+      query: {sort: "-created_at"}
+    pagination: {type: cursor, items_path: tickets, cursor_param: "page[after]", next_path: meta.after_cursor, has_more_path: meta.has_more, limit_param: "page[size]", page_size: 100}
+
+  - name: Search Tickets
+    resource: Ticket
+    description: Finds tickets with Zendesk's search, up to 1,000.
+    fields:
+      - {name: query, label: Search, description: "Like status:open priority:urgent tags:vip"}
+      - {name: sort_by, label: Sort by, type: select, options: [{label: Updated, value: updated_at}, {label: Created, value: created_at}, {label: Priority, value: priority}, {label: Status, value: status}, {label: Type, value: ticket_type}]}
+      - {name: sort_order, label: Direction, type: select, options: [{label: Descending, value: desc}, {label: Ascending, value: asc}]}
+    request:
+      method: GET
+      path: search
+      query:
+        query: "type:ticket {{fields.query}}"
+        sort_by: "{{fields.sort_by}}"
+        sort_order: "{{fields.sort_order}}"
+    pagination: {type: page, items_path: results, limit_param: per_page, page_size: 100}
+
+  - name: Update Ticket
+    resource: Ticket
+    description: Changes a ticket, and adds a public reply or an internal note if you write one.
+    fields:
+      - {name: id, label: Ticket ID, required: true}
+      - {name: comment, label: Reply or note, type: textarea}
+      - {name: public, label: The comment is, type: select, default: true, options: [{label: A public reply, value: true}, {label: An internal note, value: false}]}
+      - {name: subject, label: Subject}
+      - {name: type, label: Type, type: select, options: [{label: Question, value: question}, {label: Incident, value: incident}, {label: Problem, value: problem}, {label: Task, value: task}]}
+      - {name: priority, label: Priority, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}, {label: Urgent, value: urgent}]}
+      - {name: status, label: Status, type: select, options: [{label: New, value: new}, {label: Open, value: open}, {label: Pending, value: pending}, {label: On hold, value: hold}, {label: Solved, value: solved}, {label: Closed, value: closed}]}
+      - {name: group_id, label: Group ID}
+      - {name: assignee_email, label: Assignee email}
+      - {name: tags, label: Tags, type: json, description: "Replaces them, like [\"vip\"]"}
+      - {name: external_id, label: External ID}
+      - {name: due_at, label: Due, type: datetime}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like [{\"id\": 25356371, \"value\": \"x\"}]"}
+      - {name: extra, label: Other ticket properties, type: json, description: "Like {\"brand_id\": 123}"}
+    request:
+      method: PUT
+      path: "tickets/{{fields.id}}"
+      body:
+        ticket:
+          comment: {body: "{{fields.comment}}", public: "{{fields.public}}"}
+          subject: "{{fields.subject}}"
+          type: "{{fields.type}}"
+          priority: "{{fields.priority}}"
+          status: "{{fields.status}}"
+          group_id: "{{fields.group_id}}"
+          assignee_email: "{{fields.assignee_email}}"
+          tags: "{{fields.tags}}"
+          external_id: "{{fields.external_id}}"
+          due_at: "{{fields.due_at}}"
+          custom_fields: "{{fields.custom_fields}}"
+          _merge: "{{fields.extra}}"
+    output: {path: ticket}
+
+  - name: Get Ticket Comments
+    resource: Ticket
+    description: Lists the comments of a ticket, oldest first.
+    fields:
+      - {name: id, label: Ticket ID, required: true}
+    request:
+      method: GET
+      path: "tickets/{{fields.id}}/comments"
+    pagination: {type: cursor, items_path: comments, cursor_param: "page[after]", next_path: meta.after_cursor, has_more_path: meta.has_more, limit_param: "page[size]", page_size: 100}
+
+  - name: Delete Ticket
+    resource: Ticket
+    description: Deletes a ticket. Zendesk keeps it for 30 days.
+    fields:
+      - {name: id, label: Ticket ID, required: true}
+    request:
+      method: DELETE
+      path: "tickets/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  - name: Get Suspended Ticket
+    resource: Suspended Ticket
+    description: Reads a suspended ticket.
+    fields:
+      - {name: id, label: Suspended ticket ID, required: true}
+    request:
+      method: GET
+      path: "suspended_tickets/{{fields.id}}"
+    output: {path: suspended_ticket}
+
+  - name: Get Suspended Tickets
+    resource: Suspended Ticket
+    description: Lists the suspended tickets.
+    request:
+      method: GET
+      path: suspended_tickets
+    pagination: {type: cursor, items_path: suspended_tickets, cursor_param: "page[after]", next_path: meta.after_cursor, has_more_path: meta.has_more, limit_param: "page[size]", page_size: 100}
+
+  - name: Recover Suspended Ticket
+    resource: Suspended Ticket
+    description: Turns a suspended ticket into a regular one.
+    fields:
+      - {name: id, label: Suspended ticket ID, required: true}
+    request:
+      method: PUT
+      path: "suspended_tickets/{{fields.id}}/recover"
+    output: {path: ticket}
+
+  - name: Delete Suspended Ticket
+    resource: Suspended Ticket
+    description: Deletes a suspended ticket.
+    fields:
+      - {name: id, label: Suspended ticket ID, required: true}
+    request:
+      method: DELETE
+      path: "suspended_tickets/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Ticket fields
+  - name: Get Ticket Field
+    resource: Ticket Field
+    description: Reads a ticket field.
+    fields:
+      - {name: id, label: Ticket field ID, required: true}
+    request:
+      method: GET
+      path: "ticket_fields/{{fields.id}}"
+    output: {path: ticket_field}
+
+  - name: Get Ticket Fields
+    resource: Ticket Field
+    description: Lists the ticket fields, system and custom.
+    request:
+      method: GET
+      path: ticket_fields
+    pagination: {type: cursor, items_path: ticket_fields, cursor_param: "page[after]", next_path: meta.after_cursor, has_more_path: meta.has_more, limit_param: "page[size]", page_size: 100}
+
+  # Users
+  - name: Create User
+    resource: User
+    description: Creates an end user, agent or admin.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email}
+      - {name: role, label: Role, type: select, default: end-user, options: [{label: End user, value: end-user}, {label: Agent, value: agent}, {label: Admin, value: admin}]}
+      - {name: phone, label: Phone}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: external_id, label: External ID}
+      - {name: alias, label: Alias}
+      - {name: details, label: Details}
+      - {name: notes, label: Notes}
+      - {name: locale, label: Locale, description: "Like pt-br"}
+      - {name: time_zone, label: Time zone, description: "Like Brasilia"}
+      - {name: tags, label: Tags, type: json}
+      - {name: verified, label: Email verified, type: boolean}
+      - {name: user_fields, label: User fields, type: json, description: "By field key, like {\"plan\": \"pro\"}"}
+    request:
+      method: POST
+      path: users
+      body:
+        user:
+          name: "{{fields.name}}"
+          email: "{{fields.email}}"
+          role: "{{fields.role}}"
+          phone: "{{fields.phone}}"
+          organization_id: "{{fields.organization_id}}"
+          external_id: "{{fields.external_id}}"
+          alias: "{{fields.alias}}"
+          details: "{{fields.details}}"
+          notes: "{{fields.notes}}"
+          locale: "{{fields.locale}}"
+          time_zone: "{{fields.time_zone}}"
+          tags: "{{fields.tags}}"
+          verified: "{{fields.verified}}"
+          user_fields: "{{fields.user_fields}}"
+    output: {path: user}
+
+  - name: Create or Update User
+    resource: User
+    description: Creates a user, or updates the one with the same email or external ID.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email}
+      - {name: external_id, label: External ID}
+      - {name: role, label: Role, type: select, options: [{label: End user, value: end-user}, {label: Agent, value: agent}, {label: Admin, value: admin}]}
+      - {name: phone, label: Phone}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: tags, label: Tags, type: json}
+      - {name: user_fields, label: User fields, type: json, description: "By field key, like {\"plan\": \"pro\"}"}
+    request:
+      method: POST
+      path: users/create_or_update
+      body:
+        user:
+          name: "{{fields.name}}"
+          email: "{{fields.email}}"
+          external_id: "{{fields.external_id}}"
+          role: "{{fields.role}}"
+          phone: "{{fields.phone}}"
+          organization_id: "{{fields.organization_id}}"
+          tags: "{{fields.tags}}"
+          user_fields: "{{fields.user_fields}}"
+    output: {path: user}
+
+  - name: Get User
+    resource: User
+    description: Reads a user.
+    fields:
+      - {name: id, label: User ID, required: true}
+    request:
+      method: GET
+      path: "users/{{fields.id}}"
+    output: {path: user}
+
+  - name: Get Users
+    resource: User
+    description: Lists users, all of them or those with some roles.
+    fields:
+      - {name: roles, label: Roles, type: multiselect, options: [{label: End user, value: end-user}, {label: Agent, value: agent}, {label: Admin, value: admin}]}
+    request:
+      method: GET
+      path: users
+      query: {"role[]": "{{fields.roles}}"}
+    pagination: {type: cursor, items_path: users, cursor_param: "page[after]", next_path: meta.after_cursor, has_more_path: meta.has_more, limit_param: "page[size]", page_size: 100}
+
+  - name: Search Users
+    resource: User
+    description: Finds users by name, email or phone, or by external ID.
+    fields:
+      - {name: query, label: Search, description: "Like ana or email:ana@acme.test"}
+      - {name: external_id, label: External ID}
+    request:
+      method: GET
+      path: users/search
+      query: {query: "{{fields.query}}", external_id: "{{fields.external_id}}"}
+    pagination: {type: page, items_path: users, limit_param: per_page, page_size: 100}
+
+  - name: Get User Organizations
+    resource: User
+    description: Lists the organizations a user belongs to.
+    fields:
+      - {name: id, label: User ID, required: true}
+    request:
+      method: GET
+      path: "users/{{fields.id}}/organizations"
+    output: {path: organizations}
+
+  - name: Get User Related Data
+    resource: User
+    description: Counts a user's tickets, requests and other related records.
+    fields:
+      - {name: id, label: User ID, required: true}
+    request:
+      method: GET
+      path: "users/{{fields.id}}/related"
+    output: {path: user_related}
+
+  - name: Update User
+    resource: User
+    description: Changes a user. Empty fields stay as they are.
+    fields:
+      - {name: id, label: User ID, required: true}
+      - {name: name, label: Name}
+      - {name: email, label: Email}
+      - {name: role, label: Role, type: select, options: [{label: End user, value: end-user}, {label: Agent, value: agent}, {label: Admin, value: admin}]}
+      - {name: phone, label: Phone}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: external_id, label: External ID}
+      - {name: alias, label: Alias}
+      - {name: details, label: Details}
+      - {name: notes, label: Notes}
+      - {name: locale, label: Locale}
+      - {name: time_zone, label: Time zone}
+      - {name: tags, label: Tags, type: json}
+      - {name: suspended, label: Suspended, type: boolean}
+      - {name: user_fields, label: User fields, type: json, description: "By field key, like {\"plan\": \"pro\"}"}
+    request:
+      method: PUT
+      path: "users/{{fields.id}}"
+      body:
+        user:
+          name: "{{fields.name}}"
+          email: "{{fields.email}}"
+          role: "{{fields.role}}"
+          phone: "{{fields.phone}}"
+          organization_id: "{{fields.organization_id}}"
+          external_id: "{{fields.external_id}}"
+          alias: "{{fields.alias}}"
+          details: "{{fields.details}}"
+          notes: "{{fields.notes}}"
+          locale: "{{fields.locale}}"
+          time_zone: "{{fields.time_zone}}"
+          tags: "{{fields.tags}}"
+          suspended: "{{fields.suspended}}"
+          user_fields: "{{fields.user_fields}}"
+    output: {path: user}
+
+  - name: Delete User
+    resource: User
+    description: Deletes a user.
+    fields:
+      - {name: id, label: User ID, required: true}
+    request:
+      method: DELETE
+      path: "users/{{fields.id}}"
+    output: {path: user}
+
+  # Organizations
+  - name: Create Organization
+    resource: Organization
+    description: Creates an organization.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: domain_names, label: Domains, type: json, description: "Like [\"acme.com\"]"}
+      - {name: details, label: Details}
+      - {name: notes, label: Notes}
+      - {name: external_id, label: External ID}
+      - {name: group_id, label: Group ID, type: number}
+      - {name: shared_tickets, label: Members see each other's tickets, type: boolean}
+      - {name: shared_comments, label: Members comment on each other's tickets, type: boolean}
+      - {name: tags, label: Tags, type: json}
+      - {name: organization_fields, label: Organization fields, type: json, description: "By field key, like {\"plan\": \"pro\"}"}
+    request:
+      method: POST
+      path: organizations
+      body:
+        organization:
+          name: "{{fields.name}}"
+          domain_names: "{{fields.domain_names}}"
+          details: "{{fields.details}}"
+          notes: "{{fields.notes}}"
+          external_id: "{{fields.external_id}}"
+          group_id: "{{fields.group_id}}"
+          shared_tickets: "{{fields.shared_tickets}}"
+          shared_comments: "{{fields.shared_comments}}"
+          tags: "{{fields.tags}}"
+          organization_fields: "{{fields.organization_fields}}"
+    output: {path: organization}
+
+  - name: Get Organization
+    resource: Organization
+    description: Reads an organization.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+    request:
+      method: GET
+      path: "organizations/{{fields.id}}"
+    output: {path: organization}
+
+  - name: Get Organizations
+    resource: Organization
+    description: Lists every organization.
+    request:
+      method: GET
+      path: organizations
+    pagination: {type: cursor, items_path: organizations, cursor_param: "page[after]", next_path: meta.after_cursor, has_more_path: meta.has_more, limit_param: "page[size]", page_size: 100}
+
+  - name: Count Organizations
+    resource: Organization
+    description: Counts the organizations.
+    request:
+      method: GET
+      path: organizations/count
+    output: {path: count}
+
+  - name: Get Organization Related Data
+    resource: Organization
+    description: Counts an organization's tickets and users.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+    request:
+      method: GET
+      path: "organizations/{{fields.id}}/related"
+    output: {path: organization_related}
+
+  - name: Update Organization
+    resource: Organization
+    description: Changes an organization. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+      - {name: name, label: Name}
+      - {name: domain_names, label: Domains, type: json, description: "Replaces them, like [\"acme.com\"]"}
+      - {name: details, label: Details}
+      - {name: notes, label: Notes}
+      - {name: external_id, label: External ID}
+      - {name: group_id, label: Group ID, type: number}
+      - {name: tags, label: Tags, type: json}
+      - {name: organization_fields, label: Organization fields, type: json, description: "By field key, like {\"plan\": \"pro\"}"}
+    request:
+      method: PUT
+      path: "organizations/{{fields.id}}"
+      body:
+        organization:
+          name: "{{fields.name}}"
+          domain_names: "{{fields.domain_names}}"
+          details: "{{fields.details}}"
+          notes: "{{fields.notes}}"
+          external_id: "{{fields.external_id}}"
+          group_id: "{{fields.group_id}}"
+          tags: "{{fields.tags}}"
+          organization_fields: "{{fields.organization_fields}}"
+    output: {path: organization}
+
+  - name: Delete Organization
+    resource: Organization
+    description: Deletes an organization.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+    request:
+      method: DELETE
+      path: "organizations/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+i18n:
+  pt-BR:
+    description: "Tickets, tickets suspensos, campos de ticket, usuários e organizações no Zendesk Support."
+    triggers:
+      Event: {name: Evento, description: "Inicia o fluxo quando tickets, usuários ou organizações mudam do jeito que você escolher.", fields: {events: Eventos}}
+    actions:
+      Create Ticket: {name: Criar ticket, description: "Abre um ticket, com o primeiro comentário.", fields: {comment: Descrição, html: A descrição é HTML, subject: Assunto, requester_email: E-mail do solicitante, requester_name: Nome do solicitante, type: Tipo, priority: Prioridade, status: Status, group_id: Grupo, assignee_email: E-mail do responsável, tags: Etiquetas, external_id: ID externo, recipient: E-mail de destino, due_at: Prazo, custom_fields: Campos personalizados, extra: Outras propriedades do ticket}}
+      Get Ticket: {name: Ler ticket, description: Lê um ticket., fields: {id: ID do ticket}}
+      Get Tickets: {name: Listar tickets, description: "Lista todos os tickets, os mais novos primeiro."}
+      Search Tickets: {name: Buscar tickets, description: "Encontra tickets com a busca do Zendesk, até 1.000.", fields: {query: Busca, sort_by: Ordenar por, sort_order: Direção}}
+      Update Ticket: {name: Atualizar ticket, description: "Muda um ticket, e põe uma resposta pública ou nota interna se você escrever uma.", fields: {id: ID do ticket, comment: Resposta ou nota, public: O comentário é, subject: Assunto, type: Tipo, priority: Prioridade, status: Status, group_id: ID do grupo, assignee_email: E-mail do responsável, tags: Etiquetas, external_id: ID externo, due_at: Prazo, custom_fields: Campos personalizados, extra: Outras propriedades do ticket}}
+      Get Ticket Comments: {name: Listar comentários do ticket, description: "Lista os comentários de um ticket, os mais antigos primeiro.", fields: {id: ID do ticket}}
+      Delete Ticket: {name: Excluir ticket, description: Exclui um ticket. O Zendesk o guarda por 30 dias., fields: {id: ID do ticket}}
+      Get Suspended Ticket: {name: Ler ticket suspenso, description: Lê um ticket suspenso., fields: {id: ID do ticket suspenso}}
+      Get Suspended Tickets: {name: Listar tickets suspensos, description: Lista os tickets suspensos.}
+      Recover Suspended Ticket: {name: Recuperar ticket suspenso, description: Transforma um ticket suspenso num ticket normal., fields: {id: ID do ticket suspenso}}
+      Delete Suspended Ticket: {name: Excluir ticket suspenso, description: Exclui um ticket suspenso., fields: {id: ID do ticket suspenso}}
+      Get Ticket Field: {name: Ler campo de ticket, description: Lê um campo de ticket., fields: {id: ID do campo}}
+      Get Ticket Fields: {name: Listar campos de ticket, description: "Lista os campos de ticket, do sistema e personalizados."}
+      Create User: {name: Criar usuário, description: "Cria um usuário final, agente ou admin.", fields: {name: Nome, email: E-mail, role: Papel, phone: Telefone, organization_id: ID da organização, external_id: ID externo, alias: Apelido, details: Detalhes, notes: Notas, locale: Idioma, time_zone: Fuso horário, tags: Etiquetas, verified: E-mail verificado, user_fields: Campos do usuário}}
+      Create or Update User: {name: Criar ou atualizar usuário, description: "Cria um usuário, ou atualiza o que tem o mesmo e-mail ou ID externo.", fields: {name: Nome, email: E-mail, external_id: ID externo, role: Papel, phone: Telefone, organization_id: ID da organização, tags: Etiquetas, user_fields: Campos do usuário}}
+      Get User: {name: Ler usuário, description: Lê um usuário., fields: {id: ID do usuário}}
+      Get Users: {name: Listar usuários, description: "Lista usuários, todos ou os de alguns papéis.", fields: {roles: Papéis}}
+      Search Users: {name: Buscar usuários, description: "Encontra usuários pelo nome, e-mail ou telefone, ou pelo ID externo.", fields: {query: Busca, external_id: ID externo}}
+      Get User Organizations: {name: Listar organizações do usuário, description: Lista as organizações de que um usuário faz parte., fields: {id: ID do usuário}}
+      Get User Related Data: {name: Ler dados ligados ao usuário, description: "Conta os tickets, pedidos e outros registros ligados a um usuário.", fields: {id: ID do usuário}}
+      Update User: {name: Atualizar usuário, description: Muda um usuário. Campos vazios ficam como estão., fields: {id: ID do usuário, name: Nome, email: E-mail, role: Papel, phone: Telefone, organization_id: ID da organização, external_id: ID externo, alias: Apelido, details: Detalhes, notes: Notas, locale: Idioma, time_zone: Fuso horário, tags: Etiquetas, suspended: Suspenso, user_fields: Campos do usuário}}
+      Delete User: {name: Excluir usuário, description: Exclui um usuário., fields: {id: ID do usuário}}
+      Create Organization: {name: Criar organização, description: Cria uma organização., fields: {name: Nome, domain_names: Domínios, details: Detalhes, notes: Notas, external_id: ID externo, group_id: ID do grupo, shared_tickets: Membros veem os tickets uns dos outros, shared_comments: Membros comentam nos tickets uns dos outros, tags: Etiquetas, organization_fields: Campos da organização}}
+      Get Organization: {name: Ler organização, description: Lê uma organização., fields: {id: ID da organização}}
+      Get Organizations: {name: Listar organizações, description: Lista todas as organizações.}
+      Count Organizations: {name: Contar organizações, description: Conta as organizações.}
+      Get Organization Related Data: {name: Ler dados ligados à organização, description: Conta os tickets e usuários de uma organização., fields: {id: ID da organização}}
+      Update Organization: {name: Atualizar organização, description: Muda uma organização. Campos vazios ficam como estão., fields: {id: ID da organização, name: Nome, domain_names: Domínios, details: Detalhes, notes: Notas, external_id: ID externo, group_id: ID do grupo, tags: Etiquetas, organization_fields: Campos da organização}}
+      Delete Organization: {name: Excluir organização, description: Exclui uma organização., fields: {id: ID da organização}}
