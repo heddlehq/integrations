@@ -70,7 +70,7 @@ integrations:
   - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: package, lib: {name: supabase_potion, version: 1.0.0, released: 2026-07-17}, status: planned}
   - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: package, lib: {name: ex_gram, version: 0.71.0, released: 2026-10-01}, status: planned}
   - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
-  - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: planned}
+  - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: draft}
   - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: planned}
   - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: oauth2, n8n: Typeform, kind: manifest, status: planned}
   - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: oauth2, n8n: Webflow, kind: manifest, status: planned}
