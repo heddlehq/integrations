@@ -62,10 +62,10 @@ actions:
         label: Priority
         type: select
         options:
-          - {label: Normal, value: "1"}
-          - {label: Medium, value: "2"}
-          - {label: High, value: "3"}
-          - {label: Urgent, value: "4"}
+          - {label: Normal, value: 1}
+          - {label: Medium, value: 2}
+          - {label: High, value: 3}
+          - {label: Urgent, value: 4}
       - {name: due_string, label: Due (in words), description: "Like tomorrow at 9am or every monday"}
       - {name: due_date, label: Due date, type: datetime}
       - {name: due_lang, label: Language of the due words}
@@ -160,7 +160,7 @@ actions:
       - {name: content, label: Content}
       - {name: description, label: Description, type: textarea}
       - {name: labels, label: Labels, type: multiselect, options_from: {request: {method: GET, path: labels, query: {limit: 200}}, path: results, label: name, value: name}}
-      - {name: priority, label: Priority, type: select, options: [{label: Normal, value: '1'}, {label: Medium, value: '2'}, {label: High, value: '3'}, {label: Urgent, value: '4'}]}
+      - {name: priority, label: Priority, type: select, options: [{label: Normal, value: 1}, {label: Medium, value: 2}, {label: High, value: 3}, {label: Urgent, value: 4}]}
       - {name: due_string, label: Due (in words)}
       - {name: due_date, label: Due date, type: datetime}
       - {name: due_lang, label: Language of the due words}
