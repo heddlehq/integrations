@@ -1,0 +1,748 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# ActiveCampaign's API v3. The URL and key are in ActiveCampaign, under Settings >
+# Developer.
+id: activecampaign
+name: ActiveCampaign
+version: 1.0.0
+description: Contacts, lists, tags, accounts, deals and e-commerce data in ActiveCampaign.
+icon: hero-megaphone
+category: marketing
+author: Heddle
+homepage: https://developers.activecampaign.com/reference/overview
+base_url: "{{credential.url}}/api/3/"
+
+credential:
+  label: ActiveCampaign
+  fields:
+    - {name: url, label: API URL, required: true, description: "Like https://acme.api-us1.com"}
+    - {name: api_key, label: API key, secret: true, required: true}
+  auth:
+    type: header
+    name: Api-Token
+    value: "{{credential.api_key}}"
+
+errors:
+  message_path: errors.0.title
+
+triggers:
+  - name: Account Event
+    description: Starts the flow when the chosen things happen in ActiveCampaign.
+    fields:
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        options:
+          - {label: Contact subscribed, value: subscribe}
+          - {label: Contact unsubscribed, value: unsubscribe}
+          - {label: Contact updated, value: update}
+          - {label: Contact note added, value: subscriber_note}
+          - {label: Tag added to contact, value: contact_tag_added}
+          - {label: Tag removed from contact, value: contact_tag_removed}
+          - {label: List added, value: list_add}
+          - {label: Deal added, value: deal_add}
+          - {label: Deal updated, value: deal_update}
+          - {label: Deal note added, value: deal_note_add}
+          - {label: Deal task added, value: deal_task_add}
+          - {label: Deal task completed, value: deal_task_complete}
+          - {label: Pipeline added, value: deal_pipeline_add}
+          - {label: Stage added, value: deal_stage_add}
+          - {label: Account added, value: account_add}
+          - {label: Account updated, value: account_update}
+          - {label: Contact added to account, value: account_contact_add}
+          - {label: Campaign sent, value: sent}
+          - {label: Email opened, value: open}
+          - {label: Link clicked, value: click}
+          - {label: Email bounced, value: bounce}
+          - {label: Email replied, value: reply}
+          - {label: Email forwarded, value: forward}
+          - {label: Campaign shared, value: share}
+          - {label: SMS sent, value: sms_sent}
+          - {label: SMS replied, value: sms_reply}
+          - {label: SMS unsubscribed, value: sms_unsub}
+      - name: sources
+        label: Done by
+        type: multiselect
+        required: true
+        default: [public, admin, api, system]
+        options:
+          - {label: The contact, value: public}
+          - {label: An admin, value: admin}
+          - {label: The API, value: api}
+          - {label: Automations, value: system}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body: {webhook: {name: Heddle, url: "{{webhook.url}}", events: "{{fields.events}}", sources: "{{fields.sources}}"}}
+        id_path: webhook.id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+
+actions:
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Adds a contact. Fails when the email exists.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: phone, label: Phone}
+      - {name: field_values, label: Custom fields, type: json, description: "A list like [{\"field\": \"1\", \"value\": \"Gold\"}]"}
+    request:
+      method: POST
+      path: contacts
+      body:
+        contact: {email: "{{fields.email}}", firstName: "{{fields.first_name}}", lastName: "{{fields.last_name}}", phone: "{{fields.phone}}", fieldValues: "{{fields.field_values}}"}
+    output:
+      path: contact
+
+  - name: Create or Update Contact
+    resource: Contact
+    description: Adds a contact, or changes the one with the same email.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: phone, label: Phone}
+      - {name: field_values, label: Custom fields, type: json, description: 'A list like [{"field": "1", "value": "Gold"}]'}
+    request:
+      method: POST
+      path: contact/sync
+      body:
+        contact: {email: "{{fields.email}}", firstName: "{{fields.first_name}}", lastName: "{{fields.last_name}}", phone: "{{fields.phone}}", fieldValues: "{{fields.field_values}}"}
+    output:
+      path: contact
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: GET, path: "contacts/{{fields.contact_id}}"}
+    output:
+      path: contact
+
+  - name: Get Contacts
+    resource: Contact
+    description: Lists contacts, all of them or those that match.
+    fields:
+      - {name: email, label: Email}
+      - {name: search, label: Search, description: "In the name, email, phone or organization."}
+      - {name: listid, label: List, type: select, options_from: {request: {method: GET, path: lists, query: {limit: 100}}, path: lists, label: name, value: id}}
+      - {name: tagid, label: Tag, type: select, options_from: {request: {method: GET, path: tags, query: {limit: 100}}, path: tags, label: tag, value: id}}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: 1}, {label: Unsubscribed, value: 2}, {label: Bounced, value: 3}, {label: Unconfirmed, value: 0}, {label: Any, value: -1}]}
+      - {name: updated_after, label: Updated after, type: datetime}
+      - {name: created_after, label: Created after, type: datetime}
+    request:
+      method: GET
+      path: contacts
+      query:
+        email: "{{fields.email}}"
+        search: "{{fields.search}}"
+        listid: "{{fields.listid}}"
+        tagid: "{{fields.tagid}}"
+        status: "{{fields.status}}"
+        "filters[updated_after]": "{{fields.updated_after}}"
+        "filters[created_after]": "{{fields.created_after}}"
+    pagination: {type: offset, items_path: contacts, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: email, label: Email}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: phone, label: Phone}
+      - {name: field_values, label: Custom fields, type: json, description: 'A list like [{"field": "1", "value": "Gold"}]'}
+    request:
+      method: PUT
+      path: "contacts/{{fields.contact_id}}"
+      body:
+        contact: {email: "{{fields.email}}", firstName: "{{fields.first_name}}", lastName: "{{fields.last_name}}", phone: "{{fields.phone}}", fieldValues: "{{fields.field_values}}"}
+    output:
+      path: contact
+
+  - name: Delete Contact
+    resource: Contact
+    description: Deletes a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: DELETE, path: "contacts/{{fields.contact_id}}"}
+    output: {value: {id: "{{fields.contact_id}}", deleted: true}}
+
+  - name: Subscribe to List
+    resource: Contact
+    description: Subscribes a contact to a list, or unsubscribes them.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: list, label: List, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {limit: 100}}, path: lists, label: name, value: id}}
+      - {name: status, label: Status, type: select, required: true, default: 1, options: [{label: Subscribed, value: 1}, {label: Unsubscribed, value: 2}]}
+    request:
+      method: POST
+      path: contactLists
+      body: {contactList: {list: "{{fields.list}}", contact: "{{fields.contact_id}}", status: "{{fields.status}}"}}
+    output:
+      path: contactList
+
+  - name: Add Tag to Contact
+    resource: Contact
+    description: Puts a tag on a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: tag, label: Tag, type: select, required: true, options_from: {request: {method: GET, path: tags, query: {limit: 100}}, path: tags, label: tag, value: id}}
+    request:
+      method: POST
+      path: contactTags
+      body: {contactTag: {contact: "{{fields.contact_id}}", tag: "{{fields.tag}}"}}
+    output:
+      path: contactTag
+
+  - name: Remove Tag from Contact
+    resource: Contact
+    description: Takes a tag off a contact, given the ID that Add Tag to Contact returned.
+    fields:
+      - {name: contact_tag_id, label: Contact tag ID, required: true}
+    request: {method: DELETE, path: "contactTags/{{fields.contact_tag_id}}"}
+    output: {value: {id: "{{fields.contact_tag_id}}", removed: true}}
+
+  # Lists and tags
+  - name: Get Lists
+    resource: List
+    description: Lists the lists.
+    request: {method: GET, path: lists}
+    pagination: {type: offset, items_path: lists, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Create Tag
+    resource: Tag
+    description: Makes a tag.
+    fields:
+      - {name: tag, label: Name, required: true}
+      - {name: tag_type, label: For, type: select, default: contact, options: [{label: Contacts, value: contact}, {label: Templates, value: template}]}
+      - {name: description, label: Description}
+    request:
+      method: POST
+      path: tags
+      body: {tag: {tag: "{{fields.tag}}", tagType: "{{fields.tag_type}}", description: "{{fields.description}}"}}
+    output:
+      path: tag
+
+  - name: Get Tag
+    resource: Tag
+    description: Reads a tag.
+    fields:
+      - {name: tag_id, label: Tag ID, required: true}
+    request: {method: GET, path: "tags/{{fields.tag_id}}"}
+    output:
+      path: tag
+
+  - name: Get Tags
+    resource: Tag
+    description: Lists the tags, all of them or those whose name has a text.
+    fields:
+      - {name: search, label: Search}
+    request: {method: GET, path: tags, query: {search: "{{fields.search}}"}}
+    pagination: {type: offset, items_path: tags, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Tag
+    resource: Tag
+    description: Changes a tag. Empty fields stay as they are.
+    fields:
+      - {name: tag_id, label: Tag ID, required: true}
+      - {name: tag, label: Name}
+      - {name: tag_type, label: For, type: select, default: contact, options: [{label: Contacts, value: contact}, {label: Templates, value: template}]}
+      - {name: description, label: Description}
+    request:
+      method: PUT
+      path: "tags/{{fields.tag_id}}"
+      body: {tag: {tag: "{{fields.tag}}", tagType: "{{fields.tag_type}}", description: "{{fields.description}}"}}
+    output:
+      path: tag
+
+  - name: Delete Tag
+    resource: Tag
+    description: Deletes a tag.
+    fields:
+      - {name: tag_id, label: Tag ID, required: true}
+    request: {method: DELETE, path: "tags/{{fields.tag_id}}"}
+    output: {value: {id: "{{fields.tag_id}}", deleted: true}}
+
+  # Accounts
+  - name: Create Account
+    resource: Account
+    description: Adds an account, a company your contacts belong to.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: account_url, label: Website}
+      - {name: fields, label: Custom fields, type: json, description: "A list like [{\"customFieldId\": 9, \"fieldValue\": \"500-1000\"}]"}
+    request:
+      method: POST
+      path: accounts
+      body: {account: {name: "{{fields.name}}", accountUrl: "{{fields.account_url}}", fields: "{{fields.fields}}"}}
+    output:
+      path: account
+
+  - name: Get Account
+    resource: Account
+    description: Reads an account.
+    fields:
+      - {name: account_id, label: Account ID, required: true}
+    request: {method: GET, path: "accounts/{{fields.account_id}}"}
+    output:
+      path: account
+
+  - name: Get Accounts
+    resource: Account
+    description: Lists accounts, all of them or those whose name has a text.
+    fields:
+      - {name: search, label: Search}
+    request: {method: GET, path: accounts, query: {search: "{{fields.search}}"}}
+    pagination: {type: offset, items_path: accounts, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Account
+    resource: Account
+    description: Changes an account. Empty fields stay as they are.
+    fields:
+      - {name: account_id, label: Account ID, required: true}
+      - {name: name, label: Name}
+      - {name: account_url, label: Website}
+      - {name: fields, label: Custom fields, type: json, description: 'A list like [{"customFieldId": 9, "fieldValue": "500-1000"}]'}
+    request:
+      method: PUT
+      path: "accounts/{{fields.account_id}}"
+      body: {account: {name: "{{fields.name}}", accountUrl: "{{fields.account_url}}", fields: "{{fields.fields}}"}}
+    output:
+      path: account
+
+  - name: Delete Account
+    resource: Account
+    description: Deletes an account.
+    fields:
+      - {name: account_id, label: Account ID, required: true}
+    request: {method: DELETE, path: "accounts/{{fields.account_id}}"}
+    output: {value: {id: "{{fields.account_id}}", deleted: true}}
+
+  - name: Add Contact to Account
+    resource: Account
+    description: Links a contact to an account.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: account_id, label: Account ID, required: true}
+      - {name: job_title, label: Job title}
+    request:
+      method: POST
+      path: accountContacts
+      body: {accountContact: {contact: "{{fields.contact_id}}", account: "{{fields.account_id}}", jobTitle: "{{fields.job_title}}"}}
+    output:
+      path: accountContact
+
+  - name: Update Account Contact
+    resource: Account
+    description: Changes the job title of a contact in an account.
+    fields:
+      - {name: account_contact_id, label: Account contact ID, required: true}
+      - {name: job_title, label: Job title}
+    request:
+      method: PUT
+      path: "accountContacts/{{fields.account_contact_id}}"
+      body: {accountContact: {jobTitle: "{{fields.job_title}}"}}
+    output:
+      path: accountContact
+
+  - name: Remove Contact from Account
+    resource: Account
+    description: Unlinks a contact from an account.
+    fields:
+      - {name: account_contact_id, label: Account contact ID, required: true}
+    request: {method: DELETE, path: "accountContacts/{{fields.account_contact_id}}"}
+    output: {value: {id: "{{fields.account_contact_id}}", removed: true}}
+
+  # Deals
+  - name: Create Deal
+    resource: Deal
+    description: Adds a deal to a pipeline.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: contact, label: Contact ID, required: true}
+      - {name: value, label: Value in cents, type: number, required: true}
+      - {name: currency, label: Currency, required: true, default: usd, description: "Like usd or brl"}
+      - {name: group, label: Pipeline, type: select, options_from: {request: {method: GET, path: dealGroups, query: {limit: 100}}, path: dealGroups, label: title, value: id}}
+      - {name: stage, label: Stage, type: select, options_from: {request: {method: GET, path: dealStages, query: {"filters[d_groupid]": "{{fields.group}}", limit: 100}}, path: dealStages, label: title, value: id}}
+      - {name: owner, label: Owner ID}
+      - {name: description, label: Description, type: textarea}
+      - {name: account, label: Account ID}
+      - {name: percent, label: Probability (%), type: number}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: 0}, {label: Won, value: 1}, {label: Lost, value: 2}]}
+      - {name: fields, label: Custom fields, type: json, description: "A list like [{\"customFieldId\": 1, \"fieldValue\": \"Big\"}]"}
+    request:
+      method: POST
+      path: deals
+      body:
+        deal:
+          title: "{{fields.title}}"
+          contact: "{{fields.contact}}"
+          value: "{{fields.value}}"
+          currency: "{{fields.currency}}"
+          group: "{{fields.group}}"
+          stage: "{{fields.stage}}"
+          owner: "{{fields.owner}}"
+          description: "{{fields.description}}"
+          account: "{{fields.account}}"
+          percent: "{{fields.percent}}"
+          status: "{{fields.status}}"
+          fields: "{{fields.fields}}"
+    output:
+      path: deal
+
+  - name: Get Deal
+    resource: Deal
+    description: Reads a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+    request: {method: GET, path: "deals/{{fields.deal_id}}"}
+    output:
+      path: deal
+
+  - name: Get Deals
+    resource: Deal
+    description: Lists deals, all of them or those that match.
+    fields:
+      - {name: search, label: Search, description: "In the title, contact or organization."}
+      - {name: group, label: Pipeline, type: select, options_from: {request: {method: GET, path: dealGroups, query: {limit: 100}}, path: dealGroups, label: title, value: id}}
+      - {name: stage, label: Stage, type: select, options_from: {request: {method: GET, path: dealStages, query: {'filters[d_groupid]': '{{fields.group}}', limit: 100}}, path: dealStages, label: title, value: id}}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: 0}, {label: Won, value: 1}, {label: Lost, value: 2}]}
+      - {name: owner, label: Owner ID}
+    request:
+      method: GET
+      path: deals
+      query:
+        "filters[search]": "{{fields.search}}"
+        "filters[group]": "{{fields.group}}"
+        "filters[stage]": "{{fields.stage}}"
+        "filters[status]": "{{fields.status}}"
+        "filters[owner]": "{{fields.owner}}"
+    pagination: {type: offset, items_path: deals, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Deal
+    resource: Deal
+    description: Changes a deal. Empty fields stay as they are.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: title, label: Title}
+      - {name: contact, label: Contact ID}
+      - {name: value, label: Value in cents, type: number}
+      - {name: currency, label: Currency}
+      - {name: group, label: Pipeline, type: select, options_from: {request: {method: GET, path: dealGroups, query: {limit: 100}}, path: dealGroups, label: title, value: id}}
+      - {name: stage, label: Stage, type: select, options_from: {request: {method: GET, path: dealStages, query: {'filters[d_groupid]': '{{fields.group}}', limit: 100}}, path: dealStages, label: title, value: id}}
+      - {name: owner, label: Owner ID}
+      - {name: description, label: Description, type: textarea}
+      - {name: account, label: Account ID}
+      - {name: percent, label: Probability (%), type: number}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: 0}, {label: Won, value: 1}, {label: Lost, value: 2}]}
+      - {name: fields, label: Custom fields, type: json, description: 'A list like [{"customFieldId": 1, "fieldValue": "Big"}]'}
+    request:
+      method: PUT
+      path: "deals/{{fields.deal_id}}"
+      body:
+        deal:
+          title: "{{fields.title}}"
+          contact: "{{fields.contact}}"
+          value: "{{fields.value}}"
+          currency: "{{fields.currency}}"
+          group: "{{fields.group}}"
+          stage: "{{fields.stage}}"
+          owner: "{{fields.owner}}"
+          description: "{{fields.description}}"
+          account: "{{fields.account}}"
+          percent: "{{fields.percent}}"
+          status: "{{fields.status}}"
+          fields: "{{fields.fields}}"
+    output:
+      path: deal
+
+  - name: Delete Deal
+    resource: Deal
+    description: Deletes a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+    request: {method: DELETE, path: "deals/{{fields.deal_id}}"}
+    output: {value: {id: "{{fields.deal_id}}", deleted: true}}
+
+  - name: Add Deal Note
+    resource: Deal
+    description: Adds a note to a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: note, label: Note, type: textarea, required: true}
+    request:
+      method: POST
+      path: "deals/{{fields.deal_id}}/notes"
+      body: {note: {note: "{{fields.note}}"}}
+    output:
+      path: note
+
+  - name: Update Deal Note
+    resource: Deal
+    description: Changes the text of a note of a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: note_id, label: Note ID, required: true}
+      - {name: note, label: Note, type: textarea, required: true}
+    request:
+      method: PUT
+      path: "deals/{{fields.deal_id}}/notes/{{fields.note_id}}"
+      body: {note: {note: "{{fields.note}}"}}
+    output:
+      path: note
+
+  # E-commerce
+  - name: Create Connection
+    resource: E-commerce Connection
+    description: Connects a store, so its customers and orders can come in.
+    fields:
+      - {name: service, label: Service, required: true, description: "The store's platform, like shopify or my-store"}
+      - {name: externalid, label: Store ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: logo_url, label: Logo URL, required: true}
+      - {name: link_url, label: Store URL, required: true}
+    request:
+      method: POST
+      path: connections
+      body: {connection: {service: "{{fields.service}}", externalid: "{{fields.externalid}}", name: "{{fields.name}}", logoUrl: "{{fields.logo_url}}", linkUrl: "{{fields.link_url}}"}}
+    output:
+      path: connection
+
+  - name: Get Connection
+    resource: E-commerce Connection
+    description: Reads a store connection.
+    fields:
+      - {name: connection_id, label: Connection ID, required: true}
+    request: {method: GET, path: "connections/{{fields.connection_id}}"}
+    output:
+      path: connection
+
+  - name: Get Connections
+    resource: E-commerce Connection
+    description: Lists the store connections.
+    request: {method: GET, path: connections}
+    pagination: {type: offset, items_path: connections, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Connection
+    resource: E-commerce Connection
+    description: Changes a store connection. Empty fields stay as they are.
+    fields:
+      - {name: connection_id, label: Connection ID, required: true}
+      - {name: name, label: Name}
+      - {name: logo_url, label: Logo URL}
+      - {name: link_url, label: Store URL}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: 1}, {label: Inactive, value: 0}]}
+    request:
+      method: PUT
+      path: "connections/{{fields.connection_id}}"
+      body: {connection: {name: "{{fields.name}}", logoUrl: "{{fields.logo_url}}", linkUrl: "{{fields.link_url}}", status: "{{fields.status}}"}}
+    output:
+      path: connection
+
+  - name: Delete Connection
+    resource: E-commerce Connection
+    description: Deletes a store connection, with its customers and orders.
+    fields:
+      - {name: connection_id, label: Connection ID, required: true}
+    request: {method: DELETE, path: "connections/{{fields.connection_id}}"}
+    output: {value: {id: "{{fields.connection_id}}", deleted: true}}
+
+  - name: Create Customer
+    resource: E-commerce Customer
+    description: Adds a customer of a store.
+    fields:
+      - {name: connectionid, label: Connection ID, required: true}
+      - {name: externalid, label: Customer ID in the store, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: accepts_marketing, label: Accepts marketing, type: boolean}
+    request:
+      method: POST
+      path: ecomCustomers
+      body: {ecomCustomer: {connectionid: "{{fields.connectionid}}", externalid: "{{fields.externalid}}", email: "{{fields.email}}", acceptsMarketing: "{{fields.accepts_marketing}}"}}
+    output:
+      path: ecomCustomer
+
+  - name: Get Customer
+    resource: E-commerce Customer
+    description: Reads a customer of a store.
+    fields:
+      - {name: customer_id, label: Customer ID, required: true}
+    request: {method: GET, path: "ecomCustomers/{{fields.customer_id}}"}
+    output:
+      path: ecomCustomer
+
+  - name: Get Customers
+    resource: E-commerce Customer
+    description: Lists the customers of the stores, all of them or by email.
+    fields:
+      - {name: email, label: Email}
+      - {name: connectionid, label: Connection ID}
+    request:
+      method: GET
+      path: ecomCustomers
+      query: {"filters[email]": "{{fields.email}}", "filters[connectionid]": "{{fields.connectionid}}"}
+    pagination: {type: offset, items_path: ecomCustomers, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Customer
+    resource: E-commerce Customer
+    description: Changes a customer. Empty fields stay as they are.
+    fields:
+      - {name: customer_id, label: Customer ID, required: true}
+      - {name: externalid, label: Customer ID in the store}
+      - {name: email, label: Email}
+      - {name: accepts_marketing, label: Accepts marketing, type: boolean}
+    request:
+      method: PUT
+      path: "ecomCustomers/{{fields.customer_id}}"
+      body: {ecomCustomer: {externalid: "{{fields.externalid}}", email: "{{fields.email}}", acceptsMarketing: "{{fields.accepts_marketing}}"}}
+    output:
+      path: ecomCustomer
+
+  - name: Delete Customer
+    resource: E-commerce Customer
+    description: Deletes a customer of a store.
+    fields:
+      - {name: customer_id, label: Customer ID, required: true}
+    request: {method: DELETE, path: "ecomCustomers/{{fields.customer_id}}"}
+    output: {value: {id: "{{fields.customer_id}}", deleted: true}}
+
+  - name: Create Order
+    resource: E-commerce Order
+    description: Adds an order of a store, or an abandoned cart.
+    fields:
+      - {name: order, label: Order, type: json, required: true, description: "ActiveCampaign's ecomOrder: externalid, email, orderProducts, totalPrice in cents, currency, connectionid, customerid, externalCreatedDate"}
+    request:
+      method: POST
+      path: ecomOrders
+      body: {ecomOrder: "{{fields.order}}"}
+    output:
+      path: ecomOrder
+
+  - name: Get Order
+    resource: E-commerce Order
+    description: Reads an order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: GET, path: "ecomOrders/{{fields.order_id}}"}
+    output:
+      path: ecomOrder
+
+  - name: Get Orders
+    resource: E-commerce Order
+    description: Lists the orders of the stores.
+    fields:
+      - {name: email, label: Email}
+      - {name: connectionid, label: Connection ID}
+    request:
+      method: GET
+      path: ecomOrders
+      query: {"filters[email]": "{{fields.email}}", "filters[connectionid]": "{{fields.connectionid}}"}
+    pagination: {type: offset, items_path: ecomOrders, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Order
+    resource: E-commerce Order
+    description: Changes an order with the values given.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+      - {name: order, label: Order, type: json, required: true, description: "The ecomOrder values to change, like {\"totalPrice\": 9900}"}
+    request:
+      method: PUT
+      path: "ecomOrders/{{fields.order_id}}"
+      body: {ecomOrder: "{{fields.order}}"}
+    output:
+      path: ecomOrder
+
+  - name: Delete Order
+    resource: E-commerce Order
+    description: Deletes an order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: DELETE, path: "ecomOrders/{{fields.order_id}}"}
+    output: {value: {id: "{{fields.order_id}}", deleted: true}}
+
+  - name: Get Order Products
+    resource: E-commerce Order
+    description: Lists the products of an order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: GET, path: "ecomOrders/{{fields.order_id}}/orderProducts"}
+    pagination: {type: offset, items_path: ecomOrderProducts, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Get All Order Products
+    resource: E-commerce Order
+    description: Lists the products of every order.
+    request: {method: GET, path: ecomOrderProducts}
+    pagination: {type: offset, items_path: ecomOrderProducts, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Get Order Product
+    resource: E-commerce Order
+    description: Reads a product of an order.
+    fields:
+      - {name: product_id, label: Order product ID, required: true}
+    request: {method: GET, path: "ecomOrderProducts/{{fields.product_id}}"}
+    output:
+      path: ecomOrderProduct
+
+i18n:
+  pt-BR:
+    description: Contatos, listas, etiquetas, contas, negócios e dados de e-commerce no ActiveCampaign.
+    triggers:
+      Account Event: {name: Evento na conta, description: Inicia o fluxo quando as coisas escolhidas acontecem no ActiveCampaign., fields: {events: Eventos, sources: Feito por}}
+    actions:
+      Create Contact: {name: Criar contato, description: Adiciona um contato. Falha quando o e-mail já existe., fields: {email: E-mail, first_name: Nome, last_name: Sobrenome, phone: Telefone, field_values: Campos personalizados}}
+      Create or Update Contact: {name: Criar ou atualizar contato, description: "Adiciona um contato, ou muda o que tem o mesmo e-mail.", fields: {email: E-mail, first_name: Nome, last_name: Sobrenome, phone: Telefone, field_values: Campos personalizados}}
+      Get Contact: {name: Ler contato, description: Lê um contato., fields: {contact_id: ID do contato}}
+      Get Contacts: {name: Listar contatos, description: "Lista contatos, todos ou os que batem.", fields: {email: E-mail, search: Busca, listid: Lista, tagid: Etiqueta, status: Status, updated_after: Atualizados depois de, created_after: Criados depois de}}
+      Update Contact: {name: Atualizar contato, description: Muda um contato. Campos vazios ficam como estão., fields: {contact_id: ID do contato, email: E-mail, first_name: Nome, last_name: Sobrenome, phone: Telefone, field_values: Campos personalizados}}
+      Delete Contact: {name: Apagar contato, description: Apaga um contato., fields: {contact_id: ID do contato}}
+      Subscribe to List: {name: Inscrever na lista, description: "Inscreve um contato numa lista, ou desinscreve.", fields: {contact_id: ID do contato, list: Lista, status: Status}}
+      Add Tag to Contact: {name: Etiquetar contato, description: Põe uma etiqueta num contato., fields: {contact_id: ID do contato, tag: Etiqueta}}
+      Remove Tag from Contact: {name: Tirar etiqueta do contato, description: "Tira uma etiqueta de um contato, dado o ID que Etiquetar contato devolveu.", fields: {contact_tag_id: ID da etiqueta do contato}}
+      Get Lists: {name: Listar listas, description: Lista as listas.}
+      Create Tag: {name: Criar etiqueta, description: Cria uma etiqueta., fields: {tag: Nome, tag_type: Para, description: Descrição}}
+      Get Tag: {name: Ler etiqueta, description: Lê uma etiqueta., fields: {tag_id: ID da etiqueta}}
+      Get Tags: {name: Listar etiquetas, description: "Lista as etiquetas, todas ou as que têm um texto no nome.", fields: {search: Busca}}
+      Update Tag: {name: Atualizar etiqueta, description: Muda uma etiqueta. Campos vazios ficam como estão., fields: {tag_id: ID da etiqueta, tag: Nome, tag_type: Para, description: Descrição}}
+      Delete Tag: {name: Apagar etiqueta, description: Apaga uma etiqueta., fields: {tag_id: ID da etiqueta}}
+      Create Account: {name: Criar conta, description: "Adiciona uma conta, uma empresa de que seus contatos fazem parte.", fields: {name: Nome, account_url: Site, fields: Campos personalizados}}
+      Get Account: {name: Ler conta, description: Lê uma conta., fields: {account_id: ID da conta}}
+      Get Accounts: {name: Listar contas, description: "Lista contas, todas ou as que têm um texto no nome.", fields: {search: Busca}}
+      Update Account: {name: Atualizar conta, description: Muda uma conta. Campos vazios ficam como estão., fields: {account_id: ID da conta, name: Nome, account_url: Site, fields: Campos personalizados}}
+      Delete Account: {name: Apagar conta, description: Apaga uma conta., fields: {account_id: ID da conta}}
+      Add Contact to Account: {name: Pôr contato na conta, description: Liga um contato a uma conta., fields: {contact_id: ID do contato, account_id: ID da conta, job_title: Cargo}}
+      Update Account Contact: {name: Atualizar contato da conta, description: Muda o cargo de um contato numa conta., fields: {account_contact_id: ID do contato da conta, job_title: Cargo}}
+      Remove Contact from Account: {name: Tirar contato da conta, description: Desliga um contato de uma conta., fields: {account_contact_id: ID do contato da conta}}
+      Create Deal: {name: Criar negócio, description: Adiciona um negócio a um funil., fields: {title: Título, contact: ID do contato, value: Valor em centavos, currency: Moeda, group: Funil, stage: Etapa, owner: ID do dono, description: Descrição, account: ID da conta, percent: Probabilidade (%), status: Status, fields: Campos personalizados}}
+      Get Deal: {name: Ler negócio, description: Lê um negócio., fields: {deal_id: ID do negócio}}
+      Get Deals: {name: Listar negócios, description: "Lista negócios, todos ou os que batem.", fields: {search: Busca, group: Funil, stage: Etapa, status: Status, owner: ID do dono}}
+      Update Deal: {name: Atualizar negócio, description: Muda um negócio. Campos vazios ficam como estão., fields: {deal_id: ID do negócio, title: Título, contact: ID do contato, value: Valor em centavos, currency: Moeda, group: Funil, stage: Etapa, owner: ID do dono, description: Descrição, account: ID da conta, percent: Probabilidade (%), status: Status, fields: Campos personalizados}}
+      Delete Deal: {name: Apagar negócio, description: Apaga um negócio., fields: {deal_id: ID do negócio}}
+      Add Deal Note: {name: Adicionar nota ao negócio, description: Adiciona uma nota a um negócio., fields: {deal_id: ID do negócio, note: Nota}}
+      Update Deal Note: {name: Atualizar nota do negócio, description: Muda o texto de uma nota de um negócio., fields: {deal_id: ID do negócio, note_id: ID da nota, note: Nota}}
+      Create Connection: {name: Criar conexão, description: "Conecta uma loja, para os clientes e pedidos dela entrarem.", fields: {service: Serviço, externalid: ID da loja, name: Nome, logo_url: URL do logo, link_url: URL da loja}}
+      Get Connection: {name: Ler conexão, description: Lê a conexão de uma loja., fields: {connection_id: ID da conexão}}
+      Get Connections: {name: Listar conexões, description: Lista as conexões de lojas.}
+      Update Connection: {name: Atualizar conexão, description: Muda a conexão de uma loja. Campos vazios ficam como estão., fields: {connection_id: ID da conexão, name: Nome, logo_url: URL do logo, link_url: URL da loja, status: Status}}
+      Delete Connection: {name: Apagar conexão, description: "Apaga a conexão de uma loja, com clientes e pedidos.", fields: {connection_id: ID da conexão}}
+      Create Customer: {name: Criar cliente, description: Adiciona um cliente de uma loja., fields: {connectionid: ID da conexão, externalid: ID do cliente na loja, email: E-mail, accepts_marketing: Aceita marketing}}
+      Get Customer: {name: Ler cliente, description: Lê um cliente de uma loja., fields: {customer_id: ID do cliente}}
+      Get Customers: {name: Listar clientes, description: "Lista os clientes das lojas, todos ou por e-mail.", fields: {email: E-mail, connectionid: ID da conexão}}
+      Update Customer: {name: Atualizar cliente, description: Muda um cliente. Campos vazios ficam como estão., fields: {customer_id: ID do cliente, externalid: ID do cliente na loja, email: E-mail, accepts_marketing: Aceita marketing}}
+      Delete Customer: {name: Apagar cliente, description: Apaga um cliente de uma loja., fields: {customer_id: ID do cliente}}
+      Create Order: {name: Criar pedido, description: "Adiciona um pedido de uma loja, ou um carrinho abandonado.", fields: {order: Pedido}}
+      Get Order: {name: Ler pedido, description: Lê um pedido., fields: {order_id: ID do pedido}}
+      Get Orders: {name: Listar pedidos, description: Lista os pedidos das lojas., fields: {email: E-mail, connectionid: ID da conexão}}
+      Update Order: {name: Atualizar pedido, description: Muda um pedido com os valores dados., fields: {order_id: ID do pedido, order: Pedido}}
+      Delete Order: {name: Apagar pedido, description: Apaga um pedido., fields: {order_id: ID do pedido}}
+      Get Order Products: {name: Listar produtos do pedido, description: Lista os produtos de um pedido., fields: {order_id: ID do pedido}}
+      Get All Order Products: {name: Listar todos os produtos de pedidos, description: Lista os produtos de todos os pedidos.}
+      Get Order Product: {name: Ler produto do pedido, description: Lê um produto de um pedido., fields: {product_id: ID do produto do pedido}}
