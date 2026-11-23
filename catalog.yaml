@@ -20,7 +20,7 @@ integrations:
   - {id: email, name: Email (IMAP/SMTP), category: email, phase: 1, origin: n8n, auth: basic, n8n: EmailReadImap, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: official}
   - {id: facebook_lead_ads, name: Facebook Lead Ads, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: FacebookLeadAds, kind: manifest, status: planned}
   - {id: facebook_pages, name: Facebook Pages, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Facebook, kind: manifest, status: planned}
-  - {id: freshdesk, name: Freshdesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Freshdesk, host: true, kind: manifest, status: planned}
+  - {id: freshdesk, name: Freshdesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Freshdesk, host: true, kind: manifest, status: draft}
   - {id: ftp, name: FTP / SFTP, category: files, phase: 1, origin: n8n, auth: basic, n8n: Ftp, kind: package, status: official}
   - {id: github, name: GitHub, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Github, kind: package, lib: {name: tentacat, version: 2.5.0, released: 2024-12-20}, status: community}
   - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: draft}
