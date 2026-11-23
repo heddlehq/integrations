@@ -1,0 +1,304 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Dropbox, through the API v2. Connect with an app from the Dropbox App Console, with
+# the permissions files.content.write, files.content.read, sharing.write and
+# account_info.read. Paths start with a slash, like /Reports/2026.pdf, and the top of
+# the Dropbox is an empty path.
+id: dropbox
+name: Dropbox
+version: 1.0.0
+description: Files and folders in Dropbox.
+icon: hero-cloud
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0061FF" d="M6 1.807L0 5.629l6 3.822 6.001-3.822L6 1.807zM18 1.807l-6 3.822 6 3.822 6-3.822-6-3.822zM0 13.274l6 3.822 6.001-3.822L6 9.452l-6 3.822zM18 9.452l-6 3.822 6 3.822 6-3.822-6-3.822zM6 18.371l6.001 3.822 6-3.822-6-3.822L6 18.371z"/></svg>
+category: files
+author: Heddle
+homepage: https://www.dropbox.com/developers/documentation/http/documentation
+base_url: https://api.dropboxapi.com/2/
+
+credential:
+  label: Dropbox
+  auth:
+    type: oauth2
+    authorize_url: https://www.dropbox.com/oauth2/authorize
+    token_url: https://api.dropboxapi.com/oauth2/token
+    token_auth: body
+    scopes: [account_info.read, files.metadata.read, files.metadata.write, files.content.read, files.content.write, sharing.read, sharing.write]
+    authorize_params: {token_access_type: offline}
+
+errors:
+  message_path: error_summary
+
+triggers:
+  - name: New Item
+    description: Starts the flow for each new file or folder in a folder, checking every 5 minutes.
+    fields:
+      - {name: folder, label: Folder, description: "Like /Reports. The top of the Dropbox when empty."}
+    request:
+      method: POST
+      path: files/list_folder
+      body: {path: "{{fields.folder | keep}}", limit: 2000}
+    output:
+      path: entries
+    poll:
+      every: 5
+      id: id
+
+  - name: File Changed
+    description: Starts the flow when a file in a folder is created or changed, checking every 5 minutes.
+    fields:
+      - {name: folder, label: Folder, description: "Like /Reports. The top of the Dropbox when empty."}
+    request:
+      method: POST
+      path: files/list_folder
+      body: {path: "{{fields.folder | keep}}", limit: 2000}
+    output:
+      path: entries
+    poll:
+      every: 5
+      id: rev
+
+actions:
+  # Files
+  - name: Upload File
+    resource: File
+    description: Uploads a file, up to 150 MB, to a path.
+    fields:
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: path, label: Path, required: true, description: "With the file's name, like /Reports/2026.pdf."}
+      - {name: mode, label: If the path exists, type: select, default: add, options: [{label: Keep both, value: add}, {label: Replace, value: overwrite}]}
+      - {name: mute, label: Don't notify, type: boolean, default: false, description: "Leaves the Dropbox apps quiet about the change."}
+    request:
+      method: POST
+      base_url: https://content.dropboxapi.com/2/
+      path: files/upload
+      headers:
+        Content-Type: application/octet-stream
+        Dropbox-API-Arg: {path: "{{fields.path}}", mode: "{{fields.mode}}", autorename: true, mute: "{{fields.mute}}"}
+      body_type: binary
+      body: "{{fields.file}}"
+
+  - name: Download File
+    resource: File
+    description: Downloads a file.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports/2026.pdf, or an ID like id:a4ayc_80_OEAAAAAAAAAYa."}
+    request:
+      method: POST
+      base_url: https://content.dropboxapi.com/2/
+      path: files/download
+      headers:
+        Dropbox-API-Arg: {path: "{{fields.path}}"}
+    output:
+      file: {name: "{{fields.path | name}}"}
+
+  - name: Get Temporary Link
+    resource: File
+    description: Makes a link that downloads a file for the next 4 hours.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports/2026.pdf."}
+    request:
+      method: POST
+      path: files/get_temporary_link
+      body: {path: "{{fields.path}}"}
+
+  - name: Copy File
+    resource: File
+    description: Copies a file to another path.
+    fields:
+      - {name: from, label: From path, required: true, description: "Like /Reports/2026.pdf."}
+      - {name: to, label: To path, required: true, description: "With the name, like /Archive/2026.pdf."}
+      - {name: autorename, label: Rename if the path exists, type: boolean, default: false}
+    request:
+      method: POST
+      path: files/copy_v2
+      body: {from_path: "{{fields.from}}", to_path: "{{fields.to}}", autorename: "{{fields.autorename}}"}
+    output:
+      path: metadata
+
+  - name: Move File
+    resource: File
+    description: Moves or renames a file.
+    fields: [{name: from, label: From path, required: true, description: Like /Reports/2026.pdf.}, {name: to, label: To path, required: true, description: 'With the name, like /Archive/2026.pdf.'}, {name: autorename, label: Rename if the path exists, type: boolean, default: false}]
+    request:
+      method: POST
+      path: files/move_v2
+      body: {from_path: "{{fields.from}}", to_path: "{{fields.to}}", autorename: "{{fields.autorename}}"}
+    output:
+      path: metadata
+
+  - name: Delete File
+    resource: File
+    description: Deletes a file. Dropbox keeps it for a while among the deleted files.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports/2026.pdf."}
+    request:
+      method: POST
+      path: files/delete_v2
+      body: {path: "{{fields.path}}"}
+    output:
+      path: metadata
+
+  # Folders
+  - name: Create Folder
+    resource: Folder
+    description: Creates a folder.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports/2026."}
+      - {name: autorename, label: Rename if the path exists, type: boolean, default: false}
+    request:
+      method: POST
+      path: files/create_folder_v2
+      body: {path: "{{fields.path}}", autorename: "{{fields.autorename}}"}
+    output:
+      path: metadata
+
+  - name: List Folder
+    resource: Folder
+    description: Lists the files and folders in a folder, up to 2,000.
+    fields:
+      - {name: folder, label: Folder, description: "Like /Reports. The top of the Dropbox when empty."}
+      - {name: recursive, label: With subfolders, type: boolean, default: false}
+      - {name: deleted, label: With deleted files, type: boolean, default: false}
+    request:
+      method: POST
+      path: files/list_folder
+      body: {path: "{{fields.folder | keep}}", recursive: "{{fields.recursive}}", include_deleted: "{{fields.deleted}}", limit: 2000}
+    output:
+      path: entries
+
+  - name: Copy Folder
+    resource: Folder
+    description: Copies a folder, and what is in it, to another path.
+    fields:
+      - {name: from, label: From path, required: true, description: "Like /Reports."}
+      - {name: to, label: To path, required: true, description: "With the name, like /Archive/Reports."}
+      - {name: autorename, label: Rename if the path exists, type: boolean, default: false}
+    request: {method: POST, path: files/copy_v2, body: {from_path: '{{fields.from}}', to_path: '{{fields.to}}', autorename: '{{fields.autorename}}'}}
+    output:
+      path: metadata
+
+  - name: Move Folder
+    resource: Folder
+    description: Moves or renames a folder.
+    fields:
+      - {name: from, label: From path, required: true, description: "Like /Reports."}
+      - {name: to, label: To path, required: true, description: "With the name, like /Archive/Reports."}
+      - {name: autorename, label: Rename if the path exists, type: boolean, default: false}
+    request: {method: POST, path: files/move_v2, body: {from_path: '{{fields.from}}', to_path: '{{fields.to}}', autorename: '{{fields.autorename}}'}}
+    output:
+      path: metadata
+
+  - name: Delete Folder
+    resource: Folder
+    description: Deletes a folder and what is in it.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports."}
+    request: {method: POST, path: files/delete_v2, body: {path: '{{fields.path}}'}}
+    output:
+      path: metadata
+
+  # Files and folders
+  - name: Search
+    resource: File and Folder
+    description: Finds files and folders by name or content, up to 1,000.
+    fields:
+      - {name: query, label: Search, required: true}
+      - {name: folder, label: In folder, description: "Like /Reports. Everywhere when empty."}
+      - {name: names_only, label: Names only, type: boolean, default: false}
+      - {name: extensions, label: Extensions, description: "Like pdf, docx."}
+      - name: category
+        label: Kind
+        type: select
+        options:
+          - {label: Images, value: image}
+          - {label: Documents, value: document}
+          - {label: PDFs, value: pdf}
+          - {label: Spreadsheets, value: spreadsheet}
+          - {label: Presentations, value: presentation}
+          - {label: Audio, value: audio}
+          - {label: Videos, value: video}
+          - {label: Folders, value: folder}
+          - {label: Paper, value: paper}
+          - {label: Other, value: others}
+      - {name: deleted, label: Deleted files only, type: boolean, default: false}
+    request:
+      method: POST
+      path: files/search_v2
+      body:
+        query: "{{fields.query}}"
+        options:
+          path: "{{fields.folder}}"
+          max_results: 1000
+          filename_only: "{{fields.names_only}}"
+          file_extensions: {_each: "{{fields.extensions}}", _value: "{{item}}"}
+          file_categories: ["{{fields.category}}"]
+          file_status: {".tag": deleted, _if: "{{fields.deleted}}"}
+    output:
+      path: matches
+
+  - name: Get Metadata
+    resource: File and Folder
+    description: Gets a file's or folder's details.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports/2026.pdf, or an ID like id:a4ayc_80_OEAAAAAAAAAYa."}
+    request:
+      method: POST
+      path: files/get_metadata
+      body: {path: "{{fields.path}}", include_media_info: true}
+
+  - name: Share
+    resource: File and Folder
+    description: Makes a shared link to a file or folder, for anyone with it or for your team.
+    fields:
+      - {name: path, label: Path, required: true, description: "Like /Reports/2026.pdf."}
+      - {name: audience, label: Who can open it, type: select, required: true, default: public, options: [{label: Anyone with the link, value: public}, {label: Your team, value: team}, {label: Only those invited, value: no_one}]}
+      - {name: password, label: Password, description: "Dropbox Plus and up."}
+      - {name: expires, label: Expires, type: datetime, description: "Dropbox Plus and up."}
+      - {name: downloads, label: Allow downloads, type: select, options: [{label: "Yes", value: true}, {label: "No", value: false}]}
+    request:
+      method: POST
+      path: sharing/create_shared_link_with_settings
+      body:
+        path: "{{fields.path}}"
+        settings:
+          audience: "{{fields.audience}}"
+          requested_visibility: {".tag": password, _if: "{{fields.password}}"}
+          link_password: "{{fields.password}}"
+          expires: "{{fields.expires}}"
+          allow_download: "{{fields.downloads}}"
+
+  # Account
+  - name: Get Account
+    resource: Account
+    description: Gets the connected account's name, email and team.
+    request: {method: POST, path: users/get_current_account}
+
+  - name: Get Space Usage
+    resource: Account
+    description: Gets how much space the account uses and has.
+    request: {method: POST, path: users/get_space_usage}
+
+i18n:
+  pt-BR:
+    description: Arquivos e pastas no Dropbox.
+    triggers:
+      New Item: {name: Novo item, description: "Inicia o fluxo para cada arquivo ou pasta nova numa pasta, olhando a cada 5 minutos.", fields: {folder: Pasta}}
+      File Changed: {name: Arquivo mudou, description: "Inicia o fluxo quando um arquivo numa pasta é criado ou muda, olhando a cada 5 minutos.", fields: {folder: Pasta}}
+    actions:
+      Upload File: {name: Enviar arquivo, description: "Envia um arquivo, de até 150 MB, para um caminho.", fields: {file: Arquivo, path: Caminho, mode: Se o caminho existir, mute: Não notificar}}
+      Download File: {name: Baixar arquivo, description: Baixa um arquivo., fields: {path: Caminho}}
+      Get Temporary Link: {name: Gerar link temporário, description: "Cria um link que baixa um arquivo pelas próximas 4 horas.", fields: {path: Caminho}}
+      Copy File: {name: Copiar arquivo, description: Copia um arquivo para outro caminho., fields: {from: Caminho de origem, to: Caminho de destino, autorename: Renomear se o caminho existir}}
+      Move File: {name: Mover arquivo, description: Move ou renomeia um arquivo., fields: {from: Caminho de origem, to: Caminho de destino, autorename: Renomear se o caminho existir}}
+      Delete File: {name: Excluir arquivo, description: "Exclui um arquivo. O Dropbox guarda por um tempo entre os excluídos.", fields: {path: Caminho}}
+      Create Folder: {name: Criar pasta, description: Cria uma pasta., fields: {path: Caminho, autorename: Renomear se o caminho existir}}
+      List Folder: {name: Listar pasta, description: "Lista os arquivos e pastas de uma pasta, até 2.000.", fields: {folder: Pasta, recursive: Com subpastas, deleted: Com arquivos excluídos}}
+      Copy Folder: {name: Copiar pasta, description: "Copia uma pasta, e o que tem nela, para outro caminho.", fields: {from: Caminho de origem, to: Caminho de destino, autorename: Renomear se o caminho existir}}
+      Move Folder: {name: Mover pasta, description: Move ou renomeia uma pasta., fields: {from: Caminho de origem, to: Caminho de destino, autorename: Renomear se o caminho existir}}
+      Delete Folder: {name: Excluir pasta, description: Exclui uma pasta e o que tem nela., fields: {path: Caminho}}
+      Search: {name: Buscar, description: "Encontra arquivos e pastas pelo nome ou conteúdo, até 1.000.", fields: {query: Busca, folder: Na pasta, names_only: Só nomes, extensions: Extensões, category: Tipo, deleted: Só arquivos excluídos}}
+      Get Metadata: {name: Ler detalhes, description: Lê os detalhes de um arquivo ou pasta., fields: {path: Caminho}}
+      Share: {name: Compartilhar, description: "Cria um link compartilhado para um arquivo ou pasta, para qualquer um com o link ou para sua equipe.", fields: {path: Caminho, audience: Quem pode abrir, password: Senha, expires: Expira em, downloads: Permitir download}}
+      Get Account: {name: Ler conta, description: "Lê o nome, o e-mail e a equipe da conta conectada."}
+      Get Space Usage: {name: Ler uso de espaço, description: Lê quanto espaço a conta usa e tem.}
