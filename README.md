@@ -34,18 +34,21 @@ CI checks that every folder here is in it.
 1. Write the manifest with [Bobbin](https://github.com/heddlehq/Bobbin):
 
    ```bash
-   mix new tools && cd tools        # any Mix project with {:bobbin, "~> 0.5"} in deps
+   mix new tools && cd tools        # any Mix project with {:bobbin, "~> 0.6"} in deps
    mix deps.get
    mix bobbin.new acme_crm --path ../integrations/acme_crm/integration.yaml
    ```
 
-2. Fill it in, and try each action against the real API:
+2. Fill it in, read the request each action sends, and try them against the real API:
 
    ```bash
    mix bobbin.validate integrations/acme_crm/integration.yaml
+   elixir scripts/smoke.exs integrations/acme_crm/integration.yaml
    mix bobbin.run integrations/acme_crm/integration.yaml "Get Item" \
      --field id=42 --credential api_key=$KEY
    ```
+
+   Write each field out: YAML aliases (`*name`) aren't supported.
 
 3. Open a pull request. CI checks the manifest, and a maintainer reviews what it sends
    and where.
