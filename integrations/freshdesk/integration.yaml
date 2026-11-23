@@ -134,7 +134,7 @@ actions:
       method: GET
       path: search/tickets
       query: {query: "\"{{fields.query}}\""}
-    pagination: {type: page, items_path: results}
+    pagination: {type: page, items_path: results, page_size: 30}
 
   - name: Update Ticket
     resource: Ticket
