@@ -28,7 +28,7 @@ integrations:
   - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: package, lib: {name: google_api_analytics_admin, version: 0.26.0, released: 2025-04-15}, status: planned}
   - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: package, lib: {name: google_api_big_query, version: 0.88.0, released: 2025-04-15}, status: planned}
   - {id: google_calendar, name: Google Calendar, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Calendar, kind: package, lib: {name: google_api_calendar, version: 0.26.0, released: 2025-04-15}, status: planned}
-  - {id: google_contacts, name: Google Contacts, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Contacts, kind: manifest, status: planned}
+  - {id: google_contacts, name: Google Contacts, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Contacts, kind: manifest, status: draft}
   - {id: google_docs, name: Google Docs, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Docs, kind: package, lib: {name: google_api_docs, version: 0.18.0, released: 2025-04-15}, status: planned}
   - {id: google_drive, name: Google Drive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Drive, kind: manifest, status: draft}
   - {id: google_forms, name: Google Forms, category: forms, phase: 1, origin: extra, auth: oauth2, kind: package, lib: {name: google_api_forms, version: 0.5.0, released: 2025-04-15}, status: planned}
