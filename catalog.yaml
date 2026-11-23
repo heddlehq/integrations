@@ -45,7 +45,7 @@ integrations:
   - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: microsoft_excel, name: Microsoft Excel 365, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Excel, kind: manifest, status: planned}
   - {id: microsoft_onedrive, name: Microsoft OneDrive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/OneDrive, kind: manifest, status: planned}
-  - {id: microsoft_outlook, name: Microsoft Outlook, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Outlook, kind: manifest, status: planned}
+  - {id: microsoft_outlook, name: Microsoft Outlook, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Outlook, kind: manifest, status: draft}
   - {id: microsoft_sharepoint, name: Microsoft SharePoint, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/SharePoint, kind: manifest, status: planned}
   - {id: microsoft_teams, name: Microsoft Teams, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Teams, kind: manifest, status: planned}
   - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: draft}
