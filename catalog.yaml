@@ -49,7 +49,7 @@ integrations:
   - {id: microsoft_sharepoint, name: Microsoft SharePoint, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/SharePoint, kind: manifest, status: planned}
   - {id: microsoft_teams, name: Microsoft Teams, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Teams, kind: manifest, status: planned}
   - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: planned}
-  - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: bearer, n8n: MondayCom, kind: manifest, status: planned}
+  - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: header, n8n: MondayCom, kind: manifest, status: draft}
   - {id: mongodb, name: MongoDB, category: database, phase: 1, origin: n8n, auth: basic, n8n: MongoDb, kind: package, lib: {name: mongodb_driver, version: 1.6.4, released: 2026-07-24}, status: official}
   - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: draft}
   - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
