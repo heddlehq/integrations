@@ -55,7 +55,7 @@ integrations:
   - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
   - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: login, n8n: Odoo, host: true, kind: manifest, status: planned}
   - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
-  - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Pipedrive, kind: manifest, status: planned}
+  - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: header, n8n: Pipedrive, kind: manifest, status: draft}
   - {id: postmark, name: Postmark, category: email, phase: 1, origin: n8n, auth: header, n8n: Postmark, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: quickbooks, name: QuickBooks Online, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: QuickBooks, kind: manifest, status: planned}
   - {id: redis, name: Redis, category: database, phase: 1, origin: n8n, auth: basic, n8n: Redis, kind: package, lib: {name: redix, version: 1.10.0, released: 2026-10-22}, status: official}

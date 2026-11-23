@@ -1,0 +1,1084 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Pipedrive's API: version 2 for deals, people, organizations, products and activities,
+# version 1 for leads, notes, files and webhooks, which have no version 2 yet. The API
+# token is in Pipedrive, under your name > Personal preferences > API.
+id: pipedrive
+name: Pipedrive
+version: 1.0.0
+description: Deals and their products, people, organizations, leads, activities, notes, products and files in Pipedrive.
+icon: hero-funnel
+category: crm
+author: Heddle
+homepage: https://developers.pipedrive.com/docs/api/v1
+base_url: https://api.pipedrive.com/
+
+credential:
+  label: Pipedrive
+  fields:
+    - {name: api_token, label: API token, secret: true, required: true}
+  auth:
+    type: header
+    name: x-api-token
+    value: "{{credential.api_token}}"
+
+errors:
+  message_path: error
+
+triggers:
+  - name: Event
+    description: Starts the flow when deals, people, activities or other things you choose are added, changed or deleted.
+    fields:
+      - {name: object, label: What, type: select, required: true, default: "*", options: [{label: Everything, value: "*"}, {label: Deals, value: deal}, {label: People, value: person}, {label: Organizations, value: organization}, {label: Leads, value: lead}, {label: Activities, value: activity}, {label: Activity types, value: activityType}, {label: Notes, value: note}, {label: Products, value: product}, {label: Pipelines, value: pipeline}, {label: Stages, value: stage}, {label: Users, value: user}]}
+      - {name: action, label: When, type: select, required: true, default: "*", options: [{label: Anything happens, value: "*"}, {label: Added, value: create}, {label: Changed, value: change}, {label: Deleted, value: delete}]}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: api/v1/webhooks
+          body:
+            subscription_url: "{{webhook.url}}"
+            event_object: "{{fields.object}}"
+            event_action: "{{fields.action}}"
+            http_auth_user: heddle
+            http_auth_password: "{{webhook.secret}}"
+            version: "2.0"
+        id_path: data.id
+      unregister:
+        request: {method: DELETE, path: "api/v1/webhooks/{{webhook.id}}"}
+      signature:
+        basic: {username: heddle, password: "{{webhook.secret}}"}
+
+actions:
+  # Deals
+  - name: Create Deal
+    resource: Deal
+    description: Creates a deal.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: value, label: Value, type: number}
+      - {name: currency, label: Currency, description: "Like BRL or USD"}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: pipeline_id, label: Pipeline, type: select, options_from: {request: {method: GET, path: api/v2/pipelines}, path: data}}
+      - {name: stage_id, label: Stage, type: select, options_from: {request: {method: GET, path: api/v2/stages, query: {pipeline_id: "{{fields.pipeline_id}}"}}, path: data}}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: open}, {label: Won, value: won}, {label: Lost, value: lost}]}
+      - {name: owner_id, label: Owner, type: select, options_from: {request: {method: GET, path: api/v1/users}, path: data}}
+      - {name: expected_close_date, label: Expected close date, type: datetime}
+      - {name: probability, label: Probability (%), type: number}
+      - {name: lost_reason, label: Lost reason}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: label_ids, label: Label IDs, type: json, description: "Like [1, 2]"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key, like {\"8f4b27fbd...\": \"x\"}"}
+    request:
+      method: POST
+      path: api/v2/deals
+      body:
+        title: "{{fields.title}}"
+        value: "{{fields.value}}"
+        currency: "{{fields.currency}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        pipeline_id: "{{fields.pipeline_id}}"
+        stage_id: "{{fields.stage_id}}"
+        status: "{{fields.status}}"
+        owner_id: "{{fields.owner_id}}"
+        expected_close_date: "{{fields.expected_close_date}}"
+        probability: "{{fields.probability}}"
+        lost_reason: "{{fields.lost_reason}}"
+        visible_to: "{{fields.visible_to}}"
+        label_ids: "{{fields.label_ids}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Deal
+    resource: Deal
+    description: Reads a deal.
+    fields:
+      - {name: id, label: Deal ID, required: true}
+      - {name: include_fields, label: Also include, description: "Comma separated, like next_activity_id,email_messages_count"}
+    request:
+      method: GET
+      path: "api/v2/deals/{{fields.id}}"
+      query: {include_fields: "{{fields.include_fields}}"}
+    output: {path: data}
+
+  - name: Get Deals
+    resource: Deal
+    description: Lists deals, all of them or those that match.
+    fields:
+      - {name: filter_id, label: Saved filter ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: pipeline_id, label: Pipeline ID, type: number}
+      - {name: stage_id, label: Stage ID, type: number}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: open}, {label: Won, value: won}, {label: Lost, value: lost}, {label: Deleted, value: deleted}]}
+      - {name: updated_since, label: Updated since, type: datetime}
+      - {name: sort_by, label: Sort by, type: select, options: [{label: ID, value: id}, {label: Updated, value: update_time}, {label: Added, value: add_time}]}
+      - {name: sort_direction, label: Direction, type: select, options: [{label: Ascending, value: asc}, {label: Descending, value: desc}]}
+    request:
+      method: GET
+      path: api/v2/deals
+      query:
+        filter_id: "{{fields.filter_id}}"
+        owner_id: "{{fields.owner_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        pipeline_id: "{{fields.pipeline_id}}"
+        stage_id: "{{fields.stage_id}}"
+        status: "{{fields.status}}"
+        updated_since: "{{fields.updated_since}}"
+        sort_by: "{{fields.sort_by}}"
+        sort_direction: "{{fields.sort_direction}}"
+    pagination: {type: cursor, items_path: data, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Search Deals
+    resource: Deal
+    description: Finds deals by title, notes or custom fields.
+    fields:
+      - {name: term, label: Text, required: true, description: At least 2 characters.}
+      - {name: fields, label: In, type: multiselect, options: [{label: Title, value: title}, {label: Notes, value: notes}, {label: Custom fields, value: custom_fields}]}
+      - {name: exact_match, label: Exact match, type: boolean}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: open}, {label: Won, value: won}, {label: Lost, value: lost}]}
+    request:
+      method: GET
+      path: api/v2/deals/search
+      query:
+        term: "{{fields.term}}"
+        fields: "{{fields.fields}}"
+        exact_match: "{{fields.exact_match}}"
+        person_id: "{{fields.person_id}}"
+        organization_id: "{{fields.organization_id}}"
+        status: "{{fields.status}}"
+    pagination: {type: cursor, items_path: data.items, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Update Deal
+    resource: Deal
+    description: Changes a deal. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Deal ID, required: true}
+      - {name: title, label: Title}
+      - {name: value, label: Value, type: number}
+      - {name: currency, label: Currency}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: pipeline_id, label: Pipeline ID, type: number}
+      - {name: stage_id, label: Stage ID, type: number}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: open}, {label: Won, value: won}, {label: Lost, value: lost}]}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: expected_close_date, label: Expected close date, type: datetime}
+      - {name: probability, label: Probability (%), type: number}
+      - {name: lost_reason, label: Lost reason}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: label_ids, label: Label IDs, type: json, description: "Like [1, 2]"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key, like {\"8f4b27fbd...\": \"x\"}"}
+    request:
+      method: PATCH
+      path: "api/v2/deals/{{fields.id}}"
+      body:
+        title: "{{fields.title}}"
+        value: "{{fields.value}}"
+        currency: "{{fields.currency}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        pipeline_id: "{{fields.pipeline_id}}"
+        stage_id: "{{fields.stage_id}}"
+        status: "{{fields.status}}"
+        owner_id: "{{fields.owner_id}}"
+        expected_close_date: "{{fields.expected_close_date}}"
+        probability: "{{fields.probability}}"
+        lost_reason: "{{fields.lost_reason}}"
+        visible_to: "{{fields.visible_to}}"
+        label_ids: "{{fields.label_ids}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Duplicate Deal
+    resource: Deal
+    description: Copies a deal.
+    fields:
+      - {name: id, label: Deal ID, required: true}
+    request:
+      method: POST
+      path: "api/v1/deals/{{fields.id}}/duplicate"
+    output: {path: data}
+
+  - name: Delete Deal
+    resource: Deal
+    description: Deletes a deal. Pipedrive keeps it for 30 days.
+    fields:
+      - {name: id, label: Deal ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/deals/{{fields.id}}"
+    output: {path: data}
+
+  # Deal products
+  - name: Add Product to Deal
+    resource: Deal Product
+    description: Adds a product to a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: product_id, label: Product ID, type: number, required: true}
+      - {name: item_price, label: Price, type: number, required: true}
+      - {name: quantity, label: Quantity, type: number, required: true, default: 1}
+      - {name: discount, label: Discount, type: number}
+      - {name: discount_type, label: Discount is, type: select, options: [{label: A percentage, value: percentage}, {label: An amount, value: amount}]}
+      - {name: tax, label: Tax (%), type: number}
+      - {name: tax_method, label: Tax, type: select, options: [{label: Exclusive, value: exclusive}, {label: Inclusive, value: inclusive}, {label: None, value: none}]}
+      - {name: comments, label: Comments}
+      - {name: product_variation_id, label: Variation ID, type: number}
+      - {name: is_enabled, label: Enabled, type: boolean, default: true}
+    request:
+      method: POST
+      path: "api/v2/deals/{{fields.deal_id}}/products"
+      body:
+        product_id: "{{fields.product_id}}"
+        item_price: "{{fields.item_price}}"
+        quantity: "{{fields.quantity}}"
+        discount: "{{fields.discount}}"
+        discount_type: "{{fields.discount_type}}"
+        tax: "{{fields.tax}}"
+        tax_method: "{{fields.tax_method}}"
+        comments: "{{fields.comments}}"
+        product_variation_id: "{{fields.product_variation_id}}"
+        is_enabled: "{{fields.is_enabled}}"
+    output: {path: data}
+
+  - name: Get Deal Products
+    resource: Deal Product
+    description: Lists the products of a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+    request:
+      method: GET
+      path: "api/v2/deals/{{fields.deal_id}}/products"
+    pagination: {type: cursor, items_path: data, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Update Deal Product
+    resource: Deal Product
+    description: Changes a product of a deal. Empty fields stay as they are.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: attachment_id, label: Deal product ID, required: true}
+      - {name: product_id, label: Product ID, type: number}
+      - {name: item_price, label: Price, type: number}
+      - {name: quantity, label: Quantity, type: number}
+      - {name: discount, label: Discount, type: number}
+      - {name: discount_type, label: Discount is, type: select, options: [{label: A percentage, value: percentage}, {label: An amount, value: amount}]}
+      - {name: tax, label: Tax (%), type: number}
+      - {name: comments, label: Comments}
+      - {name: is_enabled, label: Enabled, type: boolean}
+    request:
+      method: PATCH
+      path: "api/v2/deals/{{fields.deal_id}}/products/{{fields.attachment_id}}"
+      body:
+        product_id: "{{fields.product_id}}"
+        item_price: "{{fields.item_price}}"
+        quantity: "{{fields.quantity}}"
+        discount: "{{fields.discount}}"
+        discount_type: "{{fields.discount_type}}"
+        tax: "{{fields.tax}}"
+        comments: "{{fields.comments}}"
+        is_enabled: "{{fields.is_enabled}}"
+    output: {path: data}
+
+  - name: Remove Product from Deal
+    resource: Deal Product
+    description: Takes a product off a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: attachment_id, label: Deal product ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/deals/{{fields.deal_id}}/products/{{fields.attachment_id}}"
+    output: {path: data}
+
+  # People
+  - name: Create Person
+    resource: Person
+    description: Creates a person.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: emails, label: Emails, type: json, description: "Like [{\"value\": \"ana@acme.test\", \"primary\": true, \"label\": \"work\"}]"}
+      - {name: phones, label: Phones, type: json, description: "Like [{\"value\": \"+5511999990000\", \"primary\": true, \"label\": \"mobile\"}]"}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: owner_id, label: Owner, type: select, options_from: {request: {method: GET, path: api/v1/users}, path: data}}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: label_ids, label: Label IDs, type: json, description: "Like [1, 2]"}
+      - {name: marketing_status, label: Marketing status, type: select, options: [{label: No consent, value: no_consent}, {label: Unsubscribed, value: unsubscribed}, {label: Subscribed, value: subscribed}, {label: Archived, value: archived}]}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key"}
+    request:
+      method: POST
+      path: api/v2/persons
+      body:
+        name: "{{fields.name}}"
+        emails: "{{fields.emails}}"
+        phones: "{{fields.phones}}"
+        org_id: "{{fields.org_id}}"
+        owner_id: "{{fields.owner_id}}"
+        visible_to: "{{fields.visible_to}}"
+        label_ids: "{{fields.label_ids}}"
+        marketing_status: "{{fields.marketing_status}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Person
+    resource: Person
+    description: Reads a person.
+    fields:
+      - {name: id, label: Person ID, required: true}
+      - {name: include_fields, label: Also include, description: "Comma separated, like open_deals_count,email_messages_count"}
+    request:
+      method: GET
+      path: "api/v2/persons/{{fields.id}}"
+      query: {include_fields: "{{fields.include_fields}}"}
+    output: {path: data}
+
+  - name: Get People
+    resource: Person
+    description: Lists people, all of them or those that match.
+    fields:
+      - {name: filter_id, label: Saved filter ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: updated_since, label: Updated since, type: datetime}
+      - {name: sort_by, label: Sort by, type: select, options: [{label: ID, value: id}, {label: Updated, value: update_time}, {label: Added, value: add_time}]}
+      - {name: sort_direction, label: Direction, type: select, options: [{label: Ascending, value: asc}, {label: Descending, value: desc}]}
+    request:
+      method: GET
+      path: api/v2/persons
+      query:
+        filter_id: "{{fields.filter_id}}"
+        owner_id: "{{fields.owner_id}}"
+        org_id: "{{fields.org_id}}"
+        updated_since: "{{fields.updated_since}}"
+        sort_by: "{{fields.sort_by}}"
+        sort_direction: "{{fields.sort_direction}}"
+    pagination: {type: cursor, items_path: data, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Search People
+    resource: Person
+    description: Finds people by name, email, phone, notes or custom fields.
+    fields:
+      - {name: term, label: Text, required: true, description: At least 2 characters.}
+      - {name: fields, label: In, type: multiselect, options: [{label: Name, value: name}, {label: Email, value: email}, {label: Phone, value: phone}, {label: Notes, value: notes}, {label: Custom fields, value: custom_fields}]}
+      - {name: exact_match, label: Exact match, type: boolean}
+      - {name: organization_id, label: Organization ID, type: number}
+    request:
+      method: GET
+      path: api/v2/persons/search
+      query:
+        term: "{{fields.term}}"
+        fields: "{{fields.fields}}"
+        exact_match: "{{fields.exact_match}}"
+        organization_id: "{{fields.organization_id}}"
+    pagination: {type: cursor, items_path: data.items, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Update Person
+    resource: Person
+    description: Changes a person. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Person ID, required: true}
+      - {name: name, label: Name}
+      - {name: emails, label: Emails, type: json, description: "Replaces them, like [{\"value\": \"ana@acme.test\", \"primary\": true}]"}
+      - {name: phones, label: Phones, type: json, description: "Replaces them, like [{\"value\": \"+5511999990000\", \"primary\": true}]"}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: label_ids, label: Label IDs, type: json}
+      - {name: marketing_status, label: Marketing status, type: select, options: [{label: No consent, value: no_consent}, {label: Unsubscribed, value: unsubscribed}, {label: Subscribed, value: subscribed}, {label: Archived, value: archived}]}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key"}
+    request:
+      method: PATCH
+      path: "api/v2/persons/{{fields.id}}"
+      body:
+        name: "{{fields.name}}"
+        emails: "{{fields.emails}}"
+        phones: "{{fields.phones}}"
+        org_id: "{{fields.org_id}}"
+        owner_id: "{{fields.owner_id}}"
+        visible_to: "{{fields.visible_to}}"
+        label_ids: "{{fields.label_ids}}"
+        marketing_status: "{{fields.marketing_status}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Delete Person
+    resource: Person
+    description: Deletes a person. Pipedrive keeps it for 30 days.
+    fields:
+      - {name: id, label: Person ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/persons/{{fields.id}}"
+    output: {path: data}
+
+  # Organizations
+  - name: Create Organization
+    resource: Organization
+    description: Creates an organization.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: address, label: Address}
+      - {name: owner_id, label: Owner, type: select, options_from: {request: {method: GET, path: api/v1/users}, path: data}}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: label_ids, label: Label IDs, type: json, description: "Like [1, 2]"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key"}
+    request:
+      method: POST
+      path: api/v2/organizations
+      body:
+        name: "{{fields.name}}"
+        address: {value: "{{fields.address}}"}
+        owner_id: "{{fields.owner_id}}"
+        visible_to: "{{fields.visible_to}}"
+        label_ids: "{{fields.label_ids}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Organization
+    resource: Organization
+    description: Reads an organization.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+      - {name: include_fields, label: Also include, description: "Comma separated, like open_deals_count,people_count"}
+    request:
+      method: GET
+      path: "api/v2/organizations/{{fields.id}}"
+      query: {include_fields: "{{fields.include_fields}}"}
+    output: {path: data}
+
+  - name: Get Organizations
+    resource: Organization
+    description: Lists organizations, all of them or those that match.
+    fields:
+      - {name: filter_id, label: Saved filter ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: updated_since, label: Updated since, type: datetime}
+      - {name: sort_by, label: Sort by, type: select, options: [{label: ID, value: id}, {label: Updated, value: update_time}, {label: Added, value: add_time}]}
+      - {name: sort_direction, label: Direction, type: select, options: [{label: Ascending, value: asc}, {label: Descending, value: desc}]}
+    request:
+      method: GET
+      path: api/v2/organizations
+      query:
+        filter_id: "{{fields.filter_id}}"
+        owner_id: "{{fields.owner_id}}"
+        updated_since: "{{fields.updated_since}}"
+        sort_by: "{{fields.sort_by}}"
+        sort_direction: "{{fields.sort_direction}}"
+    pagination: {type: cursor, items_path: data, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Search Organizations
+    resource: Organization
+    description: Finds organizations by name, address, notes or custom fields.
+    fields:
+      - {name: term, label: Text, required: true, description: At least 2 characters.}
+      - {name: fields, label: In, type: multiselect, options: [{label: Name, value: name}, {label: Address, value: address}, {label: Notes, value: notes}, {label: Custom fields, value: custom_fields}]}
+      - {name: exact_match, label: Exact match, type: boolean}
+    request:
+      method: GET
+      path: api/v2/organizations/search
+      query: {term: "{{fields.term}}", fields: "{{fields.fields}}", exact_match: "{{fields.exact_match}}"}
+    pagination: {type: cursor, items_path: data.items, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Update Organization
+    resource: Organization
+    description: Changes an organization. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+      - {name: name, label: Name}
+      - {name: address, label: Address}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: label_ids, label: Label IDs, type: json}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key"}
+    request:
+      method: PATCH
+      path: "api/v2/organizations/{{fields.id}}"
+      body:
+        name: "{{fields.name}}"
+        address: {value: "{{fields.address}}"}
+        owner_id: "{{fields.owner_id}}"
+        visible_to: "{{fields.visible_to}}"
+        label_ids: "{{fields.label_ids}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Delete Organization
+    resource: Organization
+    description: Deletes an organization. Pipedrive keeps it for 30 days.
+    fields:
+      - {name: id, label: Organization ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/organizations/{{fields.id}}"
+    output: {path: data}
+
+  # Leads
+  - name: Create Lead
+    resource: Lead
+    description: Creates a lead, tied to a person or an organization.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: amount, label: Value, type: number}
+      - {name: currency, label: Currency, description: "Like BRL or USD"}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: label_ids, label: Label IDs, type: json, description: "Like [\"f08b42a0-...\"]"}
+      - {name: expected_close_date, label: Expected close date, type: datetime}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: "1"}, {label: Owner's group, value: "3"}, {label: Owner's group and subgroups, value: "5"}, {label: Everyone, value: "7"}]}
+    request:
+      method: POST
+      path: api/v1/leads
+      body:
+        title: "{{fields.title}}"
+        person_id: "{{fields.person_id}}"
+        organization_id: "{{fields.organization_id}}"
+        value: {amount: "{{fields.amount}}", currency: "{{fields.currency}}"}
+        owner_id: "{{fields.owner_id}}"
+        label_ids: "{{fields.label_ids}}"
+        expected_close_date: "{{fields.expected_close_date}}"
+        visible_to: "{{fields.visible_to}}"
+    output: {path: data}
+
+  - name: Get Lead
+    resource: Lead
+    description: Reads a lead.
+    fields:
+      - {name: id, label: Lead ID, required: true}
+    request:
+      method: GET
+      path: "api/v1/leads/{{fields.id}}"
+    output: {path: data}
+
+  - name: Get Leads
+    resource: Lead
+    description: Lists leads.
+    fields:
+      - {name: archived_status, label: Which, type: select, options: [{label: Not archived, value: not_archived}, {label: Archived, value: archived}, {label: All, value: all}]}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: filter_id, label: Saved filter ID, type: number}
+      - {name: sort, label: Sort, description: "Like add_time DESC"}
+    request:
+      method: GET
+      path: api/v1/leads
+      query:
+        archived_status: "{{fields.archived_status}}"
+        owner_id: "{{fields.owner_id}}"
+        person_id: "{{fields.person_id}}"
+        organization_id: "{{fields.organization_id}}"
+        filter_id: "{{fields.filter_id}}"
+        sort: "{{fields.sort}}"
+    pagination: {type: offset, items_path: data, offset_param: start, limit_param: limit, page_size: 500}
+
+  - name: Update Lead
+    resource: Lead
+    description: Changes a lead. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Lead ID, required: true}
+      - {name: title, label: Title}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: organization_id, label: Organization ID, type: number}
+      - {name: amount, label: Value, type: number}
+      - {name: currency, label: Currency}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: label_ids, label: Label IDs, type: json}
+      - {name: expected_close_date, label: Expected close date, type: datetime}
+      - {name: is_archived, label: Archived, type: boolean}
+      - {name: was_seen, label: Seen, type: boolean}
+    request:
+      method: PATCH
+      path: "api/v1/leads/{{fields.id}}"
+      body:
+        title: "{{fields.title}}"
+        person_id: "{{fields.person_id}}"
+        organization_id: "{{fields.organization_id}}"
+        value: {amount: "{{fields.amount}}", currency: "{{fields.currency}}"}
+        owner_id: "{{fields.owner_id}}"
+        label_ids: "{{fields.label_ids}}"
+        expected_close_date: "{{fields.expected_close_date}}"
+        is_archived: "{{fields.is_archived}}"
+        was_seen: "{{fields.was_seen}}"
+    output: {path: data}
+
+  - name: Delete Lead
+    resource: Lead
+    description: Deletes a lead.
+    fields:
+      - {name: id, label: Lead ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v1/leads/{{fields.id}}"
+    output: {path: data}
+
+  # Activities
+  - name: Create Activity
+    resource: Activity
+    description: Schedules a call, meeting, task or other activity.
+    fields:
+      - {name: subject, label: Subject, required: true}
+      - {name: type, label: Type, type: select, options_from: {request: {method: GET, path: api/v1/activityTypes}, path: data, label: name, value: key_string}}
+      - {name: due_date, label: Due date, type: datetime, description: "A date, like 2026-12-31"}
+      - {name: due_time, label: Due time, description: "Like 14:30, in UTC"}
+      - {name: duration, label: Duration, description: "Like 01:00"}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: lead_id, label: Lead ID}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: done, label: Done, type: boolean}
+      - {name: busy, label: Busy, type: boolean}
+      - {name: priority, label: Priority, type: number}
+      - {name: location, label: Location}
+      - {name: note, label: Note, type: textarea, description: HTML is fine.}
+      - {name: public_description, label: Public description, type: textarea}
+      - {name: participants, label: Participants, type: json, description: "Like [{\"person_id\": 1, \"primary\": true}]"}
+    request:
+      method: POST
+      path: api/v2/activities
+      body:
+        subject: "{{fields.subject}}"
+        type: "{{fields.type}}"
+        due_date: "{{fields.due_date}}"
+        due_time: "{{fields.due_time}}"
+        duration: "{{fields.duration}}"
+        deal_id: "{{fields.deal_id}}"
+        lead_id: "{{fields.lead_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        owner_id: "{{fields.owner_id}}"
+        done: "{{fields.done}}"
+        busy: "{{fields.busy}}"
+        priority: "{{fields.priority}}"
+        location: {value: "{{fields.location}}"}
+        note: "{{fields.note}}"
+        public_description: "{{fields.public_description}}"
+        participants: "{{fields.participants}}"
+    output: {path: data}
+
+  - name: Get Activity
+    resource: Activity
+    description: Reads an activity.
+    fields:
+      - {name: id, label: Activity ID, required: true}
+    request:
+      method: GET
+      path: "api/v2/activities/{{fields.id}}"
+    output: {path: data}
+
+  - name: Get Activities
+    resource: Activity
+    description: Lists activities, all of them or those that match.
+    fields:
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: lead_id, label: Lead ID}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: done, label: Done, type: select, options: [{label: Done, value: true}, {label: Not done, value: false}]}
+      - {name: filter_id, label: Saved filter ID, type: number}
+      - {name: updated_since, label: Updated since, type: datetime}
+    request:
+      method: GET
+      path: api/v2/activities
+      query:
+        owner_id: "{{fields.owner_id}}"
+        deal_id: "{{fields.deal_id}}"
+        lead_id: "{{fields.lead_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        done: "{{fields.done}}"
+        filter_id: "{{fields.filter_id}}"
+        updated_since: "{{fields.updated_since}}"
+    pagination: {type: cursor, items_path: data, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Update Activity
+    resource: Activity
+    description: Changes an activity, or marks it done. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Activity ID, required: true}
+      - {name: subject, label: Subject}
+      - {name: type, label: Type key, description: "Like call or meeting"}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: due_time, label: Due time}
+      - {name: duration, label: Duration}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: done, label: Done, type: select, options: [{label: Done, value: true}, {label: Not done, value: false}]}
+      - {name: busy, label: Busy, type: select, options: [{label: Busy, value: true}, {label: Free, value: false}]}
+      - {name: location, label: Location}
+      - {name: note, label: Note, type: textarea}
+      - {name: public_description, label: Public description, type: textarea}
+    request:
+      method: PATCH
+      path: "api/v2/activities/{{fields.id}}"
+      body:
+        subject: "{{fields.subject}}"
+        type: "{{fields.type}}"
+        due_date: "{{fields.due_date}}"
+        due_time: "{{fields.due_time}}"
+        duration: "{{fields.duration}}"
+        deal_id: "{{fields.deal_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        owner_id: "{{fields.owner_id}}"
+        done: "{{fields.done}}"
+        busy: "{{fields.busy}}"
+        location: {value: "{{fields.location}}"}
+        note: "{{fields.note}}"
+        public_description: "{{fields.public_description}}"
+    output: {path: data}
+
+  - name: Delete Activity
+    resource: Activity
+    description: Deletes an activity.
+    fields:
+      - {name: id, label: Activity ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/activities/{{fields.id}}"
+    output: {path: data}
+
+  # Notes
+  - name: Create Note
+    resource: Note
+    description: Adds a note to a deal, person, organization or lead.
+    fields:
+      - {name: content, label: Note, type: textarea, required: true, description: HTML is fine.}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: lead_id, label: Lead ID}
+      - {name: pinned_to_deal_flag, label: Pin to the deal, type: boolean}
+      - {name: pinned_to_person_flag, label: Pin to the person, type: boolean}
+      - {name: pinned_to_organization_flag, label: Pin to the organization, type: boolean}
+      - {name: pinned_to_lead_flag, label: Pin to the lead, type: boolean}
+    request:
+      method: POST
+      path: api/v1/notes
+      body:
+        content: "{{fields.content}}"
+        deal_id: "{{fields.deal_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        lead_id: "{{fields.lead_id}}"
+        pinned_to_deal_flag: "{{fields.pinned_to_deal_flag}}"
+        pinned_to_person_flag: "{{fields.pinned_to_person_flag}}"
+        pinned_to_organization_flag: "{{fields.pinned_to_organization_flag}}"
+        pinned_to_lead_flag: "{{fields.pinned_to_lead_flag}}"
+    output: {path: data}
+
+  - name: Get Note
+    resource: Note
+    description: Reads a note.
+    fields:
+      - {name: id, label: Note ID, required: true}
+    request:
+      method: GET
+      path: "api/v1/notes/{{fields.id}}"
+    output: {path: data}
+
+  - name: Get Notes
+    resource: Note
+    description: Lists notes, all of them or those of a deal, person, organization or lead.
+    fields:
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: lead_id, label: Lead ID}
+      - {name: user_id, label: Author ID, type: number}
+      - {name: start_date, label: From, type: datetime}
+      - {name: end_date, label: To, type: datetime}
+      - {name: sort, label: Sort, description: "Like add_time DESC"}
+    request:
+      method: GET
+      path: api/v1/notes
+      query:
+        deal_id: "{{fields.deal_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        lead_id: "{{fields.lead_id}}"
+        user_id: "{{fields.user_id}}"
+        start_date: "{{fields.start_date}}"
+        end_date: "{{fields.end_date}}"
+        sort: "{{fields.sort}}"
+    pagination: {type: offset, items_path: data, offset_param: start, limit_param: limit, page_size: 500}
+
+  - name: Update Note
+    resource: Note
+    description: Changes a note.
+    fields:
+      - {name: id, label: Note ID, required: true}
+      - {name: content, label: Note, type: textarea}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: lead_id, label: Lead ID}
+    request:
+      method: PUT
+      path: "api/v1/notes/{{fields.id}}"
+      body:
+        content: "{{fields.content}}"
+        deal_id: "{{fields.deal_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        lead_id: "{{fields.lead_id}}"
+    output: {path: data}
+
+  - name: Delete Note
+    resource: Note
+    description: Deletes a note.
+    fields:
+      - {name: id, label: Note ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v1/notes/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Products
+  - name: Create Product
+    resource: Product
+    description: Creates a product.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: code, label: Code}
+      - {name: description, label: Description, type: textarea}
+      - {name: unit, label: Unit}
+      - {name: tax, label: Tax (%), type: number}
+      - {name: category, label: Category}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: is_linkable, label: Can be added to deals, type: boolean, default: true}
+      - {name: prices, label: Prices, type: json, description: "Like [{\"price\": 100, \"currency\": \"BRL\", \"cost\": 60}]"}
+      - {name: visible_to, label: Visible to, type: select, options: [{label: Owner only, value: 1}, {label: Owner's group, value: 3}, {label: Owner's group and subgroups, value: 5}, {label: Everyone, value: 7}]}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key"}
+    request:
+      method: POST
+      path: api/v2/products
+      body:
+        name: "{{fields.name}}"
+        code: "{{fields.code}}"
+        description: "{{fields.description}}"
+        unit: "{{fields.unit}}"
+        tax: "{{fields.tax}}"
+        category: "{{fields.category}}"
+        owner_id: "{{fields.owner_id}}"
+        is_linkable: "{{fields.is_linkable}}"
+        prices: "{{fields.prices}}"
+        visible_to: "{{fields.visible_to}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request:
+      method: GET
+      path: "api/v2/products/{{fields.id}}"
+    output: {path: data}
+
+  - name: Get Products
+    resource: Product
+    description: Lists products.
+    fields:
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: filter_id, label: Saved filter ID, type: number}
+      - {name: sort_by, label: Sort by, type: select, options: [{label: ID, value: id}, {label: Name, value: name}, {label: Updated, value: update_time}, {label: Added, value: add_time}]}
+      - {name: sort_direction, label: Direction, type: select, options: [{label: Ascending, value: asc}, {label: Descending, value: desc}]}
+    request:
+      method: GET
+      path: api/v2/products
+      query: {owner_id: "{{fields.owner_id}}", filter_id: "{{fields.filter_id}}", sort_by: "{{fields.sort_by}}", sort_direction: "{{fields.sort_direction}}"}
+    pagination: {type: cursor, items_path: data, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Search Products
+    resource: Product
+    description: Finds products by name, code or custom fields.
+    fields:
+      - {name: term, label: Text, required: true, description: At least 2 characters.}
+      - {name: fields, label: In, type: multiselect, options: [{label: Name, value: name}, {label: Code, value: code}, {label: Custom fields, value: custom_fields}]}
+      - {name: exact_match, label: Exact match, type: boolean}
+    request:
+      method: GET
+      path: api/v2/products/search
+      query: {term: "{{fields.term}}", fields: "{{fields.fields}}", exact_match: "{{fields.exact_match}}"}
+    pagination: {type: cursor, items_path: data.items, cursor_param: cursor, next_path: additional_data.next_cursor, limit_param: limit, page_size: 500}
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: name, label: Name}
+      - {name: code, label: Code}
+      - {name: description, label: Description, type: textarea}
+      - {name: unit, label: Unit}
+      - {name: tax, label: Tax (%), type: number}
+      - {name: category, label: Category}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: is_linkable, label: Can be added to deals, type: boolean}
+      - {name: prices, label: Prices, type: json, description: "Replaces them, like [{\"price\": 100, \"currency\": \"BRL\"}]"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field key"}
+    request:
+      method: PATCH
+      path: "api/v2/products/{{fields.id}}"
+      body:
+        name: "{{fields.name}}"
+        code: "{{fields.code}}"
+        description: "{{fields.description}}"
+        unit: "{{fields.unit}}"
+        tax: "{{fields.tax}}"
+        category: "{{fields.category}}"
+        owner_id: "{{fields.owner_id}}"
+        is_linkable: "{{fields.is_linkable}}"
+        prices: "{{fields.prices}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Delete Product
+    resource: Product
+    description: Deletes a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/products/{{fields.id}}"
+    output: {path: data}
+
+  # Files
+  - name: Upload File
+    resource: File
+    description: Uploads a file to a deal, person, organization, product, activity or lead.
+    fields:
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: org_id, label: Organization ID, type: number}
+      - {name: product_id, label: Product ID, type: number}
+      - {name: activity_id, label: Activity ID, type: number}
+      - {name: lead_id, label: Lead ID}
+    request:
+      method: POST
+      path: api/v1/files
+      body_type: multipart
+      body:
+        file: "{{fields.file}}"
+        deal_id: "{{fields.deal_id}}"
+        person_id: "{{fields.person_id}}"
+        org_id: "{{fields.org_id}}"
+        product_id: "{{fields.product_id}}"
+        activity_id: "{{fields.activity_id}}"
+        lead_id: "{{fields.lead_id}}"
+    output: {path: data}
+
+  - name: Get File
+    resource: File
+    description: Reads a file's details.
+    fields:
+      - {name: id, label: File ID, required: true}
+    request:
+      method: GET
+      path: "api/v1/files/{{fields.id}}"
+    output: {path: data}
+
+  - name: Download File
+    resource: File
+    description: Downloads a file.
+    fields:
+      - {name: id, label: File ID, required: true}
+    request:
+      method: GET
+      path: "api/v1/files/{{fields.id}}/download"
+    output:
+      file: true
+
+  - name: Update File
+    resource: File
+    description: Renames a file or changes its description.
+    fields:
+      - {name: id, label: File ID, required: true}
+      - {name: name, label: Name}
+      - {name: description, label: Description}
+    request:
+      method: PUT
+      path: "api/v1/files/{{fields.id}}"
+      body: {name: "{{fields.name}}", description: "{{fields.description}}"}
+    output: {path: data}
+
+  - name: Delete File
+    resource: File
+    description: Deletes a file.
+    fields:
+      - {name: id, label: File ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v1/files/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+i18n:
+  pt-BR:
+    description: "Negócios e seus produtos, pessoas, organizações, leads, atividades, notas, produtos e arquivos no Pipedrive."
+    triggers:
+      Event: {name: Evento, description: "Inicia o fluxo quando negócios, pessoas, atividades ou outras coisas que você escolher são criados, mudados ou excluídos.", fields: {object: O quê, action: Quando}}
+    actions:
+      Create Deal: {name: Criar negócio, description: Cria um negócio., fields: {title: Título, value: Valor, currency: Moeda, person_id: ID da pessoa, org_id: ID da organização, pipeline_id: Funil, stage_id: Etapa, status: Status, owner_id: Dono, expected_close_date: Previsão de fechamento, probability: Probabilidade (%), lost_reason: Motivo da perda, visible_to: Visível para, label_ids: IDs das etiquetas, custom_fields: Campos personalizados}}
+      Get Deal: {name: Ler negócio, description: Lê um negócio., fields: {id: ID do negócio, include_fields: Incluir também}}
+      Get Deals: {name: Listar negócios, description: "Lista negócios, todos ou os que batem.", fields: {filter_id: ID do filtro salvo, owner_id: ID do dono, person_id: ID da pessoa, org_id: ID da organização, pipeline_id: ID do funil, stage_id: ID da etapa, status: Status, updated_since: Alterados desde, sort_by: Ordenar por, sort_direction: Direção}}
+      Search Deals: {name: Buscar negócios, description: "Encontra negócios pelo título, notas ou campos personalizados.", fields: {term: Texto, fields: Em, exact_match: Exato, person_id: ID da pessoa, organization_id: ID da organização, status: Status}}
+      Update Deal: {name: Atualizar negócio, description: Muda um negócio. Campos vazios ficam como estão., fields: {id: ID do negócio, title: Título, value: Valor, currency: Moeda, person_id: ID da pessoa, org_id: ID da organização, pipeline_id: ID do funil, stage_id: ID da etapa, status: Status, owner_id: ID do dono, expected_close_date: Previsão de fechamento, probability: Probabilidade (%), lost_reason: Motivo da perda, visible_to: Visível para, label_ids: IDs das etiquetas, custom_fields: Campos personalizados}}
+      Duplicate Deal: {name: Duplicar negócio, description: Copia um negócio., fields: {id: ID do negócio}}
+      Delete Deal: {name: Excluir negócio, description: Exclui um negócio. O Pipedrive o guarda por 30 dias., fields: {id: ID do negócio}}
+      Add Product to Deal: {name: Adicionar produto ao negócio, description: Põe um produto num negócio., fields: {deal_id: ID do negócio, product_id: ID do produto, item_price: Preço, quantity: Quantidade, discount: Desconto, discount_type: O desconto é, tax: Imposto (%), tax_method: Imposto, comments: Comentários, product_variation_id: ID da variação, is_enabled: Ativo}}
+      Get Deal Products: {name: Listar produtos do negócio, description: Lista os produtos de um negócio., fields: {deal_id: ID do negócio}}
+      Update Deal Product: {name: Atualizar produto do negócio, description: Muda um produto de um negócio. Campos vazios ficam como estão., fields: {deal_id: ID do negócio, attachment_id: ID do produto no negócio, product_id: ID do produto, item_price: Preço, quantity: Quantidade, discount: Desconto, discount_type: O desconto é, tax: Imposto (%), comments: Comentários, is_enabled: Ativo}}
+      Remove Product from Deal: {name: Tirar produto do negócio, description: Tira um produto de um negócio., fields: {deal_id: ID do negócio, attachment_id: ID do produto no negócio}}
+      Create Person: {name: Criar pessoa, description: Cria uma pessoa., fields: {name: Nome, emails: E-mails, phones: Telefones, org_id: ID da organização, owner_id: Dono, visible_to: Visível para, label_ids: IDs das etiquetas, marketing_status: Status de marketing, custom_fields: Campos personalizados}}
+      Get Person: {name: Ler pessoa, description: Lê uma pessoa., fields: {id: ID da pessoa, include_fields: Incluir também}}
+      Get People: {name: Listar pessoas, description: "Lista pessoas, todas ou as que batem.", fields: {filter_id: ID do filtro salvo, owner_id: ID do dono, org_id: ID da organização, updated_since: Alteradas desde, sort_by: Ordenar por, sort_direction: Direção}}
+      Search People: {name: Buscar pessoas, description: "Encontra pessoas pelo nome, e-mail, telefone, notas ou campos personalizados.", fields: {term: Texto, fields: Em, exact_match: Exato, organization_id: ID da organização}}
+      Update Person: {name: Atualizar pessoa, description: Muda uma pessoa. Campos vazios ficam como estão., fields: {id: ID da pessoa, name: Nome, emails: E-mails, phones: Telefones, org_id: ID da organização, owner_id: ID do dono, visible_to: Visível para, label_ids: IDs das etiquetas, marketing_status: Status de marketing, custom_fields: Campos personalizados}}
+      Delete Person: {name: Excluir pessoa, description: Exclui uma pessoa. O Pipedrive a guarda por 30 dias., fields: {id: ID da pessoa}}
+      Create Organization: {name: Criar organização, description: Cria uma organização., fields: {name: Nome, address: Endereço, owner_id: Dono, visible_to: Visível para, label_ids: IDs das etiquetas, custom_fields: Campos personalizados}}
+      Get Organization: {name: Ler organização, description: Lê uma organização., fields: {id: ID da organização, include_fields: Incluir também}}
+      Get Organizations: {name: Listar organizações, description: "Lista organizações, todas ou as que batem.", fields: {filter_id: ID do filtro salvo, owner_id: ID do dono, updated_since: Alteradas desde, sort_by: Ordenar por, sort_direction: Direção}}
+      Search Organizations: {name: Buscar organizações, description: "Encontra organizações pelo nome, endereço, notas ou campos personalizados.", fields: {term: Texto, fields: Em, exact_match: Exato}}
+      Update Organization: {name: Atualizar organização, description: Muda uma organização. Campos vazios ficam como estão., fields: {id: ID da organização, name: Nome, address: Endereço, owner_id: ID do dono, visible_to: Visível para, label_ids: IDs das etiquetas, custom_fields: Campos personalizados}}
+      Delete Organization: {name: Excluir organização, description: Exclui uma organização. O Pipedrive a guarda por 30 dias., fields: {id: ID da organização}}
+      Create Lead: {name: Criar lead, description: "Cria um lead, ligado a uma pessoa ou organização.", fields: {title: Título, person_id: ID da pessoa, organization_id: ID da organização, amount: Valor, currency: Moeda, owner_id: ID do dono, label_ids: IDs das etiquetas, expected_close_date: Previsão de fechamento, visible_to: Visível para}}
+      Get Lead: {name: Ler lead, description: Lê um lead., fields: {id: ID do lead}}
+      Get Leads: {name: Listar leads, description: Lista leads., fields: {archived_status: Quais, owner_id: ID do dono, person_id: ID da pessoa, organization_id: ID da organização, filter_id: ID do filtro salvo, sort: Ordem}}
+      Update Lead: {name: Atualizar lead, description: Muda um lead. Campos vazios ficam como estão., fields: {id: ID do lead, title: Título, person_id: ID da pessoa, organization_id: ID da organização, amount: Valor, currency: Moeda, owner_id: ID do dono, label_ids: IDs das etiquetas, expected_close_date: Previsão de fechamento, is_archived: Arquivado, was_seen: Visto}}
+      Delete Lead: {name: Excluir lead, description: Exclui um lead., fields: {id: ID do lead}}
+      Create Activity: {name: Criar atividade, description: "Agenda uma ligação, reunião, tarefa ou outra atividade.", fields: {subject: Assunto, type: Tipo, due_date: Data, due_time: Hora, duration: Duração, deal_id: ID do negócio, lead_id: ID do lead, person_id: ID da pessoa, org_id: ID da organização, owner_id: ID do dono, done: Feita, busy: Ocupado, priority: Prioridade, location: Local, note: Nota, public_description: Descrição pública, participants: Participantes}}
+      Get Activity: {name: Ler atividade, description: Lê uma atividade., fields: {id: ID da atividade}}
+      Get Activities: {name: Listar atividades, description: "Lista atividades, todas ou as que batem.", fields: {owner_id: ID do dono, deal_id: ID do negócio, lead_id: ID do lead, person_id: ID da pessoa, org_id: ID da organização, done: Feita, filter_id: ID do filtro salvo, updated_since: Alteradas desde}}
+      Update Activity: {name: Atualizar atividade, description: "Muda uma atividade, ou a marca como feita. Campos vazios ficam como estão.", fields: {id: ID da atividade, subject: Assunto, type: Chave do tipo, due_date: Data, due_time: Hora, duration: Duração, deal_id: ID do negócio, person_id: ID da pessoa, org_id: ID da organização, owner_id: ID do dono, done: Feita, busy: Ocupado, location: Local, note: Nota, public_description: Descrição pública}}
+      Delete Activity: {name: Excluir atividade, description: Exclui uma atividade., fields: {id: ID da atividade}}
+      Create Note: {name: Criar nota, description: "Adiciona uma nota a um negócio, pessoa, organização ou lead.", fields: {content: Nota, deal_id: ID do negócio, person_id: ID da pessoa, org_id: ID da organização, lead_id: ID do lead, pinned_to_deal_flag: Fixar no negócio, pinned_to_person_flag: Fixar na pessoa, pinned_to_organization_flag: Fixar na organização, pinned_to_lead_flag: Fixar no lead}}
+      Get Note: {name: Ler nota, description: Lê uma nota., fields: {id: ID da nota}}
+      Get Notes: {name: Listar notas, description: "Lista notas, todas ou as de um negócio, pessoa, organização ou lead.", fields: {deal_id: ID do negócio, person_id: ID da pessoa, org_id: ID da organização, lead_id: ID do lead, user_id: ID do autor, start_date: De, end_date: Até, sort: Ordem}}
+      Update Note: {name: Atualizar nota, description: Muda uma nota., fields: {id: ID da nota, content: Nota, deal_id: ID do negócio, person_id: ID da pessoa, org_id: ID da organização, lead_id: ID do lead}}
+      Delete Note: {name: Excluir nota, description: Exclui uma nota., fields: {id: ID da nota}}
+      Create Product: {name: Criar produto, description: Cria um produto., fields: {name: Nome, code: Código, description: Descrição, unit: Unidade, tax: Imposto (%), category: Categoria, owner_id: ID do dono, is_linkable: Pode ir em negócios, prices: Preços, visible_to: Visível para, custom_fields: Campos personalizados}}
+      Get Product: {name: Ler produto, description: Lê um produto., fields: {id: ID do produto}}
+      Get Products: {name: Listar produtos, description: Lista produtos., fields: {owner_id: ID do dono, filter_id: ID do filtro salvo, sort_by: Ordenar por, sort_direction: Direção}}
+      Search Products: {name: Buscar produtos, description: "Encontra produtos pelo nome, código ou campos personalizados.", fields: {term: Texto, fields: Em, exact_match: Exato}}
+      Update Product: {name: Atualizar produto, description: Muda um produto. Campos vazios ficam como estão., fields: {id: ID do produto, name: Nome, code: Código, description: Descrição, unit: Unidade, tax: Imposto (%), category: Categoria, owner_id: ID do dono, is_linkable: Pode ir em negócios, prices: Preços, custom_fields: Campos personalizados}}
+      Delete Product: {name: Excluir produto, description: Exclui um produto., fields: {id: ID do produto}}
+      Upload File: {name: Enviar arquivo, description: "Envia um arquivo para um negócio, pessoa, organização, produto, atividade ou lead.", fields: {file: Arquivo, deal_id: ID do negócio, person_id: ID da pessoa, org_id: ID da organização, product_id: ID do produto, activity_id: ID da atividade, lead_id: ID do lead}}
+      Get File: {name: Ler arquivo, description: Lê os detalhes de um arquivo., fields: {id: ID do arquivo}}
+      Download File: {name: Baixar arquivo, description: Baixa um arquivo., fields: {id: ID do arquivo}}
+      Update File: {name: Atualizar arquivo, description: Renomeia um arquivo ou muda sua descrição., fields: {id: ID do arquivo, name: Nome, description: Descrição}}
+      Delete File: {name: Excluir arquivo, description: Exclui um arquivo., fields: {id: ID do arquivo}}
