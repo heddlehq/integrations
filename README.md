@@ -22,6 +22,13 @@ lists these integrations on its Integrations page, marked as community integrati
 Only workspace admins can install them, and an installed integration keeps its
 version until someone updates it.
 
+## The catalog
+
+[`catalog.yaml`](catalog.yaml) lists every integration Heddle plans to have, about 600,
+with its status, how it authenticates and the Elixir library it builds on, if any.
+Why and in what order: [docs/adr/0001](docs/adr/0001-five-hundred-integrations.md).
+CI checks that every folder here is in it.
+
 ## Adding an integration
 
 1. Write the manifest with [Bobbin](https://github.com/heddlehq/Bobbin):

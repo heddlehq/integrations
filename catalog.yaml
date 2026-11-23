@@ -1,0 +1,610 @@
+# Every integration Heddle plans to have, built or not. See docs/adr/0001-five-hundred-integrations.md.
+# status: planned → draft → community → official. kind: package (Elixir) or manifest (YAML).
+# lib: the active Hex library a package builds on, as checked on the date in `checked`.
+
+checked: 2026-11-22
+integrations:
+
+  # Phase 1: the most used
+  - {id: activecampaign, name: ActiveCampaign, category: marketing, phase: 1, origin: n8n, auth: header, n8n: ActiveCampaign, host: true, kind: manifest, status: planned}
+  - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: planned}
+  - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: planned}
+  - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: planned}
+  - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: planned}
+  - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Calendly, kind: manifest, status: planned}
+  - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: ClickUp, kind: manifest, status: planned}
+  - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: planned}
+  - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: Discord, kind: package, lib: {name: nostrum, version: 0.10.4, released: 2025-03-02}, status: planned}
+  - {id: dropbox, name: Dropbox, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Dropbox, kind: manifest, status: planned}
+  - {id: email, name: Email (IMAP/SMTP), category: email, phase: 1, origin: n8n, auth: basic, n8n: EmailReadImap, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: official}
+  - {id: facebook_lead_ads, name: Facebook Lead Ads, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: FacebookLeadAds, kind: manifest, status: planned}
+  - {id: facebook_pages, name: Facebook Pages, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Facebook, kind: manifest, status: planned}
+  - {id: freshdesk, name: Freshdesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Freshdesk, host: true, kind: manifest, status: planned}
+  - {id: ftp, name: FTP / SFTP, category: files, phase: 1, origin: n8n, auth: basic, n8n: Ftp, kind: package, status: official}
+  - {id: github, name: GitHub, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Github, kind: package, lib: {name: tentacat, version: 2.5.0, released: 2024-12-20}, status: community}
+  - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: planned}
+  - {id: gmail, name: Gmail, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Gmail, kind: package, lib: {name: google_api_gmail, version: 0.17.0, released: 2025-04-15}, status: planned}
+  - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: package, lib: {name: google_api_analytics_admin, version: 0.26.0, released: 2025-04-15}, status: planned}
+  - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: package, lib: {name: google_api_big_query, version: 0.88.0, released: 2025-04-15}, status: planned}
+  - {id: google_calendar, name: Google Calendar, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Calendar, kind: package, lib: {name: google_api_calendar, version: 0.26.0, released: 2025-04-15}, status: planned}
+  - {id: google_contacts, name: Google Contacts, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Contacts, kind: manifest, status: planned}
+  - {id: google_docs, name: Google Docs, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Docs, kind: package, lib: {name: google_api_docs, version: 0.18.0, released: 2025-04-15}, status: planned}
+  - {id: google_drive, name: Google Drive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Drive, kind: manifest, status: planned}
+  - {id: google_forms, name: Google Forms, category: forms, phase: 1, origin: extra, auth: oauth2, kind: package, lib: {name: google_api_forms, version: 0.5.0, released: 2025-04-15}, status: planned}
+  - {id: google_sheets, name: Google Sheets, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Sheet, kind: package, lib: {name: google_api_sheets, version: 0.35.0, released: 2025-04-15}, status: official}
+  - {id: google_slides, name: Google Slides, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Slides, kind: package, lib: {name: google_api_slides, version: 0.24.0, released: 2025-04-15}, status: planned}
+  - {id: google_tasks, name: Google Tasks, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Task, kind: package, lib: {name: google_api_tasks, version: 0.17.0, released: 2025-04-15}, status: planned}
+  - {id: hubspot, name: HubSpot, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Hubspot, kind: manifest, status: planned}
+  - {id: instagram, name: Instagram, category: social, phase: 1, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: planned}
+  - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: planned}
+  - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Linear, kind: manifest, status: planned}
+  - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
+  - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: Mailchimp, kind: manifest, status: planned}
+  - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: microsoft_excel, name: Microsoft Excel 365, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Excel, kind: manifest, status: planned}
+  - {id: microsoft_onedrive, name: Microsoft OneDrive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/OneDrive, kind: manifest, status: planned}
+  - {id: microsoft_outlook, name: Microsoft Outlook, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Outlook, kind: manifest, status: planned}
+  - {id: microsoft_sharepoint, name: Microsoft SharePoint, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/SharePoint, kind: manifest, status: planned}
+  - {id: microsoft_teams, name: Microsoft Teams, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Teams, kind: manifest, status: planned}
+  - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: planned}
+  - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: bearer, n8n: MondayCom, kind: manifest, status: planned}
+  - {id: mongodb, name: MongoDB, category: database, phase: 1, origin: n8n, auth: basic, n8n: MongoDb, kind: package, lib: {name: mongodb_driver, version: 1.6.4, released: 2026-07-24}, status: official}
+  - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: planned}
+  - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
+  - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: login, n8n: Odoo, host: true, kind: manifest, status: planned}
+  - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
+  - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Pipedrive, kind: manifest, status: planned}
+  - {id: postmark, name: Postmark, category: email, phase: 1, origin: n8n, auth: header, n8n: Postmark, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: quickbooks, name: QuickBooks Online, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: QuickBooks, kind: manifest, status: planned}
+  - {id: redis, name: Redis, category: database, phase: 1, origin: n8n, auth: basic, n8n: Redis, kind: package, lib: {name: redix, version: 1.10.0, released: 2026-10-22}, status: official}
+  - {id: resend, name: Resend, category: email, phase: 1, origin: extra, auth: bearer, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: community}
+  - {id: s3, name: Amazon S3, category: files, phase: 1, origin: n8n, auth: aws, n8n: Aws/S3, kind: package, lib: {name: ex_aws_s3, version: 2.5.9, released: 2025-12-09}, status: official}
+  - {id: salesforce, name: Salesforce, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Salesforce, host: true, kind: manifest, status: planned}
+  - {id: sendgrid, name: SendGrid, category: email, phase: 1, origin: n8n, auth: bearer, n8n: SendGrid, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: shopify, name: Shopify, category: ecommerce, phase: 1, origin: n8n, auth: header, n8n: Shopify, host: true, kind: manifest, status: planned}
+  - {id: slack, name: Slack, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Slack, kind: package, lib: {name: slack_elixir, version: 1.2.2, released: 2026-09-14}, status: official}
+  - {id: sql, name: "SQL (Postgres, MySQL, SQL Server, SQLite, Oracle)", category: database, phase: 1, origin: n8n, auth: basic, n8n: Postgres, kind: package, lib: {name: exqlite, version: 0.43.0, released: 2026-10-20}, status: official}
+  - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: package, lib: {name: stripity_stripe, version: 3.3.3, released: 2026-10-29}, status: planned}
+  - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: package, lib: {name: supabase_potion, version: 1.0.0, released: 2026-07-17}, status: planned}
+  - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: package, lib: {name: ex_gram, version: 0.71.0, released: 2026-10-01}, status: planned}
+  - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: planned}
+  - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: planned}
+  - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: planned}
+  - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: oauth2, n8n: Typeform, kind: manifest, status: planned}
+  - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: oauth2, n8n: Webflow, kind: manifest, status: planned}
+  - {id: whatsapp, name: WhatsApp Business Cloud, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: WhatsApp, kind: package, lib: {name: whatsapp_elixir, version: 0.1.10, released: 2026-11-12}, status: planned}
+  - {id: woocommerce, name: WooCommerce, category: ecommerce, phase: 1, origin: n8n, auth: basic, n8n: WooCommerce, host: true, kind: manifest, status: planned}
+  - {id: wordpress, name: WordPress, category: cms, phase: 1, origin: n8n, auth: basic, n8n: Wordpress, host: true, kind: manifest, status: planned}
+  - {id: x, name: X (Twitter), category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Twitter, kind: manifest, status: planned}
+  - {id: xero, name: Xero, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: Xero, kind: manifest, status: planned}
+  - {id: youtube, name: YouTube, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Google/YouTube, kind: package, lib: {name: google_api_you_tube, version: 0.54.0, released: 2025-04-15}, status: planned}
+  - {id: zendesk, name: Zendesk, category: support, phase: 1, origin: n8n, auth: oauth2, n8n: Zendesk, host: true, kind: manifest, status: planned}
+  - {id: zoho_crm, name: Zoho CRM, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Zoho, host: true, kind: manifest, status: planned}
+  - {id: zoom, name: Zoom, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Zoom, kind: manifest, status: planned}
+
+  # Phase 2: Brazil
+  - {id: abacatepay, name: AbacatePay, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: agendor, name: Agendor, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: appmax, name: Appmax, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: asaas, name: Asaas, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: banco_do_brasil, name: Banco do Brasil, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: banco_inter, name: Banco Inter, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: inter, version: 0.7.0, released: 2026-09-25}, status: planned}
+  - {id: bcb, name: "Banco Central (SGS, PTAX)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
+  - {id: bling, name: Bling, category: erp, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: blip, name: Blip, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: bradesco, name: Bradesco, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: braip, name: Braip, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: brasil_api, name: "BrasilAPI (CEP, CNPJ, bancos, feriados)", category: data, phase: 2, origin: br, auth: none, kind: package, lib: {name: brasilapi, version: 1.0.3, released: 2026-04-26}, status: planned}
+  - {id: btg_empresas, name: BTG Pactual Empresas, category: banking, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: cielo, name: Cielo, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: clicksign, name: Clicksign, category: esign, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: cnpja, name: CNPJá, category: data, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: conta_azul, name: Conta Azul, category: accounting, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: cora, name: Cora, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: correios, name: Correios, category: logistics, phase: 2, origin: br, auth: login, kind: manifest, status: planned}
+  - {id: d4sign, name: D4Sign, category: esign, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: digisac, name: Digisac, category: messaging, phase: 2, origin: br, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: ebanx, name: EBANX, category: payments, phase: 2, origin: br, auth: body, kind: manifest, status: planned}
+  - {id: eduzz, name: Eduzz, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: efi, name: Efí (Gerencianet), category: payments, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: gerencianet, version: 0.1.11, released: 2026-09-25}, status: planned}
+  - {id: enotas, name: eNotas, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: erede, name: e.Rede, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: evolution_api, name: Evolution API, category: messaging, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
+  - {id: focus_nfe, name: Focus NFe, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: frenet, name: Frenet, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: getnet, name: Getnet, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: gupy, name: Gupy, category: hr, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: hotmart, name: Hotmart, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: ifood, name: iFood Merchant, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: intelipost, name: Intelipost, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: itau, name: Itaú, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: iugu, name: Iugu, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: jadlog, name: Jadlog, category: logistics, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: kangu, name: Kangu, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: kiwify, name: Kiwify, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: loggi, name: Loggi, category: logistics, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: loja_integrada, name: Loja Integrada, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: magalu, name: Magalu Marketplace, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: melhor_envio, name: Melhor Envio, category: logistics, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: mercado_livre, name: Mercado Livre, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: mercado_pago, name: Mercado Pago, category: payments, phase: 2, origin: br, auth: bearer, kind: package, lib: {name: meli, version: 0.1.0, released: 2026-02-28}, status: planned}
+  - {id: monetizze, name: Monetizze, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: moskit, name: Moskit, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: movidesk, name: Movidesk, category: support, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: nfe_io, name: NFE.io, category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: nibo, name: Nibo, category: accounting, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: nuvem_fiscal, name: Nuvem Fiscal, category: fiscal, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: nuvemshop, name: Nuvemshop, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: octadesk, name: Octadesk, category: support, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: olist, name: Olist, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: omie, name: Omie, category: erp, phase: 2, origin: br, auth: body, kind: manifest, status: planned}
+  - {id: pagarme, name: Pagar.me, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: pagbank, name: PagBank (PagSeguro), category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: pipefy, name: Pipefy, category: project, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: piperun, name: PipeRun, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: ploomes, name: Ploomes, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: plugnotas, name: PlugNotas (TecnoSpeed), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: rd_station_crm, name: RD Station CRM, category: crm, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: rd_station_marketing, name: RD Station Marketing, category: marketing, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: receitaws, name: ReceitaWS, category: data, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: sankhya, name: Sankhya, category: erp, phase: 2, origin: br, auth: login, host: true, kind: manifest, status: planned}
+  - {id: santander, name: Santander, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: serpro, name: "Serpro (CPF, CNPJ, NF-e)", category: data, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: shopee, name: Shopee, category: ecommerce, phase: 2, origin: br, auth: hmac, kind: manifest, status: planned}
+  - {id: sicoob, name: Sicoob, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: sicredi, name: Sicredi, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: stone, name: Stone, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: sympla, name: Sympla, category: events, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: ticto, name: Ticto, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: tiny, name: Tiny ERP, category: erp, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: totvs_protheus, name: TOTVS Protheus, category: erp, phase: 2, origin: br, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: tray, name: Tray, category: ecommerce, phase: 2, origin: br, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: vhsys, name: VHSYS, category: erp, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: viacep, name: ViaCEP, category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
+  - {id: vindi, name: Vindi, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: vtex, name: VTEX, category: ecommerce, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
+  - {id: woovi, name: Woovi (OpenPix), category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: yampi, name: Yampi, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: z_api, name: Z-API, category: messaging, phase: 2, origin: br, auth: path, kind: manifest, status: planned}
+  - {id: zapsign, name: ZapSign, category: esign, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: zenvia, name: Zenvia, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+
+  # Phase 3: the rest, by category
+  - {id: freshbooks, name: FreshBooks, category: accounting, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: wave, name: Wave, category: accounting, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: zoho_books, name: Zoho Books, category: accounting, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: airtop, name: Airtop, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: Airtop, kind: manifest, status: planned}
+  - {id: assemblyai, name: AssemblyAI, category: ai, phase: 3, origin: ai, auth: header, kind: package, lib: {name: assemblyai, version: 1.0.0, released: 2026-02-25}, status: planned}
+  - {id: aws_comprehend, name: AWS Comprehend, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Comprehend, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_rekognition, name: AWS Rekognition, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Rekognition, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_textract, name: AWS Textract, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Textract, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_transcribe, name: AWS Transcribe, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Transcribe, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: brave_search, name: Brave Search, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
+  - {id: chroma, name: Chroma, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: manifest, status: planned}
+  - {id: deepgram, name: Deepgram, category: ai, phase: 3, origin: ai, auth: header, kind: package, lib: {name: deepgram, version: 0.1.0, released: 2025-07-14}, status: planned}
+  - {id: deepl, name: DeepL, category: ai, phase: 3, origin: n8n, auth: header, n8n: DeepL, kind: package, lib: {name: deepl, version: 0.3.0, released: 2025-07-27}, status: planned}
+  - {id: elevenlabs, name: ElevenLabs, category: ai, phase: 3, origin: ai, auth: header, kind: package, lib: {name: eleven_labs, version: 0.1.0, released: 2026-03-21}, status: planned}
+  - {id: exa, name: Exa, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
+  - {id: fal, name: fal.ai, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
+  - {id: firecrawl, name: Firecrawl, category: ai, phase: 3, origin: ai, auth: bearer, kind: package, lib: {name: firecrawl, version: 1.12.6, released: 2026-10-22}, status: planned}
+  - {id: google_cloud_natural_language, name: Google Cloud Natural Language, category: ai, phase: 3, origin: n8n, auth: oauth2, n8n: Google/CloudNaturalLanguage, kind: package, lib: {name: google_api_language, version: 0.16.3, released: 2025-04-15}, status: planned}
+  - {id: google_perspective, name: Google Perspective, category: ai, phase: 3, origin: n8n, auth: query, n8n: Google/Perspective, kind: manifest, status: planned}
+  - {id: google_translate, name: Google Translate, category: ai, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Translate, kind: package, lib: {name: google_api_translate, version: 0.22.0, released: 2025-04-15}, status: planned}
+  - {id: google_vision, name: Google Cloud Vision, category: ai, phase: 3, origin: ai, auth: oauth2, kind: manifest, status: planned}
+  - {id: heygen, name: HeyGen, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
+  - {id: hugging_face, name: Hugging Face Inference, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
+  - {id: humantic_ai, name: Humantic AI, category: ai, phase: 3, origin: n8n, auth: query, n8n: HumanticAI, kind: manifest, status: planned}
+  - {id: jina_ai, name: Jina AI, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: JinaAI, kind: manifest, status: planned}
+  - {id: langfuse, name: Langfuse, category: ai, phase: 3, origin: ai, auth: basic, host: true, kind: package, lib: {name: langfuse, version: 0.2.0, released: 2026-03-31}, status: planned}
+  - {id: lingvanex, name: Lingvanex, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: LingvaNex, kind: manifest, status: planned}
+  - {id: mem0, name: Mem0, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
+  - {id: milvus, name: Milvus / Zilliz, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: manifest, status: planned}
+  - {id: mindee, name: Mindee, category: ai, phase: 3, origin: n8n, auth: header, n8n: Mindee, kind: manifest, status: planned}
+  - {id: mistral_ocr, name: Mistral Document AI, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: MistralAI, kind: manifest, status: planned}
+  - {id: perplexity, name: Perplexity, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: Perplexity, kind: manifest, status: planned}
+  - {id: pinecone, name: Pinecone, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/vector_store, kind: manifest, status: planned}
+  - {id: qdrant, name: Qdrant, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: package, lib: {name: qdrant, version: 0.1.18, released: 2026-08-02}, status: planned}
+  - {id: replicate, name: Replicate, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
+  - {id: runway, name: Runway, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
+  - {id: searxng, name: SearXNG, category: ai, phase: 3, origin: n8n, auth: none, n8n: @n8n/nodes-langchain/tools, host: true, kind: manifest, status: planned}
+  - {id: serpapi, name: SerpApi, category: ai, phase: 3, origin: n8n, auth: query, n8n: @n8n/nodes-langchain/tools, kind: manifest, status: planned}
+  - {id: stability_ai, name: Stability AI, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
+  - {id: tavily, name: Tavily, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
+  - {id: weaviate, name: Weaviate, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: manifest, status: planned}
+  - {id: wolfram_alpha, name: Wolfram Alpha, category: ai, phase: 3, origin: n8n, auth: query, n8n: @n8n/nodes-langchain/tools, kind: manifest, status: planned}
+  - {id: zep, name: Zep, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/memory, kind: package, lib: {name: zep, version: 1.0.0, released: 2026-07-27}, status: planned}
+  - {id: amplitude, name: Amplitude, category: analytics, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: hotjar, name: Hotjar, category: analytics, phase: 3, origin: extra, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: looker_studio, name: Looker Studio, category: analytics, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: matomo, name: Matomo, category: analytics, phase: 3, origin: extra, auth: query, host: true, kind: manifest, status: planned}
+  - {id: metabase, name: Metabase, category: analytics, phase: 3, origin: n8n, auth: header, n8n: Metabase, host: true, kind: manifest, status: planned}
+  - {id: microsoft_power_bi, name: Microsoft Power BI, category: analytics, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: mixpanel, name: Mixpanel, category: analytics, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: plausible, name: Plausible Analytics, category: analytics, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: posthog, name: PostHog, category: analytics, phase: 3, origin: n8n, auth: bearer, n8n: PostHog, host: true, kind: package, lib: {name: posthog, version: 2.23.4, released: 2026-11-20}, status: planned}
+  - {id: profitwell, name: ProfitWell, category: analytics, phase: 3, origin: n8n, auth: header, n8n: ProfitWell, kind: manifest, status: planned}
+  - {id: segment, name: Segment, category: analytics, phase: 3, origin: n8n, auth: basic, n8n: Segment, kind: manifest, status: planned}
+  - {id: umami, name: Umami, category: analytics, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: mercury, name: Mercury, category: banking, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: revolut_business, name: Revolut Business, category: banking, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: cockpit, name: Cockpit CMS, category: cms, phase: 3, origin: n8n, auth: header, n8n: Cockpit, host: true, kind: manifest, status: planned}
+  - {id: contentful, name: Contentful, category: cms, phase: 3, origin: n8n, auth: bearer, n8n: Contentful, kind: manifest, status: planned}
+  - {id: directus, name: Directus, category: cms, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: ghost, name: Ghost, category: cms, phase: 3, origin: n8n, auth: jwt, n8n: Ghost, host: true, kind: manifest, status: planned}
+  - {id: hubspot_cms, name: HubSpot CMS, category: cms, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: hygraph, name: Hygraph, category: cms, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: prismic, name: Prismic, category: cms, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: sanity, name: Sanity, category: cms, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: storyblok, name: Storyblok, category: cms, phase: 3, origin: n8n, auth: header, n8n: Storyblok, kind: manifest, status: planned}
+  - {id: strapi, name: Strapi, category: cms, phase: 3, origin: n8n, auth: bearer, n8n: Strapi, host: true, kind: manifest, status: planned}
+  - {id: wix, name: Wix, category: cms, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: aircall, name: Aircall, category: communication, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: dialpad, name: Dialpad, category: communication, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: discourse, name: Discourse, category: communication, phase: 3, origin: n8n, auth: header, n8n: Discourse, host: true, kind: manifest, status: planned}
+  - {id: google_chat, name: Google Chat, category: communication, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Chat, kind: package, lib: {name: google_api_chat, version: 0.43.0, released: 2025-04-15}, status: planned}
+  - {id: google_meet, name: Google Meet, category: communication, phase: 3, origin: extra, auth: oauth2, kind: package, lib: {name: google_api_meet, version: 0.4.0, released: 2025-04-15}, status: planned}
+  - {id: matrix, name: Matrix, category: communication, phase: 3, origin: n8n, auth: bearer, n8n: Matrix, host: true, kind: manifest, status: planned}
+  - {id: mattermost, name: Mattermost, category: communication, phase: 3, origin: n8n, auth: bearer, n8n: Mattermost, host: true, kind: manifest, status: planned}
+  - {id: ringcentral, name: RingCentral, category: communication, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: rocketchat, name: Rocket.Chat, category: communication, phase: 3, origin: n8n, auth: header, n8n: Rocketchat, host: true, kind: manifest, status: planned}
+  - {id: twake, name: Twake, category: communication, phase: 3, origin: n8n, auth: bearer, n8n: Twake, kind: manifest, status: planned}
+  - {id: twist, name: Twist, category: communication, phase: 3, origin: n8n, auth: oauth2, n8n: Twist, kind: manifest, status: planned}
+  - {id: webex, name: Cisco Webex, category: communication, phase: 3, origin: n8n, auth: oauth2, n8n: Cisco/Webex, kind: manifest, status: planned}
+  - {id: zulip, name: Zulip, category: communication, phase: 3, origin: n8n, auth: basic, n8n: Zulip, host: true, kind: manifest, status: planned}
+  - {id: affinity, name: Affinity, category: crm, phase: 3, origin: n8n, auth: basic, n8n: Affinity, kind: manifest, status: planned}
+  - {id: agile_crm, name: Agile CRM, category: crm, phase: 3, origin: n8n, auth: basic, n8n: AgileCrm, host: true, kind: manifest, status: planned}
+  - {id: attio, name: Attio, category: crm, phase: 3, origin: extra, auth: bearer, kind: package, lib: {name: attio, version: 0.3.6, released: 2026-10-28}, status: planned}
+  - {id: bitrix24, name: Bitrix24, category: crm, phase: 3, origin: extra, auth: path, host: true, kind: manifest, status: planned}
+  - {id: capsule, name: Capsule CRM, category: crm, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: close, name: Close, category: crm, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: copper, name: Copper, category: crm, phase: 3, origin: n8n, auth: header, n8n: Copper, kind: manifest, status: planned}
+  - {id: freshsales, name: Freshsales (Freshworks CRM), category: crm, phase: 3, origin: n8n, auth: header, n8n: FreshworksCrm, host: true, kind: manifest, status: planned}
+  - {id: highlevel, name: HighLevel, category: crm, phase: 3, origin: n8n, auth: oauth2, n8n: HighLevel, kind: manifest, status: planned}
+  - {id: insightly, name: Insightly, category: crm, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: keap, name: Keap, category: crm, phase: 3, origin: n8n, auth: oauth2, n8n: Keap, kind: manifest, status: planned}
+  - {id: kommo, name: Kommo, category: crm, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: microsoft_dynamics_crm, name: Microsoft Dynamics 365 CRM, category: crm, phase: 3, origin: n8n, auth: oauth2, n8n: Microsoft/Dynamics, host: true, kind: manifest, status: planned}
+  - {id: monica_crm, name: Monica CRM, category: crm, phase: 3, origin: n8n, auth: bearer, n8n: MonicaCrm, host: true, kind: manifest, status: planned}
+  - {id: salesmate, name: Salesmate, category: crm, phase: 3, origin: n8n, auth: header, n8n: Salesmate, host: true, kind: manifest, status: planned}
+  - {id: zoho_bigin, name: Bigin by Zoho, category: crm, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: apify, name: Apify, category: data, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: apollo, name: Apollo.io, category: data, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: brandfetch, name: Brandfetch, category: data, phase: 3, origin: n8n, auth: bearer, n8n: Brandfetch, kind: manifest, status: planned}
+  - {id: bright_data, name: Bright Data, category: data, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: browse_ai, name: Browse AI, category: data, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: browserless, name: Browserless, category: data, phase: 3, origin: extra, auth: query, host: true, kind: manifest, status: planned}
+  - {id: clearbit, name: Clearbit, category: data, phase: 3, origin: n8n, auth: bearer, n8n: Clearbit, kind: manifest, status: planned}
+  - {id: dropcontact, name: Dropcontact, category: data, phase: 3, origin: n8n, auth: header, n8n: Dropcontact, kind: manifest, status: planned}
+  - {id: google_books, name: Google Books, category: data, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Books, kind: manifest, status: planned}
+  - {id: google_maps, name: Google Maps Platform, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
+  - {id: hacker_news, name: Hacker News, category: data, phase: 3, origin: n8n, auth: none, n8n: HackerNews, kind: manifest, status: planned}
+  - {id: hunter, name: Hunter, category: data, phase: 3, origin: n8n, auth: query, n8n: Hunter, kind: manifest, status: planned}
+  - {id: lonescale, name: LoneScale, category: data, phase: 3, origin: n8n, auth: header, n8n: LoneScale, kind: manifest, status: planned}
+  - {id: mailcheck, name: Mailcheck, category: data, phase: 3, origin: n8n, auth: bearer, n8n: Mailcheck, kind: manifest, status: planned}
+  - {id: mapbox, name: Mapbox, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
+  - {id: nasa, name: NASA, category: data, phase: 3, origin: n8n, auth: query, n8n: Nasa, kind: manifest, status: planned}
+  - {id: neverbounce, name: NeverBounce, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
+  - {id: one_simple_api, name: One Simple API, category: data, phase: 3, origin: n8n, auth: query, n8n: OneSimpleApi, kind: manifest, status: planned}
+  - {id: openthesaurus, name: OpenThesaurus, category: data, phase: 3, origin: n8n, auth: none, n8n: OpenThesaurus, kind: manifest, status: planned}
+  - {id: openweathermap, name: OpenWeatherMap, category: data, phase: 3, origin: n8n, auth: query, n8n: OpenWeatherMap, kind: manifest, status: planned}
+  - {id: peekalink, name: Peekalink, category: data, phase: 3, origin: n8n, auth: header, n8n: Peekalink, kind: manifest, status: planned}
+  - {id: people_data_labs, name: People Data Labs, category: data, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: phantombuster, name: PhantomBuster, category: data, phase: 3, origin: n8n, auth: header, n8n: Phantombuster, kind: manifest, status: planned}
+  - {id: scrapingbee, name: ScrapingBee, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
+  - {id: uplead, name: UpLead, category: data, phase: 3, origin: n8n, auth: header, n8n: Uplead, kind: manifest, status: planned}
+  - {id: uproc, name: uProc, category: data, phase: 3, origin: n8n, auth: basic, n8n: UProc, kind: manifest, status: planned}
+  - {id: wikipedia, name: Wikipedia, category: data, phase: 3, origin: n8n, auth: none, n8n: @n8n/nodes-langchain/tools, kind: manifest, status: planned}
+  - {id: zerobounce, name: ZeroBounce, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
+  - {id: adalo, name: Adalo, category: database, phase: 3, origin: n8n, auth: bearer, n8n: Adalo, kind: manifest, status: planned}
+  - {id: algolia, name: Algolia, category: database, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: appwrite, name: Appwrite, category: database, phase: 3, origin: extra, auth: header, host: true, kind: package, lib: {name: appwrite, version: 1.0.0, released: 2026-05-22}, status: planned}
+  - {id: azure_cosmos_db, name: Azure Cosmos DB, category: database, phase: 3, origin: n8n, auth: header, n8n: Microsoft/AzureCosmosDb, host: true, kind: manifest, status: planned}
+  - {id: bubble, name: Bubble, category: database, phase: 3, origin: n8n, auth: bearer, n8n: Bubble, host: true, kind: manifest, status: planned}
+  - {id: cassandra, name: Apache Cassandra, category: database, phase: 3, origin: extra, auth: basic, kind: package, lib: {name: xandra, version: 0.20.0, released: 2026-08-11}, status: official}
+  - {id: clickhouse, name: ClickHouse, category: database, phase: 3, origin: extra, auth: basic, host: true, kind: package, lib: {name: ch, version: 0.9.3, released: 2026-10-15}, status: planned}
+  - {id: cockroachdb, name: CockroachDB, category: database, phase: 3, origin: extra, auth: basic, via: sql, status: planned}
+  - {id: couchdb, name: CouchDB, category: database, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: cratedb, name: CrateDB, category: database, phase: 3, origin: n8n, auth: basic, n8n: CrateDb, via: sql, status: planned}
+  - {id: databricks, name: Databricks, category: database, phase: 3, origin: n8n, auth: bearer, n8n: Databricks, host: true, kind: manifest, status: planned}
+  - {id: dynamodb, name: Amazon DynamoDB, category: database, phase: 3, origin: n8n, auth: aws, n8n: Aws/DynamoDB, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: official}
+  - {id: elasticsearch, name: Elasticsearch, category: database, phase: 3, origin: n8n, auth: basic, n8n: Elastic/Elasticsearch, kind: package, lib: {name: snap, version: 0.17.0, released: 2026-07-27}, status: official}
+  - {id: filemaker, name: FileMaker, category: database, phase: 3, origin: n8n, auth: login, n8n: FileMaker, host: true, kind: manifest, status: planned}
+  - {id: google_firebase_realtime, name: Firebase Realtime Database, category: database, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Firebase, kind: package, lib: {name: google_api_firebase_database, version: 0.4.0, released: 2024-12-05}, status: planned}
+  - {id: google_firestore, name: Google Firestore, category: database, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Firebase, kind: package, lib: {name: google_api_firestore, version: 0.33.0, released: 2025-04-15}, status: planned}
+  - {id: grist, name: Grist, category: database, phase: 3, origin: n8n, auth: bearer, n8n: Grist, host: true, kind: manifest, status: planned}
+  - {id: influxdb, name: InfluxDB, category: database, phase: 3, origin: extra, auth: header, host: true, kind: manifest, status: planned}
+  - {id: meilisearch, name: Meilisearch, category: database, phase: 3, origin: extra, auth: bearer, host: true, kind: package, lib: {name: meilisearch_ex, version: 1.2.2, released: 2025-07-03}, status: planned}
+  - {id: microsoft_dataverse, name: Microsoft Dataverse, category: database, phase: 3, origin: n8n, auth: oauth2, n8n: Microsoft/Dataverse, host: true, kind: manifest, status: planned}
+  - {id: microsoft_sql, name: Microsoft SQL Server, category: database, phase: 3, origin: n8n, auth: basic, n8n: Microsoft/Sql, via: sql, lib: {name: tds, version: 2.3.8, released: 2026-05-18}, status: planned}
+  - {id: mysql, name: MySQL / MariaDB, category: database, phase: 3, origin: n8n, auth: basic, n8n: MySql, via: sql, lib: {name: myxql, version: 0.9.0, released: 2026-05-07}, status: planned}
+  - {id: neo4j, name: Neo4j, category: database, phase: 3, origin: extra, auth: basic, kind: package, status: official}
+  - {id: neon, name: Neon, category: database, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: oracle, name: Oracle Database, category: database, phase: 3, origin: n8n, auth: basic, n8n: Oracle, via: sql, lib: {name: jamdb_oracle, version: 0.5.12, released: 2025-08-06}, status: planned}
+  - {id: postgres, name: PostgreSQL, category: database, phase: 3, origin: n8n, auth: basic, n8n: Postgres, via: sql, status: planned}
+  - {id: questdb, name: QuestDB, category: database, phase: 3, origin: n8n, auth: basic, n8n: QuestDb, via: sql, status: planned}
+  - {id: quickbase, name: Quickbase, category: database, phase: 3, origin: n8n, auth: header, n8n: QuickBase, kind: manifest, status: planned}
+  - {id: redshift, name: Amazon Redshift, category: database, phase: 3, origin: extra, auth: basic, via: sql, status: planned}
+  - {id: seatable, name: SeaTable, category: database, phase: 3, origin: n8n, auth: bearer, n8n: SeaTable, host: true, kind: manifest, status: planned}
+  - {id: snowflake, name: Snowflake, category: database, phase: 3, origin: n8n, auth: jwt, n8n: Snowflake, kind: package, lib: {name: snowflex, version: 1.8.0, released: 2026-10-06}, status: planned}
+  - {id: stackby, name: Stackby, category: database, phase: 3, origin: n8n, auth: header, n8n: Stackby, kind: manifest, status: planned}
+  - {id: timescaledb, name: TimescaleDB, category: database, phase: 3, origin: n8n, auth: basic, n8n: TimescaleDb, via: sql, status: planned}
+  - {id: typesense, name: Typesense, category: database, phase: 3, origin: extra, auth: header, host: true, kind: package, lib: {name: ex_typesense, version: 2.3.3, released: 2026-08-25}, status: planned}
+  - {id: upstash, name: Upstash, category: database, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: canva, name: Canva, category: design, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: figma, name: Figma, category: design, phase: 3, origin: n8n, auth: oauth2, n8n: Figma, kind: manifest, status: planned}
+  - {id: miro, name: Miro, category: design, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: azure_devops, name: Azure DevOps, category: dev, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: bitbucket, name: Bitbucket, category: dev, phase: 3, origin: n8n, auth: basic, n8n: Bitbucket, kind: manifest, status: planned}
+  - {id: git, name: Git, category: dev, phase: 3, origin: n8n, auth: basic, n8n: Git, kind: package, status: planned}
+  - {id: launchdarkly, name: LaunchDarkly, category: dev, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: npm, name: npm, category: dev, phase: 3, origin: n8n, auth: bearer, n8n: Npm, kind: manifest, status: planned}
+  - {id: postman, name: Postman, category: dev, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: sonarcloud, name: SonarQube Cloud, category: dev, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: statsig, name: Statsig, category: dev, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: aws_certificate_manager, name: AWS Certificate Manager, category: devops, phase: 3, origin: n8n, auth: aws, n8n: Aws/CertificateManager, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_elb, name: AWS Elastic Load Balancing, category: devops, phase: 3, origin: n8n, auth: aws, n8n: Aws/ELB, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_lambda, name: AWS Lambda, category: devops, phase: 3, origin: n8n, auth: aws, n8n: Aws, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: circleci, name: CircleCI, category: devops, phase: 3, origin: n8n, auth: header, n8n: CircleCi, kind: manifest, status: planned}
+  - {id: cloudflare, name: Cloudflare, category: devops, phase: 3, origin: n8n, auth: bearer, n8n: Cloudflare, kind: package, lib: {name: cloudflare, version: 0.5.0, released: 2026-02-19}, status: planned}
+  - {id: digitalocean, name: DigitalOcean, category: devops, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: docker_hub, name: Docker Hub, category: devops, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: fly_io, name: Fly.io, category: devops, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: heroku, name: Heroku, category: devops, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: jenkins, name: Jenkins, category: devops, phase: 3, origin: n8n, auth: basic, n8n: Jenkins, host: true, kind: manifest, status: planned}
+  - {id: netlify, name: Netlify, category: devops, phase: 3, origin: n8n, auth: bearer, n8n: Netlify, kind: manifest, status: planned}
+  - {id: netscaler, name: NetScaler ADC, category: devops, phase: 3, origin: n8n, auth: header, n8n: Netscaler, host: true, kind: manifest, status: planned}
+  - {id: rundeck, name: Rundeck, category: devops, phase: 3, origin: n8n, auth: header, n8n: Rundeck, host: true, kind: manifest, status: planned}
+  - {id: ssh, name: SSH, category: devops, phase: 3, origin: n8n, auth: basic, n8n: Ssh, kind: package, status: planned}
+  - {id: travis_ci, name: Travis CI, category: devops, phase: 3, origin: n8n, auth: header, n8n: TravisCi, kind: manifest, status: planned}
+  - {id: vercel, name: Vercel, category: devops, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: apitemplate_io, name: APITemplate.io, category: documents, phase: 3, origin: n8n, auth: header, n8n: ApiTemplateIo, kind: manifest, status: planned}
+  - {id: bannerbear, name: Bannerbear, category: documents, phase: 3, origin: n8n, auth: bearer, n8n: Bannerbear, kind: manifest, status: planned}
+  - {id: cloudconvert, name: CloudConvert, category: documents, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: convertapi, name: ConvertAPI, category: documents, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: gotenberg, name: Gotenberg, category: documents, phase: 3, origin: extra, auth: none, host: true, kind: package, lib: {name: gotenberg_elixir, version: 0.1.1, released: 2026-11-02}, status: planned}
+  - {id: pdf_co, name: PDF.co, category: documents, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: pdfmonkey, name: PDFMonkey, category: documents, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: quickchart, name: QuickChart, category: documents, phase: 3, origin: n8n, auth: none, n8n: QuickChart, kind: manifest, status: planned}
+  - {id: amazon_seller, name: Amazon Selling Partner, category: ecommerce, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: bigcommerce, name: BigCommerce, category: ecommerce, phase: 3, origin: extra, auth: header, host: true, kind: manifest, status: planned}
+  - {id: ebay, name: eBay, category: ecommerce, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: ecwid, name: Ecwid, category: ecommerce, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: etsy, name: Etsy, category: ecommerce, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: google_merchant_center, name: Google Merchant Center, category: ecommerce, phase: 3, origin: extra, auth: oauth2, kind: package, lib: {name: google_api_content, version: 0.73.0, released: 2025-04-15}, status: planned}
+  - {id: gumroad, name: Gumroad, category: ecommerce, phase: 3, origin: n8n, auth: bearer, n8n: Gumroad, kind: manifest, status: planned}
+  - {id: magento, name: Magento (Adobe Commerce), category: ecommerce, phase: 3, origin: n8n, auth: bearer, n8n: Magento, host: true, kind: manifest, status: planned}
+  - {id: prestashop, name: PrestaShop, category: ecommerce, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: printful, name: Printful, category: ecommerce, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: printify, name: Printify, category: ecommerce, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: squarespace, name: Squarespace Commerce, category: ecommerce, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: aws_ses, name: AWS SES, category: email, phase: 3, origin: n8n, auth: aws, n8n: Aws/SES, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: loops, name: Loops, category: email, phase: 3, origin: extra, auth: bearer, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: mailersend, name: MailerSend, category: email, phase: 3, origin: extra, auth: bearer, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: mailjet, name: Mailjet, category: email, phase: 3, origin: n8n, auth: basic, n8n: Mailjet, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: mandrill, name: Mandrill, category: email, phase: 3, origin: n8n, auth: body, n8n: Mandrill, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: smtp2go, name: SMTP2GO, category: email, phase: 3, origin: extra, auth: header, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: sparkpost, name: SparkPost, category: email, phase: 3, origin: extra, auth: header, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: zeptomail, name: ZeptoMail, category: email, phase: 3, origin: extra, auth: header, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: zoho_mail, name: Zoho Mail, category: email, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: business_central, name: Dynamics 365 Business Central, category: erp, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: erpnext, name: ERPNext, category: erp, phase: 3, origin: n8n, auth: header, n8n: ERPNext, host: true, kind: manifest, status: planned}
+  - {id: netsuite, name: NetSuite, category: erp, phase: 3, origin: extra, auth: oauth1, host: true, kind: manifest, status: planned}
+  - {id: oracle_fusion_erp, name: Oracle Fusion Cloud ERP, category: erp, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: sap_s4hana, name: SAP S/4HANA Cloud, category: erp, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: unleashed, name: Unleashed Software, category: erp, phase: 3, origin: n8n, auth: hmac, n8n: UnleashedSoftware, kind: manifest, status: planned}
+  - {id: zoho_inventory, name: Zoho Inventory, category: erp, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: adobe_sign, name: Adobe Acrobat Sign, category: esign, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: docusign, name: DocuSign, category: esign, phase: 3, origin: extra, auth: oauth2, kind: package, lib: {name: docusign, version: 4.1.0, released: 2026-10-22}, status: planned}
+  - {id: dropbox_sign, name: Dropbox Sign, category: esign, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: pandadoc, name: PandaDoc, category: esign, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: zoho_sign, name: Zoho Sign, category: esign, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: demio, name: Demio, category: events, phase: 3, origin: n8n, auth: header, n8n: Demio, kind: manifest, status: planned}
+  - {id: eventbrite, name: Eventbrite, category: events, phase: 3, origin: n8n, auth: oauth2, n8n: Eventbrite, kind: manifest, status: planned}
+  - {id: gotowebinar, name: GoTo Webinar, category: events, phase: 3, origin: n8n, auth: oauth2, n8n: GoToWebinar, kind: manifest, status: planned}
+  - {id: luma, name: Luma, category: events, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: azure_storage, name: Azure Blob Storage, category: files, phase: 3, origin: n8n, auth: header, n8n: Microsoft/Storage, host: true, kind: package, lib: {name: ex_microsoft_azure_storage, version: 2.0.1, released: 2026-08-13}, status: planned}
+  - {id: google_cloud_storage, name: Google Cloud Storage, category: files, phase: 3, origin: n8n, auth: oauth2, n8n: Google/CloudStorage, kind: package, lib: {name: google_api_storage, version: 0.46.1, released: 2025-04-15}, status: planned}
+  - {id: nextcloud, name: Nextcloud, category: files, phase: 3, origin: n8n, auth: basic, n8n: NextCloud, host: true, kind: manifest, status: planned}
+  - {id: alpha_vantage, name: Alpha Vantage, category: finance, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
+  - {id: binance, name: Binance, category: finance, phase: 3, origin: extra, auth: hmac, kind: manifest, status: planned}
+  - {id: brex, name: Brex, category: finance, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: coinbase, name: Coinbase, category: finance, phase: 3, origin: extra, auth: jwt, kind: manifest, status: planned}
+  - {id: coingecko, name: CoinGecko, category: finance, phase: 3, origin: n8n, auth: header, n8n: CoinGecko, kind: manifest, status: planned}
+  - {id: coinmarketcap, name: CoinMarketCap, category: finance, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: marketstack, name: marketstack, category: finance, phase: 3, origin: n8n, auth: query, n8n: Marketstack, kind: manifest, status: planned}
+  - {id: plaid, name: Plaid, category: finance, phase: 3, origin: extra, auth: body, kind: manifest, status: planned}
+  - {id: ramp, name: Ramp, category: finance, phase: 3, origin: extra, auth: oauth2_cc, kind: package, lib: {name: ramp, version: 1.0.0, released: 2026-08-07}, status: planned}
+  - {id: wise, name: Wise, category: finance, phase: 3, origin: n8n, auth: bearer, n8n: Wise, kind: manifest, status: planned}
+  - {id: fillout, name: Fillout, category: forms, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: form_io, name: Form.io, category: forms, phase: 3, origin: n8n, auth: login, n8n: FormIo, host: true, kind: manifest, status: planned}
+  - {id: formstack, name: Formstack, category: forms, phase: 3, origin: n8n, auth: oauth2, n8n: Formstack, kind: manifest, status: planned}
+  - {id: jotform, name: Jotform, category: forms, phase: 3, origin: n8n, auth: header, n8n: JotForm, kind: manifest, status: planned}
+  - {id: kobotoolbox, name: KoBoToolbox, category: forms, phase: 3, origin: n8n, auth: header, n8n: KoBoToolbox, host: true, kind: manifest, status: planned}
+  - {id: qualtrics, name: Qualtrics, category: forms, phase: 3, origin: extra, auth: header, host: true, kind: manifest, status: planned}
+  - {id: surveymonkey, name: SurveyMonkey, category: forms, phase: 3, origin: n8n, auth: oauth2, n8n: SurveyMonkey, kind: manifest, status: planned}
+  - {id: tally, name: Tally, category: forms, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: wufoo, name: Wufoo, category: forms, phase: 3, origin: n8n, auth: basic, n8n: Wufoo, host: true, kind: manifest, status: planned}
+  - {id: fitbit, name: Fitbit, category: health, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: oura, name: Oura, category: health, phase: 3, origin: n8n, auth: bearer, n8n: Oura, kind: manifest, status: planned}
+  - {id: strava, name: Strava, category: health, phase: 3, origin: n8n, auth: oauth2, n8n: Strava, kind: manifest, status: planned}
+  - {id: bamboohr, name: BambooHR, category: hr, phase: 3, origin: n8n, auth: basic, n8n: BambooHr, host: true, kind: manifest, status: planned}
+  - {id: deel, name: Deel, category: hr, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: greenhouse, name: Greenhouse, category: hr, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: gusto, name: Gusto, category: hr, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: hibob, name: HiBob, category: hr, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: lattice, name: Lattice, category: hr, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: lever, name: Lever, category: hr, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: personio, name: Personio, category: hr, phase: 3, origin: extra, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: workable, name: Workable, category: hr, phase: 3, origin: n8n, auth: bearer, n8n: Workable, host: true, kind: manifest, status: planned}
+  - {id: workday, name: Workday, category: hr, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: zoho_people, name: Zoho People, category: hr, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: zoho_recruit, name: Zoho Recruit, category: hr, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: home_assistant, name: Home Assistant, category: iot, phase: 3, origin: n8n, auth: bearer, n8n: HomeAssistant, host: true, kind: manifest, status: planned}
+  - {id: mqtt, name: MQTT, category: iot, phase: 3, origin: n8n, auth: basic, n8n: MQTT, kind: package, lib: {name: emqtt, version: 1.16.2, released: 2026-11-17}, status: planned}
+  - {id: philips_hue, name: Philips Hue, category: iot, phase: 3, origin: n8n, auth: oauth2, n8n: PhilipsHue, kind: manifest, status: planned}
+  - {id: aftership, name: AfterShip, category: logistics, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: dhl, name: DHL, category: logistics, phase: 3, origin: n8n, auth: header, n8n: Dhl, kind: manifest, status: planned}
+  - {id: easypost, name: EasyPost, category: logistics, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: onfleet, name: Onfleet, category: logistics, phase: 3, origin: n8n, auth: basic, n8n: Onfleet, kind: manifest, status: planned}
+  - {id: shippo, name: Shippo, category: logistics, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: shipstation, name: ShipStation, category: logistics, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: action_network, name: Action Network, category: marketing, phase: 3, origin: n8n, auth: header, n8n: ActionNetwork, kind: manifest, status: planned}
+  - {id: autopilot, name: Ortto (Autopilot), category: marketing, phase: 3, origin: n8n, auth: header, n8n: Autopilot, kind: manifest, status: planned}
+  - {id: aweber, name: AWeber, category: marketing, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: beehiiv, name: beehiiv, category: marketing, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: bitly, name: Bitly, category: marketing, phase: 3, origin: n8n, auth: bearer, n8n: Bitly, kind: manifest, status: planned}
+  - {id: campaign_monitor, name: Campaign Monitor, category: marketing, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: constant_contact, name: Constant Contact, category: marketing, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: customer_io, name: Customer.io, category: marketing, phase: 3, origin: n8n, auth: bearer, n8n: CustomerIo, kind: manifest, status: planned}
+  - {id: drip, name: Drip, category: marketing, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: egoi, name: E-goi, category: marketing, phase: 3, origin: n8n, auth: header, n8n: Egoi, kind: manifest, status: planned}
+  - {id: emelia, name: Emelia, category: marketing, phase: 3, origin: n8n, auth: header, n8n: Emelia, kind: manifest, status: planned}
+  - {id: getresponse, name: GetResponse, category: marketing, phase: 3, origin: n8n, auth: header, n8n: GetResponse, kind: manifest, status: planned}
+  - {id: google_ads, name: Google Ads, category: marketing, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Ads, kind: manifest, status: planned}
+  - {id: google_business_profile, name: Google Business Profile, category: marketing, phase: 3, origin: n8n, auth: oauth2, n8n: Google/BusinessProfile, kind: package, lib: {name: google_api_my_business_business_information, version: 0.5.2, released: 2025-04-15}, status: planned}
+  - {id: google_search_console, name: Google Search Console, category: marketing, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: iterable, name: Iterable, category: marketing, phase: 3, origin: n8n, auth: header, n8n: Iterable, kind: manifest, status: planned}
+  - {id: kit, name: Kit (ConvertKit), category: marketing, phase: 3, origin: n8n, auth: header, n8n: ConvertKit, kind: manifest, status: planned}
+  - {id: klaviyo, name: Klaviyo, category: marketing, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: lemlist, name: lemlist, category: marketing, phase: 3, origin: n8n, auth: basic, n8n: Lemlist, kind: manifest, status: planned}
+  - {id: linkedin_ads, name: LinkedIn Ads, category: marketing, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: mailerlite, name: MailerLite, category: marketing, phase: 3, origin: n8n, auth: bearer, n8n: MailerLite, kind: manifest, status: planned}
+  - {id: manychat, name: ManyChat, category: marketing, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: mautic, name: Mautic, category: marketing, phase: 3, origin: n8n, auth: basic, n8n: Mautic, host: true, kind: manifest, status: planned}
+  - {id: meta_ads, name: Meta Ads, category: marketing, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: omnisend, name: Omnisend, category: marketing, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: sendgrid_marketing, name: SendGrid Marketing Campaigns, category: marketing, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: sendpulse, name: SendPulse, category: marketing, phase: 3, origin: extra, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: sendy, name: Sendy, category: marketing, phase: 3, origin: n8n, auth: body, n8n: Sendy, host: true, kind: manifest, status: planned}
+  - {id: tapfiliate, name: Tapfiliate, category: marketing, phase: 3, origin: n8n, auth: header, n8n: Tapfiliate, kind: manifest, status: planned}
+  - {id: tiktok_ads, name: TikTok Ads, category: marketing, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: vero, name: Vero, category: marketing, phase: 3, origin: n8n, auth: body, n8n: Vero, kind: manifest, status: planned}
+  - {id: yourls, name: YOURLS, category: marketing, phase: 3, origin: n8n, auth: query, n8n: Yourls, host: true, kind: manifest, status: planned}
+  - {id: zoho_campaigns, name: Zoho Campaigns, category: marketing, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: cloudinary, name: Cloudinary, category: media, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: loom, name: Loom, category: media, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: mux, name: Mux, category: media, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: spotify, name: Spotify, category: media, phase: 3, origin: n8n, auth: oauth2, n8n: Spotify, kind: package, lib: {name: spotify_ex, version: 2.4.0, released: 2025-08-19}, status: planned}
+  - {id: twitch, name: Twitch, category: media, phase: 3, origin: extra, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: vimeo, name: Vimeo, category: media, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: wistia, name: Wistia, category: media, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: ably, name: Ably, category: messaging, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: amqp, name: AMQP 1.0, category: messaging, phase: 3, origin: n8n, auth: basic, n8n: Amqp, kind: package, lib: {name: amqp10_client, version: 4.3.7, released: 2026-10-25}, status: planned}
+  - {id: aws_sns, name: AWS SNS, category: messaging, phase: 3, origin: n8n, auth: aws, n8n: Aws, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_sqs, name: AWS SQS, category: messaging, phase: 3, origin: n8n, auth: aws, n8n: Aws/SQS, kind: package, lib: {name: ex_aws_sqs, version: 3.5.0, released: 2026-09-25}, status: planned}
+  - {id: bird, name: Bird (MessageBird), category: messaging, phase: 3, origin: n8n, auth: header, n8n: MessageBird, kind: manifest, status: planned}
+  - {id: clicksend, name: ClickSend, category: messaging, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: expo_push, name: Expo Push, category: messaging, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: firebase_cloud_messaging, name: Firebase Cloud Messaging, category: messaging, phase: 3, origin: extra, auth: oauth2, kind: package, lib: {name: pigeon, version: 2.1.0, released: 2026-09-08}, status: planned}
+  - {id: google_pubsub, name: Google Cloud Pub/Sub, category: messaging, phase: 3, origin: extra, auth: oauth2, kind: package, lib: {name: broadway_cloud_pub_sub, version: 2.1.0, released: 2026-11-20}, status: planned}
+  - {id: gotify, name: Gotify, category: messaging, phase: 3, origin: n8n, auth: header, n8n: Gotify, host: true, kind: manifest, status: planned}
+  - {id: infobip, name: Infobip, category: messaging, phase: 3, origin: extra, auth: header, host: true, kind: manifest, status: planned}
+  - {id: kafka, name: Kafka, category: messaging, phase: 3, origin: n8n, auth: basic, n8n: Kafka, kind: package, lib: {name: brod, version: 4.7.0, released: 2026-09-25}, status: planned}
+  - {id: line, name: LINE Messaging, category: messaging, phase: 3, origin: n8n, auth: bearer, n8n: Line, kind: manifest, status: planned}
+  - {id: mocean, name: Mocean, category: messaging, phase: 3, origin: n8n, auth: query, n8n: Mocean, kind: manifest, status: planned}
+  - {id: msg91, name: MSG91, category: messaging, phase: 3, origin: n8n, auth: header, n8n: Msg91, kind: manifest, status: planned}
+  - {id: onesignal, name: OneSignal, category: messaging, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: plivo, name: Plivo, category: messaging, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: pushbullet, name: Pushbullet, category: messaging, phase: 3, origin: n8n, auth: header, n8n: Pushbullet, kind: manifest, status: planned}
+  - {id: pushcut, name: Pushcut, category: messaging, phase: 3, origin: n8n, auth: header, n8n: Pushcut, kind: manifest, status: planned}
+  - {id: pusher, name: Pusher Channels, category: messaging, phase: 3, origin: extra, auth: hmac, kind: manifest, status: planned}
+  - {id: pushover, name: Pushover, category: messaging, phase: 3, origin: n8n, auth: body, n8n: Pushover, kind: manifest, status: planned}
+  - {id: rabbitmq, name: RabbitMQ, category: messaging, phase: 3, origin: n8n, auth: basic, n8n: RabbitMQ, kind: package, lib: {name: amqp, version: 4.3.0, released: 2026-10-06}, status: planned}
+  - {id: seven, name: seven (sms77), category: messaging, phase: 3, origin: n8n, auth: header, n8n: Sms77, kind: manifest, status: planned}
+  - {id: sinch, name: Sinch, category: messaging, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: telnyx, name: Telnyx, category: messaging, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: vonage, name: Vonage, category: messaging, phase: 3, origin: n8n, auth: basic, n8n: Vonage, kind: manifest, status: planned}
+  - {id: better_stack, name: Better Stack, category: monitoring, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: datadog, name: Datadog, category: monitoring, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: grafana, name: Grafana, category: monitoring, phase: 3, origin: n8n, auth: bearer, n8n: Grafana, host: true, kind: manifest, status: planned}
+  - {id: incident_io, name: incident.io, category: monitoring, phase: 3, origin: extra, auth: bearer, kind: package, lib: {name: incident_io, version: 0.3.3, released: 2026-10-28}, status: planned}
+  - {id: new_relic, name: New Relic, category: monitoring, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: opsgenie, name: Opsgenie, category: monitoring, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: pagerduty, name: PagerDuty, category: monitoring, phase: 3, origin: n8n, auth: header, n8n: PagerDuty, kind: manifest, status: planned}
+  - {id: sentry, name: Sentry, category: monitoring, phase: 3, origin: n8n, auth: bearer, n8n: SentryIo, kind: manifest, status: planned}
+  - {id: signl4, name: SIGNL4, category: monitoring, phase: 3, origin: n8n, auth: path, n8n: Signl4, kind: manifest, status: planned}
+  - {id: splunk, name: Splunk, category: monitoring, phase: 3, origin: n8n, auth: bearer, n8n: Splunk, host: true, kind: manifest, status: planned}
+  - {id: statuspage, name: Statuspage, category: monitoring, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: uptimerobot, name: UptimeRobot, category: monitoring, phase: 3, origin: n8n, auth: body, n8n: UptimeRobot, kind: manifest, status: planned}
+  - {id: adyen, name: Adyen, category: payments, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: braintree, name: Braintree, category: payments, phase: 3, origin: extra, auth: basic, kind: package, lib: {name: braintree, version: 0.17.0, released: 2026-07-08}, status: planned}
+  - {id: chargebee, name: Chargebee, category: payments, phase: 3, origin: n8n, auth: basic, n8n: Chargebee, host: true, kind: package, lib: {name: chargebeex, version: 0.10.3, released: 2026-11-05}, status: planned}
+  - {id: gocardless, name: GoCardless, category: payments, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: lemon_squeezy, name: Lemon Squeezy, category: payments, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: mollie, name: Mollie, category: payments, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: paddle, name: Paddle, category: payments, phase: 3, origin: n8n, auth: bearer, n8n: Paddle, kind: manifest, status: planned}
+  - {id: razorpay, name: Razorpay, category: payments, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: recurly, name: Recurly, category: payments, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: square, name: Square, category: payments, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: beeminder, name: Beeminder, category: productivity, phase: 3, origin: n8n, auth: query, n8n: Beeminder, kind: manifest, status: planned}
+  - {id: clockify, name: Clockify, category: productivity, phase: 3, origin: n8n, auth: header, n8n: Clockify, kind: manifest, status: planned}
+  - {id: coda, name: Coda, category: productivity, phase: 3, origin: n8n, auth: bearer, n8n: Coda, kind: manifest, status: planned}
+  - {id: evernote, name: Evernote, category: productivity, phase: 3, origin: extra, auth: oauth1, kind: manifest, status: planned}
+  - {id: harvest, name: Harvest, category: productivity, phase: 3, origin: n8n, auth: bearer, n8n: Harvest, kind: manifest, status: planned}
+  - {id: microsoft_onenote, name: Microsoft OneNote, category: productivity, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: quickbooks_time, name: QuickBooks Time, category: productivity, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: raindrop, name: Raindrop.io, category: productivity, phase: 3, origin: n8n, auth: oauth2, n8n: Raindrop, kind: manifest, status: planned}
+  - {id: readwise, name: Readwise, category: productivity, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: ticktick, name: TickTick, category: productivity, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: toggl, name: Toggl Track, category: productivity, phase: 3, origin: n8n, auth: basic, n8n: Toggl, kind: manifest, status: planned}
+  - {id: zoho_sheet, name: Zoho Sheet, category: productivity, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: basecamp, name: Basecamp, category: project, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: canny, name: Canny, category: project, phase: 3, origin: extra, auth: body, kind: manifest, status: planned}
+  - {id: microsoft_planner, name: Microsoft Planner, category: project, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: productboard, name: Productboard, category: project, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: shortcut, name: Shortcut, category: project, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
+  - {id: smartsheet, name: Smartsheet, category: project, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: taiga, name: Taiga, category: project, phase: 3, origin: n8n, auth: login, n8n: Taiga, host: true, kind: manifest, status: planned}
+  - {id: teamwork, name: Teamwork.com, category: project, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: wekan, name: Wekan, category: project, phase: 3, origin: n8n, auth: login, n8n: Wekan, host: true, kind: manifest, status: planned}
+  - {id: wrike, name: Wrike, category: project, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: youtrack, name: YouTrack, category: project, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: zoho_projects, name: Zoho Projects, category: project, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
+  - {id: gong, name: Gong, category: sales, phase: 3, origin: n8n, auth: basic, n8n: Gong, kind: manifest, status: planned}
+  - {id: outreach, name: Outreach, category: sales, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: salesloft, name: Salesloft, category: sales, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: acuity_scheduling, name: Acuity Scheduling, category: scheduling, phase: 3, origin: n8n, auth: basic, n8n: AcuityScheduling, kind: manifest, status: planned}
+  - {id: cal_com, name: Cal.com, category: scheduling, phase: 3, origin: n8n, auth: header, n8n: Cal, kind: manifest, status: planned}
+  - {id: microsoft_bookings, name: Microsoft Bookings, category: scheduling, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: aws_cognito, name: AWS Cognito, category: security, phase: 3, origin: n8n, auth: aws, n8n: Aws/Cognito, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: aws_iam, name: AWS IAM, category: security, phase: 3, origin: n8n, auth: aws, n8n: Aws/IAM, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
+  - {id: bitwarden, name: Bitwarden, category: security, phase: 3, origin: n8n, auth: oauth2_cc, n8n: Bitwarden, kind: manifest, status: planned}
+  - {id: cortex, name: Cortex, category: security, phase: 3, origin: n8n, auth: bearer, n8n: Cortex, host: true, kind: manifest, status: planned}
+  - {id: elastic_security, name: Elastic Security, category: security, phase: 3, origin: n8n, auth: basic, n8n: Elastic/ElasticSecurity, host: true, kind: manifest, status: planned}
+  - {id: google_workspace_admin, name: Google Workspace Admin, category: security, phase: 3, origin: n8n, auth: oauth2, n8n: Google/GSuiteAdmin, kind: manifest, status: planned}
+  - {id: ldap, name: LDAP, category: security, phase: 3, origin: n8n, auth: basic, n8n: Ldap, kind: package, status: planned}
+  - {id: microsoft_entra, name: Microsoft Entra ID, category: security, phase: 3, origin: n8n, auth: oauth2, n8n: Microsoft/Entra, kind: manifest, status: planned}
+  - {id: microsoft_graph_security, name: Microsoft Graph Security, category: security, phase: 3, origin: n8n, auth: oauth2, n8n: Microsoft/GraphSecurity, kind: manifest, status: planned}
+  - {id: misp, name: MISP, category: security, phase: 3, origin: n8n, auth: header, n8n: Misp, host: true, kind: manifest, status: planned}
+  - {id: okta, name: Okta, category: security, phase: 3, origin: n8n, auth: header, n8n: Okta, host: true, kind: manifest, status: planned}
+  - {id: securityscorecard, name: SecurityScorecard, category: security, phase: 3, origin: n8n, auth: header, n8n: SecurityScorecard, kind: manifest, status: planned}
+  - {id: thehive, name: TheHive, category: security, phase: 3, origin: n8n, auth: bearer, n8n: TheHiveProject, host: true, kind: manifest, status: planned}
+  - {id: urlscan, name: urlscan.io, category: security, phase: 3, origin: n8n, auth: header, n8n: UrlScanIo, kind: manifest, status: planned}
+  - {id: venafi, name: Venafi, category: security, phase: 3, origin: n8n, auth: header, n8n: Venafi, host: true, kind: manifest, status: planned}
+  - {id: bluesky, name: Bluesky, category: social, phase: 3, origin: extra, auth: login, kind: manifest, status: planned}
+  - {id: buffer, name: Buffer, category: social, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: disqus, name: Disqus, category: social, phase: 3, origin: n8n, auth: query, n8n: Disqus, kind: manifest, status: planned}
+  - {id: mastodon, name: Mastodon, category: social, phase: 3, origin: extra, auth: oauth2, host: true, kind: package, lib: {name: hunter, version: 0.8.0, released: 2026-07-21}, status: planned}
+  - {id: medium, name: Medium, category: social, phase: 3, origin: n8n, auth: bearer, n8n: Medium, kind: manifest, status: planned}
+  - {id: pinterest, name: Pinterest, category: social, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: reddit, name: Reddit, category: social, phase: 3, origin: n8n, auth: oauth2, n8n: Reddit, kind: manifest, status: planned}
+  - {id: threads, name: Threads, category: social, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: tiktok, name: TikTok, category: social, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
+  - {id: chatwoot, name: Chatwoot, category: support, phase: 3, origin: extra, auth: header, host: true, kind: manifest, status: planned}
+  - {id: crisp, name: Crisp, category: support, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: drift, name: Drift, category: support, phase: 3, origin: n8n, auth: bearer, n8n: Drift, kind: manifest, status: planned}
+  - {id: freshchat, name: Freshchat, category: support, phase: 3, origin: extra, auth: bearer, host: true, kind: manifest, status: planned}
+  - {id: freshservice, name: Freshservice, category: support, phase: 3, origin: n8n, auth: basic, n8n: Freshservice, host: true, kind: manifest, status: planned}
+  - {id: front, name: Front, category: support, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: gorgias, name: Gorgias, category: support, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: halopsa, name: HaloPSA, category: support, phase: 3, origin: n8n, auth: oauth2_cc, n8n: HaloPSA, host: true, kind: manifest, status: planned}
+  - {id: help_scout, name: Help Scout, category: support, phase: 3, origin: n8n, auth: oauth2, n8n: HelpScout, kind: manifest, status: planned}
+  - {id: jira_service_management, name: Jira Service Management, category: support, phase: 3, origin: extra, auth: basic, host: true, kind: manifest, status: planned}
+  - {id: livechat, name: LiveChat, category: support, phase: 3, origin: extra, auth: bearer, kind: manifest, status: planned}
+  - {id: servicenow, name: ServiceNow, category: support, phase: 3, origin: n8n, auth: oauth2, n8n: ServiceNow, host: true, kind: manifest, status: planned}
+  - {id: syncromsp, name: SyncroMSP, category: support, phase: 3, origin: n8n, auth: query, n8n: SyncroMSP, host: true, kind: manifest, status: planned}
+  - {id: tawk, name: tawk.to, category: support, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
+  - {id: zammad, name: Zammad, category: support, phase: 3, origin: n8n, auth: header, n8n: Zammad, host: true, kind: manifest, status: planned}
+  - {id: zoho_desk, name: Zoho Desk, category: support, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
