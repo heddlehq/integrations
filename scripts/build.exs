@@ -22,6 +22,10 @@ paths = Path.wildcard("integrations/*/integration.yaml") |> Enum.sort()
     yaml = File.read!(path)
 
     case Bobbin.Integration.parse(yaml) do
+      # Every integration shows its service's own logo, see README.md.
+      {:ok, %{id: ^folder, logo: nil}} ->
+        {entries, ["#{path}: add the service's logo, as `logo:` with its SVG" | errors]}
+
       {:ok, %{id: ^folder} = integration} ->
         map = YamlElixir.read_from_string!(yaml)
 
@@ -31,6 +35,7 @@ paths = Path.wildcard("integrations/*/integration.yaml") |> Enum.sort()
           version: integration.version,
           description: integration.description,
           icon: integration.icon,
+          logo: integration.logo,
           author: map["author"],
           homepage: map["homepage"],
           actions: Enum.map(integration.actions, & &1.name),

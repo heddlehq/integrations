@@ -50,6 +50,18 @@ CI checks that every folder here is in it.
 
    Write each field out: YAML aliases (`*name`) aren't supported.
 
+   Give it the service's own logo, as `logo:` with the SVG right after `icon:`. CI
+   refuses a manifest without one. Take it from [Simple Icons](https://simpleicons.org)
+   (CC0, in the brand's color) or from the service's brand kit, square, at most 30 KB.
+   A logo that is near black goes on a white rounded square, so it shows on the dark
+   theme too:
+
+   ```yaml
+   icon: hero-ticket
+   logo: |
+     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#F06A6A" d="..."/></svg>
+   ```
+
 3. Open a pull request. CI checks the manifest, and a maintainer reviews what it sends
    and where.
 
