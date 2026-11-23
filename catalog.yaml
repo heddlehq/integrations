@@ -7,7 +7,7 @@ integrations:
 
   # Phase 1: the most used
   - {id: activecampaign, name: ActiveCampaign, category: marketing, phase: 1, origin: n8n, auth: header, n8n: ActiveCampaign, host: true, kind: manifest, status: planned}
-  - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: planned}
+  - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: draft}
   - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: planned}
   - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: planned}
   - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: planned}

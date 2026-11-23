@@ -1,0 +1,232 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Airtable's Web API. Make a personal access token at https://airtable.com/create/tokens
+# with data.records:read, data.records:write and schema.bases:read, and give it the bases.
+id: airtable
+name: Airtable
+version: 1.0.0
+description: Records of Airtable bases, and their tables.
+icon: hero-table-cells
+category: database
+author: Heddle
+homepage: https://airtable.com/developers/web/api/introduction
+base_url: https://api.airtable.com/v0/
+
+credential:
+  label: Airtable
+  fields:
+    - {name: token, label: Personal access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Record
+    description: Starts the flow for each new record of a table, checking every 5 minutes.
+    fields:
+      - name: base_id
+        label: Base
+        type: select
+        required: true
+        options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}
+      - name: table
+        label: Table
+        type: select
+        required: true
+        options_from: {request: {method: GET, path: "meta/bases/{{fields.base_id}}/tables"}, path: tables, label: name, value: id}
+      - {name: view, label: View, description: Only the records this view shows.}
+      - {name: formula, label: Filter formula, description: "An Airtable formula, like {Status} = 'Open'"}
+    request:
+      method: GET
+      path: "{{fields.base_id}}/{{fields.table}}"
+      query: {view: "{{fields.view}}", filterByFormula: "{{fields.formula}}", pageSize: 100}
+    output:
+      path: records
+    poll:
+      every: 5
+      id: id
+
+actions:
+  - name: Create Record
+    resource: Record
+    description: Adds a record to a table.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: "meta/bases/{{fields.base_id}}/tables"}, path: tables, label: name, value: id}}
+      - {name: fields, label: Fields, type: json, required: true, description: "The values by field name, like {\"Name\": \"Ana\", \"Age\": 30}"}
+      - {name: typecast, label: Convert values, type: boolean, description: "Turns text into the field's type, and makes select options that don't exist yet."}
+    request:
+      method: POST
+      path: "{{fields.base_id}}/{{fields.table}}"
+      body: {fields: "{{fields.fields}}", typecast: "{{fields.typecast}}"}
+
+  - name: Create Records
+    resource: Record
+    description: Adds up to 10 records at once.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: records, label: Records, type: json, required: true, description: "A list like [{\"fields\": {\"Name\": \"Ana\"}}, {\"fields\": {\"Name\": \"Bia\"}}]"}
+      - {name: typecast, label: Convert values, type: boolean, description: 'Turns text into the field''s type, and makes select options that don''t exist yet.'}
+    request:
+      method: POST
+      path: "{{fields.base_id}}/{{fields.table}}"
+      body: {records: "{{fields.records}}", typecast: "{{fields.typecast}}"}
+    output:
+      path: records
+
+  - name: Get Record
+    resource: Record
+    description: Reads a record.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+    request: {method: GET, path: "{{fields.base_id}}/{{fields.table}}/{{fields.record_id}}"}
+
+  - name: Search Records
+    resource: Record
+    description: Lists the records of a table, all of them or those a formula or view picks.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: formula, label: Filter formula, description: "An Airtable formula, like {Status} = 'Open'"}
+      - {name: view, label: View}
+      - {name: sort_field, label: Sort by field}
+      - name: sort_direction
+        label: Sort direction
+        type: select
+        default: asc
+        options:
+          - {label: Ascending, value: asc}
+          - {label: Descending, value: desc}
+      - {name: max_records, label: At most, type: number, description: Every record when left empty.}
+    request:
+      method: GET
+      path: "{{fields.base_id}}/{{fields.table}}"
+      query:
+        filterByFormula: "{{fields.formula}}"
+        view: "{{fields.view}}"
+        "sort[0][field]": "{{fields.sort_field}}"
+        "sort[0][direction]": "{{fields.sort_direction}}"
+        maxRecords: "{{fields.max_records}}"
+    pagination: {type: cursor, items_path: records, next_path: offset, cursor_param: offset, limit_param: pageSize, page_size: 100}
+
+  - name: Update Record
+    resource: Record
+    description: Changes the fields given of a record. The others stay as they are.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: fields, label: Fields, type: json, required: true, description: "The values by field name, like {\"Status\": \"Done\"}"}
+      - {name: typecast, label: Convert values, type: boolean, description: 'Turns text into the field''s type, and makes select options that don''t exist yet.'}
+    request:
+      method: PATCH
+      path: "{{fields.base_id}}/{{fields.table}}/{{fields.record_id}}"
+      body: {fields: "{{fields.fields}}", typecast: "{{fields.typecast}}"}
+
+  - name: Replace Record
+    resource: Record
+    description: Sets every field of a record. Fields left out are cleared.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: fields, label: Fields, type: json, required: true}
+      - {name: typecast, label: Convert values, type: boolean, description: 'Turns text into the field''s type, and makes select options that don''t exist yet.'}
+    request:
+      method: PUT
+      path: "{{fields.base_id}}/{{fields.table}}/{{fields.record_id}}"
+      body: {fields: "{{fields.fields}}", typecast: "{{fields.typecast}}"}
+
+  - name: Upsert Records
+    resource: Record
+    description: Updates the records that match on the given fields and adds the others, up to 10 at once.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: merge_on, label: Match on fields, type: json, required: true, description: "A list of field names, like [\"Email\"]"}
+      - {name: records, label: Records, type: json, required: true, description: "A list like [{\"fields\": {\"Email\": \"ana@acme.test\", \"Name\": \"Ana\"}}]"}
+      - {name: typecast, label: Convert values, type: boolean, description: 'Turns text into the field''s type, and makes select options that don''t exist yet.'}
+    request:
+      method: PATCH
+      path: "{{fields.base_id}}/{{fields.table}}"
+      body:
+        performUpsert: {fieldsToMergeOn: "{{fields.merge_on}}"}
+        records: "{{fields.records}}"
+        typecast: "{{fields.typecast}}"
+
+  - name: Delete Record
+    resource: Record
+    description: Deletes a record.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+    request: {method: DELETE, path: "{{fields.base_id}}/{{fields.table}}/{{fields.record_id}}"}
+
+  - name: Get Bases
+    resource: Base
+    description: Lists the bases the token can reach.
+    request: {method: GET, path: meta/bases}
+    pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}
+
+  - name: Get Base Schema
+    resource: Base
+    description: Lists the tables of a base, with their fields and views.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+    request: {method: GET, path: "meta/bases/{{fields.base_id}}/tables"}
+    output:
+      path: tables
+
+  - name: Create Table
+    resource: Base
+    description: Adds a table to a base.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: name, label: Name, required: true}
+      - {name: description, label: Description}
+      - {name: fields, label: Fields, type: json, required: true, description: "A list like [{\"name\": \"Name\", \"type\": \"singleLineText\"}]. The first is the primary field."}
+    request:
+      method: POST
+      path: "meta/bases/{{fields.base_id}}/tables"
+      body: {name: "{{fields.name}}", description: "{{fields.description}}", fields: "{{fields.fields}}"}
+
+  - name: Create Field
+    resource: Base
+    description: Adds a field to a table.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: meta/bases}, path: bases, label: name, value: id, pagination: {type: cursor, items_path: bases, next_path: offset, cursor_param: offset}}}
+      - {name: table, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'meta/bases/{{fields.base_id}}/tables'}, path: tables, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: type, label: Type, required: true, description: "Like singleLineText, number, singleSelect or date"}
+      - {name: description, label: Description}
+      - {name: options, label: Options, type: json, description: "What the type takes, like {\"precision\": 2} for a number"}
+    request:
+      method: POST
+      path: "meta/bases/{{fields.base_id}}/tables/{{fields.table}}/fields"
+      body: {name: "{{fields.name}}", type: "{{fields.type}}", description: "{{fields.description}}", options: "{{fields.options}}"}
+
+i18n:
+  pt-BR:
+    description: Registros das bases do Airtable, e suas tabelas.
+    triggers:
+      New Record: {name: Novo registro, description: "Inicia o fluxo para cada registro novo de uma tabela, olhando a cada 5 minutos.", fields: {base_id: Base, table: Tabela, view: Visão, formula: Fórmula de filtro}}
+    actions:
+      Create Record: {name: Criar registro, description: Adiciona um registro a uma tabela., fields: {base_id: Base, table: Tabela, fields: Campos, typecast: Converter valores}}
+      Create Records: {name: Criar registros, description: Adiciona até 10 registros de uma vez., fields: {base_id: Base, table: Tabela, records: Registros, typecast: Converter valores}}
+      Get Record: {name: Ler registro, description: Lê um registro., fields: {base_id: Base, table: Tabela, record_id: ID do registro}}
+      Search Records: {name: Buscar registros, description: "Lista os registros de uma tabela, todos ou os que uma fórmula ou visão escolhe.", fields: {base_id: Base, table: Tabela, formula: Fórmula de filtro, view: Visão, sort_field: Ordenar pelo campo, sort_direction: Direção, max_records: No máximo}}
+      Update Record: {name: Atualizar registro, description: Muda os campos dados de um registro. Os outros ficam como estão., fields: {base_id: Base, table: Tabela, record_id: ID do registro, fields: Campos, typecast: Converter valores}}
+      Replace Record: {name: Substituir registro, description: Define todos os campos de um registro. Os que faltarem ficam vazios., fields: {base_id: Base, table: Tabela, record_id: ID do registro, fields: Campos, typecast: Converter valores}}
+      Upsert Records: {name: Criar ou atualizar registros, description: "Atualiza os registros que batem nos campos dados e adiciona os outros, até 10 de uma vez.", fields: {base_id: Base, table: Tabela, merge_on: Comparar pelos campos, records: Registros, typecast: Converter valores}}
+      Delete Record: {name: Apagar registro, description: Apaga um registro., fields: {base_id: Base, table: Tabela, record_id: ID do registro}}
+      Get Bases: {name: Listar bases, description: Lista as bases que o token alcança.}
+      Get Base Schema: {name: Ler estrutura da base, description: "Lista as tabelas de uma base, com seus campos e visões.", fields: {base_id: Base}}
+      Create Table: {name: Criar tabela, description: Adiciona uma tabela a uma base., fields: {base_id: Base, name: Nome, description: Descrição, fields: Campos}}
+      Create Field: {name: Criar campo, description: Adiciona um campo a uma tabela., fields: {base_id: Base, table: Tabela, name: Nome, type: Tipo, description: Descrição, options: Opções}}
