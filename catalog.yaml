@@ -182,7 +182,7 @@ integrations:
   - {id: aws_textract, name: AWS Textract, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Textract, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
   - {id: aws_transcribe, name: AWS Transcribe, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Transcribe, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
   - {id: brave_search, name: Brave Search, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
-  - {id: chroma, name: Chroma, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: manifest, status: planned}
+  - {id: chroma, name: Chroma, category: ai, phase: 3, origin: n8n, auth: header, n8n: "@n8n/nodes-langchain/vector_store", host: true, kind: manifest, status: planned}
   - {id: deepgram, name: Deepgram, category: ai, phase: 3, origin: ai, auth: header, kind: package, lib: {name: deepgram, version: 0.1.0, released: 2025-07-14}, status: planned}
   - {id: deepl, name: DeepL, category: ai, phase: 3, origin: n8n, auth: header, n8n: DeepL, kind: package, lib: {name: deepl, version: 0.3.0, released: 2025-07-27}, status: planned}
   - {id: elevenlabs, name: ElevenLabs, category: ai, phase: 3, origin: ai, auth: header, kind: package, lib: {name: eleven_labs, version: 0.1.0, released: 2026-03-21}, status: planned}
@@ -200,21 +200,21 @@ integrations:
   - {id: langfuse, name: Langfuse, category: ai, phase: 3, origin: ai, auth: basic, host: true, kind: package, lib: {name: langfuse, version: 0.2.0, released: 2026-03-31}, status: planned}
   - {id: lingvanex, name: Lingvanex, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: LingvaNex, kind: manifest, status: planned}
   - {id: mem0, name: Mem0, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
-  - {id: milvus, name: Milvus / Zilliz, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: manifest, status: planned}
+  - {id: milvus, name: Milvus / Zilliz, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: "@n8n/nodes-langchain/vector_store", host: true, kind: manifest, status: planned}
   - {id: mindee, name: Mindee, category: ai, phase: 3, origin: n8n, auth: header, n8n: Mindee, kind: manifest, status: planned}
   - {id: mistral_ocr, name: Mistral Document AI, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: MistralAI, kind: manifest, status: planned}
   - {id: perplexity, name: Perplexity, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: Perplexity, kind: manifest, status: planned}
-  - {id: pinecone, name: Pinecone, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/vector_store, kind: manifest, status: planned}
-  - {id: qdrant, name: Qdrant, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: package, lib: {name: qdrant, version: 0.1.18, released: 2026-08-02}, status: planned}
+  - {id: pinecone, name: Pinecone, category: ai, phase: 3, origin: n8n, auth: header, n8n: "@n8n/nodes-langchain/vector_store", kind: manifest, status: planned}
+  - {id: qdrant, name: Qdrant, category: ai, phase: 3, origin: n8n, auth: header, n8n: "@n8n/nodes-langchain/vector_store", host: true, kind: package, lib: {name: qdrant, version: 0.1.18, released: 2026-08-02}, status: planned}
   - {id: replicate, name: Replicate, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
   - {id: runway, name: Runway, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
-  - {id: searxng, name: SearXNG, category: ai, phase: 3, origin: n8n, auth: none, n8n: @n8n/nodes-langchain/tools, host: true, kind: manifest, status: planned}
-  - {id: serpapi, name: SerpApi, category: ai, phase: 3, origin: n8n, auth: query, n8n: @n8n/nodes-langchain/tools, kind: manifest, status: planned}
+  - {id: searxng, name: SearXNG, category: ai, phase: 3, origin: n8n, auth: none, n8n: "@n8n/nodes-langchain/tools", host: true, kind: manifest, status: planned}
+  - {id: serpapi, name: SerpApi, category: ai, phase: 3, origin: n8n, auth: query, n8n: "@n8n/nodes-langchain/tools", kind: manifest, status: planned}
   - {id: stability_ai, name: Stability AI, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
   - {id: tavily, name: Tavily, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}
-  - {id: weaviate, name: Weaviate, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: @n8n/nodes-langchain/vector_store, host: true, kind: manifest, status: planned}
-  - {id: wolfram_alpha, name: Wolfram Alpha, category: ai, phase: 3, origin: n8n, auth: query, n8n: @n8n/nodes-langchain/tools, kind: manifest, status: planned}
-  - {id: zep, name: Zep, category: ai, phase: 3, origin: n8n, auth: header, n8n: @n8n/nodes-langchain/memory, kind: package, lib: {name: zep, version: 1.0.0, released: 2026-07-27}, status: planned}
+  - {id: weaviate, name: Weaviate, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: "@n8n/nodes-langchain/vector_store", host: true, kind: manifest, status: planned}
+  - {id: wolfram_alpha, name: Wolfram Alpha, category: ai, phase: 3, origin: n8n, auth: query, n8n: "@n8n/nodes-langchain/tools", kind: manifest, status: planned}
+  - {id: zep, name: Zep, category: ai, phase: 3, origin: n8n, auth: header, n8n: "@n8n/nodes-langchain/memory", kind: package, lib: {name: zep, version: 1.0.0, released: 2026-07-27}, status: planned}
   - {id: amplitude, name: Amplitude, category: analytics, phase: 3, origin: extra, auth: basic, kind: manifest, status: planned}
   - {id: hotjar, name: Hotjar, category: analytics, phase: 3, origin: extra, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: looker_studio, name: Looker Studio, category: analytics, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
@@ -295,7 +295,7 @@ integrations:
   - {id: scrapingbee, name: ScrapingBee, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
   - {id: uplead, name: UpLead, category: data, phase: 3, origin: n8n, auth: header, n8n: Uplead, kind: manifest, status: planned}
   - {id: uproc, name: uProc, category: data, phase: 3, origin: n8n, auth: basic, n8n: UProc, kind: manifest, status: planned}
-  - {id: wikipedia, name: Wikipedia, category: data, phase: 3, origin: n8n, auth: none, n8n: @n8n/nodes-langchain/tools, kind: manifest, status: planned}
+  - {id: wikipedia, name: Wikipedia, category: data, phase: 3, origin: n8n, auth: none, n8n: "@n8n/nodes-langchain/tools", kind: manifest, status: planned}
   - {id: zerobounce, name: ZeroBounce, category: data, phase: 3, origin: extra, auth: query, kind: manifest, status: planned}
   - {id: adalo, name: Adalo, category: database, phase: 3, origin: n8n, auth: bearer, n8n: Adalo, kind: manifest, status: planned}
   - {id: algolia, name: Algolia, category: database, phase: 3, origin: extra, auth: header, kind: manifest, status: planned}
