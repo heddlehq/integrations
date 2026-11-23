@@ -37,7 +37,7 @@ integrations:
   - {id: google_tasks, name: Google Tasks, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Task, kind: package, lib: {name: google_api_tasks, version: 0.17.0, released: 2025-04-15}, status: planned}
   - {id: hubspot, name: HubSpot, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Hubspot, kind: manifest, status: planned}
   - {id: instagram, name: Instagram, category: social, phase: 1, origin: extra, auth: oauth2, kind: manifest, status: planned}
-  - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: planned}
+  - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: draft}
   - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: planned}
   - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Linear, kind: manifest, status: planned}
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
