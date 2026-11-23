@@ -51,7 +51,7 @@ integrations:
   - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: planned}
   - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: bearer, n8n: MondayCom, kind: manifest, status: planned}
   - {id: mongodb, name: MongoDB, category: database, phase: 1, origin: n8n, auth: basic, n8n: MongoDb, kind: package, lib: {name: mongodb_driver, version: 1.6.4, released: 2026-07-24}, status: official}
-  - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: planned}
+  - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: draft}
   - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
   - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: login, n8n: Odoo, host: true, kind: manifest, status: planned}
   - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
