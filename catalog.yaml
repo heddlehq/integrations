@@ -71,7 +71,7 @@ integrations:
   - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: package, lib: {name: ex_gram, version: 0.71.0, released: 2026-10-01}, status: planned}
   - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
   - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: draft}
-  - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: planned}
+  - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: draft}
   - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: oauth2, n8n: Typeform, kind: manifest, status: planned}
   - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: oauth2, n8n: Webflow, kind: manifest, status: planned}
   - {id: whatsapp, name: WhatsApp Business Cloud, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: WhatsApp, kind: package, lib: {name: whatsapp_elixir, version: 0.1.10, released: 2026-11-12}, status: planned}
