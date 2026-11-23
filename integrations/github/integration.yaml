@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
 id: github
 name: GitHub
-version: 1.0.0
+version: 1.0.1
 description: Issues and comments in GitHub repositories.
 icon: hero-code-bracket
 author: heddlehq
@@ -31,7 +31,7 @@ actions:
       - {name: body, label: Body, type: textarea}
     request:
       method: POST
-      path: "repos/{{fields.repo}}/issues"
+      path: "repos/{{fields.repo | path}}/issues"
       headers:
         Accept: application/vnd.github+json
       body:
@@ -54,7 +54,7 @@ actions:
           - {label: All, value: all}
     request:
       method: GET
-      path: "repos/{{fields.repo}}/issues"
+      path: "repos/{{fields.repo | path}}/issues"
       query:
         state: "{{fields.state}}"
     output:
@@ -73,7 +73,7 @@ actions:
       - {name: body, label: Comment, type: textarea}
     request:
       method: POST
-      path: "repos/{{fields.repo}}/issues/{{fields.number}}/comments"
+      path: "repos/{{fields.repo | path}}/issues/{{fields.number}}/comments"
       body:
         body: "{{fields.body}}"
     output:
