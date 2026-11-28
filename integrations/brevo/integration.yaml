@@ -1,0 +1,341 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Brevo (formerly Sendinblue) v3 API with the key in the api-key header. The triggers
+# register a webhook that sends the secret back in a custom X-Heddle-Token header.
+id: brevo
+name: Brevo
+version: 1.0.0
+homepage: https://developers.brevo.com/reference
+description: Send transactional emails, plain or from templates, manage Brevo contacts, lists, attributes and senders, and start flows on email and marketing events.
+icon: hero-envelope
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#0B996E" d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zM7.2 4.8h5.747c2.34 0 3.895 1.406 3.895 3.516 0 1.022-.348 1.862-1.09 2.588C17.189 11.812 18 13.22 18 14.785c0 2.86-2.64 5.016-6.164 5.016H7.199v-15zm2.085 1.952v5.537h.07c.233-.432.858-.796 2.249-1.226 2.039-.659 3.037-1.52 3.037-2.655 0-.998-.766-1.656-1.924-1.656H9.285zm4.87 5.266c-.766.385-1.67.748-2.76 1.11-1.229.387-2.11 1.386-2.11 2.407v2.315h2.365c2.387 0 4.149-1.34 4.149-3.155 0-1.067-.625-2.087-1.645-2.677z"/></svg></svg>
+category: marketing
+base_url: https://api.brevo.com/v3/
+
+credential:
+  label: Brevo
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true, description: SMTP & API › API keys in Brevo.}
+  auth:
+    type: header
+    name: api-key
+    value: "{{credential.api_key}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Transactional Email Event
+    description: Starts the flow when a transactional email is sent, delivered, opened, clicked, bounced and more, by the events you pick.
+    fields:
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [delivered]
+        options:
+          - {label: Sent, value: request}
+          - {label: Delivered, value: delivered}
+          - {label: Opened, value: opened}
+          - {label: First open, value: uniqueOpened}
+          - {label: Clicked, value: click}
+          - {label: Hard bounce, value: hardBounce}
+          - {label: Soft bounce, value: softBounce}
+          - {label: Blocked, value: blocked}
+          - {label: Spam, value: spam}
+          - {label: Invalid, value: invalid}
+          - {label: Deferred, value: deferred}
+          - {label: Unsubscribed, value: unsubscribed}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body: {url: "{{webhook.url}}", description: Heddle, type: transactional, events: "{{fields.events}}", headers: [{key: X-Heddle-Token, value: "{{webhook.secret}}"}]}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature:
+        header: X-Heddle-Token
+        token: "{{webhook.secret}}"
+
+  - name: Marketing Event
+    description: Starts the flow on campaign events and contact changes, like an open, a click, an unsubscribe or a contact added to a list.
+    fields:
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [listAddition]
+        options:
+          - {label: Delivered, value: delivered}
+          - {label: Opened, value: opened}
+          - {label: Clicked, value: click}
+          - {label: Hard bounce, value: hardBounce}
+          - {label: Soft bounce, value: softBounce}
+          - {label: Spam, value: spam}
+          - {label: Unsubscribed, value: unsubscribed}
+          - {label: Added to a list, value: listAddition}
+          - {label: Contact updated, value: contactUpdated}
+          - {label: Contact deleted, value: contactDeleted}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body: {url: "{{webhook.url}}", description: Heddle, type: marketing, events: "{{fields.events}}", headers: [{key: X-Heddle-Token, value: "{{webhook.secret}}"}]}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature:
+        header: X-Heddle-Token
+        token: "{{webhook.secret}}"
+
+actions:
+  # Email
+  - name: Send Email
+    resource: Email
+    description: Sends a transactional email with text, HTML or both.
+    fields:
+      - {name: sender_email, label: From email, required: true, description: A sender verified in Brevo.}
+      - {name: sender_name, label: From name}
+      - {name: to, label: To, required: true, description: "One email, or several separated by commas."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: reply_to, label: Reply to}
+      - {name: subject, label: Subject, required: true}
+      - {name: html_content, label: HTML, type: textarea}
+      - {name: text_content, label: Text, type: textarea}
+      - {name: tags, label: Tags, description: Separated by commas.}
+      - {name: scheduled_at, label: Send at, type: datetime}
+    request:
+      method: POST
+      path: smtp/email
+      body:
+        sender: {email: "{{fields.sender_email}}", name: "{{fields.sender_name}}"}
+        to: {_each: "{{fields.to}}", email: "{{item}}"}
+        cc: {_each: "{{fields.cc}}", email: "{{item}}"}
+        bcc: {_each: "{{fields.bcc}}", email: "{{item}}"}
+        replyTo: {_if: "{{fields.reply_to}}", email: "{{fields.reply_to}}"}
+        subject: "{{fields.subject}}"
+        htmlContent: "{{fields.html_content}}"
+        textContent: "{{fields.text_content}}"
+        tags: {_each: "{{fields.tags}}", _value: "{{item}}"}
+        scheduledAt: "{{fields.scheduled_at}}"
+
+  - name: Send Template Email
+    resource: Email
+    description: Sends an email from a Brevo template, filling it with your data.
+    fields:
+      - {name: template_id, label: Template, type: select, format: number, required: true, options_from: {request: {method: GET, path: smtp/templates, query: {limit: 1000}}, path: templates, label: name, value: id}}
+      - {name: to, label: To, required: true, description: "One email, or several separated by commas."}
+      - {name: params, label: Template data, type: json, description: "The values for the template, like {\"name\": \"Ana\"}."}
+      - {name: tags, label: Tags}
+      - {name: scheduled_at, label: Send at, type: datetime}
+    request:
+      method: POST
+      path: smtp/email
+      body:
+        templateId: "{{fields.template_id}}"
+        to: {_each: "{{fields.to}}", email: "{{item}}"}
+        params: "{{fields.params}}"
+        tags: {_each: "{{fields.tags}}", _value: "{{item}}"}
+        scheduledAt: "{{fields.scheduled_at}}"
+
+  - name: List Templates
+    resource: Email
+    description: Lists the email templates.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 50}
+      - {name: offset, label: Skip, type: number, default: 0}
+    request: {method: GET, path: smtp/templates, query: {limit: "{{fields.limit}}", offset: "{{fields.offset}}"}}
+    output: {path: templates}
+
+  - name: List Email Events
+    resource: Email
+    description: Lists what happened to transactional emails (delivered, opened, bounced...), by email, event and dates.
+    fields:
+      - {name: email, label: Email}
+      - {name: event, label: Event, type: select, options: [{label: Delivered, value: delivered}, {label: Opened, value: opened}, {label: Clicked, value: clicks}, {label: Bounces, value: bounces}, {label: Hard bounces, value: hardBounces}, {label: Soft bounces, value: softBounces}, {label: Spam, value: spam}, {label: Sent, value: requests}, {label: Blocked, value: blocked}, {label: Unsubscribed, value: unsubscribed}]}
+      - {name: days, label: Last days, type: number, description: Up to 90.}
+      - {name: limit, label: Limit, type: number, default: 100}
+    request:
+      method: GET
+      path: smtp/statistics/events
+      query: {email: "{{fields.email}}", event: "{{fields.event}}", days: "{{fields.days}}", limit: "{{fields.limit}}"}
+    output: {path: events}
+
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Adds a contact, or updates the one with the same email when asked.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: attributes, label: Attributes, type: json, description: "Like {\"FIRSTNAME\": \"Ana\", \"LASTNAME\": \"Silva\"}."}
+      - {name: list_ids, label: Lists, type: multiselect, format: number, options_from: {request: {method: GET, path: contacts/lists, query: {limit: 50}}, path: lists, label: name, value: id}}
+      - {name: update_enabled, label: Update if it exists, type: boolean, default: true}
+    request:
+      method: POST
+      path: contacts
+      body: {email: "{{fields.email}}", attributes: "{{fields.attributes}}", listIds: "{{fields.list_ids}}", updateEnabled: "{{fields.update_enabled}}"}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact by email or ID, with its lists and attributes.
+    fields:
+      - {name: identifier, label: Email or ID, required: true}
+    request: {method: GET, path: "contacts/{{fields.identifier | path}}"}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact's attributes and lists.
+    fields:
+      - {name: identifier, label: Email or ID, required: true}
+      - {name: attributes, label: Attributes, type: json}
+      - {name: list_ids, label: Add to lists, type: multiselect, format: number, options_from: {request: {method: GET, path: contacts/lists, query: {limit: 50}}, path: lists, label: name, value: id}}
+      - {name: unlink_list_ids, label: Remove from lists, type: multiselect, format: number, options_from: {request: {method: GET, path: contacts/lists, query: {limit: 50}}, path: lists, label: name, value: id}}
+      - {name: email_blacklisted, label: Block emails, type: boolean}
+    request:
+      method: PUT
+      path: "contacts/{{fields.identifier | path}}"
+      body: {attributes: "{{fields.attributes}}", listIds: "{{fields.list_ids}}", unlinkListIds: "{{fields.unlink_list_ids}}", emailBlacklisted: "{{fields.email_blacklisted}}"}
+
+  - name: Delete Contact
+    resource: Contact
+    description: Deletes a contact by email or ID.
+    fields:
+      - {name: identifier, label: Email or ID, required: true}
+    request: {method: DELETE, path: "contacts/{{fields.identifier | path}}"}
+
+  - name: List Contacts
+    resource: Contact
+    description: Lists contacts, newest first, optionally only those changed since a date.
+    fields:
+      - {name: modified_since, label: Changed since, type: datetime}
+      - {name: limit, label: Limit, type: number, default: 50}
+      - {name: offset, label: Skip, type: number, default: 0}
+    request:
+      method: GET
+      path: contacts
+      query: {modifiedSince: "{{fields.modified_since}}", limit: "{{fields.limit}}", offset: "{{fields.offset}}", sort: desc}
+    output: {path: contacts}
+
+  # Lists
+  - name: List Lists
+    resource: List
+    description: Lists the contact lists, with their contact counts.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 50}
+      - {name: offset, label: Skip, type: number, default: 0}
+    request: {method: GET, path: contacts/lists, query: {limit: "{{fields.limit}}", offset: "{{fields.offset}}"}}
+    output: {path: lists}
+
+  - name: Create List
+    resource: List
+    description: Creates a contact list in a folder.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: folder_id, label: Folder, type: select, format: number, required: true, options_from: {request: {method: GET, path: contacts/folders, query: {limit: 50}}, path: folders, label: name, value: id}}
+    request: {method: POST, path: contacts/lists, body: {name: "{{fields.name}}", folderId: "{{fields.folder_id}}"}}
+
+  - name: Delete List
+    resource: List
+    description: Deletes a list; its contacts stay.
+    fields:
+      - {name: list_id, label: List, type: select, format: number, required: true, options_from: {request: {method: GET, path: contacts/lists, query: {limit: 50}}, path: lists, label: name, value: id}}
+    request: {method: DELETE, path: "contacts/lists/{{fields.list_id | path}}"}
+
+  - name: Add Contacts to List
+    resource: List
+    description: Adds existing contacts to a list by email, up to 150.
+    fields:
+      - {name: list_id, label: List, type: select, format: number, required: true, options_from: {request: {method: GET, path: contacts/lists, query: {limit: 50}}, path: lists, label: name, value: id}}
+      - {name: emails, label: Emails, required: true, description: "One email, or several separated by commas."}
+    request:
+      method: POST
+      path: "contacts/lists/{{fields.list_id | path}}/contacts/add"
+      body: {emails: {_each: "{{fields.emails}}", _value: "{{item}}"}}
+
+  - name: Remove Contacts from List
+    resource: List
+    description: Takes contacts out of a list by email.
+    fields:
+      - {name: list_id, label: List, type: select, format: number, required: true, options_from: {request: {method: GET, path: contacts/lists, query: {limit: 50}}, path: lists, label: name, value: id}}
+      - {name: emails, label: Emails, required: true, description: "One email, or several separated by commas."}
+    request:
+      method: POST
+      path: "contacts/lists/{{fields.list_id | path}}/contacts/remove"
+      body: {emails: {_each: "{{fields.emails}}", _value: "{{item}}"}}
+
+  # Attributes
+  - name: List Attributes
+    resource: Attribute
+    description: Lists the contact attributes, with category and type.
+    request: {method: GET, path: contacts/attributes}
+    output: {path: attributes}
+
+  - name: Create Attribute
+    resource: Attribute
+    description: Creates a contact attribute.
+    fields:
+      - {name: name, label: Name, required: true, description: "In capitals, like PLAN."}
+      - {name: type, label: Type, type: select, required: true, default: text, options: [{label: Text, value: text}, {label: Number, value: float}, {label: Date, value: date}, {label: Yes or no, value: boolean}]}
+    request: {method: POST, path: "contacts/attributes/normal/{{fields.name | path}}", body: {type: "{{fields.type}}"}}
+
+  - name: Delete Attribute
+    resource: Attribute
+    description: Deletes a contact attribute and its values.
+    fields:
+      - {name: name, label: Name, required: true}
+    request: {method: DELETE, path: "contacts/attributes/normal/{{fields.name | path}}"}
+
+  # Senders
+  - name: List Senders
+    resource: Sender
+    description: Lists the email senders and whether they are active.
+    request: {method: GET, path: senders}
+    output: {path: senders}
+
+  - name: Create Sender
+    resource: Sender
+    description: Adds a sender; Brevo emails the address to verify it.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email, required: true}
+    request: {method: POST, path: senders, body: {name: "{{fields.name}}", email: "{{fields.email}}"}}
+
+  - name: Delete Sender
+    resource: Sender
+    description: Deletes a sender.
+    fields:
+      - {name: sender_id, label: Sender ID, required: true}
+    request: {method: DELETE, path: "senders/{{fields.sender_id | path}}"}
+
+i18n:
+  pt-BR:
+    description: "Envie e-mails transacionais, simples ou de templates, gerencie contatos, listas, atributos e remetentes da Brevo, e inicie fluxos com eventos de e-mail e marketing."
+    triggers:
+      Transactional Email Event: {name: "Evento de e-mail transacional", description: "Inicia o fluxo quando um e-mail transacional é enviado, entregue, aberto, clicado, dá bounce e mais, conforme os eventos escolhidos.", fields: {events: "Eventos"}}
+      Marketing Event: {name: "Evento de marketing", description: "Inicia o fluxo com eventos de campanha e mudanças de contato, como abertura, clique, descadastro ou contato adicionado a uma lista.", fields: {events: "Eventos"}}
+    actions:
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail transacional com texto, HTML ou os dois.", fields: {sender_email: "E-mail do remetente", sender_name: "Nome do remetente", to: "Para", cc: "Cc", bcc: "Cco", reply_to: "Responder para", subject: "Assunto", html_content: "HTML", text_content: "Texto", tags: "Tags", scheduled_at: "Enviar em"}}
+      Send Template Email: {name: "Enviar e-mail de template", description: "Envia um e-mail a partir de um template da Brevo, preenchido com seus dados.", fields: {template_id: "Template", to: "Para", params: "Dados do template", tags: "Tags", scheduled_at: "Enviar em"}}
+      List Templates: {name: "Listar templates", description: "Lista os templates de e-mail.", fields: {limit: "Limite", offset: "Pular"}}
+      List Email Events: {name: "Listar eventos de e-mail", description: "Lista o que aconteceu com os e-mails transacionais (entregue, aberto, bounce...), por e-mail, evento e datas.", fields: {email: "E-mail", event: "Evento", days: "Últimos dias", limit: "Limite"}}
+      Create Contact: {name: "Criar contato", description: "Adiciona um contato, ou atualiza o de mesmo e-mail quando pedido.", fields: {email: "E-mail", attributes: "Atributos", list_ids: "Listas", update_enabled: "Atualizar se existir"}}
+      Get Contact: {name: "Ler contato", description: "Lê um contato por e-mail ou ID, com listas e atributos.", fields: {identifier: "E-mail ou ID"}}
+      Update Contact: {name: "Atualizar contato", description: "Muda os atributos e as listas de um contato.", fields: {identifier: "E-mail ou ID", attributes: "Atributos", list_ids: "Adicionar às listas", unlink_list_ids: "Remover das listas", email_blacklisted: "Bloquear e-mails"}}
+      Delete Contact: {name: "Excluir contato", description: "Exclui um contato por e-mail ou ID.", fields: {identifier: "E-mail ou ID"}}
+      List Contacts: {name: "Listar contatos", description: "Lista contatos, dos mais novos primeiro, opcionalmente só os alterados desde uma data.", fields: {modified_since: "Alterados desde", limit: "Limite", offset: "Pular"}}
+      List Lists: {name: "Listar listas", description: "Lista as listas de contatos, com a contagem de cada uma.", fields: {limit: "Limite", offset: "Pular"}}
+      Create List: {name: "Criar lista", description: "Cria uma lista de contatos numa pasta.", fields: {name: "Nome", folder_id: "Pasta"}}
+      Delete List: {name: "Excluir lista", description: "Exclui uma lista; os contatos continuam.", fields: {list_id: "Lista"}}
+      Add Contacts to List: {name: "Adicionar contatos à lista", description: "Adiciona contatos existentes a uma lista por e-mail, até 150.", fields: {list_id: "Lista", emails: "E-mails"}}
+      Remove Contacts from List: {name: "Remover contatos da lista", description: "Tira contatos de uma lista por e-mail.", fields: {list_id: "Lista", emails: "E-mails"}}
+      List Attributes: {name: "Listar atributos", description: "Lista os atributos de contato, com categoria e tipo."}
+      Create Attribute: {name: "Criar atributo", description: "Cria um atributo de contato.", fields: {name: "Nome", type: "Tipo"}}
+      Delete Attribute: {name: "Excluir atributo", description: "Exclui um atributo de contato e seus valores.", fields: {name: "Nome"}}
+      List Senders: {name: "Listar remetentes", description: "Lista os remetentes de e-mail e se estão ativos."}
+      Create Sender: {name: "Criar remetente", description: "Adiciona um remetente; a Brevo manda um e-mail para verificar o endereço.", fields: {name: "Nome", email: "E-mail"}}
+      Delete Sender: {name: "Excluir remetente", description: "Exclui um remetente.", fields: {sender_id: "ID do remetente"}}

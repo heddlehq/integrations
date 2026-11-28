@@ -1,0 +1,342 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Discord API v10 with a bot token ("Bot <token>"). The bot must be in the server, with
+# the permissions each action needs. New messages are polled: Discord sends bot events
+# over a gateway connection, not webhooks.
+id: discord
+name: Discord
+version: 1.0.0
+homepage: https://discord.com/developers/docs/reference
+description: Send, edit and react to messages with a Discord bot, manage channels, members and roles, and start flows on new messages.
+icon: hero-chat-bubble-left-right
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#5865F2" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></svg>
+category: messaging
+base_url: https://discord.com/api/v10/
+
+credential:
+  label: Discord bot
+  fields:
+    - {name: token, label: Bot token, secret: true, required: true, description: Applications › your app › Bot › Reset Token.}
+  auth:
+    type: header
+    name: Authorization
+    value: "Bot {{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Message
+    description: Starts the flow for each new message in a channel, checking every minute. Reading the text needs the Message Content intent.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+    request:
+      method: GET
+      path: "channels/{{fields.channel_id | path}}/messages"
+      query: {limit: 50}
+    poll: {every: 1, id: id}
+
+actions:
+  - name: Send Message
+    resource: Message
+    description: Sends a message to a channel, with text, embeds or both.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: content, label: Text, type: textarea, description: Up to 2000 characters.}
+      - {name: embeds, label: Embeds, type: json, description: "A list of embed objects, like [{\"title\": \"Hi\", \"description\": \"...\", \"color\": 5793266}]."}
+      - {name: reply_to, label: Reply to message ID}
+      - {name: tts, label: Read aloud, type: boolean}
+    request:
+      method: POST
+      path: "channels/{{fields.channel_id | path}}/messages"
+      body: {content: "{{fields.content}}", embeds: "{{fields.embeds}}", tts: "{{fields.tts}}", message_reference: {_if: "{{fields.reply_to}}", message_id: "{{fields.reply_to}}"}}
+
+  - name: Get Message
+    resource: Message
+    description: Reads a message.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: GET
+      path: "channels/{{fields.channel_id | path}}/messages/{{fields.message_id | path}}"
+
+  - name: List Messages
+    resource: Message
+    description: Lists the latest messages of a channel, newest first.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 100.}
+      - {name: before, label: Before message ID}
+      - {name: after, label: After message ID}
+    request:
+      method: GET
+      path: "channels/{{fields.channel_id | path}}/messages"
+      query: {limit: "{{fields.limit}}", before: "{{fields.before}}", after: "{{fields.after}}"}
+
+  - name: Edit Message
+    resource: Message
+    description: Changes a message the bot sent.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: content, label: Text, type: textarea}
+      - {name: embeds, label: Embeds, type: json}
+    request:
+      method: PATCH
+      path: "channels/{{fields.channel_id | path}}/messages/{{fields.message_id | path}}"
+      body: {content: "{{fields.content}}", embeds: "{{fields.embeds}}"}
+
+  - name: Delete Message
+    resource: Message
+    description: Deletes a message.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: DELETE
+      path: "channels/{{fields.channel_id | path}}/messages/{{fields.message_id | path}}"
+
+  - name: React to Message
+    resource: Message
+    description: Adds the bot's reaction to a message.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: emoji, label: Emoji, required: true, description: "A Unicode emoji like 👍, or name:id for a custom one."}
+    request:
+      method: PUT
+      path: "channels/{{fields.channel_id | path}}/messages/{{fields.message_id | path}}/reactions/{{fields.emoji}}/@me"
+
+  - name: Pin Message
+    resource: Message
+    description: Pins a message in its channel.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: PUT
+      path: "channels/{{fields.channel_id | path}}/pins/{{fields.message_id | path}}"
+
+  - name: Unpin Message
+    resource: Message
+    description: Unpins a message.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: DELETE
+      path: "channels/{{fields.channel_id | path}}/pins/{{fields.message_id | path}}"
+
+  - name: Start Thread
+    resource: Message
+    description: Starts a thread from a message.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: name, label: Thread name, required: true}
+      - {name: auto_archive_duration, label: Archive after, type: select, default: 1440, options: [{label: 1 hour, value: 60}, {label: 1 day, value: 1440}, {label: 3 days, value: 4320}, {label: 1 week, value: 10080}]}
+    request:
+      method: POST
+      path: "channels/{{fields.channel_id | path}}/messages/{{fields.message_id | path}}/threads"
+      body: {name: "{{fields.name}}", auto_archive_duration: "{{fields.auto_archive_duration}}"}
+
+  - name: Open Direct Message
+    resource: Message
+    description: Opens a private chat with a user who shares a server with the bot; send to its id with Send Message.
+    fields:
+      - {name: user_id, label: User ID, required: true}
+    request:
+      method: POST
+      path: "users/@me/channels"
+      body: {recipient_id: "{{fields.user_id}}"}
+
+  - name: List Channels
+    resource: Channel
+    description: Lists the channels and categories of a server.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+    request:
+      method: GET
+      path: "guilds/{{fields.guild_id | path}}/channels"
+
+  - name: Get Channel
+    resource: Channel
+    description: Reads a channel.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+    request:
+      method: GET
+      path: "channels/{{fields.channel_id | path}}"
+
+  - name: Create Channel
+    resource: Channel
+    description: Creates a text, voice or category channel.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: type, label: Type, type: select, default: 0, options: [{label: Text, value: 0}, {label: Voice, value: 2}, {label: Category, value: 4}, {label: Announcement, value: 5}, {label: Forum, value: 15}]}
+      - {name: topic, label: Topic}
+      - {name: parent_id, label: Category ID}
+    request:
+      method: POST
+      path: "guilds/{{fields.guild_id | path}}/channels"
+      body: {name: "{{fields.name}}", type: "{{fields.type}}", topic: "{{fields.topic}}", parent_id: "{{fields.parent_id}}"}
+
+  - name: Update Channel
+    resource: Channel
+    description: Changes a channel's name or topic.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+      - {name: name, label: Name}
+      - {name: topic, label: Topic}
+    request:
+      method: PATCH
+      path: "channels/{{fields.channel_id | path}}"
+      body: {name: "{{fields.name}}", topic: "{{fields.topic}}"}
+
+  - name: Delete Channel
+    resource: Channel
+    description: Deletes a channel, or closes a DM.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: channel_id, label: Channel, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/channels"}, label: name, value: id}}
+    request:
+      method: DELETE
+      path: "channels/{{fields.channel_id | path}}"
+
+  - name: List Members
+    resource: Member
+    description: Lists the members of a server; needs the Server Members intent.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: limit, label: Limit, type: number, default: 100, description: Up to 1000.}
+      - {name: after, label: After user ID}
+    request:
+      method: GET
+      path: "guilds/{{fields.guild_id | path}}/members"
+      query: {limit: "{{fields.limit}}", after: "{{fields.after}}"}
+
+  - name: Get Member
+    resource: Member
+    description: Reads a member of a server, with roles and nickname.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: user_id, label: User ID, required: true}
+    request:
+      method: GET
+      path: "guilds/{{fields.guild_id | path}}/members/{{fields.user_id | path}}"
+
+  - name: Add Role
+    resource: Member
+    description: Gives a role to a member.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: user_id, label: User ID, required: true}
+      - {name: role_id, label: Role, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/roles"}, label: name, value: id}}
+    request:
+      method: PUT
+      path: "guilds/{{fields.guild_id | path}}/members/{{fields.user_id | path}}/roles/{{fields.role_id | path}}"
+
+  - name: Remove Role
+    resource: Member
+    description: Takes a role from a member.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: user_id, label: User ID, required: true}
+      - {name: role_id, label: Role, type: select, required: true, options_from: {request: {method: GET, path: "guilds/{{fields.guild_id}}/roles"}, label: name, value: id}}
+    request:
+      method: DELETE
+      path: "guilds/{{fields.guild_id | path}}/members/{{fields.user_id | path}}/roles/{{fields.role_id | path}}"
+
+  - name: Kick Member
+    resource: Member
+    description: Removes a member from a server; they can join again.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: user_id, label: User ID, required: true}
+    request:
+      method: DELETE
+      path: "guilds/{{fields.guild_id | path}}/members/{{fields.user_id | path}}"
+
+  - name: Ban Member
+    resource: Member
+    description: Bans a user from a server.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: user_id, label: User ID, required: true}
+      - {name: delete_message_seconds, label: Delete their messages from the last, type: select, options: [{label: Nothing, value: 0}, {label: 1 hour, value: 3600}, {label: 1 day, value: 86400}, {label: 7 days, value: 604800}]}
+    request:
+      method: PUT
+      path: "guilds/{{fields.guild_id | path}}/bans/{{fields.user_id | path}}"
+      body: {delete_message_seconds: "{{fields.delete_message_seconds}}"}
+
+  - name: Unban Member
+    resource: Member
+    description: Lifts a ban.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+      - {name: user_id, label: User ID, required: true}
+    request:
+      method: DELETE
+      path: "guilds/{{fields.guild_id | path}}/bans/{{fields.user_id | path}}"
+
+  - name: List Roles
+    resource: Role
+    description: Lists the roles of a server.
+    fields:
+      - {name: guild_id, label: Server, type: select, required: true, options_from: {request: {method: GET, path: users/@me/guilds}, label: name, value: id}}
+    request:
+      method: GET
+      path: "guilds/{{fields.guild_id | path}}/roles"
+
+  - name: List Servers
+    resource: Server
+    description: Lists the servers the bot is in.
+    request:
+      method: GET
+      path: "users/@me/guilds"
+
+i18n:
+  pt-BR:
+    description: "Envie, edite e reaja a mensagens com um bot do Discord, gerencie canais, membros e cargos, e inicie fluxos com novas mensagens."
+    triggers:
+      New Message: {name: "Nova mensagem", description: "Inicia o fluxo a cada nova mensagem num canal, verificando a cada minuto. Ler o texto exige o intent Message Content.", fields: {guild_id: "Servidor", channel_id: "Canal"}}
+    actions:
+      Send Message: {name: "Enviar mensagem", description: "Envia uma mensagem para um canal, com texto, embeds ou os dois.", fields: {guild_id: "Servidor", channel_id: "Canal", content: "Texto", embeds: "Embeds", reply_to: "Responder à mensagem (ID)", tts: "Ler em voz alta"}}
+      Get Message: {name: "Ler mensagem", description: "Lê uma mensagem.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem"}}
+      List Messages: {name: "Listar mensagens", description: "Lista as últimas mensagens de um canal, das mais novas primeiro.", fields: {guild_id: "Servidor", channel_id: "Canal", limit: "Limite", before: "Antes da mensagem (ID)", after: "Depois de (ID)"}}
+      Edit Message: {name: "Editar mensagem", description: "Muda uma mensagem que o bot enviou.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem", content: "Texto", embeds: "Embeds"}}
+      Delete Message: {name: "Apagar mensagem", description: "Apaga uma mensagem.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem"}}
+      React to Message: {name: "Reagir à mensagem", description: "Adiciona uma reação do bot a uma mensagem.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem", emoji: "Emoji"}}
+      Pin Message: {name: "Fixar mensagem", description: "Fixa uma mensagem no canal.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem"}}
+      Unpin Message: {name: "Desafixar mensagem", description: "Desafixa uma mensagem.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem"}}
+      Start Thread: {name: "Criar thread", description: "Cria uma thread a partir de uma mensagem.", fields: {guild_id: "Servidor", channel_id: "Canal", message_id: "ID da mensagem", name: "Nome da thread", auto_archive_duration: "Arquivar após"}}
+      Open Direct Message: {name: "Abrir mensagem direta", description: "Abre um chat privado com um usuário que divide um servidor com o bot; envie para o id dele com Enviar mensagem.", fields: {user_id: "ID do usuário"}}
+      List Channels: {name: "Listar canais", description: "Lista os canais e categorias de um servidor.", fields: {guild_id: "Servidor"}}
+      Get Channel: {name: "Ler canal", description: "Lê um canal.", fields: {guild_id: "Servidor", channel_id: "Canal"}}
+      Create Channel: {name: "Criar canal", description: "Cria um canal de texto, de voz ou uma categoria.", fields: {guild_id: "Servidor", name: "Nome", type: "Tipo", topic: "Tópico", parent_id: "ID da categoria"}}
+      Update Channel: {name: "Atualizar canal", description: "Muda o nome ou o tópico de um canal.", fields: {guild_id: "Servidor", channel_id: "Canal", name: "Nome", topic: "Tópico"}}
+      Delete Channel: {name: "Excluir canal", description: "Exclui um canal, ou fecha uma DM.", fields: {guild_id: "Servidor", channel_id: "Canal"}}
+      List Members: {name: "Listar membros", description: "Lista os membros de um servidor; exige o intent Server Members.", fields: {guild_id: "Servidor", limit: "Limite", after: "Depois do usuário (ID)"}}
+      Get Member: {name: "Ler membro", description: "Lê um membro de um servidor, com cargos e apelido.", fields: {guild_id: "Servidor", user_id: "ID do usuário"}}
+      Add Role: {name: "Dar cargo", description: "Dá um cargo a um membro.", fields: {guild_id: "Servidor", user_id: "ID do usuário", role_id: "Cargo"}}
+      Remove Role: {name: "Tirar cargo", description: "Tira um cargo de um membro.", fields: {guild_id: "Servidor", user_id: "ID do usuário", role_id: "Cargo"}}
+      Kick Member: {name: "Expulsar membro", description: "Remove um membro do servidor; ele pode entrar de novo.", fields: {guild_id: "Servidor", user_id: "ID do usuário"}}
+      Ban Member: {name: "Banir membro", description: "Bane um usuário de um servidor.", fields: {guild_id: "Servidor", user_id: "ID do usuário", delete_message_seconds: "Apagar mensagens dele das últimas"}}
+      Unban Member: {name: "Desbanir membro", description: "Retira um banimento.", fields: {guild_id: "Servidor", user_id: "ID do usuário"}}
+      List Roles: {name: "Listar cargos", description: "Lista os cargos de um servidor.", fields: {guild_id: "Servidor"}}
+      List Servers: {name: "Listar servidores", description: "Lista os servidores em que o bot está."}

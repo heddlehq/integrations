@@ -11,11 +11,11 @@ integrations:
   - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: draft}
   - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: draft}
   - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: draft}
-  - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: manifest, status: draft}
   - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: bearer, n8n: Calendly, kind: manifest, status: draft}
   - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: header, n8n: ClickUp, kind: manifest, status: draft}
   - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: draft}
-  - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: Discord, kind: package, lib: {name: nostrum, version: 0.10.4, released: 2025-03-02}, status: planned}
+  - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: header, n8n: Discord, kind: manifest, status: draft}
   - {id: dropbox, name: Dropbox, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Dropbox, kind: manifest, status: draft}
   - {id: email, name: Email (IMAP/SMTP), category: email, phase: 1, origin: n8n, auth: basic, n8n: EmailReadImap, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: official}
   - {id: facebook_lead_ads, name: Facebook Lead Ads, category: marketing, phase: 1, origin: n8n, auth: bearer, n8n: FacebookLeadAds, kind: manifest, status: draft}
