@@ -1,0 +1,225 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Slides API v1 with Google OAuth. Edits go through presentations:batchUpdate;
+# slides and shapes are addressed by their object IDs.
+id: google_slides
+name: Google Slides
+version: 1.0.0
+homepage: https://developers.google.com/workspace/slides/api/reference/rest
+description: Create Google Slides presentations, read them, add and copy slides, fill templates and get thumbnails.
+icon: hero-presentation-chart-bar
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.32" width="18.00" height="17.36" viewBox="0 0 800 771.41786"><path fill="url(#gslides_a)" d="M 2.8142856,230.08686 C -9.0571427,157.41067 40.233331,88.872583 112.90952,77.001154 L 573.49996,1.763064 C 646.17618,-10.103602 714.71423,39.186872 726.5857,111.8583 l 70.15238,429.47139 C 808.6095,614.00586 759.31902,682.54396 686.64284,694.41538 L 226.05237,769.65349 C 153.37618,781.52491 84.838092,732.23444 72.966664,659.55826 Z" style="fill:url(#gslides_a);stroke-width:4.76188" /> <path fill="url(#gslides_b)" d="M 0,221.90591 C 0,179.3202 0,158.02496 6.690476,141.13448 A 95.23809,95.23809 0 0 1 60.180949,87.644012 c 16.890476,-6.690477 38.18095,-6.690477 80.771431,-6.690477 H 659.0476 c 42.5857,0 63.88093,0 80.77142,6.685715 a 95.23809,95.23809 0 0 1 53.49522,53.49523 c 6.68573,16.89048 6.68573,38.18572 6.68573,80.77143 v 327.61902 c 0,42.5857 0,63.88093 -6.68573,80.77142 a 95.23809,95.23809 0 0 1 -53.49522,53.49522 c -16.89049,6.68573 -38.18572,6.68573 -80.77142,6.68573 H 140.95238 c -42.585719,0 -63.880955,0 -80.776193,-6.68573 A 95.23809,95.23809 0 0 1 6.690476,630.29635 C 0,613.40586 0,592.11063 0,549.52493 Z" style="fill:url(#gslides_b);stroke-width:4.76188" /> <mask id="gslides_e" width="168" height="128" x="12" y="32" maskUnits="userSpaceOnUse"> <path fill="#fec700" d="m 12,61.6 c 0,-8.943 0,-13.415 1.405,-16.962 A 20,20 0 0 1 24.638,33.405 C 28.185,32 32.656,32 41.6,32 h 108.8 c 8.943,0 13.415,0 16.962,1.404 a 20,20 0 0 1 11.234,11.234 C 180,48.185 180,52.657 180,61.6 v 68.8 c 0,8.943 0,13.415 -1.404,16.962 a 20,20 0 0 1 -11.234,11.234 C 163.815,160 159.343,160 150.4,160 H 41.6 c -8.943,0 -13.415,0 -16.963,-1.404 A 20,20 0 0 1 13.405,147.362 C 12,143.815 12,139.343 12,130.4 Z" /> </mask> <g filter="url(#gslides_c)" mask="url(#gslides_e)" transform="matrix(4.7619047,0,0,4.7619047,-57.142854,-71.427409)"> <path fill="#ffbe00" d="M 33.74,191.516 178.136,169.936 153.304,3.781 8.907,25.361 Z" /> <path fill="url(#gslides_f)" d="M 33.74,191.516 178.136,169.936 153.304,3.781 8.907,25.361 Z" style="fill:url(#gslides_f)" /> </g> <path fill="#ffffff" fill-rule="evenodd" d="m 647.61903,204.76305 a 28.571428,28.571428 0 0 1 28.57144,28.57143 V 538.09637 A 28.571428,28.571428 0 0 1 647.61903,566.6678 H 152.38094 l -1.47142,-0.0381 a 28.571428,28.571428 0 0 1 -27.1,-28.53334 V 233.33448 a 28.571428,28.571428 0 0 1 27.1,-28.53333 l 1.47142,-0.0381 z M 180.95237,509.52493 H 619.0476 V 261.90591 H 180.95237 Z" clip-rule="evenodd" style="stroke-width:4.76188" /> <defs > <linearGradient id="gslides_a" x1="84.07" x2="157.2" y1="23.27" y2="160.82001" gradientUnits="userSpaceOnUse" gradientTransform="matrix(4.7619048,0,0,4.7619048,-57.142859,-71.427414)"> <stop offset=".2" stop-color="#ffdb0f" /> <stop offset=".67" stop-color="#ffbe00" /> <stop offset=".91" stop-color="#ffa8e3" /> </linearGradient> <linearGradient id="gslides_b" x1="96" x2="96" y1="32" y2="160" gradientUnits="userSpaceOnUse" gradientTransform="matrix(4.7619048,0,0,4.7619048,-57.142859,-71.427414)"> <stop stop-color="#ffbe00" /> <stop offset="1" stop-color="#fec700" /> </linearGradient> <linearGradient id="gslides_f" x1="108.52" x2="83.959999" y1="168.16" y2="25.27" gradientUnits="userSpaceOnUse"> <stop offset=".07" stop-color="#fff549" /> <stop offset=".78" stop-color="#ffbe00" stop-opacity="0" /> </linearGradient> <filter id="gslides_c" width="193.23" height="211.73" x="-3.0899999" y="-8.2200003" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"> <feFlood flood-opacity="0" result="BackgroundImageFix" /> <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape" mode="normal" /> <feGaussianBlur result="effect1_foregroundBlur_37552_9023" stdDeviation="6" /> </filter> </defs></svg></svg>
+category: productivity
+base_url: https://slides.googleapis.com/v1/
+
+credential:
+  label: Google Slides
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/presentations, https://www.googleapis.com/auth/drive.file]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+actions:
+  - name: Create Presentation
+    resource: Presentation
+    description: Creates a presentation with one blank title slide in My Drive.
+    fields:
+      - {name: title, label: Title, required: true}
+    request: {method: POST, path: presentations, body: {title: "{{fields.title}}"}}
+
+  - name: Get Presentation
+    resource: Presentation
+    description: Reads a presentation, with its slides, layouts and masters.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+    request: {method: GET, path: "presentations/{{fields.presentation_id}}"}
+
+  - name: List Slides
+    resource: Slide
+    description: Lists the slides of a presentation, in order.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+    request: {method: GET, path: "presentations/{{fields.presentation_id}}", query: {fields: slides}}
+    output: {path: slides}
+
+  - name: Get Slide
+    resource: Slide
+    description: Reads one slide with its shapes and text.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: slide_id, label: Slide ID, required: true, description: "The objectId of the slide, as List Slides shows it."}
+    request: {method: GET, path: "presentations/{{fields.presentation_id}}/pages/{{fields.slide_id}}"}
+
+  - name: Get Slide Thumbnail
+    resource: Slide
+    description: Gets a link to a PNG image of a slide, valid for 30 minutes.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: slide_id, label: Slide ID, required: true}
+      - {name: size, label: Size, type: select, default: MEDIUM, options: [{label: Small (200 px), value: SMALL}, {label: Medium (800 px), value: MEDIUM}, {label: Large (1600 px), value: LARGE}]}
+    request:
+      method: GET
+      path: "presentations/{{fields.presentation_id}}/pages/{{fields.slide_id}}/thumbnail"
+      query: {thumbnailProperties.thumbnailSize: "{{fields.size}}", thumbnailProperties.mimeType: PNG}
+
+  - name: Add Slide
+    resource: Slide
+    description: Adds a slide with a standard layout.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - name: layout
+        label: Layout
+        type: select
+        default: TITLE_AND_BODY
+        options:
+          - {label: Blank, value: BLANK}
+          - {label: Title, value: TITLE}
+          - {label: Title and body, value: TITLE_AND_BODY}
+          - {label: Title and two columns, value: TITLE_AND_TWO_COLUMNS}
+          - {label: Title only, value: TITLE_ONLY}
+          - {label: Section header, value: SECTION_HEADER}
+          - {label: Section title and description, value: SECTION_TITLE_AND_DESCRIPTION}
+          - {label: One column text, value: ONE_COLUMN_TEXT}
+          - {label: Main point, value: MAIN_POINT}
+          - {label: Big number, value: BIG_NUMBER}
+          - {label: Caption only, value: CAPTION_ONLY}
+      - {name: index, label: Position, type: number, description: "0 is the first slide; empty adds it at the end."}
+      - {name: slide_id, label: New slide ID, description: "5 to 50 letters, digits or underscores; empty lets Google pick one."}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - createSlide: {objectId: "{{fields.slide_id}}", insertionIndex: "{{fields.index}}", slideLayoutReference: {predefinedLayout: "{{fields.layout}}"}}
+    output: {path: replies.0.createSlide}
+
+  - name: Duplicate Slide
+    resource: Slide
+    description: Copies a slide, placing the copy right after it.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: slide_id, label: Slide ID, required: true}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - duplicateObject: {objectId: "{{fields.slide_id}}"}
+    output: {path: replies.0.duplicateObject}
+
+  - name: Move Slide
+    resource: Slide
+    description: Moves a slide to another position.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: slide_id, label: Slide ID, required: true}
+      - {name: index, label: New position, type: number, required: true, description: 0 is the first slide.}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - updateSlidesPosition: {slideObjectIds: ["{{fields.slide_id}}"], insertionIndex: "{{fields.index}}"}
+
+  - name: Delete Slide
+    resource: Slide
+    description: Deletes a slide, or any other object, by its ID.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: slide_id, label: Slide or object ID, required: true}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - deleteObject: {objectId: "{{fields.slide_id}}"}
+
+  - name: Replace Text
+    resource: Presentation
+    description: Replaces every match of a text, like a {{placeholder}} in a template.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: find, label: Find, required: true}
+      - {name: replace, label: Replace with}
+      - {name: match_case, label: Match case, type: boolean, default: true}
+      - {name: slide_ids, label: Only on slides, description: "Slide IDs separated by commas; empty means all slides."}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - replaceAllText:
+              containsText: {text: "{{fields.find}}", matchCase: "{{fields.match_case}}"}
+              replaceText: "{{fields.replace | keep}}"
+              pageObjectIds: {_each: "{{fields.slide_ids}}", _value: "{{item}}"}
+    output: {path: replies.0.replaceAllText}
+
+  - name: Replace Shapes With Image
+    resource: Presentation
+    description: Replaces every shape that contains a text, like {{logo}}, with an image from a public URL.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: find, label: Shape text, required: true}
+      - {name: image_url, label: Image URL, required: true, description: "PNG, JPEG or GIF, public, under 50 MB."}
+      - {name: method, label: Fit, type: select, default: CENTER_INSIDE, options: [{label: Fit inside the shape, value: CENTER_INSIDE}, {label: Fill the shape, value: CENTER_CROP}]}
+      - {name: match_case, label: Match case, type: boolean, default: true}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - replaceAllShapesWithImage:
+              containsText: {text: "{{fields.find}}", matchCase: "{{fields.match_case}}"}
+              imageUrl: "{{fields.image_url}}"
+              imageReplaceMethod: "{{fields.method}}"
+    output: {path: replies.0.replaceAllShapesWithImage}
+
+  - name: Insert Text
+    resource: Shape
+    description: Inserts text into a shape or table cell.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: object_id, label: Shape ID, required: true}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: index, label: Position, type: number, default: 0, description: 0 is the start of the shape's text.}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body:
+        requests:
+          - insertText: {objectId: "{{fields.object_id}}", text: "{{fields.text}}", insertionIndex: "{{fields.index}}"}
+
+  - name: Batch Update
+    resource: Presentation
+    description: Sends a list of Slides API edit requests in one call, for shapes, tables, styles and more.
+    fields:
+      - {name: presentation_id, label: Presentation ID, required: true, description: "From the address: docs.google.com/presentation/d/<ID>/edit."}
+      - {name: requests, label: Requests, type: json, required: true, description: "A list like [{\"createSlide\": {\"insertionIndex\": 1}}]."}
+    request:
+      method: POST
+      path: "presentations/{{fields.presentation_id}}:batchUpdate"
+      body: {requests: "{{fields.requests}}"}
+
+i18n:
+  pt-BR:
+    description: "Crie e leia apresentações do Google Slides, adicione e copie slides, preencha modelos e gere miniaturas."
+    actions:
+      Create Presentation: {name: "Criar apresentação", description: "Cria uma apresentação com um slide de título em branco no Meu Drive.", fields: {title: "Título"}}
+      Get Presentation: {name: "Ler apresentação", description: "Lê uma apresentação, com slides, layouts e mestres.", fields: {presentation_id: "ID da apresentação"}}
+      List Slides: {name: "Listar slides", description: "Lista os slides de uma apresentação, em ordem.", fields: {presentation_id: "ID da apresentação"}}
+      Get Slide: {name: "Ler slide", description: "Lê um slide com suas formas e textos.", fields: {presentation_id: "ID da apresentação", slide_id: "ID do slide"}}
+      Get Slide Thumbnail: {name: "Miniatura do slide", description: "Gera um link para uma imagem PNG do slide, válido por 30 minutos.", fields: {presentation_id: "ID da apresentação", slide_id: "ID do slide", size: "Tamanho"}}
+      Add Slide: {name: "Adicionar slide", description: "Adiciona um slide com um layout padrão.", fields: {presentation_id: "ID da apresentação", layout: "Layout", index: "Posição", slide_id: "ID do novo slide"}}
+      Duplicate Slide: {name: "Duplicar slide", description: "Copia um slide e coloca a cópia logo depois dele.", fields: {presentation_id: "ID da apresentação", slide_id: "ID do slide"}}
+      Move Slide: {name: "Mover slide", description: "Move um slide para outra posição.", fields: {presentation_id: "ID da apresentação", slide_id: "ID do slide", index: "Nova posição"}}
+      Delete Slide: {name: "Apagar slide", description: "Apaga um slide, ou qualquer outro objeto, pelo ID.", fields: {presentation_id: "ID da apresentação", slide_id: "ID do slide ou objeto"}}
+      Replace Text: {name: "Substituir texto", description: "Substitui todas as ocorrências de um texto, como um {{campo}} num modelo.", fields: {presentation_id: "ID da apresentação", find: "Procurar", replace: "Substituir por", match_case: "Diferenciar maiúsculas", slide_ids: "Só nos slides"}}
+      Replace Shapes With Image: {name: "Trocar formas por imagem", description: "Troca cada forma que contém um texto, como {{logo}}, por uma imagem de uma URL pública.", fields: {presentation_id: "ID da apresentação", find: "Texto da forma", image_url: "URL da imagem", method: "Ajuste", match_case: "Diferenciar maiúsculas"}}
+      Insert Text: {name: "Inserir texto", description: "Insere texto numa forma ou célula de tabela.", fields: {presentation_id: "ID da apresentação", object_id: "ID da forma", text: "Texto", index: "Posição"}}
+      Batch Update: {name: "Edição em lote", description: "Envia uma lista de edições da API do Slides numa chamada, para formas, tabelas, estilos e mais.", fields: {presentation_id: "ID da apresentação", requests: "Edições"}}

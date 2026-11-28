@@ -1,0 +1,152 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Docs API v1 with Google OAuth. Edits go through documents:batchUpdate; text
+# positions are indexes into the body, where 1 is the start.
+id: google_docs
+name: Google Docs
+version: 1.0.0
+homepage: https://developers.google.com/workspace/docs/api/reference/rest
+description: Create Google Docs, read them, and add, insert or replace text, images and page breaks.
+icon: hero-document-text
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="5.45" y="3.00" width="13.09" height="18.00" viewBox="0 0 800 1100.04"><mask id="gdocs_a" maskUnits="userSpaceOnUse" x="32" y="8" width="128" height="176"> <path d="M130.334 184H61.6c-8.9435 0-13.4152 0-16.9625-1.404a20 20 0 0 1-11.233-11.234C32 167.815 32 163.343 32 154.4V37.6c0-8.9435 0-13.4152 1.4045-16.9625a20 20 0 0 1 11.233-11.233C48.1848 8 52.6565 8 61.6 8H100l54.793 54.7933v.0001c1.661 1.6609 2.492 2.4914 3.13 3.4305a11.99 11.99 0 0 1 1.862 4.5011c.212 1.1154.212 2.3014.21 4.6735-.035 48.9185-.057 49.4005-.058 78.9675 0 8.966 0 13.45-1.405 16.997a20 20 0 0 1-11.233 11.233C143.752 184 139.279 184 130.334 184" fill="#fff"/> </mask> <g mask="url(#gdocs_a)" transform="matrix(6.2502276,0,0,6.2502276,-200.00728,-50.001821)"> <path d="M159.94 184H31.9999V8h68l59.9991 60z" fill="#3186ff"/> <g filter="url(#gdocs_b)"> <path d="M43 192h106V20H43Z" fill="url(#gdocs_c)"/> </g> </g> <path d="M768.7468 343.7319c-15.6631-11.7554-35.1263-18.72-56.2208-18.72H505.0183c-44.1829 0-80.003-35.8189-80.003-80.0017V0Z" fill="#76bbff"/> <rect x="200.0135" y="662.5241" width="400.0146" height="75.0027" rx="37.5014" fill="#ffffff"/> <rect x="200.0135" y="843.7807" width="300.0109" height="75.0027" rx="37.5014" fill="#ffffff"/> <defs> <linearGradient id="gdocs_c" x1="96" y1="59.2839" x2="54.6124" y2="171.338" gradientUnits="userSpaceOnUse"> <stop offset=".33" stop-color="#3186FF"/> <stop offset="1" stop-color="#A9A8FF"/> </linearGradient> <filter id="gdocs_b" x="31" y="8" width="130" height="196" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"> <feFlood flood-opacity="0" result="BackgroundImageFix"/> <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/> <feGaussianBlur stdDeviation="6" result="effect1_foregroundBlur_37242_8762"/> </filter> </defs></svg></svg>
+category: productivity
+base_url: https://docs.googleapis.com/v1/
+
+credential:
+  label: Google Docs
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/documents, https://www.googleapis.com/auth/drive.file]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+actions:
+  - name: Create Document
+    resource: Document
+    description: Creates an empty document in My Drive; add text to it with Append Text.
+    fields:
+      - {name: title, label: Title, required: true}
+    request: {method: POST, path: documents, body: {title: "{{fields.title}}"}}
+
+  - name: Get Document
+    resource: Document
+    description: Reads a document, with its whole structure, text and styles.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+    request: {method: GET, path: "documents/{{fields.document_id}}"}
+
+  - name: Append Text
+    resource: Document
+    description: Adds text at the end of a document.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+      - {name: text, label: Text, type: textarea, required: true, description: "Starts on the last line; begin with a line break for a new paragraph."}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body:
+        requests:
+          - insertText: {text: "{{fields.text}}", endOfSegmentLocation: {}}
+
+  - name: Insert Text
+    resource: Document
+    description: Inserts text at a position of a document.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: index, label: Position, type: number, required: true, default: 1, description: 1 is the start of the document.}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body:
+        requests:
+          - insertText: {text: "{{fields.text}}", location: {index: "{{fields.index}}"}}
+
+  - name: Replace Text
+    resource: Document
+    description: Replaces every match of a text, like a {{placeholder}} in a template.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+      - {name: find, label: Find, required: true}
+      - {name: replace, label: Replace with}
+      - {name: match_case, label: Match case, type: boolean, default: true}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body:
+        requests:
+          - replaceAllText: {containsText: {text: "{{fields.find}}", matchCase: "{{fields.match_case}}"}, replaceText: "{{fields.replace | keep}}"}
+
+  - name: Insert Image
+    resource: Document
+    description: Adds an image from a public URL at the end of a document.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+      - {name: uri, label: Image URL, required: true, description: "PNG, JPEG or GIF, public, under 50 MB."}
+      - {name: width, label: Width in points, type: number}
+      - {name: height, label: Height in points, type: number}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body:
+        requests:
+          - insertInlineImage:
+              uri: "{{fields.uri}}"
+              endOfSegmentLocation: {}
+              objectSize: {width: {magnitude: "{{fields.width}}", unit: PT}, height: {magnitude: "{{fields.height}}", unit: PT}}
+
+  - name: Insert Page Break
+    resource: Document
+    description: Adds a page break at the end of a document.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body:
+        requests:
+          - insertPageBreak: {endOfSegmentLocation: {}}
+
+  - name: Delete Text
+    resource: Document
+    description: Deletes the content between two positions.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+      - {name: start_index, label: From position, type: number, required: true}
+      - {name: end_index, label: To position, type: number, required: true}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body:
+        requests:
+          - deleteContentRange: {range: {startIndex: "{{fields.start_index}}", endIndex: "{{fields.end_index}}"}}
+
+  - name: Batch Update
+    resource: Document
+    description: Sends a list of Docs API edit requests in one call, for styles, tables and more.
+    fields:
+      - {name: document_id, label: Document ID, required: true, description: "From the address: docs.google.com/document/d/<ID>/edit."}
+      - {name: requests, label: Requests, type: json, required: true, description: "A list like [{\"insertText\": {\"text\": \"Hi\", \"location\": {\"index\": 1}}}]."}
+    request:
+      method: POST
+      path: "documents/{{fields.document_id}}:batchUpdate"
+      body: {requests: "{{fields.requests}}"}
+
+i18n:
+  pt-BR:
+    description: "Crie e leia documentos do Google Docs e adicione, insira ou substitua textos, imagens e quebras de página."
+    actions:
+      Create Document: {name: "Criar documento", description: "Cria um documento vazio no Meu Drive; adicione texto com Adicionar texto.", fields: {title: "Título"}}
+      Get Document: {name: "Ler documento", description: "Lê um documento, com toda a estrutura, o texto e os estilos.", fields: {document_id: "ID do documento"}}
+      Append Text: {name: "Adicionar texto", description: "Adiciona texto ao fim de um documento.", fields: {document_id: "ID do documento", text: "Texto"}}
+      Insert Text: {name: "Inserir texto", description: "Insere texto numa posição do documento.", fields: {document_id: "ID do documento", text: "Texto", index: "Posição"}}
+      Replace Text: {name: "Substituir texto", description: "Substitui todas as ocorrências de um texto, como um {{campo}} num modelo.", fields: {document_id: "ID do documento", find: "Procurar", replace: "Substituir por", match_case: "Diferenciar maiúsculas"}}
+      Insert Image: {name: "Inserir imagem", description: "Adiciona ao fim do documento uma imagem de uma URL pública.", fields: {document_id: "ID do documento", uri: "URL da imagem", width: "Largura em pontos", height: "Altura em pontos"}}
+      Insert Page Break: {name: "Inserir quebra de página", description: "Adiciona uma quebra de página ao fim do documento.", fields: {document_id: "ID do documento"}}
+      Delete Text: {name: "Apagar texto", description: "Apaga o conteúdo entre duas posições.", fields: {document_id: "ID do documento", start_index: "Da posição", end_index: "Até a posição"}}
+      Batch Update: {name: "Edição em lote", description: "Envia uma lista de edições da API do Docs numa chamada, para estilos, tabelas e mais.", fields: {document_id: "ID do documento", requests: "Edições"}}

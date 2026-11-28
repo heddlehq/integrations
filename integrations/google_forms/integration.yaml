@@ -1,0 +1,246 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Forms API v1 with Google OAuth. Questions are items of the form, addressed by
+# their position; edits go through forms:batchUpdate.
+id: google_forms
+name: Google Forms
+version: 1.0.0
+homepage: https://developers.google.com/workspace/forms/api/reference/rest
+description: Create Google Forms, add questions, publish them and read the responses as they come in.
+icon: hero-clipboard-document-list
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.12" width="18.00" height="17.76" viewBox="0 0 800 789.4737"><rect width="536.8421" height="263.1579" x="263.1579" y="526.3158" fill="#969dff" rx="131.5789"/> <rect width="263.1579" height="263.1579" x="0" y="526.3158" fill="#b8c0ff" rx="131.5789"/> <rect width="263.1579" height="263.1579" x="0" y="263.1579" fill="#5746e3" rx="131.5789"/> <rect width="536.8421" height="263.1579" x="263.1579" y="263.1579" fill="#5746e3" rx="131.5789"/> <mask id="gforms_a" width="102" height="50" x="70" y="21" maskUnits="userSpaceOnUse"> <rect width="102" height="50" x="70" y="21" fill="#fff" rx="25"/> </mask> <g mask="url(#gforms_a)" transform="matrix(5.2631579,0,0,5.2631579,-105.26316,-110.52632)"> <rect width="102" height="50" x="70" y="21" fill="#7372fe" rx="25"/> <g filter="url(#gforms_b)"> <circle cx="56" cy="46" r="36" fill="#64afff"/> </g> </g> <rect width="263.1579" height="263.1579" x="0" y="0" fill="#7372fe" rx="131.5789"/> <path stroke="#ffffff" stroke-linecap="round" stroke-width="63.6" d="M394.7368 131.579h273.6843"/> <circle cx="131.5789" cy="131.5789" r="63.1579" fill="#ffffff"/> <defs> <filter id="gforms_b" width="111.47" height="111.47" x=".27" y="-9.74" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"> <feFlood flood-opacity="0" result="BackgroundImageFix"/> <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape" mode="normal"/> <feGaussianBlur result="effect1_foregroundBlur_37586_9489" stdDeviation="9.87"/> </filter> </defs></svg></svg>
+category: forms
+base_url: https://forms.googleapis.com/v1/
+
+credential:
+  label: Google Forms
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/forms.body, https://www.googleapis.com/auth/forms.responses.readonly, https://www.googleapis.com/auth/drive.file]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Response
+    description: Starts the flow for each new response to a form, checking every 5 minutes.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+    request:
+      method: GET
+      path: "forms/{{fields.form_id}}/responses"
+      query: {filter: "timestamp > {{time.day_ago}}", pageSize: 5000}
+    output: {path: responses}
+    poll: {every: 5, id: responseId}
+
+actions:
+  - name: Create Form
+    resource: Form
+    description: Creates an empty form in My Drive; add questions with Add Question.
+    fields:
+      - {name: title, label: Title, required: true, description: What people see at the top of the form.}
+      - {name: document_title, label: File name, description: "The name in Drive; empty uses the title."}
+    request: {method: POST, path: forms, body: {info: {title: "{{fields.title}}", documentTitle: "{{fields.document_title}}"}}}
+
+  - name: Get Form
+    resource: Form
+    description: Reads a form, with its settings and every question.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+    request: {method: GET, path: "forms/{{fields.form_id}}"}
+
+  - name: Update Form Info
+    resource: Form
+    description: Changes the title and description of a form.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body:
+        requests:
+          - updateFormInfo: {info: {title: "{{fields.title}}", description: "{{fields.description | keep}}"}, updateMask: "title,description"}
+
+  - name: Add Text Question
+    resource: Question
+    description: Adds a question answered with free text.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: title, label: Question, required: true}
+      - {name: description, label: Help text}
+      - {name: paragraph, label: Long answer, type: boolean, default: false}
+      - {name: required, label: Required, type: boolean, default: false}
+      - {name: index, label: Position, type: number, default: 0, description: 0 puts it first.}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body:
+        requests:
+          - createItem:
+              location: {index: "{{fields.index}}"}
+              item:
+                title: "{{fields.title}}"
+                description: "{{fields.description}}"
+                questionItem: {question: {required: "{{fields.required}}", textQuestion: {paragraph: "{{fields.paragraph}}"}}}
+    output: {path: replies.0.createItem}
+
+  - name: Add Choice Question
+    resource: Question
+    description: Adds a multiple choice, checkbox or dropdown question.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: title, label: Question, required: true}
+      - {name: description, label: Help text}
+      - {name: type, label: Type, type: select, default: RADIO, options: [{label: Multiple choice, value: RADIO}, {label: Checkboxes, value: CHECKBOX}, {label: Dropdown, value: DROP_DOWN}]}
+      - {name: options, label: Options, required: true, description: "A list, or text with the options separated by commas."}
+      - {name: shuffle, label: Shuffle options, type: boolean, default: false}
+      - {name: required, label: Required, type: boolean, default: false}
+      - {name: index, label: Position, type: number, default: 0, description: 0 puts it first.}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body:
+        requests:
+          - createItem:
+              location: {index: "{{fields.index}}"}
+              item:
+                title: "{{fields.title}}"
+                description: "{{fields.description}}"
+                questionItem:
+                  question:
+                    required: "{{fields.required}}"
+                    choiceQuestion:
+                      type: "{{fields.type}}"
+                      shuffle: "{{fields.shuffle}}"
+                      options: {_each: "{{fields.options}}", value: "{{item}}"}
+    output: {path: replies.0.createItem}
+
+  - name: Add Scale Question
+    resource: Question
+    description: Adds a question answered on a linear scale, like 1 to 5.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: title, label: Question, required: true}
+      - {name: low, label: From, type: number, default: 1, description: 0 or 1.}
+      - {name: high, label: To, type: number, default: 5, description: 2 to 10.}
+      - {name: low_label, label: Label of the lowest}
+      - {name: high_label, label: Label of the highest}
+      - {name: required, label: Required, type: boolean, default: false}
+      - {name: index, label: Position, type: number, default: 0, description: 0 puts it first.}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body:
+        requests:
+          - createItem:
+              location: {index: "{{fields.index}}"}
+              item:
+                title: "{{fields.title}}"
+                questionItem: {question: {required: "{{fields.required}}", scaleQuestion: {low: "{{fields.low}}", high: "{{fields.high}}", lowLabel: "{{fields.low_label}}", highLabel: "{{fields.high_label}}"}}}
+    output: {path: replies.0.createItem}
+
+  - name: Add Date Question
+    resource: Question
+    description: Adds a question answered with a date, and optionally a time.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: title, label: Question, required: true}
+      - {name: include_time, label: Ask the time too, type: boolean, default: false}
+      - {name: include_year, label: Ask the year, type: boolean, default: true}
+      - {name: required, label: Required, type: boolean, default: false}
+      - {name: index, label: Position, type: number, default: 0, description: 0 puts it first.}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body:
+        requests:
+          - createItem:
+              location: {index: "{{fields.index}}"}
+              item:
+                title: "{{fields.title}}"
+                questionItem: {question: {required: "{{fields.required}}", dateQuestion: {includeTime: "{{fields.include_time}}", includeYear: "{{fields.include_year}}"}}}
+    output: {path: replies.0.createItem}
+
+  - name: Delete Item
+    resource: Question
+    description: Deletes the question or other item at a position.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: index, label: Position, type: number, required: true, description: 0 is the first item.}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body:
+        requests:
+          - deleteItem: {location: {index: "{{fields.index}}"}}
+
+  - name: Set Publishing
+    resource: Form
+    description: Publishes or unpublishes a form, and opens or closes it for responses.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: published, label: Published, type: boolean, default: true}
+      - {name: accepting, label: Accepting responses, type: boolean, default: true}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:setPublishSettings"
+      body: {publishSettings: {publishState: {isPublished: "{{fields.published}}", isAcceptingResponses: "{{fields.accepting}}"}}}
+
+  - name: Batch Update
+    resource: Form
+    description: Sends a list of Forms API edit requests in one call, for quizzes, sections and more.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: requests, label: Requests, type: json, required: true, description: "A list like [{\"deleteItem\": {\"location\": {\"index\": 0}}}]."}
+    request:
+      method: POST
+      path: "forms/{{fields.form_id}}:batchUpdate"
+      body: {requests: "{{fields.requests}}", includeFormInResponse: false}
+
+  - name: List Responses
+    resource: Response
+    description: Lists the responses to a form, newest last.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: filter, label: Filter, description: "Like timestamp > 2026-01-01T00:00:00Z; empty lists all."}
+      - {name: limit, label: Limit, type: number, default: 100, description: Up to 5000.}
+    request:
+      method: GET
+      path: "forms/{{fields.form_id}}/responses"
+      query:
+        filter: "{{fields.filter}}"
+        pageSize: "{{fields.limit}}"
+    output: {path: responses}
+
+  - name: Get Response
+    resource: Response
+    description: Reads one response, with every answer.
+    fields:
+      - {name: form_id, label: Form ID, required: true, description: "From the edit address: docs.google.com/forms/d/<ID>/edit."}
+      - {name: response_id, label: Response ID, required: true}
+    request: {method: GET, path: "forms/{{fields.form_id}}/responses/{{fields.response_id}}"}
+
+i18n:
+  pt-BR:
+    description: "Crie formulários do Google Forms, adicione perguntas, publique e leia as respostas conforme chegam."
+    triggers:
+      New Response: {name: "Nova resposta", description: "Inicia o fluxo a cada nova resposta a um formulário, verificando a cada 5 minutos.", fields: {form_id: "ID do formulário"}}
+    actions:
+      Create Form: {name: "Criar formulário", description: "Cria um formulário vazio no Meu Drive; adicione perguntas com Adicionar pergunta.", fields: {title: "Título", document_title: "Nome do arquivo"}}
+      Get Form: {name: "Ler formulário", description: "Lê um formulário, com as configurações e todas as perguntas.", fields: {form_id: "ID do formulário"}}
+      Update Form Info: {name: "Atualizar informações", description: "Altera o título e a descrição de um formulário.", fields: {form_id: "ID do formulário", title: "Título", description: "Descrição"}}
+      Add Text Question: {name: "Adicionar pergunta de texto", description: "Adiciona uma pergunta respondida com texto livre.", fields: {form_id: "ID do formulário", title: "Pergunta", description: "Texto de ajuda", paragraph: "Resposta longa", required: "Obrigatória", index: "Posição"}}
+      Add Choice Question: {name: "Adicionar pergunta de escolha", description: "Adiciona uma pergunta de múltipla escolha, caixas de seleção ou lista suspensa.", fields: {form_id: "ID do formulário", title: "Pergunta", description: "Texto de ajuda", type: "Tipo", options: "Opções", shuffle: "Embaralhar opções", required: "Obrigatória", index: "Posição"}}
+      Add Scale Question: {name: "Adicionar pergunta de escala", description: "Adiciona uma pergunta respondida numa escala linear, como de 1 a 5.", fields: {form_id: "ID do formulário", title: "Pergunta", low: "De", high: "Até", low_label: "Rótulo do menor", high_label: "Rótulo do maior", required: "Obrigatória", index: "Posição"}}
+      Add Date Question: {name: "Adicionar pergunta de data", description: "Adiciona uma pergunta respondida com uma data e, se quiser, um horário.", fields: {form_id: "ID do formulário", title: "Pergunta", include_time: "Perguntar também o horário", include_year: "Perguntar o ano", required: "Obrigatória", index: "Posição"}}
+      Delete Item: {name: "Apagar item", description: "Apaga a pergunta ou outro item numa posição.", fields: {form_id: "ID do formulário", index: "Posição"}}
+      Set Publishing: {name: "Publicação", description: "Publica ou despublica um formulário e abre ou fecha para respostas.", fields: {form_id: "ID do formulário", published: "Publicado", accepting: "Aceitando respostas"}}
+      Batch Update: {name: "Edição em lote", description: "Envia uma lista de edições da API do Forms numa chamada, para testes, seções e mais.", fields: {form_id: "ID do formulário", requests: "Edições"}}
+      List Responses: {name: "Listar respostas", description: "Lista as respostas de um formulário, as mais novas por último.", fields: {form_id: "ID do formulário", filter: "Filtro", limit: "Limite"}}
+      Get Response: {name: "Ler resposta", description: "Lê uma resposta, com todas as respostas às perguntas.", fields: {form_id: "ID do formulário", response_id: "ID da resposta"}}
