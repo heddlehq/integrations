@@ -1,0 +1,375 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Zoom, through the API v2. Connect with a general app made in the Zoom App
+# Marketplace, with the redirect URL Heddle shows and the scopes for meetings,
+# webinars, recordings and users. A user is named by its ID or email, and "me" is
+# the connected one. Zoom's webhooks are set in the app itself, so the triggers check
+# for news every 5 minutes.
+id: zoom
+name: Zoom
+version: 1.0.0
+description: Meetings, webinars, registrants and recordings in Zoom.
+icon: hero-video-camera
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0B5CFF" d="M5.033 14.649H.743a.74.74 0 0 1-.686-.458a.74.74 0 0 1 .16-.808L3.19 10.41H1.06A1.06 1.06 0 0 1 0 9.35h3.957c.301 0 .57.18.686.458a.74.74 0 0 1-.161.808L1.51 13.59h2.464c.585 0 1.06.475 1.06 1.06zM24 11.338a2.068 2.068 0 0 0-3.603-1.38a2.06 2.06 0 0 0-1.536-.686c-1.14 0-2.066.926-2.066 2.066v3.311a1.06 1.06 0 0 0 1.06-1.06v-2.251a1.004 1.004 0 0 1 2.013 0v2.251c0 .586.474 1.06 1.06 1.06v-3.311a1.004 1.004 0 0 1 2.012 0v2.251c0 .586.475 1.06 1.06 1.06zM16.265 12a2.728 2.728 0 1 1-5.457 0a2.728 2.728 0 0 1 5.457 0m-1.06 0a1.669 1.669 0 1 0-3.338 0a1.669 1.669 0 0 0 3.338 0m-4.82 0a2.728 2.728 0 1 1-5.458 0a2.728 2.728 0 0 1 5.457 0zm-1.06 0a1.669 1.669 0 1 0-3.338 0a1.669 1.669 0 0 0 3.338 0"/></svg>
+category: communication
+author: Heddle
+homepage: https://developers.zoom.us/docs/api/
+base_url: https://api.zoom.us/v2/
+
+credential:
+  label: Zoom
+  auth:
+    type: oauth2
+    authorize_url: https://zoom.us/oauth/authorize
+    token_url: https://zoom.us/oauth/token
+    scopes: []
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Meeting
+    description: Starts the flow for each new scheduled meeting of a user, checking every 5 minutes.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+    request:
+      method: GET
+      path: "users/{{fields.user}}/meetings"
+      query: {type: scheduled, page_size: 300}
+    output: {path: meetings}
+    poll: {every: 5, id: id}
+
+  - name: New Recording
+    description: Starts the flow for each new cloud recording of a user, checking every 15 minutes.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+    request:
+      method: GET
+      path: "users/{{fields.user}}/recordings"
+      query: {page_size: 300}
+    output: {path: meetings}
+    poll: {every: 15, id: uuid}
+
+actions:
+  # Meetings
+  - name: Create Meeting
+    resource: Meeting
+    description: Schedules a meeting for a user.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+      - {name: topic, label: Topic, required: true}
+      - {name: start_time, label: Starts at, type: datetime}
+      - {name: duration, label: Minutes, type: number}
+      - {name: timezone, label: Time zone, description: "Like America/Sao_Paulo"}
+      - {name: agenda, label: Agenda, type: textarea}
+      - {name: password, label: Passcode}
+      - {name: waiting_room, label: Waiting room, type: boolean}
+      - {name: join_before_host, label: Join before the host, type: boolean}
+      - {name: auto_recording, label: Record, type: select, options: [{label: "No", value: none}, {label: On this computer, value: local}, {label: In the cloud, value: cloud}]}
+      - {name: settings, label: More settings, type: json, description: 'Like {"mute_upon_entry": true}'}
+      - {name: type, label: Kind, type: select, default: 2, options: [{label: Scheduled, value: 2}, {label: Instant, value: 1}, {label: With no fixed time, value: 3}]}
+    request:
+      method: POST
+      path: "users/{{fields.user}}/meetings"
+      body:
+        type: "{{fields.type}}"
+        topic: "{{fields.topic}}"
+        start_time: "{{fields.start_time}}"
+        duration: "{{fields.duration}}"
+        timezone: "{{fields.timezone}}"
+        agenda: "{{fields.agenda}}"
+        password: "{{fields.password}}"
+        settings: {waiting_room: "{{fields.waiting_room}}", join_before_host: "{{fields.join_before_host}}", auto_recording: "{{fields.auto_recording}}", _merge: "{{fields.settings}}"}
+
+  - name: Get Meeting
+    resource: Meeting
+    description: Reads a meeting, with its join link.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+    request: {method: GET, path: "meetings/{{fields.meeting}}"}
+
+  - name: List Meetings
+    resource: Meeting
+    description: Lists the meetings of a user.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+      - {name: type, label: Which, type: select, default: scheduled, options: [{label: Scheduled, value: scheduled}, {label: Live, value: live}, {label: Upcoming, value: upcoming}, {label: Previous, value: previous_meetings}]}
+      - {name: from, label: From, description: "Like 2026-01-01"}
+      - {name: to, label: To}
+    request:
+      method: GET
+      path: "users/{{fields.user}}/meetings"
+      query: {type: "{{fields.type}}", from: "{{fields.from}}", to: "{{fields.to}}"}
+    pagination: {type: cursor, items_path: meetings, cursor_param: next_page_token, next_path: next_page_token, limit_param: page_size, page_size: 300}
+
+  - name: Update Meeting
+    resource: Meeting
+    description: Changes a meeting. Empty fields stay as they are.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+      - {name: topic, label: Topic}
+      - {name: start_time, label: Starts at, type: datetime}
+      - {name: duration, label: Minutes, type: number}
+      - {name: timezone, label: Time zone, description: "Like America/Sao_Paulo"}
+      - {name: agenda, label: Agenda, type: textarea}
+      - {name: password, label: Passcode}
+      - {name: waiting_room, label: Waiting room, type: boolean}
+      - {name: join_before_host, label: Join before the host, type: boolean}
+      - {name: auto_recording, label: Record, type: select, options: [{label: "No", value: none}, {label: On this computer, value: local}, {label: In the cloud, value: cloud}]}
+      - {name: settings, label: More settings, type: json, description: 'Like {"mute_upon_entry": true}'}
+    request:
+      method: PATCH
+      path: "meetings/{{fields.meeting}}"
+      body:
+        topic: "{{fields.topic}}"
+        start_time: "{{fields.start_time}}"
+        duration: "{{fields.duration}}"
+        timezone: "{{fields.timezone}}"
+        agenda: "{{fields.agenda}}"
+        password: "{{fields.password}}"
+        settings: {waiting_room: "{{fields.waiting_room}}", join_before_host: "{{fields.join_before_host}}", auto_recording: "{{fields.auto_recording}}", _merge: "{{fields.settings}}"}
+    output:
+      value: {id: "{{fields.meeting}}", updated: true}
+
+  - name: Delete Meeting
+    resource: Meeting
+    description: Deletes a meeting, optionally telling the host and the registrants.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+      - {name: notify_host, label: Tell the host, type: boolean, default: false}
+      - {name: notify_registrants, label: Tell the registrants, type: boolean, default: false}
+    request:
+      method: DELETE
+      path: "meetings/{{fields.meeting}}"
+      query: {schedule_for_reminder: "{{fields.notify_host}}", cancel_meeting_reminder: "{{fields.notify_registrants}}"}
+    output:
+      value: {id: "{{fields.meeting}}", deleted: true}
+
+  - name: End Meeting
+    resource: Meeting
+    description: Ends a meeting that's going on.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+    request:
+      method: PUT
+      path: "meetings/{{fields.meeting}}/status"
+      body: {action: end}
+    output:
+      value: {id: "{{fields.meeting}}", ended: true}
+
+  - name: List Past Participants
+    resource: Meeting
+    description: Lists who joined a past meeting, with when they joined and left.
+    fields:
+      - {name: meeting, label: Meeting ID or UUID, required: true}
+    request: {method: GET, path: "past_meetings/{{fields.meeting}}/participants"}
+    pagination: {type: cursor, items_path: participants, cursor_param: next_page_token, next_path: next_page_token, limit_param: page_size, page_size: 300}
+
+  # Registrants
+  - name: Add Registrant
+    resource: Registrant
+    description: Registers someone for a meeting that takes registrations, and returns their join link.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name, required: true}
+      - {name: last_name, label: Last name}
+      - {name: extra, label: More fields, type: json, description: 'Like {"phone": "...", "custom_questions": [...]}'}
+    request:
+      method: POST
+      path: "meetings/{{fields.meeting}}/registrants"
+      body: {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", _merge: "{{fields.extra}}"}
+
+  - name: List Registrants
+    resource: Registrant
+    description: Lists the registrants of a meeting.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+      - {name: status, label: Status, type: select, default: approved, options: [{label: Approved, value: approved}, {label: Pending, value: pending}, {label: Denied, value: denied}]}
+    request:
+      method: GET
+      path: "meetings/{{fields.meeting}}/registrants"
+      query: {status: "{{fields.status}}"}
+    pagination: {type: cursor, items_path: registrants, cursor_param: next_page_token, next_path: next_page_token, limit_param: page_size, page_size: 300}
+
+  - name: Update Registrant Status
+    resource: Registrant
+    description: Approves, denies or cancels registrants of a meeting.
+    fields:
+      - {name: meeting, label: Meeting ID, required: true}
+      - {name: action, label: Do, type: select, default: approve, options: [{label: Approve, value: approve}, {label: Deny, value: deny}, {label: Cancel, value: cancel}]}
+      - {name: emails, label: Emails, required: true, description: "Like ana@acme.com, bia@acme.com"}
+    request:
+      method: PUT
+      path: "meetings/{{fields.meeting}}/registrants/status"
+      body: {action: "{{fields.action}}", registrants: {_each: "{{fields.emails}}", email: "{{item}}"}}
+    output:
+      value: {meeting: "{{fields.meeting}}", action: "{{fields.action}}"}
+
+  # Webinars
+  - name: Create Webinar
+    resource: Webinar
+    description: Schedules a webinar for a user with a webinar license.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+      - {name: topic, label: Topic, required: true}
+      - {name: start_time, label: Starts at, type: datetime}
+      - {name: duration, label: Minutes, type: number}
+      - {name: timezone, label: Time zone, description: "Like America/Sao_Paulo"}
+      - {name: agenda, label: Agenda, type: textarea}
+      - {name: password, label: Passcode}
+      - {name: waiting_room, label: Waiting room, type: boolean}
+      - {name: join_before_host, label: Join before the host, type: boolean}
+      - {name: auto_recording, label: Record, type: select, options: [{label: "No", value: none}, {label: On this computer, value: local}, {label: In the cloud, value: cloud}]}
+      - {name: settings, label: More settings, type: json, description: 'Like {"mute_upon_entry": true}'}
+    request:
+      method: POST
+      path: "users/{{fields.user}}/webinars"
+      body:
+        type: 5
+        topic: "{{fields.topic}}"
+        start_time: "{{fields.start_time}}"
+        duration: "{{fields.duration}}"
+        timezone: "{{fields.timezone}}"
+        agenda: "{{fields.agenda}}"
+        password: "{{fields.password}}"
+        settings: {waiting_room: "{{fields.waiting_room}}", join_before_host: "{{fields.join_before_host}}", auto_recording: "{{fields.auto_recording}}", _merge: "{{fields.settings}}"}
+
+  - name: Get Webinar
+    resource: Webinar
+    description: Reads a webinar.
+    fields:
+      - {name: webinar, label: Webinar ID, required: true}
+    request: {method: GET, path: "webinars/{{fields.webinar}}"}
+
+  - name: List Webinars
+    resource: Webinar
+    description: Lists the webinars of a user.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+    request: {method: GET, path: "users/{{fields.user}}/webinars"}
+    pagination: {type: cursor, items_path: webinars, cursor_param: next_page_token, next_path: next_page_token, limit_param: page_size, page_size: 300}
+
+  - name: Add Webinar Registrant
+    resource: Webinar
+    description: Registers someone for a webinar, and returns their join link.
+    fields:
+      - {name: webinar, label: Webinar ID, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name, required: true}
+      - {name: last_name, label: Last name}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "webinars/{{fields.webinar}}/registrants"
+      body: {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", _merge: "{{fields.extra}}"}
+
+  - name: Delete Webinar
+    resource: Webinar
+    description: Deletes a webinar.
+    fields:
+      - {name: webinar, label: Webinar ID, required: true}
+    request: {method: DELETE, path: "webinars/{{fields.webinar}}"}
+    output:
+      value: {id: "{{fields.webinar}}", deleted: true}
+
+  # Recordings
+  - name: List Recordings
+    resource: Recording
+    description: Lists the cloud recordings of a user, in a window of up to a month.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+      - {name: from, label: From, description: "Like 2026-01-01"}
+      - {name: to, label: To}
+    request:
+      method: GET
+      path: "users/{{fields.user}}/recordings"
+      query: {from: "{{fields.from}}", to: "{{fields.to}}"}
+    pagination: {type: cursor, items_path: meetings, cursor_param: next_page_token, next_path: next_page_token, limit_param: page_size, page_size: 300}
+
+  - name: Get Meeting Recordings
+    resource: Recording
+    description: Reads the recording files of a meeting, with their download links.
+    fields:
+      - {name: meeting, label: Meeting ID or UUID, required: true}
+    request: {method: GET, path: "meetings/{{fields.meeting}}/recordings"}
+
+  - name: Delete Meeting Recordings
+    resource: Recording
+    description: Moves the recordings of a meeting to the trash, or deletes them for good.
+    fields:
+      - {name: meeting, label: Meeting ID or UUID, required: true}
+      - {name: action, label: Do, type: select, default: trash, options: [{label: Move to the trash, value: trash}, {label: Delete for good, value: delete}]}
+    request: {method: DELETE, path: "meetings/{{fields.meeting}}/recordings", query: {action: "{{fields.action}}"}}
+    output:
+      value: {meeting: "{{fields.meeting}}", deleted: true}
+
+  # Users
+  - name: Get User
+    resource: User
+    description: Reads a user.
+    fields:
+      - {name: user, label: User, required: true, default: me}
+    request: {method: GET, path: "users/{{fields.user}}"}
+
+  - name: List Users
+    resource: User
+    description: Lists the users of the account.
+    fields:
+      - {name: status, label: Status, type: select, default: active, options: [{label: Active, value: active}, {label: Inactive, value: inactive}, {label: Pending, value: pending}]}
+    request: {method: GET, path: users, query: {status: "{{fields.status}}"}}
+    pagination: {type: cursor, items_path: users, cursor_param: next_page_token, next_path: next_page_token, limit_param: page_size, page_size: 300}
+
+  - name: Create User
+    resource: User
+    description: Invites someone to the account.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: type, label: License, type: select, default: 1, options: [{label: Basic, value: 1}, {label: Licensed, value: 2}]}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+    request:
+      method: POST
+      path: users
+      body: {action: create, user_info: {email: "{{fields.email}}", type: "{{fields.type}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}"}}
+
+  - name: Delete User
+    resource: User
+    description: Removes a user from the account, or deletes them.
+    fields:
+      - {name: user, label: User, required: true}
+      - {name: action, label: Do, type: select, default: disassociate, options: [{label: Remove from the account, value: disassociate}, {label: Delete, value: delete}]}
+    request: {method: DELETE, path: "users/{{fields.user}}", query: {action: "{{fields.action}}"}}
+    output:
+      value: {user: "{{fields.user}}", deleted: true}
+
+i18n:
+  pt-BR:
+    description: Reuniões, webinars, inscritos e gravações no Zoom.
+    triggers:
+      New Meeting: {name: Nova reunião, description: "Inicia o fluxo para cada reunião agendada de um usuário, olhando a cada 5 minutos.", fields: {user: Usuário}}
+      New Recording: {name: Nova gravação, description: "Inicia o fluxo para cada gravação na nuvem de um usuário, olhando a cada 15 minutos.", fields: {user: Usuário}}
+    actions:
+      Create Meeting: {name: Criar reunião, description: Agenda uma reunião para um usuário., fields: {user: Usuário, topic: Assunto, start_time: Começa em, duration: Minutos, timezone: Fuso horário, agenda: Pauta, password: Senha, waiting_room: Sala de espera, join_before_host: Entrar antes do anfitrião, auto_recording: Gravar, settings: Mais ajustes, type: Tipo}}
+      Get Meeting: {name: Ler reunião, description: "Lê uma reunião, com o link de entrada.", fields: {meeting: ID da reunião}}
+      List Meetings: {name: Listar reuniões, description: Lista as reuniões de um usuário., fields: {user: Usuário, type: Quais, from: De, to: Até}}
+      Update Meeting: {name: Atualizar reunião, description: Altera uma reunião. Campos vazios ficam como estão., fields: {meeting: ID da reunião, topic: Assunto, start_time: Começa em, duration: Minutos, timezone: Fuso horário, agenda: Pauta, password: Senha, waiting_room: Sala de espera, join_before_host: Entrar antes do anfitrião, auto_recording: Gravar, settings: Mais ajustes}}
+      Delete Meeting: {name: Excluir reunião, description: "Exclui uma reunião, podendo avisar o anfitrião e os inscritos.", fields: {meeting: ID da reunião, notify_host: Avisar o anfitrião, notify_registrants: Avisar os inscritos}}
+      End Meeting: {name: Encerrar reunião, description: Encerra uma reunião em andamento., fields: {meeting: ID da reunião}}
+      List Past Participants: {name: Listar participantes, description: "Lista quem entrou numa reunião passada, com quando entrou e saiu.", fields: {meeting: ID ou UUID da reunião}}
+      Add Registrant: {name: Inscrever na reunião, description: "Inscreve alguém numa reunião com inscrição, e devolve o link de entrada.", fields: {meeting: ID da reunião, email: E-mail, first_name: Nome, last_name: Sobrenome, extra: Mais campos}}
+      List Registrants: {name: Listar inscritos, description: Lista os inscritos de uma reunião., fields: {meeting: ID da reunião, status: Status}}
+      Update Registrant Status: {name: Alterar status dos inscritos, description: "Aprova, recusa ou cancela inscritos de uma reunião.", fields: {meeting: ID da reunião, action: Fazer, emails: E-mails}}
+      Create Webinar: {name: Criar webinar, description: Agenda um webinar para um usuário com licença de webinar., fields: {user: Usuário, topic: Assunto, start_time: Começa em, duration: Minutos, timezone: Fuso horário, agenda: Pauta, password: Senha, waiting_room: Sala de espera, join_before_host: Entrar antes do anfitrião, auto_recording: Gravar, settings: Mais ajustes}}
+      Get Webinar: {name: Ler webinar, description: Lê um webinar., fields: {webinar: ID do webinar}}
+      List Webinars: {name: Listar webinars, description: Lista os webinars de um usuário., fields: {user: Usuário}}
+      Add Webinar Registrant: {name: Inscrever no webinar, description: "Inscreve alguém num webinar, e devolve o link de entrada.", fields: {webinar: ID do webinar, email: E-mail, first_name: Nome, last_name: Sobrenome, extra: Mais campos}}
+      Delete Webinar: {name: Excluir webinar, description: Exclui um webinar., fields: {webinar: ID do webinar}}
+      List Recordings: {name: Listar gravações, description: "Lista as gravações na nuvem de um usuário, numa janela de até um mês.", fields: {user: Usuário, from: De, to: Até}}
+      Get Meeting Recordings: {name: Ler gravações da reunião, description: "Lê os arquivos de gravação de uma reunião, com os links de download.", fields: {meeting: ID ou UUID da reunião}}
+      Delete Meeting Recordings: {name: Excluir gravações da reunião, description: "Manda as gravações de uma reunião para a lixeira, ou exclui de vez.", fields: {meeting: ID ou UUID da reunião, action: Fazer}}
+      Get User: {name: Ler usuário, description: Lê um usuário., fields: {user: Usuário}}
+      List Users: {name: Listar usuários, description: Lista os usuários da conta., fields: {status: Status}}
+      Create User: {name: Criar usuário, description: Convida alguém para a conta., fields: {email: E-mail, type: Licença, first_name: Nome, last_name: Sobrenome}}
+      Delete User: {name: Excluir usuário, description: "Tira um usuário da conta, ou exclui.", fields: {user: Usuário, action: Fazer}}
