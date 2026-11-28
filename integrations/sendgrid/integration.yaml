@@ -1,0 +1,288 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# SendGrid v3 API with an API key as Bearer. Mail Send answers 202 with no body.
+# Marketing contacts are written in the background: Add or Update Contacts returns a
+# job_id, and the contacts show up some seconds later.
+id: sendgrid
+name: SendGrid
+version: 1.0.0
+homepage: https://www.twilio.com/docs/sendgrid/api-reference
+description: Send emails, plain or from dynamic templates, and manage SendGrid marketing contacts, lists, suppressions and stats.
+icon: hero-envelope
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#1A82E2" d="M.8 24h13.6c.88 0 1.6-.72 1.6-1.6v-4.8c0-.88-.72-1.6-1.6-1.6H9.6c-.88 0-1.6-.72-1.6-1.6V9.6C8 8.72 7.28 8 6.4 8H1.6C.72 8 0 8.72 0 9.6v13.6c0 .44.36.8.8.8zM23.2 0H9.6C8.72 0 8 .72 8 1.6v4.8C8 7.28 8.72 8 9.6 8h4.8c.88 0 1.6.72 1.6 1.6v4.8c0 .88.72 1.6 1.6 1.6h4.8c.88 0 1.6-.72 1.6-1.6V.8c0-.44-.36-.8-.8-.8Z"/></svg></svg>
+category: email
+base_url: https://api.sendgrid.com/v3/
+
+credential:
+  label: SendGrid
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true, description: Settings › API Keys in SendGrid.}
+  auth:
+    type: bearer
+    token: "{{credential.api_key}}"
+
+errors:
+  message_path: errors.0.message
+
+actions:
+  # Mail
+  - name: Send Email
+    resource: Mail
+    description: Sends an email with text, HTML or both.
+    fields:
+      - {name: from_email, label: From email, required: true, description: A verified sender or an address of an authenticated domain.}
+      - {name: from_name, label: From name}
+      - {name: to, label: To, required: true, description: "One email, or several separated by commas."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: reply_to, label: Reply to}
+      - {name: subject, label: Subject, required: true}
+      - {name: text, label: Text, type: textarea}
+      - {name: html, label: HTML, type: textarea}
+      - {name: categories, label: Categories, description: "Separated by commas, for the stats."}
+      - {name: send_at, label: Send at, type: number, description: "Unix time, up to 72 hours ahead."}
+    request:
+      method: POST
+      path: mail/send
+      body:
+        personalizations:
+          - to: {_each: "{{fields.to}}", email: "{{item}}"}
+            cc: {_each: "{{fields.cc}}", email: "{{item}}"}
+            bcc: {_each: "{{fields.bcc}}", email: "{{item}}"}
+        from: {email: "{{fields.from_email}}", name: "{{fields.from_name}}"}
+        reply_to: {_if: "{{fields.reply_to}}", email: "{{fields.reply_to}}"}
+        subject: "{{fields.subject}}"
+        content:
+          - {_if: "{{fields.text}}", type: text/plain, value: "{{fields.text}}"}
+          - {_if: "{{fields.html}}", type: text/html, value: "{{fields.html}}"}
+        categories: {_each: "{{fields.categories}}", _value: "{{item}}"}
+        send_at: "{{fields.send_at}}"
+
+  - name: Send Template Email
+    resource: Mail
+    description: Sends an email from a dynamic template, filling it with your data.
+    fields:
+      - {name: from_email, label: From email, required: true}
+      - {name: from_name, label: From name}
+      - {name: to, label: To, required: true, description: "One email, or several separated by commas."}
+      - {name: template_id, label: Template, type: select, required: true, options_from: {request: {method: GET, path: templates, query: {generations: dynamic, page_size: 200}}, path: result, label: name, value: id}}
+      - {name: data, label: Template data, type: json, description: "The values for the template, like {\"name\": \"Ana\"}."}
+      - {name: reply_to, label: Reply to}
+      - {name: send_at, label: Send at, type: number, description: "Unix time, up to 72 hours ahead."}
+    request:
+      method: POST
+      path: mail/send
+      body:
+        personalizations:
+          - to: {_each: "{{fields.to}}", email: "{{item}}"}
+            dynamic_template_data: "{{fields.data}}"
+        from: {email: "{{fields.from_email}}", name: "{{fields.from_name}}"}
+        reply_to: {_if: "{{fields.reply_to}}", email: "{{fields.reply_to}}"}
+        template_id: "{{fields.template_id}}"
+        send_at: "{{fields.send_at}}"
+
+  # Contacts
+  - name: Add or Update Contact
+    resource: Contact
+    description: Adds a marketing contact, or updates the one with the same email; it shows up some seconds later.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: phone_number, label: Phone}
+      - {name: city, label: City}
+      - {name: country, label: Country}
+      - {name: list_ids, label: Lists, type: multiselect, options_from: {request: {method: GET, path: marketing/lists, query: {page_size: 1000}}, path: result, label: name, value: id}}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field ID, like {\"e1_T\": \"Gold\"}."}
+    request:
+      method: PUT
+      path: marketing/contacts
+      body:
+        list_ids: "{{fields.list_ids}}"
+        contacts:
+          - {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", phone_number: "{{fields.phone_number}}", city: "{{fields.city}}", country: "{{fields.country}}", custom_fields: "{{fields.custom_fields}}"}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact by its ID.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: GET, path: "marketing/contacts/{{fields.contact_id | path}}"}
+
+  - name: Find Contacts by Email
+    resource: Contact
+    description: Finds contacts by their emails; the answer is keyed by email.
+    fields:
+      - {name: emails, label: Emails, required: true, description: "One email, or several separated by commas."}
+    request:
+      method: POST
+      path: marketing/contacts/search/emails
+      body: {emails: {_each: "{{fields.emails}}", _value: "{{item}}"}}
+    output: {path: result}
+
+  - name: Search Contacts
+    resource: Contact
+    description: Finds contacts with an SGQL query, up to 50.
+    fields:
+      - {name: query, label: Query, required: true, description: "Like email LIKE '%@acme.com' AND first_name = 'Ana'."}
+    request:
+      method: POST
+      path: marketing/contacts/search
+      body: {query: "{{fields.query}}"}
+    output: {path: result}
+
+  - name: Delete Contacts
+    resource: Contact
+    description: Deletes contacts by ID, in the background.
+    fields:
+      - {name: ids, label: Contact IDs, required: true, description: "One ID, or several separated by commas."}
+    request: {method: DELETE, path: marketing/contacts, query: {ids: "{{fields.ids}}"}}
+
+  - name: Count Contacts
+    resource: Contact
+    description: Counts all marketing contacts.
+    request: {method: GET, path: marketing/contacts/count}
+
+  # Lists
+  - name: List Lists
+    resource: List
+    description: Lists the contact lists, with their contact counts.
+    fields:
+      - {name: page_size, label: Per page, type: number, default: 100}
+    request: {method: GET, path: marketing/lists, query: {page_size: "{{fields.page_size}}"}}
+    output: {path: result}
+
+  - name: Get List
+    resource: List
+    description: Reads a list, with its contact count and, if asked, a sample of contacts.
+    fields:
+      - {name: list_id, label: List, type: select, required: true, options_from: {request: {method: GET, path: marketing/lists, query: {page_size: 1000}}, path: result, label: name, value: id}}
+      - {name: contact_sample, label: Include sample, type: boolean}
+    request: {method: GET, path: "marketing/lists/{{fields.list_id | path}}", query: {contact_sample: "{{fields.contact_sample}}"}}
+
+  - name: Create List
+    resource: List
+    description: Creates a contact list.
+    fields:
+      - {name: name, label: Name, required: true}
+    request: {method: POST, path: marketing/lists, body: {name: "{{fields.name}}"}}
+
+  - name: Rename List
+    resource: List
+    description: Changes the name of a list.
+    fields:
+      - {name: list_id, label: List, type: select, required: true, options_from: {request: {method: GET, path: marketing/lists, query: {page_size: 1000}}, path: result, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+    request: {method: PATCH, path: "marketing/lists/{{fields.list_id | path}}", body: {name: "{{fields.name}}"}}
+
+  - name: Delete List
+    resource: List
+    description: Deletes a list, and its contacts too when asked.
+    fields:
+      - {name: list_id, label: List, type: select, required: true, options_from: {request: {method: GET, path: marketing/lists, query: {page_size: 1000}}, path: result, label: name, value: id}}
+      - {name: delete_contacts, label: Delete its contacts, type: boolean}
+    request: {method: DELETE, path: "marketing/lists/{{fields.list_id | path}}", query: {delete_contacts: "{{fields.delete_contacts}}"}}
+
+  - name: Remove Contacts from List
+    resource: List
+    description: Takes contacts out of a list without deleting them.
+    fields:
+      - {name: list_id, label: List, type: select, required: true, options_from: {request: {method: GET, path: marketing/lists, query: {page_size: 1000}}, path: result, label: name, value: id}}
+      - {name: contact_ids, label: Contact IDs, required: true, description: "One ID, or several separated by commas."}
+    request: {method: DELETE, path: "marketing/lists/{{fields.list_id | path}}/contacts", query: {contact_ids: "{{fields.contact_ids}}"}}
+
+  # Templates
+  - name: List Templates
+    resource: Template
+    description: Lists the transactional templates.
+    fields:
+      - {name: generations, label: Kind, type: select, default: dynamic, options: [{label: Dynamic, value: dynamic}, {label: Legacy, value: legacy}]}
+      - {name: page_size, label: Per page, type: number, default: 50}
+    request: {method: GET, path: templates, query: {generations: "{{fields.generations}}", page_size: "{{fields.page_size}}"}}
+    output: {path: result}
+
+  - name: Get Template
+    resource: Template
+    description: Reads a template, with its versions.
+    fields:
+      - {name: template_id, label: Template ID, required: true}
+    request: {method: GET, path: "templates/{{fields.template_id | path}}"}
+
+  # Suppressions
+  - name: List Bounces
+    resource: Suppression
+    description: Lists the addresses that bounced, newest first.
+    fields:
+      - {name: start_time, label: From, type: number, description: Unix time.}
+      - {name: end_time, label: To, type: number, description: Unix time.}
+    request: {method: GET, path: suppression/bounces, query: {start_time: "{{fields.start_time}}", end_time: "{{fields.end_time}}"}}
+
+  - name: Delete Bounce
+    resource: Suppression
+    description: Removes an address from the bounce list, so mail goes to it again.
+    fields:
+      - {name: email, label: Email, required: true}
+    request: {method: DELETE, path: "suppression/bounces/{{fields.email | path}}"}
+
+  - name: List Unsubscribes
+    resource: Suppression
+    description: Lists the addresses that unsubscribed from all mail.
+    fields:
+      - {name: start_time, label: From, type: number, description: Unix time.}
+      - {name: end_time, label: To, type: number, description: Unix time.}
+    request: {method: GET, path: suppression/unsubscribes, query: {start_time: "{{fields.start_time}}", end_time: "{{fields.end_time}}"}}
+
+  - name: Add Global Unsubscribe
+    resource: Suppression
+    description: Stops all mail to some addresses.
+    fields:
+      - {name: emails, label: Emails, required: true, description: "One email, or several separated by commas."}
+    request:
+      method: POST
+      path: asm/suppressions/global
+      body: {recipient_emails: {_each: "{{fields.emails}}", _value: "{{item}}"}}
+
+  - name: Delete Global Unsubscribe
+    resource: Suppression
+    description: Lets mail go to an address that unsubscribed.
+    fields:
+      - {name: email, label: Email, required: true}
+    request: {method: DELETE, path: "asm/suppressions/global/{{fields.email | path}}"}
+
+  # Stats
+  - name: Get Stats
+    resource: Stats
+    description: Reads delivered, opens, clicks, bounces and more, by day, week or month.
+    fields:
+      - {name: start_date, label: From, required: true, description: As YYYY-MM-DD.}
+      - {name: end_date, label: To, description: As YYYY-MM-DD.}
+      - {name: aggregated_by, label: By, type: select, default: day, options: [{label: Day, value: day}, {label: Week, value: week}, {label: Month, value: month}]}
+    request: {method: GET, path: stats, query: {start_date: "{{fields.start_date}}", end_date: "{{fields.end_date}}", aggregated_by: "{{fields.aggregated_by}}"}}
+
+i18n:
+  pt-BR:
+    description: "Envie e-mails, simples ou de templates dinâmicos, e gerencie contatos de marketing, listas, supressões e estatísticas do SendGrid."
+    actions:
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail com texto, HTML ou os dois.", fields: {from_email: "E-mail do remetente", from_name: "Nome do remetente", to: "Para", cc: "Cc", bcc: "Cco", reply_to: "Responder para", subject: "Assunto", text: "Texto", html: "HTML", categories: "Categorias", send_at: "Enviar em"}}
+      Send Template Email: {name: "Enviar e-mail de template", description: "Envia um e-mail a partir de um template dinâmico, preenchido com seus dados.", fields: {from_email: "E-mail do remetente", from_name: "Nome do remetente", to: "Para", template_id: "Template", data: "Dados do template", reply_to: "Responder para", send_at: "Enviar em"}}
+      Add or Update Contact: {name: "Adicionar ou atualizar contato", description: "Adiciona um contato de marketing, ou atualiza o de mesmo e-mail; ele aparece alguns segundos depois.", fields: {email: "E-mail", first_name: "Nome", last_name: "Sobrenome", phone_number: "Telefone", city: "Cidade", country: "País", list_ids: "Listas", custom_fields: "Campos personalizados"}}
+      Get Contact: {name: "Ler contato", description: "Lê um contato pelo ID.", fields: {contact_id: "ID do contato"}}
+      Find Contacts by Email: {name: "Buscar contatos por e-mail", description: "Encontra contatos pelos e-mails; a resposta vem indexada por e-mail.", fields: {emails: "E-mails"}}
+      Search Contacts: {name: "Pesquisar contatos", description: "Encontra até 50 contatos com uma consulta SGQL.", fields: {query: "Consulta"}}
+      Delete Contacts: {name: "Excluir contatos", description: "Exclui contatos pelo ID, em segundo plano.", fields: {ids: "IDs dos contatos"}}
+      Count Contacts: {name: "Contar contatos", description: "Conta todos os contatos de marketing."}
+      List Lists: {name: "Listar listas", description: "Lista as listas de contatos, com a contagem de cada uma.", fields: {page_size: "Por página"}}
+      Get List: {name: "Ler lista", description: "Lê uma lista, com a contagem e, se pedido, uma amostra de contatos.", fields: {list_id: "Lista", contact_sample: "Incluir amostra"}}
+      Create List: {name: "Criar lista", description: "Cria uma lista de contatos.", fields: {name: "Nome"}}
+      Rename List: {name: "Renomear lista", description: "Muda o nome de uma lista.", fields: {list_id: "Lista", name: "Nome"}}
+      Delete List: {name: "Excluir lista", description: "Exclui uma lista, e os contatos dela quando pedido.", fields: {list_id: "Lista", delete_contacts: "Excluir os contatos"}}
+      Remove Contacts from List: {name: "Remover contatos da lista", description: "Tira contatos de uma lista sem excluí-los.", fields: {list_id: "Lista", contact_ids: "IDs dos contatos"}}
+      List Templates: {name: "Listar templates", description: "Lista os templates transacionais.", fields: {generations: "Tipo", page_size: "Por página"}}
+      Get Template: {name: "Ler template", description: "Lê um template, com suas versões.", fields: {template_id: "ID do template"}}
+      List Bounces: {name: "Listar bounces", description: "Lista os endereços que deram bounce, dos mais novos primeiro.", fields: {start_time: "De", end_time: "Até"}}
+      Delete Bounce: {name: "Remover bounce", description: "Tira um endereço da lista de bounces, para voltar a receber e-mails.", fields: {email: "E-mail"}}
+      List Unsubscribes: {name: "Listar descadastros", description: "Lista os endereços que se descadastraram de todos os e-mails.", fields: {start_time: "De", end_time: "Até"}}
+      Add Global Unsubscribe: {name: "Descadastrar endereços", description: "Para de enviar qualquer e-mail para alguns endereços.", fields: {emails: "E-mails"}}
+      Delete Global Unsubscribe: {name: "Recadastrar endereço", description: "Volta a enviar e-mails para um endereço descadastrado.", fields: {email: "E-mail"}}
+      Get Stats: {name: "Ler estatísticas", description: "Lê entregas, aberturas, cliques, bounces e mais, por dia, semana ou mês.", fields: {start_date: "De", end_date: "Até", aggregated_by: "Agrupar por"}}

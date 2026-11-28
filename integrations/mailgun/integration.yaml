@@ -1,0 +1,271 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Mailgun API with Basic auth, user "api" and the API key. Accounts live in the US or
+# the EU region, each with its own host. Messages go as a form; the sending domain
+# comes from the credential.
+id: mailgun
+name: Mailgun
+version: 1.0.0
+homepage: https://documentation.mailgun.com/docs/mailgun/api-reference/
+description: Send emails, plain or from templates, read delivery events, and manage Mailgun mailing lists, bounces and unsubscribes.
+icon: hero-envelope
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#F06B66" d="M11.837 0c6.602 0 11.984 5.381 11.984 11.994-.017 2.99-3.264 4.84-5.844 3.331a3.805 3.805 0 0 1-.06-.035l-.055-.033-.022.055c-2.554 4.63-9.162 4.758-11.894.232-2.732-4.527.46-10.313 5.746-10.416a6.868 6.868 0 0 1 7.002 6.866 1.265 1.265 0 0 0 2.52 0c0-5.18-4.197-9.38-9.377-9.387C4.611 2.594.081 10.41 3.683 16.673c3.238 5.632 11.08 6.351 15.289 1.402l1.997 1.686A11.95 11.95 0 0 1 11.837 24C2.6 23.72-2.87 13.543 1.992 5.684A12.006 12.006 0 0 1 11.837 0Zm0 7.745c-3.276-.163-5.5 3.281-4.003 6.2a4.26 4.26 0 0 0 4.014 2.31c3.276-.171 5.137-3.824 3.35-6.575a4.26 4.26 0 0 0-3.36-1.935Zm0 2.53c1.324 0 2.152 1.433 1.49 2.58a1.72 1.72 0 0 1-1.49.86 1.72 1.72 0 1 1 0-3.44Z"/></svg></svg>
+category: email
+base_url: "https://{{credential.host}}/"
+
+credential:
+  label: Mailgun
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true, description: Account settings › API security.}
+    - {name: domain, label: Sending domain, required: true, description: "Like mg.acme.com."}
+    - {name: host, label: Region, type: select, required: true, default: api.mailgun.net, options: [{label: US, value: api.mailgun.net}, {label: EU, value: api.eu.mailgun.net}]}
+  auth:
+    type: basic
+    username: api
+    password: "{{credential.api_key}}"
+
+errors:
+  message_path: message
+
+actions:
+  # Messages
+  - name: Send Email
+    resource: Message
+    description: Sends an email with text, HTML or both.
+    fields:
+      - {name: from, label: From, required: true, description: "Like Ana <ana@mg.acme.com>."}
+      - {name: to, label: To, required: true, description: "One email, or several separated by commas."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: subject, label: Subject, required: true}
+      - {name: text, label: Text, type: textarea}
+      - {name: html, label: HTML, type: textarea}
+      - {name: reply_to, label: Reply to}
+      - {name: tags, label: Tags, description: "Up to 3, separated by commas."}
+      - {name: delivery_time, label: Send at, description: "RFC 2822 date, like Fri, 14 Oct 2026 23:10:10 -0000."}
+      - {name: tracking, label: Track opens and clicks, type: boolean}
+      - {name: test_mode, label: Test mode, type: boolean, description: Mailgun accepts the message but doesn't deliver it.}
+    request:
+      method: POST
+      path: "v3/{{credential.domain}}/messages"
+      body_type: form
+      body:
+        from: "{{fields.from}}"
+        to: "{{fields.to}}"
+        cc: "{{fields.cc}}"
+        bcc: "{{fields.bcc}}"
+        subject: "{{fields.subject}}"
+        text: "{{fields.text}}"
+        html: "{{fields.html}}"
+        "h:Reply-To": "{{fields.reply_to}}"
+        "o:tag": {_each: "{{fields.tags}}", _value: "{{item}}"}
+        "o:deliverytime": "{{fields.delivery_time}}"
+        "o:tracking": "{{fields.tracking}}"
+        "o:testmode": "{{fields.test_mode}}"
+
+  - name: Send Template Email
+    resource: Message
+    description: Sends an email from a stored template, filling it with your data.
+    fields:
+      - {name: from, label: From, required: true}
+      - {name: to, label: To, required: true}
+      - {name: subject, label: Subject, required: true}
+      - {name: template, label: Template, type: select, required: true, options_from: {request: {method: GET, path: "v3/{{credential.domain}}/templates", query: {limit: 100}}, path: items, label: name, value: name}}
+      - {name: variables, label: Template data, type: json, description: "The values for the template, like {\"name\": \"Ana\"}."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: tags, label: Tags}
+    request:
+      method: POST
+      path: "v3/{{credential.domain}}/messages"
+      body_type: form
+      body:
+        from: "{{fields.from}}"
+        to: "{{fields.to}}"
+        cc: "{{fields.cc}}"
+        bcc: "{{fields.bcc}}"
+        subject: "{{fields.subject}}"
+        template: "{{fields.template}}"
+        "t:variables": "{{fields.variables}}"
+        "o:tag": {_each: "{{fields.tags}}", _value: "{{item}}"}
+
+  # Events
+  - name: List Events
+    resource: Event
+    description: Lists what happened to messages (accepted, delivered, failed, opened, clicked...), newest first.
+    fields:
+      - {name: event, label: Event, type: select, options: [{label: Accepted, value: accepted}, {label: Delivered, value: delivered}, {label: Failed, value: failed}, {label: Opened, value: opened}, {label: Clicked, value: clicked}, {label: Unsubscribed, value: unsubscribed}, {label: Complained, value: complained}, {label: Stored, value: stored}]}
+      - {name: recipient, label: Recipient}
+      - {name: begin, label: From, description: "RFC 2822 date or Unix time."}
+      - {name: end, label: To, description: "RFC 2822 date or Unix time."}
+      - {name: limit, label: Limit, type: number, default: 100}
+    request:
+      method: GET
+      path: "v3/{{credential.domain}}/events"
+      query: {event: "{{fields.event}}", recipient: "{{fields.recipient}}", begin: "{{fields.begin}}", end: "{{fields.end}}", limit: "{{fields.limit}}", ascending: "no"}
+    output: {path: items}
+
+  # Domains
+  - name: List Domains
+    resource: Domain
+    description: Lists the account's domains and their state.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: v4/domains, query: {limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+  - name: Get Domain
+    resource: Domain
+    description: Reads a domain, with the DNS records it needs.
+    fields:
+      - {name: name, label: Domain, required: true}
+    request: {method: GET, path: "v4/domains/{{fields.name | path}}"}
+
+  # Templates
+  - name: List Templates
+    resource: Template
+    description: Lists the templates of the sending domain.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: "v3/{{credential.domain}}/templates", query: {limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+  # Mailing lists
+  - name: List Mailing Lists
+    resource: Mailing List
+    description: Lists the mailing lists.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: v3/lists/pages, query: {limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+  - name: Create Mailing List
+    resource: Mailing List
+    description: Creates a mailing list with its own address.
+    fields:
+      - {name: address, label: Address, required: true, description: "Like news@mg.acme.com."}
+      - {name: name, label: Name}
+      - {name: description, label: Description}
+      - {name: access_level, label: Who can post, type: select, default: readonly, options: [{label: Only the API, value: readonly}, {label: Members, value: members}, {label: Anyone, value: everyone}]}
+    request:
+      method: POST
+      path: v3/lists
+      body_type: form
+      body: {address: "{{fields.address}}", name: "{{fields.name}}", description: "{{fields.description}}", access_level: "{{fields.access_level}}"}
+    output: {path: list}
+
+  - name: Delete Mailing List
+    resource: Mailing List
+    description: Deletes a mailing list and its members.
+    fields:
+      - {name: list, label: List address, required: true}
+    request: {method: DELETE, path: "v3/lists/{{fields.list | path}}"}
+
+  - name: Add List Member
+    resource: Mailing List
+    description: Adds a member to a list, or updates the one with the same address.
+    fields:
+      - {name: list, label: List address, required: true}
+      - {name: address, label: Email, required: true}
+      - {name: name, label: Name}
+      - {name: vars, label: Variables, type: json, description: "Your own data for the member, like {\"plan\": \"pro\"}."}
+      - {name: subscribed, label: Subscribed, type: boolean, default: true}
+    request:
+      method: POST
+      path: "v3/lists/{{fields.list | path}}/members"
+      body_type: form
+      body: {address: "{{fields.address}}", name: "{{fields.name}}", vars: "{{fields.vars}}", subscribed: "{{fields.subscribed}}", upsert: "yes"}
+    output: {path: member}
+
+  - name: List Members
+    resource: Mailing List
+    description: Lists the members of a list.
+    fields:
+      - {name: list, label: List address, required: true}
+      - {name: subscribed, label: Subscribed, type: select, options: [{label: Subscribed, value: "yes"}, {label: Unsubscribed, value: "no"}]}
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: "v3/lists/{{fields.list | path}}/members/pages", query: {subscribed: "{{fields.subscribed}}", limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+  - name: Remove List Member
+    resource: Mailing List
+    description: Removes a member from a list.
+    fields:
+      - {name: list, label: List address, required: true}
+      - {name: address, label: Email, required: true}
+    request: {method: DELETE, path: "v3/lists/{{fields.list | path}}/members/{{fields.address | path}}"}
+
+  # Suppressions
+  - name: List Bounces
+    resource: Suppression
+    description: Lists the addresses that bounced on the sending domain.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: "v3/{{credential.domain}}/bounces", query: {limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+  - name: Delete Bounce
+    resource: Suppression
+    description: Removes an address from the bounces, so mail goes to it again.
+    fields:
+      - {name: address, label: Email, required: true}
+    request: {method: DELETE, path: "v3/{{credential.domain}}/bounces/{{fields.address | path}}"}
+
+  - name: List Unsubscribes
+    resource: Suppression
+    description: Lists the addresses that unsubscribed on the sending domain.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: "v3/{{credential.domain}}/unsubscribes", query: {limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+  - name: Add Unsubscribe
+    resource: Suppression
+    description: Stops mail to an address, for all mail or one tag.
+    fields:
+      - {name: address, label: Email, required: true}
+      - {name: tag, label: Tag, description: Empty for all mail.}
+    request:
+      method: POST
+      path: "v3/{{credential.domain}}/unsubscribes"
+      body_type: form
+      body: {address: "{{fields.address}}", tag: "{{fields.tag}}"}
+
+  - name: Delete Unsubscribe
+    resource: Suppression
+    description: Lets mail go to an address that unsubscribed.
+    fields:
+      - {name: address, label: Email, required: true}
+    request: {method: DELETE, path: "v3/{{credential.domain}}/unsubscribes/{{fields.address | path}}"}
+
+  - name: List Complaints
+    resource: Suppression
+    description: Lists the addresses that marked mail as spam.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 100}
+    request: {method: GET, path: "v3/{{credential.domain}}/complaints", query: {limit: "{{fields.limit}}"}}
+    output: {path: items}
+
+i18n:
+  pt-BR:
+    description: "Envie e-mails, simples ou de templates, leia eventos de entrega e gerencie listas de e-mail, bounces e descadastros do Mailgun."
+    actions:
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail com texto, HTML ou os dois.", fields: {from: "De", to: "Para", cc: "Cc", bcc: "Cco", subject: "Assunto", text: "Texto", html: "HTML", reply_to: "Responder para", tags: "Tags", delivery_time: "Enviar em", tracking: "Rastrear aberturas e cliques", test_mode: "Modo de teste"}}
+      Send Template Email: {name: "Enviar e-mail de template", description: "Envia um e-mail a partir de um template salvo, preenchido com seus dados.", fields: {from: "De", to: "Para", subject: "Assunto", template: "Template", variables: "Dados do template", cc: "Cc", bcc: "Cco", tags: "Tags"}}
+      List Events: {name: "Listar eventos", description: "Lista o que aconteceu com as mensagens (aceita, entregue, falhou, aberta, clicada...), das mais novas primeiro.", fields: {event: "Evento", recipient: "Destinatário", begin: "De", end: "Até", limit: "Limite"}}
+      List Domains: {name: "Listar domínios", description: "Lista os domínios da conta e o estado de cada um.", fields: {limit: "Limite"}}
+      Get Domain: {name: "Ler domínio", description: "Lê um domínio, com os registros DNS que ele precisa.", fields: {name: "Domínio"}}
+      List Templates: {name: "Listar templates", description: "Lista os templates do domínio de envio.", fields: {limit: "Limite"}}
+      List Mailing Lists: {name: "Listar listas de e-mail", description: "Lista as listas de e-mail.", fields: {limit: "Limite"}}
+      Create Mailing List: {name: "Criar lista de e-mail", description: "Cria uma lista de e-mail com endereço próprio.", fields: {address: "Endereço", name: "Nome", description: "Descrição", access_level: "Quem pode enviar"}}
+      Delete Mailing List: {name: "Excluir lista de e-mail", description: "Exclui uma lista de e-mail e seus membros.", fields: {list: "Endereço da lista"}}
+      Add List Member: {name: "Adicionar membro", description: "Adiciona um membro a uma lista, ou atualiza o de mesmo endereço.", fields: {list: "Endereço da lista", address: "E-mail", name: "Nome", vars: "Variáveis", subscribed: "Inscrito"}}
+      List Members: {name: "Listar membros", description: "Lista os membros de uma lista.", fields: {list: "Endereço da lista", subscribed: "Inscrito", limit: "Limite"}}
+      Remove List Member: {name: "Remover membro", description: "Remove um membro de uma lista.", fields: {list: "Endereço da lista", address: "E-mail"}}
+      List Bounces: {name: "Listar bounces", description: "Lista os endereços que deram bounce no domínio de envio.", fields: {limit: "Limite"}}
+      Delete Bounce: {name: "Remover bounce", description: "Tira um endereço dos bounces, para voltar a receber e-mails.", fields: {address: "E-mail"}}
+      List Unsubscribes: {name: "Listar descadastros", description: "Lista os endereços que se descadastraram no domínio de envio.", fields: {limit: "Limite"}}
+      Add Unsubscribe: {name: "Descadastrar endereço", description: "Para de enviar para um endereço, todos os e-mails ou uma tag.", fields: {address: "E-mail", tag: "Tag"}}
+      Delete Unsubscribe: {name: "Recadastrar endereço", description: "Volta a enviar e-mails para um endereço descadastrado.", fields: {address: "E-mail"}}
+      List Complaints: {name: "Listar reclamações", description: "Lista os endereços que marcaram e-mails como spam.", fields: {limit: "Limite"}}
