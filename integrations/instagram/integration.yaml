@@ -1,0 +1,262 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Instagram, through the Instagram Graph API v23.0, for business and creator accounts
+# linked to a Facebook Page. Connect with a long-lived token of that page, with
+# instagram_basic, instagram_content_publish, instagram_manage_comments,
+# instagram_manage_insights and pages_show_list. Media is published in two steps:
+# Create Media Container takes a public image or video URL, and Publish Media puts
+# it on the profile once it's ready.
+id: instagram
+name: Instagram
+version: 1.0.0
+description: Photos, reels, comments and insights of an Instagram business account.
+icon: hero-camera
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#E4405F" d="M7.03.084c-1.277.06-2.149.264-2.91.563a5.9 5.9 0 0 0-2.124 1.388a5.9 5.9 0 0 0-1.38 2.127C.321 4.926.12 5.8.064 7.076s-.069 1.688-.063 4.947s.021 3.667.083 4.947c.061 1.277.264 2.149.563 2.911c.308.789.72 1.457 1.388 2.123a5.9 5.9 0 0 0 2.129 1.38c.763.295 1.636.496 2.913.552c1.278.056 1.689.069 4.947.063s3.668-.021 4.947-.082c1.28-.06 2.147-.265 2.91-.563a5.9 5.9 0 0 0 2.123-1.388a5.9 5.9 0 0 0 1.38-2.129c.295-.763.496-1.636.551-2.912c.056-1.28.07-1.69.063-4.948c-.006-3.258-.02-3.667-.081-4.947c-.06-1.28-.264-2.148-.564-2.911a5.9 5.9 0 0 0-1.387-2.123a5.9 5.9 0 0 0-2.128-1.38c-.764-.294-1.636-.496-2.914-.55C15.647.009 15.236-.006 11.977 0S8.31.021 7.03.084m.14 21.693c-1.17-.05-1.805-.245-2.228-.408a3.7 3.7 0 0 1-1.382-.895a3.7 3.7 0 0 1-.9-1.378c-.165-.423-.363-1.058-.417-2.228c-.06-1.264-.072-1.644-.08-4.848c-.006-3.204.006-3.583.061-4.848c.05-1.169.246-1.805.408-2.228c.216-.561.477-.96.895-1.382a3.7 3.7 0 0 1 1.379-.9c.423-.165 1.057-.361 2.227-.417c1.265-.06 1.644-.072 4.848-.08c3.203-.006 3.583.006 4.85.062c1.168.05 1.804.244 2.227.408c.56.216.96.475 1.382.895s.681.817.9 1.378c.165.422.362 1.056.417 2.227c.06 1.265.074 1.645.08 4.848c.005 3.203-.006 3.583-.061 4.848c-.051 1.17-.245 1.805-.408 2.23c-.216.56-.477.96-.896 1.38a3.7 3.7 0 0 1-1.378.9c-.422.165-1.058.362-2.226.418c-1.266.06-1.645.072-4.85.079s-3.582-.006-4.848-.06m9.783-16.192a1.44 1.44 0 1 0 1.437-1.442a1.44 1.44 0 0 0-1.437 1.442M5.839 12.012a6.161 6.161 0 1 0 12.323-.024a6.162 6.162 0 0 0-12.323.024M8 12.008A4 4 0 1 1 12.008 16A4 4 0 0 1 8 12.008"/></svg>
+category: social
+author: Heddle
+homepage: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api
+base_url: https://graph.facebook.com/v23.0/
+
+credential:
+  label: Instagram
+  fields:
+    - {name: token, label: Access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Media
+    description: Starts the flow for each new post on the account, checking every 5 minutes.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+    request:
+      method: GET
+      path: "{{fields.account}}/media"
+      query: {fields: "id,caption,media_type,media_url,permalink,timestamp", limit: 50}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+  - name: New Comment
+    description: Starts the flow for each new comment on a post, checking every 5 minutes.
+    fields:
+      - {name: media, label: Media ID, required: true}
+    request:
+      method: GET
+      path: "{{fields.media}}/comments"
+      query: {fields: "id,text,username,timestamp", limit: 50}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+actions:
+  - name: Get Account
+    resource: Account
+    description: Reads the Instagram account linked to a Facebook Page.
+    fields:
+      - {name: page, label: Facebook Page ID, required: true}
+    request: {method: GET, path: "{{fields.page}}", query: {fields: "instagram_business_account{id,username,name,followers_count,media_count,profile_picture_url}"}}
+    output: {path: instagram_business_account}
+
+  # Publishing
+  - name: Create Media Container
+    resource: Media
+    description: Prepares a photo, reel or story from a public URL. Publish it with Publish Media.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+      - {name: type, label: Kind, type: select, default: IMAGE, options: [{label: Photo, value: IMAGE}, {label: Reel, value: REELS}, {label: Story, value: STORIES}]}
+      - {name: image_url, label: Image URL, description: "A public JPEG, for a photo or a photo story."}
+      - {name: video_url, label: Video URL, description: "A public MP4, for a reel or a video story."}
+      - {name: caption, label: Caption, type: textarea, description: "With #hashtags and @mentions."}
+      - {name: alt_text, label: Alt text}
+      - {name: share_to_feed, label: Show the reel in the feed too, type: boolean}
+      - {name: cover_url, label: Reel cover URL}
+    request:
+      method: POST
+      path: "{{fields.account}}/media"
+      body:
+        media_type: "{{fields.type}}"
+        image_url: "{{fields.image_url}}"
+        video_url: "{{fields.video_url}}"
+        caption: "{{fields.caption}}"
+        alt_text: "{{fields.alt_text}}"
+        share_to_feed: "{{fields.share_to_feed}}"
+        cover_url: "{{fields.cover_url}}"
+
+  - name: Create Carousel Container
+    resource: Media
+    description: Prepares a carousel from up to 10 containers made with Create Media Container.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+      - {name: children, label: Container IDs, required: true, description: "Like 1789…, 1790…"}
+      - {name: caption, label: Caption, type: textarea}
+    request:
+      method: POST
+      path: "{{fields.account}}/media"
+      body: {media_type: CAROUSEL, children: "{{fields.children}}", caption: "{{fields.caption}}"}
+
+  - name: Get Container Status
+    resource: Media
+    description: Reads whether a container is ready to publish; videos take a while.
+    fields:
+      - {name: container, label: Container ID, required: true}
+    request: {method: GET, path: "{{fields.container}}", query: {fields: "id,status_code,status"}}
+
+  - name: Publish Media
+    resource: Media
+    description: Puts a ready container on the profile.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+      - {name: container, label: Container ID, required: true, default: "{{result.id}}"}
+    request:
+      method: POST
+      path: "{{fields.account}}/media_publish"
+      body: {creation_id: "{{fields.container}}"}
+
+  - name: List Media
+    resource: Media
+    description: Lists the account's posts, newest first.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+    request: {method: GET, path: "{{fields.account}}/media", query: {fields: "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count"}}
+    pagination: {type: link, items_path: data, next_path: paging.next, limit_param: limit, page_size: 100}
+
+  - name: Get Media
+    resource: Media
+    description: Reads a post.
+    fields:
+      - {name: media, label: Media ID, required: true}
+    request: {method: GET, path: "{{fields.media}}", query: {fields: "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count,username"}}
+
+  # Comments
+  - name: List Comments
+    resource: Comment
+    description: Lists the comments on a post.
+    fields:
+      - {name: media, label: Media ID, required: true}
+    request: {method: GET, path: "{{fields.media}}/comments", query: {fields: "id,text,username,timestamp,like_count,hidden"}}
+    pagination: {type: link, items_path: data, next_path: paging.next, limit_param: limit, page_size: 100}
+
+  - name: Comment
+    resource: Comment
+    description: Writes a comment on a post, as the account.
+    fields:
+      - {name: media, label: Media ID, required: true}
+      - {name: message, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: "{{fields.media}}/comments"
+      body: {message: "{{fields.message}}"}
+
+  - name: Reply to Comment
+    resource: Comment
+    description: Replies to a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+      - {name: message, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: "{{fields.comment}}/replies"
+      body: {message: "{{fields.message}}"}
+
+  - name: Hide Comment
+    resource: Comment
+    description: Hides or shows a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+      - {name: hide, label: Hidden, type: boolean, default: true}
+    request:
+      method: POST
+      path: "{{fields.comment}}"
+      body: {hide: "{{fields.hide}}"}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+    request: {method: DELETE, path: "{{fields.comment}}"}
+
+  # Insights and discovery
+  - name: Get Account Insights
+    resource: Insights
+    description: Reads the account's metrics, like reach and profile views.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+      - {name: metrics, label: Metrics, required: true, default: "reach,profile_views,accounts_engaged", description: "Like reach, follower_count, website_clicks"}
+      - {name: period, label: Period, type: select, default: day, options: [{label: Day, value: day}, {label: Week, value: week}, {label: 28 days, value: days_28}]}
+      - {name: since, label: Since, type: datetime, format: unix}
+      - {name: until, label: Until, type: datetime, format: unix}
+    request:
+      method: GET
+      path: "{{fields.account}}/insights"
+      query: {metric: "{{fields.metrics}}", period: "{{fields.period}}", metric_type: total_value, since: "{{fields.since}}", until: "{{fields.until}}"}
+    output: {path: data}
+
+  - name: Get Media Insights
+    resource: Insights
+    description: Reads a post's metrics, like reach, saves and shares.
+    fields:
+      - {name: media, label: Media ID, required: true}
+      - {name: metrics, label: Metrics, required: true, default: "reach,likes,comments,saved,shares"}
+    request: {method: GET, path: "{{fields.media}}/insights", query: {metric: "{{fields.metrics}}"}}
+    output: {path: data}
+
+  - name: Search Hashtag
+    resource: Insights
+    description: Finds a hashtag's ID, for List Hashtag Media.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+      - {name: hashtag, label: Hashtag, required: true, description: "Without the #."}
+    request: {method: GET, path: ig_hashtag_search, query: {user_id: "{{fields.account}}", q: "{{fields.hashtag}}"}}
+    output: {path: data}
+
+  - name: List Hashtag Media
+    resource: Insights
+    description: Lists the top or recent public posts with a hashtag.
+    fields:
+      - {name: account, label: Instagram account ID, required: true}
+      - {name: hashtag_id, label: Hashtag ID, required: true, default: "{{result.0.id}}"}
+      - {name: edge, label: Which, type: select, default: top_media, options: [{label: Top, value: top_media}, {label: Recent (last 24 hours), value: recent_media}]}
+    request: {method: GET, path: "{{fields.hashtag_id}}/{{fields.edge}}", query: {user_id: "{{fields.account}}", fields: "id,caption,media_type,permalink,like_count,comments_count,timestamp"}}
+    output: {path: data}
+
+  - name: Get Business Profile
+    resource: Insights
+    description: Reads another business or creator account by username, with its followers and posts.
+    fields:
+      - {name: account, label: Instagram account ID, required: true, description: "The business account ID, from Get Account or the page's instagram_business_account."}
+      - {name: username, label: Username, required: true}
+    request:
+      method: GET
+      path: "{{fields.account}}"
+      query: {fields: "business_discovery.username({{fields.username}}){username,name,followers_count,media_count,biography,website}"}
+    output: {path: business_discovery}
+
+i18n:
+  pt-BR:
+    description: "Fotos, reels, comentários e métricas de uma conta comercial do Instagram."
+    triggers:
+      New Media: {name: "Novo post", description: "Inicia o fluxo para cada post novo na conta, olhando a cada 5 minutos.", fields: {account: "ID da conta do Instagram"}}
+      New Comment: {name: "Novo comentário", description: "Inicia o fluxo para cada comentário novo num post, olhando a cada 5 minutos.", fields: {media: "ID do post"}}
+    actions:
+      Get Account: {name: "Ler conta", description: "Lê a conta do Instagram ligada a uma Página do Facebook.", fields: {page: "ID da Página do Facebook"}}
+      Create Media Container: {name: "Preparar mídia", description: "Prepara uma foto, reel ou story de uma URL pública. Publique com Publicar mídia.", fields: {account: "ID da conta do Instagram", type: "Tipo", image_url: "URL da imagem", video_url: "URL do vídeo", caption: "Legenda", alt_text: "Texto alternativo", share_to_feed: "Mostrar o reel no feed também", cover_url: "URL da capa do reel"}}
+      Create Carousel Container: {name: "Preparar carrossel", description: "Prepara um carrossel com até 10 mídias feitas em Preparar mídia.", fields: {account: "ID da conta do Instagram", children: "IDs das mídias", caption: "Legenda"}}
+      Get Container Status: {name: "Ler status da mídia", description: "Lê se uma mídia preparada já pode ser publicada; vídeos demoram.", fields: {container: "ID da mídia preparada"}}
+      Publish Media: {name: "Publicar mídia", description: "Põe no perfil uma mídia preparada.", fields: {account: "ID da conta do Instagram", container: "ID da mídia preparada"}}
+      List Media: {name: "Listar posts", description: "Lista os posts da conta, dos mais novos.", fields: {account: "ID da conta do Instagram"}}
+      Get Media: {name: "Ler post", description: "Lê um post.", fields: {media: "ID do post"}}
+      List Comments: {name: "Listar comentários", description: "Lista os comentários de um post.", fields: {media: "ID do post"}}
+      Comment: {name: "Comentar", description: "Escreve um comentário num post, como a conta.", fields: {media: "ID do post", message: "Texto"}}
+      Reply to Comment: {name: "Responder comentário", description: "Responde a um comentário.", fields: {comment: "ID do comentário", message: "Texto"}}
+      Hide Comment: {name: "Ocultar comentário", description: "Oculta ou mostra um comentário.", fields: {comment: "ID do comentário", hide: "Oculto"}}
+      Delete Comment: {name: "Excluir comentário", description: "Exclui um comentário.", fields: {comment: "ID do comentário"}}
+      Get Account Insights: {name: "Ler métricas da conta", description: "Lê as métricas da conta, como alcance e visitas ao perfil.", fields: {account: "ID da conta do Instagram", metrics: "Métricas", period: "Período", since: "Desde", until: "Até"}}
+      Get Media Insights: {name: "Ler métricas do post", description: "Lê as métricas de um post, como alcance, salvamentos e compartilhamentos.", fields: {media: "ID do post", metrics: "Métricas"}}
+      Search Hashtag: {name: "Buscar hashtag", description: "Encontra o ID de uma hashtag, para Listar posts da hashtag.", fields: {account: "ID da conta do Instagram", hashtag: "Hashtag"}}
+      List Hashtag Media: {name: "Listar posts da hashtag", description: "Lista os posts públicos principais ou recentes com uma hashtag.", fields: {account: "ID da conta do Instagram", hashtag_id: "ID da hashtag", edge: "Quais"}}
+      Get Business Profile: {name: "Ler perfil comercial", description: "Lê outra conta comercial ou de criador pelo usuário, com seguidores e posts.", fields: {account: "ID da conta do Instagram", username: "Usuário"}}

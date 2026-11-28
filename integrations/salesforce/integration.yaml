@@ -1,0 +1,354 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Salesforce, through the REST API v62.0. Connect with an External Client App (or a
+# Connected App) made in Setup, with OAuth on, the redirect URL Heddle shows and the
+# api and refresh_token scopes. The domain is the org's My Domain, like acme for
+# acme.my.salesforce.com. Fields go by their API names, like Custom__c.
+id: salesforce
+name: Salesforce
+version: 1.0.0
+description: Leads, contacts, accounts, opportunities, cases and any other object in Salesforce.
+icon: hero-cloud
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#00A1E0" d="M10.006 5.415a4.2 4.2 0 0 1 3.045-1.306c1.56 0 2.954.9 3.69 2.205c.63-.3 1.35-.45 2.1-.45c2.85 0 5.159 2.34 5.159 5.22s-2.31 5.22-5.176 5.22c-.345 0-.69-.044-1.02-.104a3.75 3.75 0 0 1-3.3 1.95c-.6 0-1.155-.15-1.65-.375A4.31 4.31 0 0 1 8.88 20.4a4.3 4.3 0 0 1-4.05-2.82c-.27.062-.54.076-.825.076c-2.204 0-4.005-1.8-4.005-4.05c0-1.5.811-2.805 2.01-3.51c-.255-.57-.39-1.2-.39-1.846c0-2.58 2.1-4.65 4.65-4.65c1.53 0 2.85.705 3.72 1.8"/></svg>
+category: crm
+author: Heddle
+homepage: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/
+base_url: "https://{{credential.domain}}.my.salesforce.com/services/data/v62.0/"
+
+credential:
+  label: Salesforce
+  fields:
+    - {name: domain, label: My Domain, required: true, description: "acme, for acme.my.salesforce.com. Sandboxes look like acme--dev.sandbox."}
+  auth:
+    type: oauth2
+    authorize_url: "https://{{credential.domain}}.my.salesforce.com/services/oauth2/authorize"
+    token_url: "https://{{credential.domain}}.my.salesforce.com/services/oauth2/token"
+    scopes: [api, refresh_token]
+
+errors:
+  message_path: 0.message
+
+triggers:
+  - name: New Record
+    description: Starts the flow for each new record of an object, checking every 5 minutes.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: fields, label: Fields, default: "FIELDS(STANDARD)", description: "Like Id, Name, Email. FIELDS(ALL) takes up to 200 records."}
+    request:
+      method: GET
+      path: query
+      query: {q: "SELECT {{fields.fields}} FROM {{fields.object}} ORDER BY CreatedDate DESC LIMIT 200"}
+    output: {path: records}
+    poll: {every: 5, id: Id}
+
+  - name: Updated Record
+    description: Starts the flow each time a record of an object changes, checking every 5 minutes.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: fields, label: Fields, default: "FIELDS(STANDARD)"}
+    request:
+      method: GET
+      path: query
+      query: {q: "SELECT {{fields.fields}} FROM {{fields.object}} ORDER BY SystemModstamp DESC LIMIT 200"}
+    output: {path: records}
+    poll: {every: 5, id: SystemModstamp}
+
+actions:
+  # Any object
+  - name: Create Record
+    resource: Record
+    description: Creates a record of any object.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: values, label: Fields, type: json, required: true, description: 'By API name, like {"LastName": "Silva", "Company": "Acme"}'}
+    request:
+      method: POST
+      path: "sobjects/{{fields.object}}"
+      body: "{{fields.values}}"
+
+  - name: Get Record
+    resource: Record
+    description: Reads a record.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: id, label: Record ID, required: true}
+      - {name: fields, label: Only fields, description: "Like Name, Email. All when empty."}
+    request:
+      method: GET
+      path: "sobjects/{{fields.object}}/{{fields.id}}"
+      query: {fields: "{{fields.fields}}"}
+
+  - name: Update Record
+    resource: Record
+    description: Changes a record. Only the fields given change.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: id, label: Record ID, required: true}
+      - {name: values, label: Fields, type: json, required: true}
+    request:
+      method: PATCH
+      path: "sobjects/{{fields.object}}/{{fields.id}}"
+      body: "{{fields.values}}"
+    output:
+      value: {id: "{{fields.id}}", updated: true}
+
+  - name: Upsert Record
+    resource: Record
+    description: Creates a record, or changes the one with the same external ID.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: id_field, label: External ID field, required: true, description: "Like Email or External_Id__c"}
+      - {name: id_value, label: Its value, required: true}
+      - {name: values, label: Fields, type: json, required: true}
+    request:
+      method: PATCH
+      path: "sobjects/{{fields.object}}/{{fields.id_field}}/{{fields.id_value}}"
+      body: "{{fields.values}}"
+
+  - name: Delete Record
+    resource: Record
+    description: Moves a record to the recycle bin.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+      - {name: id, label: Record ID, required: true}
+    request: {method: DELETE, path: "sobjects/{{fields.object}}/{{fields.id}}"}
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  - name: Query
+    resource: Record
+    description: Runs a SOQL query and returns every record it finds.
+    fields:
+      - {name: query, label: SOQL, type: textarea, required: true, description: "Like SELECT Id, Name FROM Account WHERE Industry = 'Retail'"}
+      - {name: endpoint, label: Records, type: select, default: query, options: [{label: Current, value: query}, {label: With deleted and archived, value: queryAll}]}
+    request:
+      method: GET
+      path: "{{fields.endpoint}}"
+      query: {q: "{{fields.query}}"}
+    pagination: {type: link, items_path: records, next_path: nextRecordsUrl}
+
+  - name: Search
+    resource: Record
+    description: Finds records across objects with a SOSL search.
+    fields:
+      - {name: query, label: SOSL, type: textarea, required: true, description: "Like FIND {Silva} IN ALL FIELDS RETURNING Contact(Id, Name), Lead(Id, Name)"}
+    request:
+      method: GET
+      path: search
+      query: {q: "{{fields.query}}"}
+    output: {path: searchRecords}
+
+  - name: Describe Object
+    resource: Record
+    description: Reads an object's fields, with their API names, types and picklist values.
+    fields:
+      - {name: object, label: Object, type: select, required: true, default: Lead, options_from: {request: {method: GET, path: sobjects}, path: sobjects, label: label, value: name}}
+    request: {method: GET, path: "sobjects/{{fields.object}}/describe"}
+
+  - name: List Objects
+    resource: Record
+    description: Lists the objects of the org, standard and custom.
+    request: {method: GET, path: sobjects}
+    output: {path: sobjects}
+
+  # Leads
+  - name: Create Lead
+    resource: Lead
+    description: Creates a lead.
+    fields:
+      - {name: last_name, label: Last name, required: true}
+      - {name: company, label: Company, required: true}
+      - {name: first_name, label: First name}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: title, label: Title}
+      - {name: source, label: Lead source, description: "Like Web or Phone Inquiry"}
+      - {name: status, label: Status, description: "Like Open - Not Contacted"}
+      - {name: description, label: Description, type: textarea}
+      - {name: owner, label: Owner ID}
+      - {name: extra, label: More fields, type: json, description: 'Like {"Custom__c": "x"}'}
+    request:
+      method: POST
+      path: sobjects/Lead
+      body: {LastName: "{{fields.last_name}}", Company: "{{fields.company}}", FirstName: "{{fields.first_name}}", Email: "{{fields.email}}", Phone: "{{fields.phone}}", Title: "{{fields.title}}", LeadSource: "{{fields.source}}", Status: "{{fields.status}}", Description: "{{fields.description}}", OwnerId: "{{fields.owner}}", _merge: "{{fields.extra}}"}
+
+  - name: Add Lead to Campaign
+    resource: Lead
+    description: Adds a lead or a contact to a campaign.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+      - {name: lead, label: Lead ID, description: "Give a lead or a contact."}
+      - {name: contact, label: Contact ID}
+      - {name: status, label: Member status, description: "Like Sent or Responded"}
+    request:
+      method: POST
+      path: sobjects/CampaignMember
+      body: {CampaignId: "{{fields.campaign}}", LeadId: "{{fields.lead}}", ContactId: "{{fields.contact}}", Status: "{{fields.status}}"}
+
+  # Contacts and accounts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a contact.
+    fields:
+      - {name: last_name, label: Last name, required: true}
+      - {name: first_name, label: First name}
+      - {name: account, label: Account ID}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: mobile, label: Mobile}
+      - {name: title, label: Title}
+      - {name: owner, label: Owner ID}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: sobjects/Contact
+      body: {LastName: "{{fields.last_name}}", FirstName: "{{fields.first_name}}", AccountId: "{{fields.account}}", Email: "{{fields.email}}", Phone: "{{fields.phone}}", MobilePhone: "{{fields.mobile}}", Title: "{{fields.title}}", OwnerId: "{{fields.owner}}", _merge: "{{fields.extra}}"}
+
+  - name: Create Account
+    resource: Account
+    description: Creates an account, a company you work with.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: website, label: Website}
+      - {name: phone, label: Phone}
+      - {name: industry, label: Industry}
+      - {name: type, label: Type, description: "Like Customer or Prospect"}
+      - {name: owner, label: Owner ID}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: sobjects/Account
+      body: {Name: "{{fields.name}}", Website: "{{fields.website}}", Phone: "{{fields.phone}}", Industry: "{{fields.industry}}", Type: "{{fields.type}}", OwnerId: "{{fields.owner}}", _merge: "{{fields.extra}}"}
+
+  # Opportunities
+  - name: Create Opportunity
+    resource: Opportunity
+    description: Creates an opportunity.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: stage, label: Stage, required: true, description: "Like Prospecting or Closed Won"}
+      - {name: close_date, label: Close date, required: true, description: "Like 2026-03-31"}
+      - {name: amount, label: Amount, type: number}
+      - {name: account, label: Account ID}
+      - {name: probability, label: Probability (%), type: number}
+      - {name: owner, label: Owner ID}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: sobjects/Opportunity
+      body: {Name: "{{fields.name}}", StageName: "{{fields.stage}}", CloseDate: "{{fields.close_date}}", Amount: "{{fields.amount}}", AccountId: "{{fields.account}}", Probability: "{{fields.probability}}", OwnerId: "{{fields.owner}}", _merge: "{{fields.extra}}"}
+
+  # Cases
+  - name: Create Case
+    resource: Case
+    description: Opens a support case.
+    fields:
+      - {name: subject, label: Subject, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: status, label: Status, default: New}
+      - {name: priority, label: Priority, type: select, options: [{label: Low, value: Low}, {label: Medium, value: Medium}, {label: High, value: High}]}
+      - {name: origin, label: Origin, description: "Like Email, Phone or Web"}
+      - {name: contact, label: Contact ID}
+      - {name: account, label: Account ID}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: sobjects/Case
+      body: {Subject: "{{fields.subject}}", Description: "{{fields.description}}", Status: "{{fields.status}}", Priority: "{{fields.priority}}", Origin: "{{fields.origin}}", ContactId: "{{fields.contact}}", AccountId: "{{fields.account}}", _merge: "{{fields.extra}}"}
+
+  - name: Add Case Comment
+    resource: Case
+    description: Writes a comment on a case.
+    fields:
+      - {name: case, label: Case ID, required: true}
+      - {name: body, label: Comment, type: textarea, required: true}
+      - {name: public, label: Visible to the customer, type: boolean, default: false}
+    request:
+      method: POST
+      path: sobjects/CaseComment
+      body: {ParentId: "{{fields.case}}", CommentBody: "{{fields.body}}", IsPublished: "{{fields.public}}"}
+
+  # Tasks and notes
+  - name: Create Task
+    resource: Task
+    description: Creates a task, like a call to make, on a record.
+    fields:
+      - {name: subject, label: Subject, required: true}
+      - {name: what, label: Related record ID, description: "An account, opportunity or case."}
+      - {name: who, label: Lead or contact ID}
+      - {name: due, label: Due date, description: "Like 2026-02-01"}
+      - {name: status, label: Status, default: Not Started}
+      - {name: priority, label: Priority, type: select, default: Normal, options: [{label: Low, value: Low}, {label: Normal, value: Normal}, {label: High, value: High}]}
+      - {name: description, label: Comments, type: textarea}
+      - {name: owner, label: Assigned to ID}
+    request:
+      method: POST
+      path: sobjects/Task
+      body: {Subject: "{{fields.subject}}", WhatId: "{{fields.what}}", WhoId: "{{fields.who}}", ActivityDate: "{{fields.due}}", Status: "{{fields.status}}", Priority: "{{fields.priority}}", Description: "{{fields.description}}", OwnerId: "{{fields.owner}}"}
+
+  - name: Create Note
+    resource: Task
+    description: Attaches a note to a record.
+    fields:
+      - {name: parent, label: Record ID, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: body, label: Note, type: textarea}
+    request:
+      method: POST
+      path: sobjects/Note
+      body: {ParentId: "{{fields.parent}}", Title: "{{fields.title}}", Body: "{{fields.body}}"}
+
+  # Files
+  - name: Upload File
+    resource: File
+    description: Uploads a file and links it to a record.
+    fields:
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: record, label: Link to record ID}
+      - {name: title, label: Title}
+    request:
+      method: POST
+      path: sobjects/ContentVersion
+      body: {Title: "{{fields.title}}", PathOnClient: "{{fields.file | name}}", VersionData: "{{fields.file | base64}}", FirstPublishLocationId: "{{fields.record}}"}
+
+  - name: Get User
+    resource: User
+    description: Reads a user.
+    fields:
+      - {name: id, label: User ID, required: true}
+    request: {method: GET, path: "sobjects/User/{{fields.id}}"}
+
+  - name: Get Limits
+    resource: User
+    description: Reads how much of the org's API limits is used.
+    request: {method: GET, path: limits}
+
+i18n:
+  pt-BR:
+    description: "Leads, contatos, contas, oportunidades, casos e qualquer outro objeto no Salesforce."
+    triggers:
+      New Record: {name: "Novo registro", description: "Inicia o fluxo para cada registro novo de um objeto, olhando a cada 5 minutos.", fields: {object: "Objeto", fields: "Campos"}}
+      Updated Record: {name: "Registro alterado", description: "Inicia o fluxo toda vez que um registro de um objeto muda, olhando a cada 5 minutos.", fields: {object: "Objeto", fields: "Campos"}}
+    actions:
+      Create Record: {name: "Criar registro", description: "Cria um registro de qualquer objeto.", fields: {object: "Objeto", values: "Campos"}}
+      Get Record: {name: "Ler registro", description: "Lê um registro.", fields: {object: "Objeto", id: "ID do registro", fields: "Só os campos"}}
+      Update Record: {name: "Atualizar registro", description: "Altera um registro. Só os campos dados mudam.", fields: {object: "Objeto", id: "ID do registro", values: "Campos"}}
+      Upsert Record: {name: "Criar ou atualizar registro", description: "Cria um registro, ou altera o que tem o mesmo ID externo.", fields: {object: "Objeto", id_field: "Campo de ID externo", id_value: "Valor", values: "Campos"}}
+      Delete Record: {name: "Excluir registro", description: "Manda um registro para a lixeira.", fields: {object: "Objeto", id: "ID do registro"}}
+      Query: {name: "Consultar", description: "Roda uma consulta SOQL e devolve todos os registros que ela acha.", fields: {query: "Consulta", endpoint: "Registros"}}
+      Search: {name: "Buscar", description: "Encontra registros em vários objetos com uma busca SOSL.", fields: {query: "Consulta"}}
+      Describe Object: {name: "Descrever objeto", description: "Lê os campos de um objeto, com nomes de API, tipos e valores de lista.", fields: {object: "Objeto"}}
+      List Objects: {name: "Listar objetos", description: "Lista os objetos da org, padrão e personalizados."}
+      Create Lead: {name: "Criar lead", description: "Cria um lead.", fields: {last_name: "Sobrenome", company: "Empresa", first_name: "Nome", email: "E-mail", phone: "Telefone", title: "Título", source: "Origem do lead", status: "Status", description: "Descrição", owner: "ID do dono", extra: "Mais campos"}}
+      Add Lead to Campaign: {name: "Adicionar à campanha", description: "Adiciona um lead ou contato a uma campanha.", fields: {campaign: "ID da campanha", lead: "ID do lead", contact: "ID do contato", status: "Status"}}
+      Create Contact: {name: "Criar contato", description: "Cria um contato.", fields: {last_name: "Sobrenome", first_name: "Nome", account: "ID da conta", email: "E-mail", phone: "Telefone", mobile: "Celular", title: "Título", owner: "ID do dono", extra: "Mais campos"}}
+      Create Account: {name: "Criar conta", description: "Cria uma conta, uma empresa com quem você trabalha.", fields: {name: "Nome", website: "Site", phone: "Telefone", industry: "Setor", type: "Tipo", owner: "ID do dono", extra: "Mais campos"}}
+      Create Opportunity: {name: "Criar oportunidade", description: "Cria uma oportunidade.", fields: {name: "Nome", stage: "Fase", close_date: "Data de fechamento", amount: "Valor", account: "ID da conta", probability: "Probabilidade (%)", owner: "ID do dono", extra: "Mais campos"}}
+      Create Case: {name: "Criar caso", description: "Abre um caso de suporte.", fields: {subject: "Assunto", description: "Descrição", status: "Status", priority: "Prioridade", origin: "Origem", contact: "ID do contato", account: "ID da conta", extra: "Mais campos"}}
+      Add Case Comment: {name: "Comentar no caso", description: "Escreve um comentário num caso.", fields: {case: "ID do caso", body: "Texto", public: "Visível ao cliente"}}
+      Create Task: {name: "Criar tarefa", description: "Cria uma tarefa, como uma ligação a fazer, num registro.", fields: {subject: "Assunto", what: "ID do registro relacionado", who: "ID do lead ou contato", due: "Vencimento", status: "Status", priority: "Prioridade", description: "Comentários", owner: "ID do dono"}}
+      Create Note: {name: "Criar nota", description: "Anexa uma nota a um registro.", fields: {parent: "ID do registro", title: "Título", body: "Texto"}}
+      Upload File: {name: "Enviar arquivo", description: "Envia um arquivo e liga a um registro.", fields: {file: "Arquivo", record: "Ligar ao registro", title: "Título"}}
+      Get User: {name: "Ler usuário", description: "Lê um usuário.", fields: {id: "ID do usuário"}}
+      Get Limits: {name: "Ler limites", description: "Lê quanto dos limites de API da org já foi usado."}
