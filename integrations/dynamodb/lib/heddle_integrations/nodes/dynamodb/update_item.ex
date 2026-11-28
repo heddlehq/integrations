@@ -11,7 +11,7 @@ defmodule HeddleIntegrations.Nodes.DynamoDB.UpdateItem do
       [
         DynamoDB.table_field(),
         DynamoDB.key_field(),
-        %{type: :textarea, name: :changes, label: "New values", default: ""}
+        %{type: :textarea, language: :json, name: :changes, label: "New values", default: ""}
       ]
     )
   end

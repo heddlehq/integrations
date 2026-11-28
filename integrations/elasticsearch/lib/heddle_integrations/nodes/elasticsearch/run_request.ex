@@ -17,7 +17,7 @@ defmodule HeddleIntegrations.Nodes.Elasticsearch.RunRequest do
           default: "GET"
         },
         %{type: :text, name: :path, label: "Path", default: "/"},
-        %{type: :textarea, name: :payload, label: "Payload (JSON)", default: ""}
+        %{type: :textarea, language: :json, name: :payload, label: "Payload (JSON)", default: ""}
       ]
     )
   end

@@ -11,7 +11,7 @@ defmodule HeddleIntegrations.Nodes.MongoDB.UpdateDocuments do
       [
         MongoDB.collection_field(),
         MongoDB.filter_field(""),
-        %{type: :textarea, name: :update, label: "Update", default: ""},
+        %{type: :textarea, language: :json, name: :update, label: "Update", default: ""},
         %{
           type: :select,
           name: :which,

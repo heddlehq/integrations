@@ -449,7 +449,7 @@ defmodule HeddleIntegrations.AgentsTest do
     test "asks another agent, waits for its reply, and goes on with it" do
       script(fn context, _options ->
         cond do
-          Enum.any?(context.messages, &(text_of(&1) =~ "Bob replied: 42")) ->
+          Enum.any?(context.messages, &(text_of(&1) =~ "Bob replied to your question: 42")) ->
             answer("Bob says 42.")
 
           Enum.any?(context.messages, &(&1.role == :tool)) ->

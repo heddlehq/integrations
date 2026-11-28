@@ -39,11 +39,11 @@ defmodule HeddleIntegrations.Services.Sql do
   def table_field, do: %{type: :text, name: :table, label: "Table", default: ""}
 
   def where_field(default \\ "") do
-    %{type: :textarea, name: :where, label: "Where", default: default}
+    %{type: :textarea, language: :sql, name: :where, label: "Where", default: default}
   end
 
   def rows_field do
-    %{type: :textarea, name: :rows, label: "Rows", default: "{{result}}"}
+    %{type: :textarea, language: :json, name: :rows, label: "Rows", default: "{{result}}"}
   end
 
   @doc """

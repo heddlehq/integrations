@@ -23,7 +23,13 @@ defmodule HeddleIntegrations.Services.DynamoDB do
   def table_field, do: %{type: :text, name: :table, label: "Table", default: ""}
 
   def key_field do
-    %{type: :textarea, name: :item_key, label: "Key", default: ~s({"id": "{{id}}"})}
+    %{
+      type: :textarea,
+      language: :json,
+      name: :item_key,
+      label: "Key",
+      default: ~s({"id": "{{id}}"})
+    }
   end
 
   def run(context, fun), do: Integration.run(context, "dynamodb", fun)

@@ -8,7 +8,7 @@ defmodule HeddleIntegrations.Nodes.Neo4j.RunQuery do
       "Run Query",
       "Runs a Cypher query on a graph. " <>
         "{{placeholders}} go as parameters, so a value can't change the query.",
-      [%{type: :textarea, name: :cypher, label: "Query", default: ""}]
+      [%{type: :textarea, language: :sql, name: :cypher, label: "Query", default: ""}]
     )
   end
 

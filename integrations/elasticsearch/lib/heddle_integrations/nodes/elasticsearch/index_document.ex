@@ -11,7 +11,13 @@ defmodule HeddleIntegrations.Nodes.Elasticsearch.IndexDocument do
       [
         Elasticsearch.index_field(),
         Elasticsearch.id_field("Document ID (empty to generate one)"),
-        %{type: :textarea, name: :document, label: "Document", default: "{{result}}"}
+        %{
+          type: :textarea,
+          language: :json,
+          name: :document,
+          label: "Document",
+          default: "{{result}}"
+        }
       ]
     )
   end

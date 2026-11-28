@@ -11,8 +11,14 @@ defmodule HeddleIntegrations.Nodes.MongoDB.FindDocuments do
       [
         MongoDB.collection_field(),
         MongoDB.filter_field(),
-        %{type: :textarea, name: :fields, label: "Fields (empty for all)", default: ""},
-        %{type: :textarea, name: :sort, label: "Sort", default: ""},
+        %{
+          type: :textarea,
+          language: :json,
+          name: :fields,
+          label: "Fields (empty for all)",
+          default: ""
+        },
+        %{type: :textarea, language: :json, name: :sort, label: "Sort", default: ""},
         %{type: :text, name: :limit, label: "Limit", default: "100"},
         %{type: :text, name: :offset, label: "Skip", default: "0"}
       ]

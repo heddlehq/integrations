@@ -23,7 +23,7 @@ defmodule HeddleIntegrations.Services.Redis do
   def key_field, do: %{type: :text, name: :key, label: "Key", default: ""}
 
   def value_field(label \\ "Value") do
-    %{type: :textarea, name: :value, label: label, default: "{{result}}"}
+    %{type: :textarea, language: :text, name: :value, label: label, default: "{{result}}"}
   end
 
   @doc """

@@ -8,7 +8,7 @@ defmodule HeddleIntegrations.Nodes.Sql.RunTransaction do
     Sql.definition(
       "Run Transaction",
       "Runs several statements, separated by semicolons. If one fails, none of them count.",
-      [%{type: :textarea, name: :statements, label: "Statements", default: ""}]
+      [%{type: :textarea, language: :sql, name: :statements, label: "Statements", default: ""}]
     )
   end
 
