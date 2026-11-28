@@ -1,0 +1,365 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Octadesk, the help desk and WhatsApp chat. Octadesk's support gives out the API key
+# and the API address of the account (like https://o123456-abc.api002.octadesk.services);
+# every request also names the agent's email in octa-agent-email. Lists answer a plain
+# array, take page and limit (up to 100), filter with filters[n][property|operator|value]
+# and order with sort[property] and sort[direction].
+id: octadesk
+name: Octadesk
+version: 1.0.0
+homepage: https://developers.octadesk.com/reference
+description: Create and read tickets and contacts, list and answer chats, transfer and close them, and send WhatsApp templates, and start flows on new tickets and chats, in Octadesk.
+icon: hero-chat-bubble-left-right
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#202737"/><svg x="3.00" y="10.06" width="18.00" height="3.89" viewBox="0 0 176 38"><g clip-path="url(#clip0_2143_467)"> <path d="M52.8682 27.5012C48.048 27.5012 44.2117 23.6082 44.2117 18.7501C44.2117 13.8921 48.048 9.99902 52.8682 9.99902C57.6226 9.99902 61.459 13.8921 61.459 18.7501C61.459 23.6082 57.6226 27.5012 52.8682 27.5012ZM52.8682 23.4751C55.3274 23.4751 57.2947 21.4453 57.2947 18.7501C57.2947 16.0549 55.3601 14.0252 52.8682 14.0252C50.3105 14.0252 48.3759 16.0549 48.3759 18.7501C48.3759 21.4453 50.3105 23.4751 52.8682 23.4751Z" fill="white"/> <path d="M75.453 16.288C74.6501 14.8705 73.214 14.0252 71.6236 14.0252C69.0987 14.0252 67.2625 16.0881 67.2625 18.7834C67.2625 21.4453 69.0987 23.5083 71.6236 23.5083C73.2604 23.5083 74.7337 22.5797 75.5217 21.0867L78.9697 23.2897C77.476 25.8477 74.7504 27.5344 71.6236 27.5344C66.8035 27.5344 63.0983 23.6414 63.0983 18.7834C63.0983 13.8921 66.8035 9.99902 71.6236 9.99902C74.6973 9.99902 77.4038 11.6614 78.9043 14.1616L75.453 16.288Z" fill="white"/> <path d="M90.9617 14.2861H87.1252V21.5756C87.1252 22.9399 87.7155 23.5721 88.9287 23.5721H90.9617V27.4652H88.3057C84.7644 27.4652 83.0265 25.7349 83.0265 22.108V14.2861H80.0755V10.5594H83.0265V6.43343L87.1252 5.13574V10.5594H90.9617V14.2861Z" fill="white"/> <path d="M100.011 9.99902C104.044 9.99902 107.06 12.8273 107.06 16.9866V27.5012H103.06V25.1387C101.847 26.4696 99.9456 27.4679 97.8467 27.5012C95.0597 27.5012 92.6006 25.6378 92.6006 22.4435C92.6006 19.4156 94.8303 17.6853 98.1425 17.0198L102.962 16.0881C102.634 14.6907 101.585 13.6259 100.011 13.6259C98.4374 13.6259 96.962 14.6241 96.0764 15.8885L92.9512 13.918L93.0597 13.6592C94.601 11.4631 97.3224 9.99902 100.011 9.99902ZM98.9289 23.9741C101.093 23.9741 103.06 22.3105 103.06 20.1143V19.349L98.8633 20.1808C97.4535 20.5136 96.6006 21.2457 96.6006 22.2106C96.6006 23.2089 97.4862 23.9741 98.9289 23.9741Z" fill="white"/> <path d="M121.262 5.13574H125.361V27.4387H121.262V24.9877C120.312 26.4518 118.639 27.5166 116.376 27.5166C112.179 27.5166 108.934 23.8565 108.966 18.7655C109.032 13.7412 112.245 10.0144 116.443 10.0144C118.606 10.0144 120.245 11.0127 121.262 12.3769V5.13574ZM117.196 23.5237C119.557 23.5237 121.36 21.5938 121.36 18.7655C121.36 15.9039 119.557 14.0074 117.229 14.0074C114.868 14.0074 113.131 16.0038 113.131 18.7988C113.131 21.5273 114.835 23.4905 117.196 23.5237Z" fill="white"/> <path d="M143.271 17.3526C143.37 18.251 143.37 19.2825 143.239 20.4138H131.697C132.155 22.51 133.533 23.7079 135.631 23.7079C137.467 23.7079 139.009 22.7762 139.73 21.412L142.944 23.2754C141.567 25.8375 138.615 27.5012 135.566 27.5012C130.844 27.5012 127.533 23.6747 127.533 18.7501C127.533 13.8255 130.811 9.99902 135.599 9.99902C139.468 9.99902 142.747 12.4946 143.271 17.3526ZM135.468 13.7923C133.369 13.7923 132.09 15.09 131.697 17.1529H139.206C139.042 14.9569 137.369 13.7923 135.468 13.7923Z" fill="white"/> <path d="M159.795 27.563V5.13574H164.077V17.6633L169.548 10.6443H175.114L167.868 18.9978L175.392 27.563H169.826L164.077 20.2391V27.563H159.795Z" fill="white"/> <path d="M158.157 22.144C158.157 25.538 155.075 27.5344 151.468 27.5344C148.298 27.5344 145.878 25.9869 144.98 23.5784L148.082 21.8909C148.749 22.972 149.788 23.9741 151.599 23.9741C153.041 23.9741 154.222 23.3752 154.222 22.51C154.222 21.5451 152.878 21.046 150.975 20.5469C148.713 19.948 145.434 18.9497 145.434 15.3228C145.434 11.9954 148.254 9.99902 151.664 9.99902C154.503 9.99902 156.666 11.3922 157.599 13.592L154.454 15.3421C154.004 14.2862 153.005 13.5261 151.631 13.5261C150.385 13.5261 149.369 14.1583 149.369 15.0566C149.369 15.955 150.418 16.3877 152.123 16.8535C152.184 16.8691 152.247 16.8852 152.31 16.9015C154.419 17.4413 158.157 18.3981 158.157 22.144Z" fill="white"/> <path d="M37.1043 7.5832C36.7329 3.6906 33.9199 0.845478 30.0725 0.470971C27.3976 0.209951 23.714 0 18.7849 0C13.8559 0 10.3349 0.205412 7.6769 0.457353C3.72736 0.832995 0.839275 3.77912 0.462274 7.77273C0.20533 10.4828 0 14.1666 0 18.9966C0 23.8266 0.206453 27.5138 0.462274 30.2273C0.840396 34.2209 3.72625 37.167 7.67577 37.5427C10.3349 37.7992 13.9625 38 18.7838 38C23.6052 38 27.3976 37.7901 30.0714 37.529C33.9188 37.1545 36.7317 34.3083 37.1031 30.4168C37.3611 27.7113 37.5688 23.9866 37.5688 19C37.5688 14.0134 37.3611 10.2876 37.1031 7.5832M28.8663 25.7707C28.3075 25.9091 27.7264 25.9522 27.1507 25.9488C26.8478 25.9488 26.638 25.9397 26.2453 25.8989C24.6666 25.7365 23.5838 25.2032 22.8792 24.6154C22.8085 24.5564 22.6671 24.5087 22.5168 24.6221C22.3923 24.7379 22.3923 24.8866 22.482 25.1078C22.5269 25.2032 22.7681 25.5958 22.7681 25.5958C22.7681 25.5958 22.9813 25.9817 23.0688 26.1202C23.7555 27.0666 24.3603 27.7589 24.891 28.2821C25.3465 28.7451 25.5036 29.4771 25.2299 30.1319C25.148 30.3374 25.0245 30.5098 24.8719 30.6676C24.2279 31.3349 23.1575 31.3145 22.5291 30.7028C21.8615 30.0446 21.1906 29.3137 20.3648 28.0948C19.705 27.1699 19.2136 26.1327 18.914 25.033C18.8915 24.9524 18.8477 24.9047 18.7849 24.9047C18.7221 24.9047 18.6795 24.9524 18.6559 25.033C18.3563 26.1327 17.8648 27.1688 17.2051 28.0948C16.3793 29.3137 15.7084 30.0446 15.0407 30.7028C14.4124 31.3145 13.3431 31.3349 12.6979 30.6676C12.5453 30.5098 12.4219 30.3374 12.34 30.1319C12.0652 29.476 12.2233 28.744 12.6788 28.2821C13.2095 27.7589 13.8155 27.0666 14.5011 26.1202C14.5885 25.9817 14.8018 25.5958 14.8018 25.5958C14.8018 25.5958 15.0429 25.2032 15.0879 25.1078C15.1777 24.8866 15.1777 24.7368 15.0531 24.6221C14.9016 24.5075 14.7613 24.5564 14.6907 24.6154C13.9871 25.2032 12.9033 25.7377 11.3246 25.8989C10.9318 25.9386 10.7209 25.9488 10.4191 25.9488C9.84355 25.9522 9.26231 25.9091 8.70467 25.7707C7.81602 25.5289 7.29764 24.5779 7.53776 23.6802C7.77226 22.8029 8.65193 22.2707 9.52712 22.4795C9.96132 22.5601 10.6267 22.5873 11.1092 22.5022C12.6542 22.3183 13.8503 21.356 13.9826 19.6163C14.0197 18.6187 13.636 17.9911 13.1176 17.2625C12.4388 16.2502 11.6982 14.986 11.6982 13.3654C11.6982 9.50798 15.1159 6.4767 18.7872 6.4767C22.4584 6.4767 25.8761 9.50798 25.8761 13.3654C25.8761 14.986 25.1356 16.2491 24.4568 17.2625C23.9384 17.9911 23.5547 18.6187 23.5917 19.6163C23.7229 21.356 24.9191 22.3183 26.4652 22.5022C26.9465 22.5862 27.613 22.559 28.0473 22.4795C28.9224 22.2718 29.8033 22.8029 30.0366 23.6802C30.2756 24.5791 29.7572 25.5289 28.8697 25.7707" fill="white"/> <path d="M16.6935 12.7607C15.9553 12.7607 15.3685 13.2782 15.3685 14.3961C15.3685 15.5139 15.9654 15.7954 16.7036 15.7954C17.4419 15.7954 18.0388 15.5139 18.0388 14.3961C18.0388 13.2782 17.4329 12.7607 16.6946 12.7607" fill="white"/> <path d="M20.8571 12.7607C20.1188 12.7607 19.532 13.2782 19.532 14.3961C19.532 15.5139 20.1289 15.7954 20.8672 15.7954C21.6055 15.7954 22.2024 15.5139 22.2024 14.3961C22.2024 13.2782 21.5965 12.7607 20.8583 12.7607" fill="white"/> </g> <defs> <clipPath id="clip0_2143_467"> <rect width="176" height="38" fill="white"/> </clipPath> </defs></svg></svg>
+category: support
+base_url: "{{credential.url}}/"
+headers:
+  User-Agent: Heddle/1.0
+  octa-agent-email: "{{credential.agent_email}}"
+
+credential:
+  label: Octadesk
+  fields:
+    - {name: url, label: API address, required: true, description: "The account's API address from Octadesk, like https://o123456-abc.api002.octadesk.services"}
+    - {name: api_key, label: API key, secret: true, required: true}
+    - {name: agent_email, label: Agent email, required: true, description: The email of the agent the API key belongs to.}
+  auth:
+    type: header
+    name: X-API-KEY
+    value: "{{credential.api_key}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Ticket
+    description: Starts the flow for each new ticket, checking every 5 minutes.
+    request:
+      method: GET
+      path: tickets
+      query: {"sort[property]": number, "sort[direction]": desc, limit: 50}
+    poll: {every: 5, id: id}
+
+  - name: New Chat
+    description: Starts the flow for each new chat, checking every 5 minutes.
+    request:
+      method: GET
+      path: chat
+      query: {"sort[property]": createdAt, "sort[direction]": desc, limit: 50}
+    poll: {every: 5, id: id}
+
+actions:
+  # Tickets
+  - name: Create Ticket
+    resource: Ticket
+    description: Opens a ticket for a requester.
+    fields:
+      - {name: summary, label: Summary, required: true}
+      - {name: description, label: Description, type: textarea, required: true}
+      - {name: requester_email, label: Requester email, required: true}
+      - {name: requester_name, label: Requester name}
+      - {name: status_id, label: Status ID, description: From List Ticket Statuses.}
+      - {name: type_id, label: Type ID, description: From List Ticket Types.}
+      - {name: priority_id, label: Priority ID, description: From List Ticket Priorities.}
+      - {name: group_id, label: Group ID, description: From List Ticket Groups.}
+      - {name: assigned_email, label: Agent email, description: The agent to assign the ticket to.}
+      - {name: tags, label: Tags, type: json, description: "A list of tag names, like [\"billing\"]"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like [{\"key\": \"plan\", \"value\": \"pro\"}]"}
+    request:
+      method: POST
+      path: tickets
+      body:
+        summary: "{{fields.summary}}"
+        description: "{{fields.description}}"
+        requester: {email: "{{fields.requester_email}}", name: "{{fields.requester_name}}"}
+        status: {_if: "{{fields.status_id}}", id: "{{fields.status_id}}"}
+        type: {_if: "{{fields.type_id}}", id: "{{fields.type_id}}"}
+        priority: {_if: "{{fields.priority_id}}", id: "{{fields.priority_id}}"}
+        group: {_if: "{{fields.group_id}}", id: "{{fields.group_id}}"}
+        assigned: {_if: "{{fields.assigned_email}}", email: "{{fields.assigned_email}}"}
+        tags: "{{fields.tags}}"
+        customField: "{{fields.custom_fields}}"
+
+  - name: Get Ticket
+    resource: Ticket
+    description: Reads a ticket by its number.
+    fields:
+      - {name: number, label: Ticket number, type: number, required: true}
+    request: {method: GET, path: "tickets/{{fields.number}}"}
+
+  - name: List Tickets
+    resource: Ticket
+    description: Lists tickets, filtered by one property if you like.
+    fields:
+      - {name: filter_property, label: Filter by, description: "A ticket property, like status.name or requester.email"}
+      - {name: filter_operator, label: Operator, type: select, description: Needed with Filter by., options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
+      - {name: filter_value, label: Value}
+      - {name: sort, label: Order by, default: number}
+      - {name: direction, label: Direction, type: select, default: desc, options: [{label: Ascending, value: asc}, {label: Descending, value: desc}]}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: tickets
+      query:
+        "filters[0][property]": "{{fields.filter_property}}"
+        "filters[0][operator]": "{{fields.filter_operator}}"
+        "filters[0][value]": "{{fields.filter_value}}"
+        "sort[property]": "{{fields.sort}}"
+        "sort[direction]": "{{fields.direction}}"
+        page: "{{fields.page}}"
+        limit: "{{fields.limit}}"
+
+  - name: List Ticket Interactions
+    resource: Ticket
+    description: Lists a ticket's interactions, its replies and changes.
+    fields:
+      - {name: number, label: Ticket number, type: number, required: true}
+      - {name: handlers, label: Only handler interactions, type: boolean}
+    request: {method: GET, path: "tickets/{{fields.number}}/interactions", query: {handlers: "{{fields.handlers}}"}}
+
+  - name: List Ticket Statuses
+    resource: Ticket
+    description: Lists the ticket statuses.
+    request: {method: GET, path: tickets/status}
+
+  - name: List Ticket Types
+    resource: Ticket
+    description: Lists the ticket types.
+    request: {method: GET, path: tickets/types}
+
+  - name: List Ticket Priorities
+    resource: Ticket
+    description: Lists the ticket priorities.
+    request: {method: GET, path: tickets/priorities}
+
+  - name: List Ticket Groups
+    resource: Ticket
+    description: Lists the agent groups tickets go to.
+    request: {method: GET, path: tickets/groups}
+
+  - name: List Ticket Tags
+    resource: Ticket
+    description: Lists the ticket tags.
+    request: {method: GET, path: tickets/tags}
+
+  - name: List Ticket Channels
+    resource: Ticket
+    description: Lists the channels tickets come from.
+    request: {method: GET, path: tickets/channels}
+
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a contact.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: phone, label: Phone, description: "With the area code, like 11999999999"}
+      - {name: country_code, label: Country code, default: "55"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like [{\"key\": \"plan\", \"value\": \"pro\"}]"}
+    request:
+      method: POST
+      path: contacts
+      body:
+        name: "{{fields.name}}"
+        email: "{{fields.email}}"
+        phoneContacts: [{_if: "{{fields.phone}}", number: "{{fields.phone}}", countryCode: "{{fields.country_code}}"}]
+        customFields: "{{fields.custom_fields}}"
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact.
+    fields:
+      - {name: id, label: Contact ID, required: true}
+    request: {method: GET, path: "contacts/{{fields.id}}"}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact's name, email, phone or custom fields.
+    fields:
+      - {name: id, label: Contact ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: phone, label: Phone, description: "With the area code, like 11999999999"}
+      - {name: country_code, label: Country code, default: "55"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like [{\"key\": \"plan\", \"value\": \"pro\"}]"}
+    request:
+      method: PUT
+      path: "contacts/{{fields.id}}"
+      body:
+        name: "{{fields.name}}"
+        email: "{{fields.email}}"
+        phoneContacts: [{_if: "{{fields.phone}}", number: "{{fields.phone}}", countryCode: "{{fields.country_code}}"}]
+        customFields: "{{fields.custom_fields}}"
+
+  - name: List Contacts
+    resource: Contact
+    description: Lists contacts, filtered by one property if you like.
+    fields:
+      - {name: filter_property, label: Filter by, description: "A contact property, like name or email"}
+      - {name: filter_operator, label: Operator, type: select, description: Needed with Filter by., options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
+      - {name: filter_value, label: Value}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: contacts
+      query:
+        "filters[0][property]": "{{fields.filter_property}}"
+        "filters[0][operator]": "{{fields.filter_operator}}"
+        "filters[0][value]": "{{fields.filter_value}}"
+        page: "{{fields.page}}"
+        limit: "{{fields.limit}}"
+
+  - name: List Organizations
+    resource: Contact
+    description: Lists the organizations contacts belong to.
+    fields:
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: organizations, query: {page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+
+  # Chat
+  - name: List Chats
+    resource: Chat
+    description: Lists chats, filtered by one property if you like.
+    fields:
+      - {name: filter_property, label: Filter by, description: "A chat property, like status or channel"}
+      - {name: filter_operator, label: Operator, type: select, description: Needed with Filter by., options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
+      - {name: filter_value, label: Value}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: chat
+      query:
+        "filters[0][property]": "{{fields.filter_property}}"
+        "filters[0][operator]": "{{fields.filter_operator}}"
+        "filters[0][value]": "{{fields.filter_value}}"
+        "sort[property]": createdAt
+        "sort[direction]": desc
+        page: "{{fields.page}}"
+        limit: "{{fields.limit}}"
+
+  - name: Get Chat
+    resource: Chat
+    description: Reads a chat.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+    request: {method: GET, path: "chat/{{fields.id}}", query: {property: createdAt, direction: desc}}
+
+  - name: List Chat Messages
+    resource: Chat
+    description: Lists the messages of a chat, newest first.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: "chat/{{fields.id}}/messages", query: {property: time, direction: desc, page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+
+  - name: Send Chat Message
+    resource: Chat
+    description: Sends a message in a chat, to the contact or as an internal note.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+      - {name: body, label: Message, type: textarea, required: true}
+      - {name: type, label: Kind, type: select, default: public, options: [{label: To the contact, value: public}, {label: Internal note, value: internal}]}
+      - {name: channel, label: Channel, type: select, required: true, default: whatsapp, options: [{label: WhatsApp, value: whatsapp}, {label: Web, value: web}, {label: Messenger, value: facebook-messenger}, {label: Instagram, value: instagram}, {label: Email, value: email}, {label: Widget, value: widget}]}
+    request:
+      method: POST
+      path: "chat/{{fields.id}}/messages"
+      body: {chatId: "{{fields.id}}", type: "{{fields.type}}", body: "{{fields.body}}", channel: "{{fields.channel}}"}
+
+  - name: Close Chat
+    resource: Chat
+    description: Closes a chat.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+    request: {method: PUT, path: "chat/{{fields.id}}/close"}
+
+  - name: Transfer Chat to Agent
+    resource: Chat
+    description: Hands a chat to an agent.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+      - {name: agent_id, label: Agent ID, required: true}
+    request: {method: PUT, path: "chat/{{fields.id}}/agent/{{fields.agent_id}}"}
+
+  - name: Transfer Chat to Group
+    resource: Chat
+    description: Hands a chat to a group of agents.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+      - {name: group_id, label: Group ID, required: true}
+    request: {method: PUT, path: "chat/{{fields.id}}/group/{{fields.group_id}}"}
+
+  - name: Tag Chat
+    resource: Chat
+    description: Sets a chat's tags.
+    fields:
+      - {name: id, label: Chat ID, required: true}
+      - {name: tags, label: Tags, type: json, required: true, description: "Like [{\"id\": \"…\", \"name\": \"vip\"}]"}
+    request: {method: POST, path: "chat/{{fields.id}}/tags", body: {tags: "{{fields.tags}}"}}
+
+  - name: List Template Messages
+    resource: Chat
+    description: Lists the WhatsApp template messages.
+    fields:
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: chat/templates-message, query: {page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+
+  - name: Send Template Message
+    resource: Chat
+    description: Sends a WhatsApp template to a phone, opening a chat.
+    fields:
+      - {name: to, label: To, required: true, description: "The contact's phone, like +5511999999999"}
+      - {name: from, label: From, required: true, description: "The account's WhatsApp number, like +5511999999999"}
+      - {name: template_id, label: Template ID, description: From List Template Messages.}
+      - {name: template_code, label: Template code, description: "The template's name at WhatsApp, if you don't give the ID."}
+      - {name: variables, label: Variables, type: json, description: "The template's variables, like [{\"key\": \"name\", \"value\": \"Ana\"}]"}
+      - {name: assign, label: Assign automatically, type: boolean, default: true}
+    request:
+      method: POST
+      path: chat/conversation/send-template
+      body:
+        target: {contact: {phoneContact: {number: "{{fields.to}}"}, customFields: "{{fields.variables}}"}}
+        content: {templateMessage: {id: "{{fields.template_id}}", code: "{{fields.template_code}}"}}
+        origin: {from: {number: "{{fields.from}}"}}
+        options: {automaticAssign: "{{fields.assign}}"}
+
+i18n:
+  pt-BR:
+    description: "Crie e leia tickets e contatos, liste e responda chats, transfira e encerre conversas, envie templates de WhatsApp e inicie fluxos com novos tickets e chats, no Octadesk."
+    triggers:
+      New Ticket: {name: "Novo ticket", description: "Inicia o fluxo a cada novo ticket, verificando a cada 5 minutos."}
+      New Chat: {name: "Novo chat", description: "Inicia o fluxo a cada novo chat, verificando a cada 5 minutos."}
+    actions:
+      Create Ticket: {name: "Criar ticket", description: "Abre um ticket para um solicitante.", fields: {summary: "Resumo", description: "Descrição", requester_email: "E-mail do solicitante", requester_name: "Nome do solicitante", status_id: "ID do status", type_id: "ID do tipo", priority_id: "ID da prioridade", group_id: "ID do grupo", assigned_email: "E-mail do agente", tags: "Tags", custom_fields: "Campos personalizados"}}
+      Get Ticket: {name: "Buscar ticket", description: "Lê um ticket pelo número.", fields: {number: "Número do ticket"}}
+      List Tickets: {name: "Listar tickets", description: "Lista tickets, filtrando por uma propriedade se quiser.", fields: {filter_property: "Filtrar por", filter_operator: "Operador", filter_value: "Valor", sort: "Ordenar por", direction: "Direção", page: "Página", limit: "Limite"}}
+      List Ticket Interactions: {name: "Listar interações do ticket", description: "Lista as interações de um ticket, suas respostas e alterações.", fields: {number: "Número do ticket", handlers: "Só interações de atendentes"}}
+      List Ticket Statuses: {name: "Listar status de ticket", description: "Lista os status de ticket."}
+      List Ticket Types: {name: "Listar tipos de ticket", description: "Lista os tipos de ticket."}
+      List Ticket Priorities: {name: "Listar prioridades de ticket", description: "Lista as prioridades de ticket."}
+      List Ticket Groups: {name: "Listar grupos de ticket", description: "Lista os grupos de agentes para onde vão os tickets."}
+      List Ticket Tags: {name: "Listar tags de ticket", description: "Lista as tags de ticket."}
+      List Ticket Channels: {name: "Listar canais de ticket", description: "Lista os canais de onde vêm os tickets."}
+      Create Contact: {name: "Criar contato", description: "Cria um contato.", fields: {name: "Nome", email: "E-mail", phone: "Telefone", country_code: "Código do país", custom_fields: "Campos personalizados"}}
+      Get Contact: {name: "Buscar contato", description: "Lê um contato.", fields: {id: "ID do contato"}}
+      Update Contact: {name: "Atualizar contato", description: "Altera o nome, e-mail, telefone ou campos personalizados de um contato.", fields: {id: "ID do contato", name: "Nome", email: "E-mail", phone: "Telefone", country_code: "Código do país", custom_fields: "Campos personalizados"}}
+      List Contacts: {name: "Listar contatos", description: "Lista contatos, filtrando por uma propriedade se quiser.", fields: {filter_property: "Filtrar por", filter_operator: "Operador", filter_value: "Valor", page: "Página", limit: "Limite"}}
+      List Organizations: {name: "Listar organizações", description: "Lista as organizações às quais os contatos pertencem.", fields: {page: "Página", limit: "Limite"}}
+      List Chats: {name: "Listar chats", description: "Lista chats, filtrando por uma propriedade se quiser.", fields: {filter_property: "Filtrar por", filter_operator: "Operador", filter_value: "Valor", page: "Página", limit: "Limite"}}
+      Get Chat: {name: "Buscar chat", description: "Lê um chat.", fields: {id: "ID do chat"}}
+      List Chat Messages: {name: "Listar mensagens do chat", description: "Lista as mensagens de um chat, das mais novas às mais antigas.", fields: {id: "ID do chat", page: "Página", limit: "Limite"}}
+      Send Chat Message: {name: "Enviar mensagem no chat", description: "Envia uma mensagem num chat, ao contato ou como nota interna.", fields: {id: "ID do chat", body: "Mensagem", type: "Tipo", channel: "Canal"}}
+      Close Chat: {name: "Encerrar chat", description: "Encerra um chat.", fields: {id: "ID do chat"}}
+      Transfer Chat to Agent: {name: "Transferir chat para agente", description: "Passa um chat para um agente.", fields: {id: "ID do chat", agent_id: "ID do agente"}}
+      Transfer Chat to Group: {name: "Transferir chat para grupo", description: "Passa um chat para um grupo de agentes.", fields: {id: "ID do chat", group_id: "ID do grupo"}}
+      Tag Chat: {name: "Marcar chat com tags", description: "Define as tags de um chat.", fields: {id: "ID do chat", tags: "Tags"}}
+      List Template Messages: {name: "Listar templates de mensagem", description: "Lista os templates de mensagem do WhatsApp.", fields: {page: "Página", limit: "Limite"}}
+      Send Template Message: {name: "Enviar template de mensagem", description: "Envia um template do WhatsApp para um telefone, abrindo um chat.", fields: {to: "Para", from: "De", template_id: "ID do template", template_code: "Código do template", variables: "Variáveis", assign: "Atribuir automaticamente"}}

@@ -137,7 +137,7 @@ integrations:
   - {id: nibo, name: Nibo, category: accounting, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: nuvem_fiscal, name: Nuvem Fiscal, category: fiscal, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: nuvemshop, name: Nuvemshop, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
-  - {id: octadesk, name: Octadesk, category: support, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: octadesk, name: Octadesk, category: support, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: olist, name: Olist, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: omie, name: Omie, category: erp, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
   - {id: pagarme, name: Pagar.me, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
