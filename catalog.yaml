@@ -109,13 +109,13 @@ integrations:
   - {id: ebanx, name: EBANX, category: payments, phase: 2, origin: br, auth: body, kind: manifest, status: planned}
   - {id: eduzz, name: Eduzz, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: efi, name: Efí (Gerencianet), category: payments, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: gerencianet, version: 0.1.11, released: 2026-09-25}, status: planned}
-  - {id: enotas, name: eNotas, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: enotas, name: eNotas (Nota Gateway), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: erede, name: e.Rede, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
   - {id: evolution_api, name: Evolution API, category: messaging, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: draft}
   - {id: focus_nfe, name: Focus NFe, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
   - {id: frenet, name: Frenet, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: getnet, name: Getnet, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
-  - {id: gupy, name: Gupy, category: hr, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: gupy, name: Gupy, category: hr, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: hotmart, name: Hotmart, category: ecommerce, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
   - {id: ifood, name: iFood Merchant, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: intelipost, name: Intelipost, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
@@ -132,7 +132,7 @@ integrations:
   - {id: mercado_pago, name: Mercado Pago, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: monetizze, name: Monetizze, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: moskit, name: Moskit, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
-  - {id: movidesk, name: Movidesk, category: support, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: movidesk, name: Movidesk, category: support, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
   - {id: nfe_io, name: NFE.io, category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: nibo, name: Nibo, category: accounting, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: nuvem_fiscal, name: Nuvem Fiscal, category: fiscal, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}

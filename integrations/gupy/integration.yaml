@@ -1,0 +1,442 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Gupy, the recruiting platform. Connect with an API token from Gupy's panel, under
+# Configurações › Integrações › Tokens de API. Lists answer with "results",
+# "totalResults" and "totalPages", 10 per page unless Per page says more, up to 100.
+# Lists return few attributes unless Fields asks for more: "all" brings every one.
+id: gupy
+name: Gupy
+version: 1.0.0
+description: Create, publish and close jobs, add candidates, move, tag and comment on applications, and receive recruiting events, in Gupy.
+icon: hero-briefcase
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#1C6CE1"/><svg x="3.00" y="8.38" width="18.00" height="7.24" viewBox="0 0 199 80"><path d="M133.666 53.263C127.825 53.263 123.819 48.5064 123.819 42.431C123.819 35.8193 128.006 31.4936 133.666 31.4936C138.128 31.4936 143.788 34.6763 143.788 42.431C143.788 50.1857 138.232 53.263 133.666 53.263ZM136.035 20.7935C129.781 20.7935 125.112 23.774 123.104 27.3524V21.7255H112.37V80H123.104V58.5295C125.051 61.4661 128.85 64.1829 135.148 64.1829C144.65 64.1829 154.522 54.5818 154.522 42.1409C154.522 29.7 148.044 20.7847 136.035 20.7847V20.7935Z" fill="white"/> <path d="M187.224 21.743L176.137 48.4449L166.247 21.743H154.531L169.581 62.9784L162.319 80H174.801L199 21.743H187.224Z" fill="white"/> <path d="M10.3463 56.6216L18.4355 48.9197C13.8955 44.9983 11.0096 39.1428 11.0096 32.6102C11.0096 20.8287 20.391 11.2452 31.9261 11.2452C38.8438 11.2452 44.9861 14.7005 48.7938 20.0022L56.883 12.3002C51.025 4.80931 42.014 0 31.9261 0C14.3177 0 0 14.6302 0 32.619C0 42.1145 3.98861 50.6693 10.3463 56.6304V56.6216Z" fill="white"/> <path d="M104.841 21.743H94.1158V44.0928C94.1158 49.5439 91.1954 53.6586 85.6131 53.6586C80.0307 53.6586 77.4377 49.034 77.4377 43.9257V21.7518H66.7124V46.2556C66.7124 56.2963 72.6221 64.1917 83.6489 64.1917C88.4042 64.1917 92.6168 62.3805 94.6155 58.635V63.2333H104.841V21.743Z" fill="white"/> <path d="M28.2304 30.9045V41.6925H42.0226L19.2453 63.2333H34.5106L49.19 49.6494V63.2333H60.2255V30.9045H28.2304Z" fill="white"/></svg></svg>
+category: hr
+author: Heddle
+homepage: https://developers.gupy.io
+base_url: https://api.gupy.io/api/v1/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Gupy
+  fields:
+    - {name: token, label: API token, secret: true, required: true, description: "From Configurações › Integrações › Tokens de API."}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Recruiting Event
+    description: Starts the flow when something happens in Gupy, like an application created, moved or completed, a candidate hired, or a job published.
+    fields:
+      - name: event
+        label: Event
+        type: select
+        required: true
+        default: application.created
+        options:
+          - {label: Application created, value: application.created}
+          - {label: Application completed, value: application.completed}
+          - {label: Application moved, value: application.moved}
+          - {label: Application assigned, value: application.assigned}
+          - {label: Application evaluated, value: application.evaluation}
+          - {label: Candidate hired, value: candidate.hired}
+          - {label: Job changed, value: job.changed}
+          - {label: Job published, value: job.published}
+          - {label: Job status changed, value: job.status-changed}
+          - {label: Job has a new recommendation, value: job.new-recommendation}
+          - {label: Job offer created, value: job-offer.created}
+          - {label: Job offer status changed, value: job-offer.status-changed}
+          - {label: Pre-employee moved, value: pre-employee.moved}
+          - {label: Pre-employee admission concluded, value: pre-employee.admission-concluded}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body:
+            action: "{{fields.event}}"
+            status: active
+            postbackUrl: "{{webhook.url}}"
+            techOwnerName: Heddle
+            clientHeaders: {Content-Type: "application/json;charset=utf-8", X-Heddle-Token: "{{webhook.secret}}"}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature: {header: X-Heddle-Token, token: "{{webhook.secret}}"}
+
+actions:
+  # Jobs
+  - name: Create Job
+    resource: Job
+    description: Creates a job as a draft, from a template or from scratch.
+    fields:
+      - {name: name, label: Name, required: true}
+      - name: type
+        label: Type
+        type: select
+        required: true
+        default: vacancy_type_associate
+        options: [{label: Effective, value: vacancy_type_associate}, {label: Apprentice, value: vacancy_type_apprentice}, {label: Talent pool, value: vacancy_type_talent_pool}]
+      - name: publicationType
+        label: Publication
+        type: select
+        required: true
+        default: external
+        options: [{label: External, value: external}, {label: Internal, value: internal}]
+      - {name: numVacancies, label: Vacancies, type: number, required: true}
+      - {name: departmentId, label: Department ID, type: number, required: true, description: "From List Departments."}
+      - {name: roleId, label: Role ID, type: number, required: true, description: "From List Roles."}
+      - {name: templateId, label: Template ID, type: number}
+      - {name: code, label: Code}
+      - {name: description, label: Description, type: textarea}
+      - {name: responsibilities, label: Responsibilities, type: textarea}
+      - {name: prerequisites, label: Prerequisites, type: textarea}
+      - name: workplaceType
+        label: Workplace
+        type: select
+        options: [{label: On-site, value: on-site}, {label: Hybrid, value: hybrid}, {label: Remote, value: remote}]
+      - {name: addressCity, label: City}
+      - {name: addressStateShortName, label: State, description: "Like SP"}
+      - {name: applicationDeadline, label: Applications until, description: "Like 2026-01-31"}
+      - {name: recruiterEmail, label: Recruiter email}
+      - {name: managerEmail, label: Manager email}
+      - {name: extra, label: More attributes, type: json, description: 'Any other attribute of Gupy, like {"salary": {"currency": "R$", "startsAt": 5000}, "branchId": 3}'}
+    request:
+      method: POST
+      path: jobs
+      body:
+        _merge: "{{fields.extra}}"
+        name: "{{fields.name}}"
+        type: "{{fields.type}}"
+        publicationType: "{{fields.publicationType}}"
+        numVacancies: "{{fields.numVacancies}}"
+        departmentId: "{{fields.departmentId}}"
+        roleId: "{{fields.roleId}}"
+        templateId: "{{fields.templateId}}"
+        code: "{{fields.code}}"
+        description: "{{fields.description}}"
+        responsibilities: "{{fields.responsibilities}}"
+        prerequisites: "{{fields.prerequisites}}"
+        workplaceType: "{{fields.workplaceType}}"
+        addressCity: "{{fields.addressCity}}"
+        addressStateShortName: "{{fields.addressStateShortName}}"
+        applicationDeadline: "{{fields.applicationDeadline}}"
+        recruiterEmail: "{{fields.recruiterEmail}}"
+        managerEmail: "{{fields.managerEmail}}"
+
+  - name: Get Job
+    resource: Job
+    description: Reads a job, with every attribute.
+    fields:
+      - {name: id, label: Job ID, required: true}
+    request: {method: GET, path: jobs, query: {id: "{{fields.id}}", fields: all}}
+    output: {path: results.0}
+
+  - name: List Jobs
+    resource: Job
+    description: Lists jobs by status, name, code, type or role.
+    fields:
+      - name: status
+        label: Status
+        type: select
+        options: [{label: Draft, value: draft}, {label: Waiting approval, value: waiting_approval}, {label: Approved, value: approved}, {label: Disapproved, value: disapproved}, {label: Published, value: published}, {label: Frozen, value: frozen}, {label: Closed, value: closed}, {label: Canceled, value: canceled}]
+      - {name: name, label: Name}
+      - {name: code, label: Code}
+      - {name: roleId, label: Role ID, type: number}
+      - {name: fields, label: Fields, description: "Like id,name,status, or all. Id, code and name when left empty."}
+      - {name: perPage, label: Per page, type: number, description: "Up to 100."}
+      - {name: page, label: Page, type: number}
+    request:
+      method: GET
+      path: jobs
+      query: {status: "{{fields.status}}", name: "{{fields.name}}", code: "{{fields.code}}", roleId: "{{fields.roleId}}", fields: "{{fields.fields}}", perPage: "{{fields.perPage}}", page: "{{fields.page}}"}
+    output: {path: results}
+
+  - name: Update Job
+    resource: Job
+    description: Changes a job, or moves it to another status, like published or frozen.
+    fields:
+      - {name: id, label: Job ID, required: true}
+      - name: status
+        label: Status
+        type: select
+        options: [{label: Draft, value: draft}, {label: Waiting approval, value: waiting_approval}, {label: Approved, value: approved}, {label: Published, value: published}, {label: Frozen, value: frozen}, {label: Closed, value: closed}, {label: Canceled, value: canceled}]
+      - {name: name, label: Name}
+      - {name: numVacancies, label: Vacancies, type: number}
+      - {name: description, label: Description, type: textarea}
+      - {name: extra, label: More attributes, type: json, description: 'Any other attribute of Gupy, like {"prerequisites": "..."}'}
+    request:
+      method: PATCH
+      path: "jobs/{{fields.id}}"
+      body:
+        _merge: "{{fields.extra}}"
+        status: "{{fields.status}}"
+        name: "{{fields.name}}"
+        numVacancies: "{{fields.numVacancies}}"
+        description: "{{fields.description}}"
+
+  - name: Close Jobs
+    resource: Job
+    description: Closes one or more jobs.
+    fields:
+      - {name: jobIds, label: Job IDs, type: json, required: true, description: "A list, like [101, 102]"}
+    request:
+      method: PUT
+      path: jobs/close
+      body: {jobIds: "{{fields.jobIds}}"}
+
+  - name: Delete Draft Job
+    resource: Job
+    description: Deletes a job that is still a draft.
+    fields:
+      - {name: id, label: Job ID, required: true}
+    request: {method: DELETE, path: "jobs/{{fields.id}}"}
+
+  - name: List Job Steps
+    resource: Job
+    description: Lists the steps of a job, to move applications to.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - name: type
+        label: Type
+        type: select
+        options: [{label: Registration, value: registration}, {label: Online, value: online}, {label: Offline, value: offline}, {label: Pre-hiring, value: pre_hiring}, {label: Hiring, value: hiring}]
+    request: {method: GET, path: "jobs/{{fields.job_id}}/steps", query: {type: "{{fields.type}}", perPage: 100}}
+    output: {path: results}
+
+  # Applications
+  - name: List Applications
+    resource: Application
+    description: Lists the applications of a job, by status, step or CPF.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - name: status
+        label: Status
+        type: select
+        options: [{label: In process, value: in_process}, {label: Gave up, value: give_up}, {label: Reproved, value: reproved}, {label: Hired, value: hired}]
+      - {name: step, label: Step name, description: "Like Cadastro"}
+      - {name: cpf, label: Candidate CPF}
+      - {name: order, label: Order, description: "Like createdAt desc"}
+      - {name: fields, label: Fields, description: "Like id,candidate.name,currentStep, or all."}
+      - {name: perPage, label: Per page, type: number, description: "Up to 100."}
+      - {name: page, label: Page, type: number}
+    request:
+      method: GET
+      path: "jobs/{{fields.job_id}}/applications"
+      query: {status: "{{fields.status}}", currentStep.name: "{{fields.step}}", candidate.identificationDocument: "{{fields.cpf}}", order: "{{fields.order}}", fields: "{{fields.fields}}", perPage: "{{fields.perPage}}", page: "{{fields.page}}"}
+    output: {path: results}
+
+  - name: Get Application
+    resource: Application
+    description: Reads an application, with the candidate and every attribute.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+    request: {method: GET, path: "jobs/{{fields.job_id}}/applications", query: {id: "{{fields.id}}", fields: all}}
+    output: {path: results.0}
+
+  - name: Add Candidate
+    resource: Application
+    description: Adds a candidate to a job, by their Gupy ID or by name and email.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: candidateId, label: Candidate ID, type: number, description: "For someone already in Gupy. Leave the rest empty."}
+      - {name: name, label: First name}
+      - {name: lastName, label: Last name}
+      - {name: email, label: Email}
+      - {name: mobileNumber, label: Mobile, description: "Like +5511912345678"}
+      - {name: documentNumber, label: CPF}
+      - {name: linkedinProfileUrl, label: LinkedIn}
+      - name: insertionSource
+        label: Source
+        type: select
+        default: hunting
+        options: [{label: Hunting, value: hunting}, {label: Candidate's own contact, value: candidate_active_contact}, {label: Events, value: events}, {label: Referral or consulting, value: market_referral_consulting}]
+      - {name: notes, label: Notes, type: textarea}
+    request:
+      method: POST
+      path: "jobs/{{fields.job_id}}/applications"
+      body:
+        candidateId: "{{fields.candidateId}}"
+        notes: "{{fields.notes}}"
+        manualCandidate:
+          _if: "{{fields.email}}"
+          name: "{{fields.name}}"
+          lastName: "{{fields.lastName}}"
+          email: "{{fields.email}}"
+          mobileNumber: "{{fields.mobileNumber}}"
+          documentNumber: "{{fields.documentNumber}}"
+          linkedinProfileUrl: "{{fields.linkedinProfileUrl}}"
+          insertionSource: "{{fields.insertionSource}}"
+
+  - name: Move Application
+    resource: Application
+    description: Moves an application to another step of its job.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+      - {name: currentStepId, label: Step ID, type: number, required: true, description: "From List Job Steps."}
+    request:
+      method: PATCH
+      path: "jobs/{{fields.job_id}}/applications/{{fields.id}}"
+      body: {currentStepId: "{{fields.currentStepId}}"}
+
+  - name: Reprove Application
+    resource: Application
+    description: Reproves an application, with a reason.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+      - name: disapprovalReason
+        label: Reason
+        type: select
+        required: true
+        options:
+          - {label: "Hired by another company", value: hired_by_another_company}
+          - {label: "Hired in another job", value: hired_in_another_job}
+          - {label: "Invited to another process", value: invited_to_another_process}
+          - {label: "Missed steps of the process", value: missed_steps_of_process}
+          - {label: "Insufficient knowledge", value: insufficient_knowledge}
+          - {label: "Incompatible résumé", value: incompatible_curriculum}
+          - {label: "Insufficient academic background", value: insufficient_academic_background}
+          - {label: "Lack of professional experience", value: lack_of_professional_experience}
+          - {label: "Insufficient seniority", value: insufficient_seniority}
+          - {label: "Overqualified", value: overqualified}
+          - {label: "High salary expectation", value: elevated_wage_expectation}
+          - {label: "Lack of culture alignment", value: lack_of_culture_alignment}
+          - {label: "No potential for growth", value: no_potential_for_growth}
+          - {label: "Little stability in previous companies", value: little_stability_in_previous_companies}
+          - {label: "Outside the required location", value: candidate_outside_required_location}
+          - {label: "Test result below the cutoff", value: test_result_below_cutoff}
+          - {label: "Didn't answer contacts", value: not_respond_to_contacts}
+          - {label: "Gave up for personal reasons", value: gave_up_for_personal_reasons}
+          - {label: "Proposal not accepted", value: proposal_not_accepted}
+          - {label: "Vacancy already filled", value: fulfilled_vacancy}
+          - {label: "Hiring not allowed", value: hiring_not_allowed}
+          - {label: "Inconsistent admission documents", value: inconsistent_admission_docs}
+          - {label: "Rejected at the medical exam", value: reject_at_medical_exam}
+          - {label: "Disqualified by medical report", value: medical_report_disqualified}
+          - {label: "Screening step not completed", value: incomplete_screening_stage}
+          - {label: "Registration step not completed", value: incomplete_registration_step}
+          - {label: "Other reason", value: other_reason}
+      - {name: disapprovalReasonNotes, label: Notes}
+    request:
+      method: PATCH
+      path: "jobs/{{fields.job_id}}/applications/{{fields.id}}"
+      body: {status: reproved, disapprovalReason: "{{fields.disapprovalReason}}", disapprovalReasonNotes: "{{fields.disapprovalReasonNotes}}"}
+
+  - name: Tag Application
+    resource: Application
+    description: Adds a tag to an application.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+      - {name: tag, label: Tag, required: true}
+    request:
+      method: PUT
+      path: "jobs/{{fields.job_id}}/applications/{{fields.id}}/tags"
+      body: {name: "{{fields.tag}}"}
+
+  - name: List Application Tags
+    resource: Application
+    description: Lists the tags of an application.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+    request: {method: GET, path: "jobs/{{fields.job_id}}/applications/{{fields.id}}/tags", query: {perPage: 100}}
+    output: {path: results}
+
+  - name: Comment On Application
+    resource: Application
+    description: Writes a comment on a candidate's timeline, with a file if you like.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+      - {name: text, label: Comment, type: textarea, required: true}
+      - {name: hidden, label: Only for the API, type: boolean}
+      - {name: file, label: Attachment, type: file, description: "Up to 10 MB."}
+    request:
+      method: POST
+      path: "jobs/{{fields.job_id}}/applications/{{fields.id}}/comments"
+      body: {text: "{{fields.text}}", hidden: "{{fields.hidden}}", attachedFileData: "{{fields.file | base64}}", attachedFileName: "{{fields.file | name}}"}
+
+  - name: List Application Comments
+    resource: Application
+    description: Lists the comments on a candidate's timeline.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+    request: {method: GET, path: "jobs/{{fields.job_id}}/applications/{{fields.id}}/comments"}
+    output: {path: results}
+
+  - name: Get Hiring Information
+    resource: Application
+    description: Reads the hiring information of a hired candidate.
+    fields:
+      - {name: job_id, label: Job ID, required: true}
+      - {name: id, label: Application ID, required: true}
+    request: {method: GET, path: "jobs/{{fields.job_id}}/applications/{{fields.id}}/hiring-information"}
+
+  # Company
+  - name: List Departments
+    resource: Company
+    description: Lists the departments, to create jobs in.
+    fields:
+      - {name: name, label: Name}
+    request: {method: GET, path: departments, query: {name: "{{fields.name}}", perPage: 100}}
+    output: {path: results}
+
+  - name: List Roles
+    resource: Company
+    description: Lists the roles, to create jobs for.
+    fields:
+      - {name: name, label: Name}
+    request: {method: GET, path: roles, query: {name: "{{fields.name}}", perPage: 100}}
+    output: {path: results}
+
+  - name: List Branches
+    resource: Company
+    description: Lists the company's branches.
+    request: {method: GET, path: branches, query: {perPage: 100}}
+    output: {path: results}
+
+  - name: List Users
+    resource: Company
+    description: Lists the users, like recruiters and managers.
+    fields:
+      - {name: email, label: Email}
+    request: {method: GET, path: users, query: {email: "{{fields.email}}", perPage: 100}}
+    output: {path: results}
+
+i18n:
+  pt-BR:
+    description: "Crie, publique e encerre vagas, adicione candidatos, mova, etiquete e comente candidaturas e receba eventos de recrutamento na Gupy."
+    triggers:
+      Recruiting Event: {name: "Evento de recrutamento", description: "Inicia o fluxo quando algo acontece na Gupy, como candidatura criada, movida ou concluída, candidato contratado ou vaga publicada.", fields: {event: "Evento"}}
+    actions:
+      Create Job: {name: "Criar vaga", description: "Cria uma vaga como rascunho, a partir de um modelo ou do zero.", fields: {name: "Nome", type: "Tipo", publicationType: "Publicação", numVacancies: "Posições", departmentId: "ID da área", roleId: "ID do cargo", templateId: "ID do modelo", code: "Código", description: "Descrição", responsibilities: "Responsabilidades", prerequisites: "Pré-requisitos", workplaceType: "Local de trabalho", addressCity: "Cidade", addressStateShortName: "Estado", applicationDeadline: "Inscrições até", recruiterEmail: "E-mail do recrutador", managerEmail: "E-mail do gestor", extra: "Mais atributos"}}
+      Get Job: {name: "Obter vaga", description: "Lê uma vaga, com todos os atributos.", fields: {id: "ID da vaga"}}
+      List Jobs: {name: "Listar vagas", description: "Lista vagas por status, nome, código, tipo ou cargo.", fields: {status: "Status", name: "Nome", code: "Código", roleId: "ID do cargo", fields: "Campos", perPage: "Por página", page: "Página"}}
+      Update Job: {name: "Alterar vaga", description: "Altera uma vaga, ou muda seu status, como publicada ou congelada.", fields: {id: "ID da vaga", status: "Status", name: "Nome", numVacancies: "Posições", description: "Descrição", extra: "Mais atributos"}}
+      Close Jobs: {name: "Encerrar vagas", description: "Encerra uma ou mais vagas.", fields: {jobIds: "IDs das vagas"}}
+      Delete Draft Job: {name: "Excluir vaga em rascunho", description: "Exclui uma vaga que ainda é rascunho.", fields: {id: "ID da vaga"}}
+      List Job Steps: {name: "Listar etapas da vaga", description: "Lista as etapas de uma vaga, para mover candidaturas.", fields: {job_id: "ID da vaga", type: "Tipo"}}
+      List Applications: {name: "Listar candidaturas", description: "Lista as candidaturas de uma vaga, por status, etapa ou CPF.", fields: {job_id: "ID da vaga", status: "Status", step: "Nome da etapa", cpf: "CPF do candidato", order: "Ordem", fields: "Campos", perPage: "Por página", page: "Página"}}
+      Get Application: {name: "Obter candidatura", description: "Lê uma candidatura, com o candidato e todos os atributos.", fields: {job_id: "ID da vaga", id: "ID da candidatura"}}
+      Add Candidate: {name: "Adicionar candidato", description: "Adiciona um candidato a uma vaga, pelo ID na Gupy ou por nome e e-mail.", fields: {job_id: "ID da vaga", candidateId: "ID do candidato", name: "Nome", lastName: "Sobrenome", email: "E-mail", mobileNumber: "Celular", documentNumber: "CPF", linkedinProfileUrl: "LinkedIn", insertionSource: "Origem", notes: "Observações"}}
+      Move Application: {name: "Mover candidatura", description: "Move uma candidatura para outra etapa da vaga.", fields: {job_id: "ID da vaga", id: "ID da candidatura", currentStepId: "ID da etapa"}}
+      Reprove Application: {name: "Reprovar candidatura", description: "Reprova uma candidatura, com motivo.", fields: {job_id: "ID da vaga", id: "ID da candidatura", disapprovalReason: "Motivo", disapprovalReasonNotes: "Observações"}}
+      Tag Application: {name: "Etiquetar candidatura", description: "Adiciona uma tag a uma candidatura.", fields: {job_id: "ID da vaga", id: "ID da candidatura", tag: "Tag"}}
+      List Application Tags: {name: "Listar tags da candidatura", description: "Lista as tags de uma candidatura.", fields: {job_id: "ID da vaga", id: "ID da candidatura"}}
+      Comment On Application: {name: "Comentar candidatura", description: "Escreve um comentário na linha do tempo do candidato, com arquivo se quiser.", fields: {job_id: "ID da vaga", id: "ID da candidatura", text: "Comentário", hidden: "Só para a API", file: "Anexo"}}
+      List Application Comments: {name: "Listar comentários da candidatura", description: "Lista os comentários da linha do tempo do candidato.", fields: {job_id: "ID da vaga", id: "ID da candidatura"}}
+      Get Hiring Information: {name: "Obter dados de contratação", description: "Lê os dados de contratação de um candidato contratado.", fields: {job_id: "ID da vaga", id: "ID da candidatura"}}
+      List Departments: {name: "Listar áreas", description: "Lista as áreas, para criar vagas nelas.", fields: {name: "Nome"}}
+      List Roles: {name: "Listar cargos", description: "Lista os cargos, para criar vagas.", fields: {name: "Nome"}}
+      List Branches: {name: "Listar filiais", description: "Lista as filiais da empresa."}
+      List Users: {name: "Listar usuários", description: "Lista os usuários, como recrutadores e gestores.", fields: {email: "E-mail"}}
