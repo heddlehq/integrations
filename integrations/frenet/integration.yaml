@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Frenet, the shipping gateway: quotes across Correios and the carriers the account
+# has, tracking and CEP lookup. Connect with the token from Frenet's panel, under
+# Dados da conta › Chave de acesso. Frenet sends tracking updates to an address that
+# its support sets up: give them the trigger's address and ask them to send the
+# webhook token below in the X-Heddle-Token header.
+id: frenet
+name: Frenet
+version: 1.0.0
+description: Quote shipping across carriers, track shipments, look up addresses by CEP and receive tracking updates, through Frenet.
+icon: hero-truck
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.26" width="18.00" height="17.48" viewBox="0 0 103 100"><path d="M74.5395 67.2523C74.0205 67.5374 73.4382 67.6859 72.8487 67.6859C72.3273 67.6859 71.7986 67.569 71.3016 67.3253C71.2967 67.3229 71.2894 67.3204 71.2845 67.3156C71.2187 67.2839 71.1554 67.2496 71.092 67.2132L44.9225 52.1052C44.8664 52.0758 44.8104 52.0443 44.7568 52.01C44.7178 51.9856 44.6812 51.9613 44.6447 51.937C44.6349 51.9322 44.6275 51.9273 44.6203 51.92C44.1793 51.6253 43.8114 51.2305 43.5435 50.7699L43.541 50.7626C43.2925 50.3339 43.1317 49.849 43.0854 49.3299C43.0757 49.2229 43.0708 49.1156 43.0708 49.006V18.6775C43.0708 18.5679 43.0758 18.4607 43.0854 18.3536C43.1317 17.8345 43.2925 17.3498 43.541 16.9209C43.6945 16.6528 43.8821 16.4093 44.0989 16.1924C44.2938 15.9975 44.5107 15.8269 44.747 15.6808C44.7519 15.6784 44.7568 15.6735 44.7617 15.6711L44.9321 15.5735L56.3832 8.96113L45.6289 2.75316C44.8273 2.2903 43.9526 2.07099 43.0903 2.07099H43.0707C42.1984 2.07343 41.3384 2.30249 40.5807 2.73123C40.5319 2.75803 40.4856 2.78727 40.4369 2.81421L2.66056 24.6248C2.58989 24.6638 2.51936 24.7052 2.44856 24.7466C2.1001 24.9586 1.77858 25.2119 1.49104 25.4994C1.17669 25.8138 0.903775 26.167 0.682164 26.5544C0.248416 27.3024 0 28.1697 0 29.0956V72.9754C0 73.9012 0.248416 74.7686 0.682164 75.5165C1.10846 76.2572 1.71766 76.8809 2.44856 77.3244C2.51923 77.3658 2.58989 77.4072 2.66056 77.4462L40.542 99.3178C41.3435 99.7807 42.2206 100.002 43.0856 100C43.9505 100 44.8057 99.7784 45.5609 99.3568C45.6194 99.3251 45.6779 99.2934 45.7339 99.2569L83.5106 77.4462C83.5812 77.4072 83.6519 77.3658 83.7225 77.3244C84.0709 77.1124 84.3925 76.8591 84.6799 76.5715C84.992 76.2596 85.2648 75.9063 85.4841 75.5239C85.4889 75.5214 85.4889 75.5165 85.4889 75.5165C85.9226 74.7686 86.1711 73.9012 86.1711 72.9754V60.5375L74.6445 67.1939L74.5395 67.2523Z" fill="url(#paint0_linear_4016_316)"></path><path d="M102.161 16.9282L102.159 16.9209C102.005 16.6528 101.815 16.4093 101.598 16.1924C101.403 15.9975 101.184 15.8246 100.948 15.6808L100.777 15.5785L74.6445 0.492095L74.6079 0.470164C74.5981 0.46529 74.5908 0.460416 74.5812 0.455543C74.0354 0.146207 73.4409 0 72.8538 0H72.8488C72.2422 0 71.6452 0.158391 71.119 0.455543L56.3832 8.96113L83.5107 24.6248C83.5813 24.6638 83.652 24.7052 83.7227 24.7466C84.071 24.9586 84.3927 25.2119 84.6801 25.4994C84.9921 25.8112 85.2649 26.1647 85.4842 26.547C85.4891 26.5494 85.4891 26.5543 85.4891 26.5543C85.9227 27.3022 86.1712 28.1696 86.1712 29.0954L86.1711 60.5375L100.787 52.1002C100.839 52.0709 100.887 52.0418 100.936 52.0124C101.177 51.8638 101.399 51.6909 101.599 51.4911C101.816 51.2744 102.006 51.0305 102.159 50.7626C102.459 50.2462 102.629 49.6467 102.629 49.0061V18.6775C102.629 18.0392 102.461 17.4423 102.161 16.9282Z" fill="url(#paint1_linear_4016_316)"></path><defs><linearGradient id="paint0_linear_4016_316" x1="51.3146" y1="0" x2="51.3146" y2="100" gradientUnits="userSpaceOnUse"><stop stop-color="#31C48D"></stop><stop offset="0.5" stop-color="#3F83F8"></stop><stop offset="1" stop-color="#7B3FF3"></stop></linearGradient><linearGradient id="paint1_linear_4016_316" x1="51.3146" y1="0" x2="51.3146" y2="100" gradientUnits="userSpaceOnUse"><stop stop-color="#31C48D"></stop><stop offset="0.5" stop-color="#3F83F8"></stop><stop offset="1" stop-color="#7B3FF3"></stop></linearGradient></defs></svg></svg>
+category: logistics
+author: Heddle
+homepage: https://docs.frenet.com.br
+base_url: https://api.frenet.com.br/
+headers:
+  User-Agent: Heddle
+  Accept: application/json
+
+credential:
+  label: Frenet
+  fields:
+    - {name: token, label: Token, secret: true, required: true, description: "From Dados da conta › Chave de acesso."}
+    - {name: webhook_token, label: Webhook token, secret: true, description: "Any secret text, for the Tracking Update trigger. Frenet's support sets it as the X-Heddle-Token header."}
+  auth:
+    type: header
+    name: token
+    value: "{{credential.token}}"
+
+triggers:
+  - name: Tracking Update
+    description: Starts the flow when a shipment has a new tracking event, like posted, out for delivery or delivered. Frenet's support sets the address up.
+    webhook:
+      signature: {header: X-Heddle-Token, token: "{{credential.webhook_token}}"}
+
+actions:
+  - name: Quote Shipping
+    resource: Shipping
+    description: Quotes a shipment across the account's carriers, with price and days for each service.
+    fields:
+      - {name: SellerCEP, label: From CEP, required: true}
+      - {name: RecipientCEP, label: To CEP, required: true}
+      - {name: ShipmentInvoiceValue, label: Order value, type: number, required: true}
+      - {name: items, label: Items, type: json, required: true, description: 'Like [{"Weight": 0.5, "Height": 10, "Length": 20, "Width": 15, "Quantity": 1, "SKU": "CAM-01"}]. Weight in kg, sizes in cm.'}
+      - {name: ShippingServiceCode, label: Service code, description: "Only this service. From List Shipping Services."}
+      - {name: RecipientCountry, label: Country, default: BR}
+      - {name: Coupom, label: Coupon}
+    request:
+      method: POST
+      path: shipping/quote
+      body:
+        SellerCEP: "{{fields.SellerCEP}}"
+        RecipientCEP: "{{fields.RecipientCEP}}"
+        ShipmentInvoiceValue: "{{fields.ShipmentInvoiceValue}}"
+        ShippingItemArray: "{{fields.items}}"
+        ShippingServiceCode: "{{fields.ShippingServiceCode}}"
+        RecipientCountry: "{{fields.RecipientCountry}}"
+        Coupom: "{{fields.Coupom}}"
+    output: {path: ShippingSevicesArray}
+
+  - name: List Shipping Services
+    resource: Shipping
+    description: Lists the shipping services the account can quote.
+    request: {method: GET, path: shipping/info}
+    output: {path: ShippingSeviceAvailableArray}
+
+  - name: Track Shipment
+    resource: Tracking
+    description: Reads a shipment's tracking events, by tracking number.
+    fields:
+      - {name: ShippingServiceCode, label: Service code, required: true}
+      - {name: TrackingNumber, label: Tracking number, required: true}
+      - {name: InvoiceNumber, label: Invoice number}
+      - {name: InvoiceSerie, label: Invoice series}
+      - {name: RecipientDocument, label: Recipient CPF or CNPJ}
+      - {name: OrderNumber, label: Order number}
+    request:
+      method: POST
+      path: tracking/trackinginfo
+      body:
+        ShippingServiceCode: "{{fields.ShippingServiceCode}}"
+        TrackingNumber: "{{fields.TrackingNumber}}"
+        InvoiceNumber: "{{fields.InvoiceNumber}}"
+        InvoiceSerie: "{{fields.InvoiceSerie}}"
+        RecipientDocument: "{{fields.RecipientDocument}}"
+        OrderNumber: "{{fields.OrderNumber}}"
+
+  - name: Get Address
+    resource: CEP
+    description: Reads the street, district, city and state of a CEP.
+    fields:
+      - {name: cep, label: CEP, required: true}
+    request: {method: GET, path: "CEP/Address/{{fields.cep}}"}
+
+i18n:
+  pt-BR:
+    description: "Cote frete entre transportadoras, rastreie envios, consulte endereços por CEP e receba atualizações de rastreio pela Frenet."
+    triggers:
+      Tracking Update: {name: "Atualização de rastreio", description: "Inicia o fluxo quando um envio tem um novo evento de rastreio, como postado, saiu para entrega ou entregue. O suporte da Frenet configura o endereço."}
+    actions:
+      Quote Shipping: {name: "Cotar frete", description: "Cota um envio entre as transportadoras da conta, com preço e prazo de cada serviço.", fields: {SellerCEP: "CEP de origem", RecipientCEP: "CEP de destino", ShipmentInvoiceValue: "Valor do pedido", items: "Itens", ShippingServiceCode: "Código do serviço", RecipientCountry: "País", Coupom: "Cupom"}}
+      List Shipping Services: {name: "Listar serviços de frete", description: "Lista os serviços de frete que a conta pode cotar."}
+      Track Shipment: {name: "Rastrear envio", description: "Lê os eventos de rastreio de um envio, pelo código de rastreio.", fields: {ShippingServiceCode: "Código do serviço", TrackingNumber: "Código de rastreio", InvoiceNumber: "Número da nota", InvoiceSerie: "Série da nota", RecipientDocument: "CPF ou CNPJ do destinatário", OrderNumber: "Número do pedido"}}
+      Get Address: {name: "Consultar CEP", description: "Lê rua, bairro, cidade e estado de um CEP.", fields: {cep: "CEP"}}
