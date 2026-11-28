@@ -85,10 +85,10 @@ integrations:
   - {id: zoom, name: Zoom, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Zoom, kind: manifest, status: draft}
 
   # Phase 2: Brazil
-  - {id: abacatepay, name: AbacatePay, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: abacatepay, name: AbacatePay, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: agendor, name: Agendor, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: appmax, name: Appmax, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
-  - {id: asaas, name: Asaas, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: asaas, name: Asaas, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: banco_do_brasil, name: Banco do Brasil, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: banco_inter, name: Banco Inter, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: inter, version: 0.7.0, released: 2026-09-25}, status: planned}
   - {id: bcb, name: "Banco Central (SGS, PTAX)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
@@ -111,9 +111,9 @@ integrations:
   - {id: efi, name: Efí (Gerencianet), category: payments, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: gerencianet, version: 0.1.11, released: 2026-09-25}, status: planned}
   - {id: enotas, name: eNotas, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
   - {id: erede, name: e.Rede, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
-  - {id: evolution_api, name: Evolution API, category: messaging, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
+  - {id: evolution_api, name: Evolution API, category: messaging, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: draft}
   - {id: focus_nfe, name: Focus NFe, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
-  - {id: frenet, name: Frenet, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: frenet, name: Frenet, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: getnet, name: Getnet, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: gupy, name: Gupy, category: hr, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: hotmart, name: Hotmart, category: ecommerce, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
@@ -127,23 +127,23 @@ integrations:
   - {id: loggi, name: Loggi, category: logistics, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: loja_integrada, name: Loja Integrada, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: magalu, name: Magalu Marketplace, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
-  - {id: melhor_envio, name: Melhor Envio, category: logistics, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: melhor_envio, name: Melhor Envio, category: logistics, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: mercado_livre, name: Mercado Livre, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: mercado_pago, name: Mercado Pago, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: monetizze, name: Monetizze, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: moskit, name: Moskit, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: movidesk, name: Movidesk, category: support, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
-  - {id: nfe_io, name: NFE.io, category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: nfe_io, name: NFE.io, category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: nibo, name: Nibo, category: accounting, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: nuvem_fiscal, name: Nuvem Fiscal, category: fiscal, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: nuvemshop, name: Nuvemshop, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: octadesk, name: Octadesk, category: support, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: olist, name: Olist, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: omie, name: Omie, category: erp, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
-  - {id: pagarme, name: Pagar.me, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
-  - {id: pagbank, name: PagBank (PagSeguro), category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
+  - {id: pagarme, name: Pagar.me, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
+  - {id: pagbank, name: PagBank (PagSeguro), category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: pipefy, name: Pipefy, category: project, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
-  - {id: piperun, name: PipeRun, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: piperun, name: PipeRun, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: ploomes, name: Ploomes, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: plugnotas, name: PlugNotas (TecnoSpeed), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: rd_station_crm, name: RD Station CRM, category: crm, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
@@ -158,12 +158,12 @@ integrations:
   - {id: stone, name: Stone, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: sympla, name: Sympla, category: events, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: ticto, name: Ticto, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
-  - {id: tiny, name: Tiny ERP, category: erp, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: tiny, name: Tiny ERP, category: erp, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
   - {id: totvs_protheus, name: TOTVS Protheus, category: erp, phase: 2, origin: br, auth: basic, host: true, kind: manifest, status: planned}
   - {id: tray, name: Tray, category: ecommerce, phase: 2, origin: br, auth: oauth2, host: true, kind: manifest, status: planned}
   - {id: vhsys, name: VHSYS, category: erp, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: viacep, name: ViaCEP, category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
-  - {id: vindi, name: Vindi, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: vindi, name: Vindi, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
   - {id: vtex, name: VTEX, category: ecommerce, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
   - {id: woovi, name: Woovi (OpenPix), category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: yampi, name: Yampi, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
