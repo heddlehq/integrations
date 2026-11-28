@@ -136,7 +136,7 @@ integrations:
   - {id: nfe_io, name: NFE.io, category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: nibo, name: Nibo, category: accounting, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: nuvem_fiscal, name: Nuvem Fiscal, category: fiscal, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
-  - {id: nuvemshop, name: Nuvemshop, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: nuvemshop, name: Nuvemshop, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: octadesk, name: Octadesk, category: support, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: olist, name: Olist, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: omie, name: Omie, category: erp, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
@@ -156,7 +156,7 @@ integrations:
   - {id: sicoob, name: Sicoob, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: sicredi, name: Sicredi, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: stone, name: Stone, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
-  - {id: sympla, name: Sympla, category: events, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: sympla, name: Sympla, category: events, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: ticto, name: Ticto, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: tiny, name: Tiny ERP, category: erp, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
   - {id: totvs_protheus, name: TOTVS Protheus, category: erp, phase: 2, origin: br, auth: basic, host: true, kind: manifest, status: planned}
