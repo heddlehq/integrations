@@ -103,7 +103,7 @@ integrations:
   - {id: cnpja, name: CNPJá, category: data, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: conta_azul, name: Conta Azul, category: accounting, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: cora, name: Cora, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
-  - {id: correios, name: Correios, category: logistics, phase: 2, origin: br, auth: login, kind: manifest, status: planned}
+  - {id: correios, name: Correios, category: logistics, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
   - {id: d4sign, name: D4Sign, category: esign, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
   - {id: digisac, name: Digisac, category: messaging, phase: 2, origin: br, auth: bearer, host: true, kind: manifest, status: planned}
   - {id: ebanx, name: EBANX, category: payments, phase: 2, origin: br, auth: body, kind: manifest, status: planned}

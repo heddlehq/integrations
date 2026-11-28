@@ -59,7 +59,7 @@ credential =
 
 plug = fn conn ->
   {:ok, body, conn} = Plug.Conn.read_body(conn)
-  token? = conn.method == "POST" and (conn.request_path =~ ~r/oauth.*token|token$/ or (conn.request_path =~ ~r/token|login|auth/ and conn.host =~ ~r/sec|auth|login|oauth|identity/))
+  token? = conn.method == "POST" and (conn.request_path =~ ~r{oauth.*token|token$|^/token/} or (conn.request_path =~ ~r/token|login|auth/ and conn.host =~ ~r/sec|auth|login|oauth|identity/))
   unless token?,
     do: send(self(), {:req, conn.method, conn.request_path, conn.query_string, body})
   # Logins and client credentials get a token back, so the action after them runs.
