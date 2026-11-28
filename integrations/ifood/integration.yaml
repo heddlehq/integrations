@@ -1,0 +1,406 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# iFood Merchant API, for a centralized app: the token comes from
+# authentication/v1.0/oauth/token with grantType client_credentials. Orders arrive as
+# events on order/v1.0/events:polling, which answers 204 when there is nothing new;
+# events not acknowledged come back on the next poll. Polling every minute or less
+# also keeps the store shown as connected.
+id: ifood
+name: iFood
+version: 1.0.0
+homepage: https://developer.ifood.com.br/pt-BR/docs/references/
+description: Receive iFood orders and move them through confirmation, preparation and dispatch, and manage stores, interruptions, menu prices, reviews and sales.
+icon: hero-shopping-bag
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#EA1D2C"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#FFFFFF" d="M8.428 1.67c-4.65 0-7.184 4.149-7.184 6.998 0 2.294 2.2 3.299 4.25 3.299l-.006-.006c4.244 0 7.184-3.854 7.184-6.998 0-2.29-2.175-3.293-4.244-3.293zm11.328 0c-4.65 0-7.184 4.149-7.184 6.998 0 2.294 2.2 3.299 4.25 3.299l-.006-.006C21.061 11.96 24 8.107 24 4.963c0-2.29-2.18-3.293-4.244-3.293zM14.172 14.52l2.435 1.834c-2.17 2.07-6.124 3.525-9.353 3.17A8.913 8.913 0 01.23 14.541H0a9.598 9.598 0 008.828 7.758c3.814.24 7.323-.905 9.947-3.13l-.004.007 1.08 2.988 1.555-7.623-7.234-.02Z"/></svg></svg>
+category: ecommerce
+base_url: https://merchant-api.ifood.com.br/
+
+credential:
+  label: iFood
+  fields:
+    - {name: client_id, label: Client ID, required: true, description: From your centralized app in the iFood Developer Portal.}
+    - {name: client_secret, label: Client secret, secret: true, required: true}
+  auth:
+    type: login
+    request:
+      method: POST
+      path: authentication/v1.0/oauth/token
+      body_type: form
+      body: {grantType: client_credentials, clientId: "{{credential.client_id}}", clientSecret: "{{credential.client_secret}}"}
+    token_path: accessToken
+    expires_path: expiresIn
+    apply: {type: bearer, token: "{{auth.token}}"}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: Order Event
+    description: Starts the flow for each new order event (placed, confirmed, dispatched, cancelled...), checking every minute. Use one such trigger per app, since iFood drops the events a filter leaves out.
+    fields:
+      - {name: types, label: Event codes, description: "Only these codes, comma separated, like PLC,CFM,CAN. Empty for all."}
+      - {name: groups, label: Event groups, description: "Only these groups, comma separated, like ORDER_STATUS,DELIVERY. Empty for all."}
+    request:
+      method: GET
+      path: "order/v1.0/events:polling"
+      query: {types: "{{fields.types}}", groups: "{{fields.groups}}"}
+    poll: {every: 1, id: id}
+
+actions:
+  # Orders
+  - name: Get Order
+    resource: Order
+    description: Reads an order, with customer, items, payments, delivery and totals.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: GET, path: "order/v1.0/orders/{{fields.order_id | path}}"}
+
+  - name: Acknowledge Events
+    resource: Order
+    description: Tells iFood the events were read, so the polling stops returning them.
+    fields:
+      - {name: event_ids, label: Event IDs, required: true, description: "One event ID, several separated by commas, or a list."}
+    request:
+      method: POST
+      path: order/v1.0/events/acknowledgment
+      body: {_each: "{{fields.event_ids}}", id: "{{item}}"}
+
+  - name: Confirm Order
+    resource: Order
+    description: Confirms a placed order, so the store starts on it.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/confirm"}
+
+  - name: Start Preparation
+    resource: Order
+    description: Marks that the store started preparing an order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/startPreparation"}
+
+  - name: Ready to Pick Up
+    resource: Order
+    description: Marks a takeout or indoor order as ready to be picked up.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/readyToPickup"}
+
+  - name: Dispatch Order
+    resource: Order
+    description: Marks a delivery order as out for delivery.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/dispatch"}
+
+  - name: Get Cancellation Reasons
+    resource: Order
+    description: Lists the cancellation codes allowed for an order right now.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: GET, path: "order/v1.0/orders/{{fields.order_id | path}}/cancellationReasons"}
+
+  - name: Request Cancellation
+    resource: Order
+    description: Asks iFood to cancel an order; a CANCELLED or CANCELLATION_REQUEST_FAILED event follows.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+      - name: cancellation_code
+        label: Reason
+        type: select
+        required: true
+        options:
+          - {label: System problems, value: "501"}
+          - {label: Duplicate order, value: "502"}
+          - {label: Item unavailable, value: "503"}
+          - {label: No delivery person, value: "504"}
+          - {label: Outdated menu, value: "505"}
+          - {label: Outside the delivery area, value: "506"}
+          - {label: Prank or fraud, value: "507"}
+          - {label: Outside delivery hours, value: "508"}
+          - {label: Internal difficulties, value: "509"}
+          - {label: Risky area, value: "511"}
+          - {label: Store opens later, value: "512"}
+          - {label: Store closed early, value: "513"}
+      - {name: reason, label: Note, type: textarea}
+    request:
+      method: POST
+      path: "order/v1.0/orders/{{fields.order_id | path}}/requestCancellation"
+      body: {cancellationCode: "{{fields.cancellation_code}}", reason: "{{fields.reason}}"}
+
+  - name: Accept Cancellation
+    resource: Order
+    description: Accepts the customer's request to cancel an order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/acceptCancellation"}
+
+  - name: Deny Cancellation
+    resource: Order
+    description: Refuses the customer's request to cancel an order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/denyCancellation"}
+
+  - name: Track Order
+    resource: Order
+    description: Reads where the delivery person is and the expected arrival.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: GET, path: "order/v1.0/orders/{{fields.order_id | path}}/tracking"}
+
+  - name: Request Driver
+    resource: Order
+    description: Asks iFood for a delivery person for an order the store delivers itself.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "order/v1.0/orders/{{fields.order_id | path}}/requestDriver"}
+
+  # Stores
+  - name: List Stores
+    resource: Store
+    description: Lists the stores the app can reach, with ID and name.
+    fields:
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: size, label: Per page, type: number, default: 100}
+    request: {method: GET, path: merchant/v1.0/merchants, query: {page: "{{fields.page}}", size: "{{fields.size}}"}}
+
+  - name: Get Store
+    resource: Store
+    description: Reads a store, with its address and operations.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+    request: {method: GET, path: "merchant/v1.0/merchants/{{fields.merchant_id | path}}"}
+
+  - name: Get Store Status
+    resource: Store
+    description: Tells whether a store can take orders now in each operation, and why not.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+    request: {method: GET, path: "merchant/v1.0/merchants/{{fields.merchant_id | path}}/status"}
+
+  - name: List Interruptions
+    resource: Store
+    description: Lists the current and future pauses of a store.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+    request: {method: GET, path: "merchant/v1.0/merchants/{{fields.merchant_id | path}}/interruptions"}
+
+  - name: Pause Store
+    resource: Store
+    description: Closes a store for a while; it takes no orders between start and end.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: description, label: Reason, required: true}
+      - {name: start, label: Start, type: datetime, required: true}
+      - {name: end, label: End, type: datetime, required: true}
+    request:
+      method: POST
+      path: "merchant/v1.0/merchants/{{fields.merchant_id | path}}/interruptions"
+      body: {description: "{{fields.description}}", start: "{{fields.start}}", end: "{{fields.end}}"}
+
+  - name: Remove Pause
+    resource: Store
+    description: Removes a pause, so the store takes orders again.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: interruption_id, label: Interruption ID, required: true}
+    request: {method: DELETE, path: "merchant/v1.0/merchants/{{fields.merchant_id | path}}/interruptions/{{fields.interruption_id | path}}"}
+
+  # Menu
+  - name: List Catalogs
+    resource: Menu
+    description: Lists the catalogs of a store, one per sales context.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+    request: {method: GET, path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/catalogs"}
+
+  - name: List Categories
+    resource: Menu
+    description: Lists the categories of a catalog, with their items when asked.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: catalog_id, label: Catalog ID, required: true}
+      - {name: include_items, label: Include items, type: boolean, default: false}
+    request:
+      method: GET
+      path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/catalogs/{{fields.catalog_id | path}}/categories"
+      query: {includeItems: "{{fields.include_items}}"}
+
+  - name: List Category Items
+    resource: Menu
+    description: Lists the items of a category, with their options.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: category_id, label: Category ID, required: true}
+    request: {method: GET, path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/categories/{{fields.category_id | path}}/items"}
+
+  - name: Update Item Price
+    resource: Menu
+    description: Changes the price of an item; a higher original price shows it as on sale.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: item_id, label: Item ID, required: true}
+      - {name: value, label: Price, type: number, required: true}
+      - {name: original_value, label: Original price, type: number}
+    request:
+      method: PATCH
+      path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/items/price"
+      body: {itemId: "{{fields.item_id}}", price: {value: "{{fields.value}}", originalValue: "{{fields.original_value}}"}}
+
+  - name: Update Item Status
+    resource: Menu
+    description: Shows or hides an item on the menu.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: item_id, label: Item ID, required: true}
+      - {name: status, label: Status, type: select, required: true, options: [{label: Available, value: AVAILABLE}, {label: Unavailable, value: UNAVAILABLE}]}
+    request:
+      method: PATCH
+      path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/items/status"
+      body: {itemId: "{{fields.item_id}}", status: "{{fields.status}}"}
+
+  - name: Update Option Price
+    resource: Menu
+    description: Changes the price of an item option, like an extra or a size.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: option_id, label: Option ID, required: true}
+      - {name: value, label: Price, type: number, required: true}
+      - {name: original_value, label: Original price, type: number}
+    request:
+      method: PATCH
+      path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/options/price"
+      body: {optionId: "{{fields.option_id}}", price: {value: "{{fields.value}}", originalValue: "{{fields.original_value}}"}}
+
+  - name: Update Option Status
+    resource: Menu
+    description: Shows or hides an item option.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: option_id, label: Option ID, required: true}
+      - {name: status, label: Status, type: select, required: true, options: [{label: Available, value: AVAILABLE}, {label: Unavailable, value: UNAVAILABLE}]}
+    request:
+      method: PATCH
+      path: "catalog/v2.0/merchants/{{fields.merchant_id | path}}/options/status"
+      body: {optionId: "{{fields.option_id}}", status: "{{fields.status}}"}
+
+  # Reviews
+  - name: List Reviews
+    resource: Review
+    description: Lists the customer reviews of a store, newest first by default.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: date_from, label: From, type: datetime}
+      - {name: date_to, label: To, type: datetime}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: page_size, label: Per page, type: number, default: 10}
+      - {name: sort, label: Order, type: select, default: DESC, options: [{label: Newest first, value: DESC}, {label: Oldest first, value: ASC}]}
+    request:
+      method: GET
+      path: "review/v1.0/merchants/{{fields.merchant_id | path}}/reviews"
+      query: {dateFrom: "{{fields.date_from}}", dateTo: "{{fields.date_to}}", page: "{{fields.page}}", pageSize: "{{fields.page_size}}", sort: "{{fields.sort}}", sortBy: CREATED_AT}
+
+  - name: Get Review
+    resource: Review
+    description: Reads a review, with its rating, comment and replies.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: review_id, label: Review ID, required: true}
+    request: {method: GET, path: "review/v1.0/merchants/{{fields.merchant_id | path}}/reviews/{{fields.review_id | path}}"}
+
+  - name: Reply to Review
+    resource: Review
+    description: Answers a review publicly.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: review_id, label: Review ID, required: true}
+      - {name: text, label: Reply, type: textarea, required: true}
+    request:
+      method: POST
+      path: "review/v1.0/merchants/{{fields.merchant_id | path}}/reviews/{{fields.review_id | path}}/answers"
+      body: {text: "{{fields.text}}"}
+
+  - name: Get Review Summary
+    resource: Review
+    description: Reads the average rating and review count of a store.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+    request: {method: GET, path: "review/v1.0/merchants/{{fields.merchant_id | path}}/summary"}
+
+  # Financial
+  - name: List Sales
+    resource: Financial
+    description: Lists the sales of a store by order date, with fees and the amount to receive.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: begin, label: From, required: true, description: "Order date, as YYYY-MM-DD."}
+      - {name: end, label: To, required: true, description: "Order date, as YYYY-MM-DD."}
+    request:
+      method: GET
+      path: "financial/v2.0/merchants/{{fields.merchant_id | path}}/sales"
+      query: {beginOrderDate: "{{fields.begin}}", endOrderDate: "{{fields.end}}"}
+
+  - name: List Payments
+    resource: Financial
+    description: Lists the payouts iFood made or will make to a store.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: begin, label: From, required: true, description: "Expected payment date, as YYYY-MM-DD."}
+      - {name: end, label: To, required: true, description: "Expected payment date, as YYYY-MM-DD."}
+    request:
+      method: GET
+      path: "financial/v2.0/merchants/{{fields.merchant_id | path}}/payments"
+      query: {beginExpectedExecutionDate: "{{fields.begin}}", endExpectedExecutionDate: "{{fields.end}}"}
+
+  - name: List Cancellations
+    resource: Financial
+    description: Lists the cancelled sales of a store and what they cost.
+    fields:
+      - {name: merchant_id, label: Store, type: select, required: true, options_from: {request: {method: GET, path: merchant/v1.0/merchants}, label: name, value: id}}
+      - {name: begin, label: From, required: true, description: "Cancellation date, as YYYY-MM-DD."}
+      - {name: end, label: To, required: true, description: "Cancellation date, as YYYY-MM-DD."}
+    request:
+      method: GET
+      path: "financial/v2.0/merchants/{{fields.merchant_id | path}}/cancellations"
+      query: {beginCancellationDate: "{{fields.begin}}", endCancellationDate: "{{fields.end}}"}
+
+i18n:
+  pt-BR:
+    description: "Receba pedidos do iFood e leve cada um pela confirmação, preparo e despacho; gerencie lojas, pausas, preços do cardápio, avaliações e vendas."
+    triggers:
+      Order Event: {name: "Evento de pedido", description: "Inicia o fluxo a cada novo evento de pedido (feito, confirmado, despachado, cancelado...), verificando a cada minuto. Use um só gatilho destes por app, porque o iFood descarta os eventos que um filtro deixa de fora.", fields: {types: "Códigos de evento", groups: "Grupos de evento"}}
+    actions:
+      Get Order: {name: "Ler pedido", description: "Lê um pedido, com cliente, itens, pagamentos, entrega e totais.", fields: {order_id: "ID do pedido"}}
+      Acknowledge Events: {name: "Confirmar leitura de eventos", description: "Avisa o iFood que os eventos foram lidos, para o polling parar de trazê-los.", fields: {event_ids: "IDs dos eventos"}}
+      Confirm Order: {name: "Confirmar pedido", description: "Confirma um pedido feito, para a loja começar.", fields: {order_id: "ID do pedido"}}
+      Start Preparation: {name: "Iniciar preparo", description: "Marca que a loja começou a preparar um pedido.", fields: {order_id: "ID do pedido"}}
+      Ready to Pick Up: {name: "Pronto para retirada", description: "Marca um pedido para retirada ou consumo no local como pronto.", fields: {order_id: "ID do pedido"}}
+      Dispatch Order: {name: "Despachar pedido", description: "Marca um pedido de entrega como saiu para entrega.", fields: {order_id: "ID do pedido"}}
+      Get Cancellation Reasons: {name: "Consultar motivos de cancelamento", description: "Lista os códigos de cancelamento permitidos para um pedido agora.", fields: {order_id: "ID do pedido"}}
+      Request Cancellation: {name: "Pedir cancelamento", description: "Pede ao iFood para cancelar um pedido; depois chega um evento CANCELLED ou CANCELLATION_REQUEST_FAILED.", fields: {order_id: "ID do pedido", cancellation_code: "Motivo", reason: "Observação"}}
+      Accept Cancellation: {name: "Aceitar cancelamento", description: "Aceita o pedido de cancelamento do cliente.", fields: {order_id: "ID do pedido"}}
+      Deny Cancellation: {name: "Recusar cancelamento", description: "Recusa o pedido de cancelamento do cliente.", fields: {order_id: "ID do pedido"}}
+      Track Order: {name: "Rastrear pedido", description: "Lê onde está o entregador e a previsão de chegada.", fields: {order_id: "ID do pedido"}}
+      Request Driver: {name: "Solicitar entregador", description: "Pede ao iFood um entregador para um pedido que a loja entregaria.", fields: {order_id: "ID do pedido"}}
+      List Stores: {name: "Listar lojas", description: "Lista as lojas que o app acessa, com ID e nome.", fields: {page: "Página", size: "Por página"}}
+      Get Store: {name: "Ler loja", description: "Lê uma loja, com endereço e operações.", fields: {merchant_id: "Loja"}}
+      Get Store Status: {name: "Status da loja", description: "Diz se a loja pode receber pedidos agora em cada operação, e por que não.", fields: {merchant_id: "Loja"}}
+      List Interruptions: {name: "Listar pausas", description: "Lista as pausas atuais e futuras de uma loja.", fields: {merchant_id: "Loja"}}
+      Pause Store: {name: "Pausar loja", description: "Fecha a loja por um tempo; ela não recebe pedidos entre o início e o fim.", fields: {merchant_id: "Loja", description: "Motivo", start: "Início", end: "Fim"}}
+      Remove Pause: {name: "Remover pausa", description: "Remove uma pausa, para a loja voltar a receber pedidos.", fields: {merchant_id: "Loja", interruption_id: "ID da pausa"}}
+      List Catalogs: {name: "Listar catálogos", description: "Lista os catálogos de uma loja, um por contexto de venda.", fields: {merchant_id: "Loja"}}
+      List Categories: {name: "Listar categorias", description: "Lista as categorias de um catálogo, com os itens quando pedido.", fields: {merchant_id: "Loja", catalog_id: "ID do catálogo", include_items: "Incluir itens"}}
+      List Category Items: {name: "Listar itens da categoria", description: "Lista os itens de uma categoria, com seus complementos.", fields: {merchant_id: "Loja", category_id: "ID da categoria"}}
+      Update Item Price: {name: "Alterar preço do item", description: "Muda o preço de um item; um preço original maior mostra como promoção.", fields: {merchant_id: "Loja", item_id: "ID do item", value: "Preço", original_value: "Preço original"}}
+      Update Item Status: {name: "Alterar status do item", description: "Mostra ou esconde um item do cardápio.", fields: {merchant_id: "Loja", item_id: "ID do item", status: "Status"}}
+      Update Option Price: {name: "Alterar preço do complemento", description: "Muda o preço de um complemento do item, como um adicional ou tamanho.", fields: {merchant_id: "Loja", option_id: "ID do complemento", value: "Preço", original_value: "Preço original"}}
+      Update Option Status: {name: "Alterar status do complemento", description: "Mostra ou esconde um complemento do item.", fields: {merchant_id: "Loja", option_id: "ID do complemento", status: "Status"}}
+      List Reviews: {name: "Listar avaliações", description: "Lista as avaliações dos clientes de uma loja, das mais novas primeiro por padrão.", fields: {merchant_id: "Loja", date_from: "De", date_to: "Até", page: "Página", page_size: "Por página", sort: "Ordem"}}
+      Get Review: {name: "Ler avaliação", description: "Lê uma avaliação, com nota, comentário e respostas.", fields: {merchant_id: "Loja", review_id: "ID da avaliação"}}
+      Reply to Review: {name: "Responder avaliação", description: "Responde publicamente a uma avaliação.", fields: {merchant_id: "Loja", review_id: "ID da avaliação", text: "Resposta"}}
+      Get Review Summary: {name: "Resumo das avaliações", description: "Lê a nota média e o número de avaliações de uma loja.", fields: {merchant_id: "Loja"}}
+      List Sales: {name: "Listar vendas", description: "Lista as vendas de uma loja pela data do pedido, com taxas e valor a receber.", fields: {merchant_id: "Loja", begin: "De", end: "Até"}}
+      List Payments: {name: "Listar repasses", description: "Lista os repasses que o iFood fez ou fará para a loja.", fields: {merchant_id: "Loja", begin: "De", end: "Até"}}
+      List Cancellations: {name: "Listar cancelamentos", description: "Lista as vendas canceladas de uma loja e quanto custaram.", fields: {merchant_id: "Loja", begin: "De", end: "Até"}}
