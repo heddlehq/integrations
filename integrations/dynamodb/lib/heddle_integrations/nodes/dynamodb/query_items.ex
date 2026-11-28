@@ -14,6 +14,7 @@ defmodule HeddleIntegrations.Nodes.DynamoDB.QueryItems do
         %{type: :text, name: :condition, label: "Key condition", default: ""},
         %{
           type: :textarea,
+          language: :json,
           name: :condition_values,
           label: "Values",
           default: ~s({":pk": "{{id}}"})

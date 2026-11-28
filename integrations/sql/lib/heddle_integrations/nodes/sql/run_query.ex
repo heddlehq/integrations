@@ -8,7 +8,7 @@ defmodule HeddleIntegrations.Nodes.Sql.RunQuery do
       "Run Query",
       "Runs any statement on PostgreSQL, MySQL, MariaDB, SQL Server, SQLite or Oracle. " <>
         "{{placeholders}} go as parameters, so a value can't change the query.",
-      [%{type: :textarea, name: :sql, label: "Query", default: ""}]
+      [%{type: :textarea, language: :sql, name: :sql, label: "Query", default: ""}]
     )
   end
 

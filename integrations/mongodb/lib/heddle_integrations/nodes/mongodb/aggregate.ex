@@ -9,7 +9,7 @@ defmodule HeddleIntegrations.Nodes.MongoDB.Aggregate do
       "Runs an aggregation pipeline on a collection.",
       [
         MongoDB.collection_field(),
-        %{type: :textarea, name: :pipeline, label: "Pipeline", default: "[]"}
+        %{type: :textarea, language: :json, name: :pipeline, label: "Pipeline", default: "[]"}
       ]
     )
   end

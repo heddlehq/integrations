@@ -8,7 +8,7 @@ defmodule HeddleIntegrations.Nodes.Cassandra.RunQuery do
       "Run Query",
       "Runs a CQL statement on Cassandra or ScyllaDB, a BATCH included. " <>
         "{{placeholders}} go as parameters, so a value can't change the query.",
-      [%{type: :textarea, name: :cql, label: "Query", default: ""}]
+      [%{type: :textarea, language: :sql, name: :cql, label: "Query", default: ""}]
     )
   end
 

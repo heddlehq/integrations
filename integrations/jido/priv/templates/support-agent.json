@@ -1,0 +1,90 @@
+{
+  "name": "Support Agent",
+  "description": "Answers customers on its chat, remembers each one, and opens a ticket when it can't solve something.",
+  "i18n": {
+    "pt-BR": {
+      "name": "Atendente",
+      "description": "Atende clientes no chat, lembra de cada um e abre um chamado quando não resolve."
+    }
+  },
+  "nodes": [
+    {
+      "id": "agent",
+      "type": "Agent",
+      "label": "Support",
+      "controls": {
+        "name": "Support",
+        "instructions": "You are the support agent of our company. Be brief, kind and concrete. Remember the customer's name and what they need with the remember tool. When you can't solve something, open a ticket and tell the customer someone will reach out.",
+        "credential": "",
+        "model": "",
+        "state": "{\"customer_name\": \"\", \"topic\": \"\", \"ticket_open\": false}",
+        "max_messages": "30",
+        "max_cost": "1",
+        "allowed": "chat, flows"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "think",
+      "type": "Agent: Think",
+      "label": "Think",
+      "controls": {
+        "message": "{{agent.message}}",
+        "agents": "",
+        "approval": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "reply",
+      "type": "Agent: Reply",
+      "label": "Reply",
+      "controls": {
+        "message": "{{result.reply}}"
+      },
+      "position": {
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
+      "id": "ticket",
+      "type": "Logger",
+      "label": "Open a ticket",
+      "controls": {
+        "level": "info",
+        "message": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 180
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "agent",
+      "sourceOutput": "exec",
+      "target": "think",
+      "targetInput": "exec"
+    },
+    {
+      "source": "think",
+      "sourceOutput": "success",
+      "target": "reply",
+      "targetInput": "exec"
+    },
+    {
+      "source": "think",
+      "sourceOutput": "tools",
+      "target": "ticket",
+      "targetInput": "exec"
+    }
+  ]
+}

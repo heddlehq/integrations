@@ -33,6 +33,12 @@ defmodule HeddleIntegrations.Jido.MixProject do
           HeddleIntegrations.Nodes.Agents.Pause,
           HeddleIntegrations.Nodes.Agents.ResetInstance,
           HeddleIntegrations.Nodes.Agents.Event
+        ],
+        bobbin_templates: [
+          "priv/templates/support-agent.json",
+          "priv/templates/sdr-follow-up.json",
+          "priv/templates/collections.json",
+          "priv/templates/triage-team.json"
         ]
       ]
     ]

@@ -35,7 +35,7 @@ defmodule HeddleIntegrations.Cassandra.MixProject do
     [
       {:bobbin, bobbin()},
       {:xandra, "~> 0.20"},
-      {:decimal, "~> 2.0"},
+      {:decimal, "~> 2.0 or ~> 3.0"},
       {:jason, "~> 1.2"},
       {:plug, "~> 1.0", only: :test}
     ]

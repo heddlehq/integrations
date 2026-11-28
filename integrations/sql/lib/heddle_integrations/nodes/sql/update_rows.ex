@@ -10,7 +10,7 @@ defmodule HeddleIntegrations.Nodes.Sql.UpdateRows do
       "Changes the rows that match. To change every row, write 1 = 1 in Where.",
       [
         Sql.table_field(),
-        %{type: :textarea, name: :changes, label: "New values", default: ""},
+        %{type: :textarea, language: :json, name: :changes, label: "New values", default: ""},
         Sql.where_field()
       ]
     )

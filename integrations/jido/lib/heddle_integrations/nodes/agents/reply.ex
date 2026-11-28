@@ -1,7 +1,7 @@
 defmodule HeddleIntegrations.Nodes.Agents.Reply do
   @moduledoc """
   Answers who sent the message. When an Agent: Ask node waits for the agent, its run
-  goes on with the reply. A message sent
+  goes on with the reply. A person on the agent's chat sees it there. A message sent
   with Agent: Send Message waits for no reply, and `result.answered` is false.
   """
 
@@ -27,6 +27,32 @@ defmodule HeddleIntegrations.Nodes.Agents.Reply do
       Service.success(context, %{"reply" => reply, "answered" => answered})
     else
       {:error, message} -> Service.failure(context, message)
+    end
+  end
+
+  defp answer(context, %{"from" => %{"type" => "chat"}} = agent, reply) do
+    with :ok <-
+           Agents.chat_append(context["workspace_id"], agent["name"], agent["key"], :agent, reply),
+         {:ok, _asked} <- answer_asking(context, agent, reply) do
+      {:ok, true}
+    end
+  end
+
+  # A schedule of an instance someone talks to on the chat, like a follow-up, says it
+  # there.
+  defp answer(context, %{"from" => %{"type" => "schedule"}} = agent, reply) do
+    if Agents.chat_messages(context["workspace_id"], agent["name"], agent["key"]) != [] do
+      with :ok <-
+             Agents.chat_append(
+               context["workspace_id"],
+               agent["name"],
+               agent["key"],
+               :agent,
+               reply
+             ),
+           do: {:ok, true}
+    else
+      answer_asking(context, agent, reply)
     end
   end
 

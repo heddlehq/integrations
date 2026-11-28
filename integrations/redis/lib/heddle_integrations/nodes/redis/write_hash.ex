@@ -10,7 +10,7 @@ defmodule HeddleIntegrations.Nodes.Redis.WriteHash do
       "Saves fields in a hash, and leaves the others as they are.",
       [
         Redis.key_field(),
-        %{type: :textarea, name: :fields, label: "Fields", default: "{{result}}"}
+        %{type: :textarea, language: :json, name: :fields, label: "Fields", default: "{{result}}"}
       ]
     )
   end

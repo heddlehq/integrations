@@ -116,6 +116,13 @@ defmodule HeddleIntegrations.AgentsTest do
       assert start(%{})["agent"]["state"]["attempts"] == 0
     end
 
+    test "a run started by hand says how to try the agent" do
+      context =
+        Map.merge(@trigger, %{"workspace_id" => 1, "trigger" => "manual", "result" => nil})
+
+      assert {:error, "An agent runs when it gets a message." <> _} = Agent.handler(context, nil)
+    end
+
     test "without a key, the message goes to its only instance" do
       assert start(%{"message" => "Hi"})["agent"]["key"] == "main"
     end
@@ -446,10 +453,28 @@ defmodule HeddleIntegrations.AgentsTest do
       assert {:ok, %{"reply" => "Ok, no refund."}} = resume(context, resumed, [@refund], call)
     end
 
+    test "the person on the chat sees what it said while it waits for approval" do
+      script(fn context, _options ->
+        if Enum.any?(context.messages, &(&1.role == :tool)),
+          do: answer("Your refund is with our team for approval."),
+          else: call_tool("refund", %{"order" => "A-1"})
+      end)
+
+      {:ok, _runs} = Agent.chat_message(1, %{"name" => "Ana"}, "v9", "Refund A-1")
+      [request] = TestHost.runs()
+      context = start(request.data) |> Map.put("approval", "refund")
+
+      assert {:wait, _wait} =
+               think(context, "{{agent.message}}", [@refund], fn _n, _a -> {:ok, "{}"} end)
+
+      assert [_visitor, %{role: :agent, text: "Your refund is with our team for approval."}] =
+               Agent.chat_history(1, %{"name" => "Ana"}, "v9")
+    end
+
     test "asks another agent, waits for its reply, and goes on with it" do
       script(fn context, _options ->
         cond do
-          Enum.any?(context.messages, &(text_of(&1) =~ "Bob replied: 42")) ->
+          Enum.any?(context.messages, &(text_of(&1) =~ "Bob replied to your question: 42")) ->
             answer("Bob says 42.")
 
           Enum.any?(context.messages, &(&1.role == :tool)) ->
@@ -696,6 +721,17 @@ defmodule HeddleIntegrations.AgentsTest do
                Schedule.handler(Map.merge(follow_up, fields), nil)
     end
 
+    test "a follow-up's reply shows on the instance's chat" do
+      {:ok, _runs} = Agent.chat_message(1, %{"name" => "Ana"}, "v1", "Oi")
+      follow_up = start(%{"key" => "v1", "from" => %{"type" => "schedule"}})
+
+      assert {:ok, %{"result" => %{"answered" => true}}, "success"} =
+               Reply.handler(Map.put(follow_up, "message", "Still there?"), nil)
+
+      assert [_visitor, %{role: :agent, text: "Still there?"}] =
+               Agent.chat_history(1, %{"name" => "Ana"}, "v1")
+    end
+
     test "says when the time is wrong" do
       context =
         start(%{}) |> Map.merge(%{"message" => "x", "in" => "0", "unit" => "days", "at" => ""})
@@ -794,6 +830,57 @@ defmodule HeddleIntegrations.AgentsTest do
       context = start(%{"key" => "b"})
       assert {:ok, %{"result" => %{"key" => "b"}}, "success"} = EndInstance.handler(context, nil)
       assert {:error, :not_found} = TestHost.store_get(1, "agents", "Ana/b", [])
+    end
+  end
+
+  describe "chat and panel" do
+    test "a person's message starts a run, and the reply shows in the chat" do
+      controls = %{"name" => "Ana"}
+      assert {:ok, _runs} = Agent.chat_message(1, controls, "chat:v1", "Oi")
+
+      [request] = TestHost.runs()
+      assert request.data["key"] == "chat:v1"
+      assert request.data["from"] == %{"type" => "chat", "conversation" => "chat:v1"}
+      assert [%{role: :visitor, text: "Oi"}] = Agent.chat_history(1, controls, "chat:v1")
+
+      context = start(request.data)
+      {:ok, _context, "success"} = Reply.handler(Map.put(context, "message", "Olá!"), nil)
+
+      assert [%{role: :visitor}, %{role: :agent, text: "Olá!"}] =
+               Agent.chat_history(1, controls, "chat:v1")
+
+      assert Agent.chat_history(1, controls, "chat:v2") == []
+    end
+
+    test "a message that can't go isn't kept" do
+      Application.put_env(:bobbin, :test_start_runs, fn _request -> {:ok, []} end)
+
+      assert {:error, "No published flow is the agent Ana." <> _} =
+               Agent.chat_message(1, %{"name" => "Ana"}, "c", "Oi")
+
+      assert Agent.chat_history(1, %{"name" => "Ana"}, "c") == []
+    end
+
+    test "the drawer shows the instances and what is scheduled" do
+      context =
+        start(%{"key" => "c-1"})
+        |> Map.merge(%{
+          "message" => "Later",
+          "in" => "1",
+          "unit" => "days",
+          "at" => "",
+          "key" => ""
+        })
+
+      {:ok, _context, "success"} = Schedule.handler(context, nil)
+
+      [instances, scheduled] = Agent.panel(1, %{"name" => "Ana"})
+      assert instances.title == "Instances"
+      assert [%{"Key" => "c-1"}] = instances.rows
+      assert scheduled.title == "Scheduled"
+      assert [%{"Message" => "Later"}] = scheduled.rows
+
+      assert [%{text: "Give the agent a name" <> _}] = Agent.panel(1, %{"name" => ""})
     end
   end
 end

@@ -79,7 +79,8 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
       {:approved, by} ->
         case call.(tool, pending["arguments"] || %{}) do
           {:ok, output} ->
-            {:ok, "[#{by} approved #{tool}. It ran and returned: #{output}] Go on with the task."}
+            {:ok,
+             "[#{by} approved #{tool}. It ran and returned: #{output}] You are no longer waiting. Go on with the task, and answer the one you talk to."}
 
           {:error, message} ->
             {:ok,
@@ -100,10 +101,13 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
   defp note(%{"wait" => %{"data" => %{"kind" => "ask"} = pending}} = resumed, _call) do
     case resumed do
       %{"by" => "call", "request" => %{"reply" => reply}} ->
-        {:ok, "[#{pending["agent"]} replied: #{reply}] Go on with the task."}
+        {:ok,
+         "[#{pending["agent"]} replied to your question: #{reply}] You are no longer waiting. " <>
+           "Answer the one you talk to now, with what #{pending["agent"]} said. Ask again only if it asked you something you can answer."}
 
       _timeout ->
-        {:ok, "[#{pending["agent"]} didn't reply in time.] Go on without its answer."}
+        {:ok,
+         "[#{pending["agent"]} didn't reply in time.] You are no longer waiting. Answer without it."}
     end
   end
 
@@ -153,7 +157,7 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
 
       case pending do
         nil -> {:ok, %{"reply" => reply}}
-        pending -> wait(context, agent, pending)
+        pending -> wait(context, agent, pending, reply)
       end
     end
   end
@@ -275,7 +279,7 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
             %{
               name: "ask_agent",
               description:
-                "Asks another agent a question and waits for its reply. After calling it, stop and say in one short sentence that you are waiting.",
+                "Asks another agent a question and waits for its reply, which comes to you as a new message. Put everything it needs in the question. After calling it, stop and say in one short sentence that you are waiting.",
               parameters: %{
                 "type" => "object",
                 "properties" => %{
@@ -445,7 +449,20 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
     end
   end
 
-  defp wait(_context, agent, %{"kind" => "approval"} = pending) do
+  # A person on the chat sees what the agent said while it waits for an approval,
+  # which can take long, like "a person is reviewing your refund".
+  defp wait(context, agent, %{"kind" => "approval"} = pending, reply) do
+    _said =
+      if match?(%{"type" => "chat"}, agent["from"]) and reply not in [nil, ""],
+        do:
+          Agents.chat_append(context["workspace_id"], agent["name"], agent["key"], :agent, reply)
+
+    wait_approval(agent, pending)
+  end
+
+  defp wait(context, agent, pending, _reply), do: wait(context, agent, pending)
+
+  defp wait_approval(agent, pending) do
     details =
       "#{agent["name"]} (#{agent["key"]}) wants to run #{pending["tool"]} with:\n" <>
         Jason.encode!(pending["arguments"], pretty: true)

@@ -8,7 +8,7 @@ defmodule HeddleIntegrations.Nodes.Redis.RunCommand do
     Redis.definition(
       "Run Command",
       ~s(Runs any command, as a JSON list like ["SADD", "tags", "{{tag}}"].),
-      [%{type: :textarea, name: :command, label: "Command", default: ""}]
+      [%{type: :textarea, language: :text, name: :command, label: "Command", default: ""}]
     )
   end
 

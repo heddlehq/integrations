@@ -10,7 +10,13 @@ defmodule HeddleIntegrations.Nodes.Elasticsearch.Search do
       ~s(Searches an index, with a query like {"match": {"title": "{{term}}"}}.),
       [
         Elasticsearch.index_field(),
-        %{type: :textarea, name: :search, label: "Query", default: ~s({"match_all": {}})},
+        %{
+          type: :textarea,
+          language: :json,
+          name: :search,
+          label: "Query",
+          default: ~s({"match_all": {}})
+        },
         %{type: :text, name: :limit, label: "Limit", default: "100"},
         %{type: :text, name: :offset, label: "Skip", default: "0"}
       ]

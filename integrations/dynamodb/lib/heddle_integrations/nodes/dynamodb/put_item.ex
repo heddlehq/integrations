@@ -9,7 +9,13 @@ defmodule HeddleIntegrations.Nodes.DynamoDB.PutItem do
       "Saves an item, and replaces the one with the same key.",
       [
         DynamoDB.table_field(),
-        %{type: :textarea, name: :item_data, label: "Item", default: "{{result}}"}
+        %{
+          type: :textarea,
+          language: :json,
+          name: :item_data,
+          label: "Item",
+          default: "{{result}}"
+        }
       ]
     )
   end

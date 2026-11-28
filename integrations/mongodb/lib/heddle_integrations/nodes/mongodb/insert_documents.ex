@@ -10,7 +10,13 @@ defmodule HeddleIntegrations.Nodes.MongoDB.InsertDocuments do
       "Adds one document or a list of them to a collection.",
       [
         MongoDB.collection_field(),
-        %{type: :textarea, name: :documents, label: "Documents", default: "{{result}}"}
+        %{
+          type: :textarea,
+          language: :json,
+          name: :documents,
+          label: "Documents",
+          default: "{{result}}"
+        }
       ]
     )
   end

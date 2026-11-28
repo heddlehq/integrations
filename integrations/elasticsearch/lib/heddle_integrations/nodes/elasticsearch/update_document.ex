@@ -11,7 +11,7 @@ defmodule HeddleIntegrations.Nodes.Elasticsearch.UpdateDocument do
       [
         Elasticsearch.index_field(),
         Elasticsearch.id_field(),
-        %{type: :textarea, name: :changes, label: "New values", default: ""}
+        %{type: :textarea, language: :json, name: :changes, label: "New values", default: ""}
       ]
     )
   end

@@ -27,7 +27,7 @@ defmodule HeddleIntegrations.Services.MongoDB do
   def collection_field, do: %{type: :text, name: :collection, label: "Collection", default: ""}
 
   def filter_field(default \\ "{}") do
-    %{type: :textarea, name: :filter, label: "Filter", default: default}
+    %{type: :textarea, language: :json, name: :filter, label: "Filter", default: default}
   end
 
   def run(context, fun) do
