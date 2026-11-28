@@ -164,7 +164,7 @@ integrations:
   - {id: vhsys, name: VHSYS, category: erp, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: viacep, name: ViaCEP, category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
   - {id: vindi, name: Vindi, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
-  - {id: vtex, name: VTEX, category: ecommerce, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
+  - {id: vtex, name: VTEX, category: ecommerce, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: draft}
   - {id: woovi, name: Woovi (OpenPix), category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: yampi, name: Yampi, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: z_api, name: Z-API, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
