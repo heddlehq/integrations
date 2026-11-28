@@ -1,0 +1,529 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Telegram Bot API. The bot token goes in the path (bot<token>/method). The trigger
+# registers its address with setWebhook and a secret_token Telegram sends back in
+# X-Telegram-Bot-Api-Secret-Token; a bot has one webhook, so one such trigger per bot.
+id: telegram
+name: Telegram
+version: 1.0.0
+homepage: https://core.telegram.org/bots/api
+description: Send messages, photos and files with a Telegram bot, manage chats and members, and start flows on new messages and button presses.
+icon: hero-paper-airplane
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#26A5E4" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></svg>
+category: messaging
+base_url: https://api.telegram.org/
+
+credential:
+  label: Telegram bot
+  fields:
+    - {name: token, label: Bot token, secret: true, required: true, description: "From @BotFather, like 123456:ABC-DEF..."}
+  auth: {type: none}
+
+errors:
+  message_path: description
+
+triggers:
+  - name: New Update
+    description: Starts the flow for each update the bot gets, like a message or a button press. A bot has one webhook, so use one such trigger per bot.
+    fields:
+      - name: allowed_updates
+        label: Updates
+        type: multiselect
+        default: [message]
+        options:
+          - {label: Message, value: message}
+          - {label: Edited message, value: edited_message}
+          - {label: Channel post, value: channel_post}
+          - {label: Edited channel post, value: edited_channel_post}
+          - {label: Button press, value: callback_query}
+          - {label: Inline query, value: inline_query}
+          - {label: Chosen inline result, value: chosen_inline_result}
+          - {label: Poll, value: poll}
+          - {label: Poll answer, value: poll_answer}
+          - {label: Bot added or removed, value: my_chat_member}
+          - {label: Member change, value: chat_member}
+          - {label: Join request, value: chat_join_request}
+          - {label: Reaction, value: message_reaction}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "bot{{credential.token}}/setWebhook"
+          body: {url: "{{webhook.url}}", secret_token: "{{webhook.secret}}", allowed_updates: "{{fields.allowed_updates}}"}
+      unregister:
+        request: {method: POST, path: "bot{{credential.token}}/deleteWebhook"}
+      signature:
+        header: X-Telegram-Bot-Api-Secret-Token
+        token: "{{webhook.secret}}"
+
+actions:
+  - name: Send Message
+    resource: Message
+    description: Sends a text message to a chat.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: disable_web_page_preview, label: No link preview, type: boolean}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendMessage"
+      body: {chat_id: "{{fields.chat_id}}", text: "{{fields.text}}", parse_mode: "{{fields.parse_mode}}", disable_web_page_preview: "{{fields.disable_web_page_preview}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Photo
+    resource: Message
+    description: Sends a photo, from a URL or a file_id.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: photo, label: Photo, required: true, description: "A URL, or the file_id of a file Telegram has."}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendPhoto"
+      body: {chat_id: "{{fields.chat_id}}", photo: "{{fields.photo}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Video
+    resource: Message
+    description: Sends a video, from a URL or a file_id.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: video, label: Video, required: true, description: "A URL, or the file_id of a file Telegram has."}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendVideo"
+      body: {chat_id: "{{fields.chat_id}}", video: "{{fields.video}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Audio
+    resource: Message
+    description: Sends an audio file to play in the music player.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: audio, label: Audio, required: true, description: "A URL, or the file_id of a file Telegram has."}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: title, label: Title}
+      - {name: performer, label: Performer}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendAudio"
+      body: {chat_id: "{{fields.chat_id}}", audio: "{{fields.audio}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}", title: "{{fields.title}}", performer: "{{fields.performer}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Animation
+    resource: Message
+    description: Sends a GIF or a silent video.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: animation, label: Animation, required: true, description: "A URL, or the file_id of a file Telegram has."}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendAnimation"
+      body: {chat_id: "{{fields.chat_id}}", animation: "{{fields.animation}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Sticker
+    resource: Message
+    description: Sends a sticker, from a URL or a file_id.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: sticker, label: Sticker, required: true, description: "A URL, or the file_id of a file Telegram has."}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendSticker"
+      body: {chat_id: "{{fields.chat_id}}", sticker: "{{fields.sticker}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Document
+    resource: Message
+    description: Uploads a file to a chat, up to 50 MB.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: document, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: disable_notification, label: Send silently, type: boolean}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendDocument"
+      body_type: multipart
+      body: {chat_id: "{{fields.chat_id}}", document: "{{fields.document}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}", disable_notification: "{{fields.disable_notification}}"}
+    output: {path: result}
+
+  - name: Send Location
+    resource: Message
+    description: Sends a point on the map.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: latitude, label: Latitude, type: number, required: true}
+      - {name: longitude, label: Longitude, type: number, required: true}
+      - {name: disable_notification, label: Send silently, type: boolean}
+      - {name: reply_to_message_id, label: Reply to message ID, type: number}
+      - {name: reply_markup, label: Keyboard, type: json, description: "An inline_keyboard, keyboard or remove_keyboard object."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendLocation"
+      body: {chat_id: "{{fields.chat_id}}", latitude: "{{fields.latitude}}", longitude: "{{fields.longitude}}", disable_notification: "{{fields.disable_notification}}", reply_to_message_id: "{{fields.reply_to_message_id}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Send Media Group
+    resource: Message
+    description: Sends 2 to 10 photos or videos as an album.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: media, label: Media, type: json, required: true, description: "A list like [{\"type\": \"photo\", \"media\": \"https://...\"}]."}
+      - {name: disable_notification, label: Send silently, type: boolean}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendMediaGroup"
+      body: {chat_id: "{{fields.chat_id}}", media: "{{fields.media}}", disable_notification: "{{fields.disable_notification}}"}
+    output: {path: result}
+
+  - name: Send Chat Action
+    resource: Message
+    description: Shows "typing…" or another status in the chat for a few seconds.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: action, label: Action, type: select, required: true, default: typing, options: [{label: Typing, value: typing}, {label: Sending photo, value: upload_photo}, {label: Recording video, value: record_video}, {label: Sending video, value: upload_video}, {label: Recording voice, value: record_voice}, {label: Sending voice, value: upload_voice}, {label: Sending document, value: upload_document}, {label: Choosing sticker, value: choose_sticker}, {label: Finding location, value: find_location}]}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/sendChatAction"
+      body: {chat_id: "{{fields.chat_id}}", action: "{{fields.action}}"}
+    output: {path: result}
+
+  - name: Edit Message Text
+    resource: Message
+    description: Changes the text of a message the bot sent.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: message_id, label: Message ID, type: number, required: true}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+      - {name: reply_markup, label: Inline keyboard, type: json}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/editMessageText"
+      body: {chat_id: "{{fields.chat_id}}", message_id: "{{fields.message_id}}", text: "{{fields.text}}", parse_mode: "{{fields.parse_mode}}", reply_markup: "{{fields.reply_markup}}"}
+    output: {path: result}
+
+  - name: Edit Message Caption
+    resource: Message
+    description: Changes the caption of a photo, video or file the bot sent.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: message_id, label: Message ID, type: number, required: true}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/editMessageCaption"
+      body: {chat_id: "{{fields.chat_id}}", message_id: "{{fields.message_id}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}"}
+    output: {path: result}
+
+  - name: Delete Message
+    resource: Message
+    description: Deletes a message, sent in the last 48 hours.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: message_id, label: Message ID, type: number, required: true}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/deleteMessage"
+      body: {chat_id: "{{fields.chat_id}}", message_id: "{{fields.message_id}}"}
+    output: {path: result}
+
+  - name: Forward Message
+    resource: Message
+    description: Forwards a message to another chat, showing where it came from.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: from_chat_id, label: From chat ID, required: true}
+      - {name: message_id, label: Message ID, type: number, required: true}
+      - {name: disable_notification, label: Send silently, type: boolean}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/forwardMessage"
+      body: {chat_id: "{{fields.chat_id}}", from_chat_id: "{{fields.from_chat_id}}", message_id: "{{fields.message_id}}", disable_notification: "{{fields.disable_notification}}"}
+    output: {path: result}
+
+  - name: Copy Message
+    resource: Message
+    description: Sends a copy of a message to another chat, without a link to the original.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: from_chat_id, label: From chat ID, required: true}
+      - {name: message_id, label: Message ID, type: number, required: true}
+      - {name: caption, label: New caption, type: textarea}
+      - {name: parse_mode, label: Format, type: select, options: [{label: HTML, value: HTML}, {label: MarkdownV2, value: MarkdownV2}, {label: Markdown (legacy), value: Markdown}]}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/copyMessage"
+      body: {chat_id: "{{fields.chat_id}}", from_chat_id: "{{fields.from_chat_id}}", message_id: "{{fields.message_id}}", caption: "{{fields.caption}}", parse_mode: "{{fields.parse_mode}}"}
+    output: {path: result}
+
+  - name: Pin Message
+    resource: Message
+    description: Pins a message in a chat.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: message_id, label: Message ID, type: number, required: true}
+      - {name: disable_notification, label: Pin silently, type: boolean}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/pinChatMessage"
+      body: {chat_id: "{{fields.chat_id}}", message_id: "{{fields.message_id}}", disable_notification: "{{fields.disable_notification}}"}
+    output: {path: result}
+
+  - name: Unpin Message
+    resource: Message
+    description: Unpins a message, or the latest pinned one when no ID is given.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: message_id, label: Message ID, type: number}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/unpinChatMessage"
+      body: {chat_id: "{{fields.chat_id}}", message_id: "{{fields.message_id}}"}
+    output: {path: result}
+
+  - name: Get Chat
+    resource: Chat
+    description: Reads a chat, with its title, type and description.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/getChat"
+      body: {chat_id: "{{fields.chat_id}}"}
+    output: {path: result}
+
+  - name: Get Chat Administrators
+    resource: Chat
+    description: Lists the administrators of a group or channel.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/getChatAdministrators"
+      body: {chat_id: "{{fields.chat_id}}"}
+    output: {path: result}
+
+  - name: Get Chat Member
+    resource: Chat
+    description: Reads a member of a chat and their status.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: user_id, label: User ID, type: number, required: true}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/getChatMember"
+      body: {chat_id: "{{fields.chat_id}}", user_id: "{{fields.user_id}}"}
+    output: {path: result}
+
+  - name: Get Member Count
+    resource: Chat
+    description: Counts the members of a chat.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/getChatMemberCount"
+      body: {chat_id: "{{fields.chat_id}}"}
+    output: {path: result}
+
+  - name: Set Chat Title
+    resource: Chat
+    description: Changes the title of a group or channel.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: title, label: Title, required: true}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/setChatTitle"
+      body: {chat_id: "{{fields.chat_id}}", title: "{{fields.title}}"}
+    output: {path: result}
+
+  - name: Set Chat Description
+    resource: Chat
+    description: Changes the description of a group or channel.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: description, label: Description, type: textarea}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/setChatDescription"
+      body: {chat_id: "{{fields.chat_id}}", description: "{{fields.description}}"}
+    output: {path: result}
+
+  - name: Ban Member
+    resource: Chat
+    description: Removes a user from a group or channel; they can't come back until unbanned.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: user_id, label: User ID, type: number, required: true}
+      - {name: until_date, label: Until, type: number, description: Unix time; empty bans for good.}
+      - {name: revoke_messages, label: Delete their messages, type: boolean}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/banChatMember"
+      body: {chat_id: "{{fields.chat_id}}", user_id: "{{fields.user_id}}", until_date: "{{fields.until_date}}", revoke_messages: "{{fields.revoke_messages}}"}
+    output: {path: result}
+
+  - name: Unban Member
+    resource: Chat
+    description: Lets a banned user join again.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: user_id, label: User ID, type: number, required: true}
+      - {name: only_if_banned, label: Only if banned, type: boolean, default: true}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/unbanChatMember"
+      body: {chat_id: "{{fields.chat_id}}", user_id: "{{fields.user_id}}", only_if_banned: "{{fields.only_if_banned}}"}
+    output: {path: result}
+
+  - name: Create Invite Link
+    resource: Chat
+    description: Makes an extra invite link for a chat.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+      - {name: name, label: Name}
+      - {name: expire_date, label: Expires at, type: number, description: Unix time.}
+      - {name: member_limit, label: Member limit, type: number}
+      - {name: creates_join_request, label: Admins approve joins, type: boolean}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/createChatInviteLink"
+      body: {chat_id: "{{fields.chat_id}}", name: "{{fields.name}}", expire_date: "{{fields.expire_date}}", member_limit: "{{fields.member_limit}}", creates_join_request: "{{fields.creates_join_request}}"}
+    output: {path: result}
+
+  - name: Leave Chat
+    resource: Chat
+    description: Makes the bot leave a group or channel.
+    fields:
+      - {name: chat_id, label: Chat ID, required: true, description: "The chat ID, or @username of a channel or group."}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/leaveChat"
+      body: {chat_id: "{{fields.chat_id}}"}
+    output: {path: result}
+
+  - name: Answer Callback Query
+    resource: Callback
+    description: Answers a press on an inline button, with an optional notice or alert.
+    fields:
+      - {name: callback_query_id, label: Callback query ID, required: true}
+      - {name: text, label: Text}
+      - {name: show_alert, label: Show as alert, type: boolean}
+      - {name: url, label: URL}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/answerCallbackQuery"
+      body: {callback_query_id: "{{fields.callback_query_id}}", text: "{{fields.text}}", show_alert: "{{fields.show_alert}}", url: "{{fields.url}}"}
+    output: {path: result}
+
+  - name: Answer Inline Query
+    resource: Callback
+    description: Sends the results of an inline query (@bot text).
+    fields:
+      - {name: inline_query_id, label: Inline query ID, required: true}
+      - {name: results, label: Results, type: json, required: true, description: A list of InlineQueryResult objects.}
+      - {name: cache_time, label: Cache seconds, type: number}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/answerInlineQuery"
+      body: {inline_query_id: "{{fields.inline_query_id}}", results: "{{fields.results}}", cache_time: "{{fields.cache_time}}"}
+    output: {path: result}
+
+  - name: Get File
+    resource: File
+    description: Reads a file's path from its file_id, to download it.
+    fields:
+      - {name: file_id, label: File ID, required: true}
+    request:
+      method: POST
+      path: "bot{{credential.token}}/getFile"
+      body: {file_id: "{{fields.file_id}}"}
+    output: {path: result}
+
+  - name: Download File
+    resource: File
+    description: Downloads a file from its file_id, up to 20 MB.
+    fields:
+      - {name: file_path, label: File path, required: true, description: The file_path Get File returns.}
+    request: {method: GET, path: "file/bot{{credential.token}}/{{fields.file_path | path}}"}
+    output:
+      file: true
+
+  - name: Get Bot
+    resource: Bot
+    description: Reads the bot itself, with its ID, name and username.
+    request:
+      method: GET
+      path: "bot{{credential.token}}/getMe"
+    output: {path: result}
+
+i18n:
+  pt-BR:
+    description: "Envie mensagens, fotos e arquivos com um bot do Telegram, gerencie chats e membros, e inicie fluxos com novas mensagens e cliques em botões."
+    triggers:
+      New Update: {name: "Nova atualização", description: "Inicia o fluxo a cada atualização que o bot recebe, como uma mensagem ou um clique em botão. Um bot tem um só webhook, então use um gatilho destes por bot.", fields: {allowed_updates: "Atualizações"}}
+    actions:
+      Send Message: {name: "Enviar mensagem", description: "Envia uma mensagem de texto para um chat.", fields: {chat_id: "ID do chat", text: "Texto", parse_mode: "Formato", disable_web_page_preview: "Sem prévia de link", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Photo: {name: "Enviar foto", description: "Envia uma foto a partir de uma URL ou de um file_id.", fields: {chat_id: "ID do chat", photo: "Foto", caption: "Legenda", parse_mode: "Formato", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Video: {name: "Enviar vídeo", description: "Envia um vídeo a partir de uma URL ou de um file_id.", fields: {chat_id: "ID do chat", video: "Vídeo", caption: "Legenda", parse_mode: "Formato", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Audio: {name: "Enviar áudio", description: "Envia um arquivo de áudio para tocar no player de música.", fields: {chat_id: "ID do chat", audio: "Áudio", caption: "Legenda", parse_mode: "Formato", title: "Título", performer: "Artista", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Animation: {name: "Enviar animação", description: "Envia um GIF ou vídeo sem som.", fields: {chat_id: "ID do chat", animation: "Animação", caption: "Legenda", parse_mode: "Formato", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Sticker: {name: "Enviar figurinha", description: "Envia uma figurinha a partir de uma URL ou de um file_id.", fields: {chat_id: "ID do chat", sticker: "Figurinha", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Document: {name: "Enviar arquivo", description: "Envia um arquivo de até 50 MB para um chat.", fields: {chat_id: "ID do chat", document: "Arquivo", caption: "Legenda", parse_mode: "Formato", disable_notification: "Enviar sem som"}}
+      Send Location: {name: "Enviar localização", description: "Envia um ponto no mapa.", fields: {chat_id: "ID do chat", latitude: "Latitude", longitude: "Longitude", disable_notification: "Enviar sem som", reply_to_message_id: "Responder à mensagem (ID)", reply_markup: "Teclado"}}
+      Send Media Group: {name: "Enviar álbum", description: "Envia de 2 a 10 fotos ou vídeos como álbum.", fields: {chat_id: "ID do chat", media: "Mídias", disable_notification: "Enviar sem som"}}
+      Send Chat Action: {name: "Mostrar ação no chat", description: "Mostra \"digitando…\" ou outro status no chat por alguns segundos.", fields: {chat_id: "ID do chat", action: "Ação"}}
+      Edit Message Text: {name: "Editar texto da mensagem", description: "Muda o texto de uma mensagem que o bot enviou.", fields: {chat_id: "ID do chat", message_id: "ID da mensagem", text: "Texto", parse_mode: "Formato", reply_markup: "Teclado inline"}}
+      Edit Message Caption: {name: "Editar legenda", description: "Muda a legenda de uma foto, vídeo ou arquivo que o bot enviou.", fields: {chat_id: "ID do chat", message_id: "ID da mensagem", caption: "Legenda", parse_mode: "Formato"}}
+      Delete Message: {name: "Apagar mensagem", description: "Apaga uma mensagem enviada nas últimas 48 horas.", fields: {chat_id: "ID do chat", message_id: "ID da mensagem"}}
+      Forward Message: {name: "Encaminhar mensagem", description: "Encaminha uma mensagem para outro chat, mostrando de onde veio.", fields: {chat_id: "ID do chat", from_chat_id: "ID do chat de origem", message_id: "ID da mensagem", disable_notification: "Enviar sem som"}}
+      Copy Message: {name: "Copiar mensagem", description: "Envia uma cópia de uma mensagem para outro chat, sem link para a original.", fields: {chat_id: "ID do chat", from_chat_id: "ID do chat de origem", message_id: "ID da mensagem", caption: "Nova legenda", parse_mode: "Formato"}}
+      Pin Message: {name: "Fixar mensagem", description: "Fixa uma mensagem num chat.", fields: {chat_id: "ID do chat", message_id: "ID da mensagem", disable_notification: "Fixar sem notificar"}}
+      Unpin Message: {name: "Desafixar mensagem", description: "Desafixa uma mensagem, ou a última fixada quando não se informa o ID.", fields: {chat_id: "ID do chat", message_id: "ID da mensagem"}}
+      Get Chat: {name: "Ler chat", description: "Lê um chat, com título, tipo e descrição.", fields: {chat_id: "ID do chat"}}
+      Get Chat Administrators: {name: "Listar administradores", description: "Lista os administradores de um grupo ou canal.", fields: {chat_id: "ID do chat"}}
+      Get Chat Member: {name: "Ler membro", description: "Lê um membro de um chat e seu status.", fields: {chat_id: "ID do chat", user_id: "ID do usuário"}}
+      Get Member Count: {name: "Contar membros", description: "Conta os membros de um chat.", fields: {chat_id: "ID do chat"}}
+      Set Chat Title: {name: "Alterar título do chat", description: "Muda o título de um grupo ou canal.", fields: {chat_id: "ID do chat", title: "Título"}}
+      Set Chat Description: {name: "Alterar descrição do chat", description: "Muda a descrição de um grupo ou canal.", fields: {chat_id: "ID do chat", description: "Descrição"}}
+      Ban Member: {name: "Banir membro", description: "Remove um usuário de um grupo ou canal; ele não volta até ser desbanido.", fields: {chat_id: "ID do chat", user_id: "ID do usuário", until_date: "Até", revoke_messages: "Apagar as mensagens dele"}}
+      Unban Member: {name: "Desbanir membro", description: "Deixa um usuário banido entrar de novo.", fields: {chat_id: "ID do chat", user_id: "ID do usuário", only_if_banned: "Só se banido"}}
+      Create Invite Link: {name: "Criar link de convite", description: "Cria um link de convite extra para um chat.", fields: {chat_id: "ID do chat", name: "Nome", expire_date: "Expira em", member_limit: "Limite de membros", creates_join_request: "Admins aprovam entradas"}}
+      Leave Chat: {name: "Sair do chat", description: "Faz o bot sair de um grupo ou canal.", fields: {chat_id: "ID do chat"}}
+      Answer Callback Query: {name: "Responder clique em botão", description: "Responde ao clique num botão inline, com aviso ou alerta opcional.", fields: {callback_query_id: "ID do clique", text: "Texto", show_alert: "Mostrar como alerta", url: "URL"}}
+      Answer Inline Query: {name: "Responder consulta inline", description: "Envia os resultados de uma consulta inline (@bot texto).", fields: {inline_query_id: "ID da consulta inline", results: "Resultados", cache_time: "Segundos de cache"}}
+      Get File: {name: "Ler arquivo", description: "Lê o caminho de um arquivo pelo file_id, para baixá-lo.", fields: {file_id: "ID do arquivo"}}
+      Download File: {name: "Baixar arquivo", description: "Baixa um arquivo de até 20 MB pelo caminho.", fields: {file_path: "Caminho do arquivo"}}
+      Get Bot: {name: "Ler bot", description: "Lê o próprio bot, com ID, nome e username."}
