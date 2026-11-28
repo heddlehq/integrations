@@ -1,0 +1,416 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Bling, through the API v3. A system admin creates an app in Bling's Central de
+# Extensões › Área do integrador, with Heddle's callback address, and gives Heddle its
+# client ID and secret; each person then connects their Bling account. Contacts,
+# products and orders are named by their Bling ID, a number. Dates go like 2026-02-10.
+id: bling
+name: Bling
+version: 1.0.0
+description: Contacts, products, stock, sales orders, invoices (NF-e) and bills in Bling ERP.
+icon: hero-building-storefront
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="7.63" width="18.00" height="8.74" viewBox="0 0 103 50"><path d="M13.4112 10.6507C10.8699 10.6507 8.33026 11.406 6.19416 12.7837V0.725177C6.19416 0.319149 5.87737 0 5.4721 0H0.722062C0.318557 0 0 0.319149 0 0.725177V5.17908C0 6.28191 0 8.67553 0 8.67553V12.461C0 12.461 0 14.3936 0 15.4805V24.7819L0.0867182 25.5071C0.88134 33.3865 8.50192 39.2181 16.6871 37.1879C21.8123 35.9255 25.796 31.5727 26.6331 26.3351C27.9764 17.9344 21.522 10.6507 13.4095 10.6507H13.4112ZM13.4112 31.3688C9.42751 31.3688 6.19416 28.1046 6.19416 24.1135C6.19416 20.1223 9.42751 16.8582 13.4112 16.8582C17.395 16.8582 20.6301 20.1082 20.6301 24.1135C20.6301 28.1188 17.3967 31.3688 13.4112 31.3688Z" fill="#002726"/> <path d="M61.1012 10.6507C54.1319 10.6543 48.4775 16.3404 48.4775 23.3457V36.2447C48.4775 36.6507 48.7943 36.9699 49.1996 36.9699H53.9355C54.339 36.9699 54.6575 36.6507 54.6575 36.2447V23.6365C54.6575 20.2553 57.1122 17.2234 60.4606 16.9043C64.301 16.5266 67.5485 19.5603 67.5485 23.3457V36.2447C67.5485 36.6507 67.8653 36.9699 68.2705 36.9699H73.0064C73.4099 36.9699 73.7285 36.6507 73.7285 36.2447V23.3457C73.7285 16.3404 68.0741 10.6543 61.1048 10.6507H61.1012Z" fill="#002726"/> <path d="M34.213 0H29.4771C29.0789 0 28.7551 0.324468 28.7551 0.725177V36.2447C28.7551 36.6454 29.0789 36.9699 29.4771 36.9699H34.213C34.6112 36.9699 34.9351 36.6454 34.9351 36.2447V0.725177C34.9351 0.324468 34.6112 0 34.213 0Z" fill="#002726"/> <path d="M89.1268 10.5621L89.1127 10.5762C82.0832 10.7801 76.2217 16.6702 76.02 23.7358C75.8041 31.383 81.9381 37.6791 89.502 37.6791C92.0576 37.6791 94.5972 36.9238 96.7633 35.5461C96.2873 40.2039 92.3036 43.8741 87.5818 43.8741H82.4566C82.0531 43.8741 81.7346 44.1933 81.7346 44.5993V49.2713C81.7346 49.6773 82.0513 49.9965 82.4566 49.9965H87.7694C96.128 49.9965 102.942 43.1631 102.956 34.7766L102.998 24.1117C102.998 16.5089 96.7333 10.3422 89.1251 10.5603L89.1268 10.5621ZM89.502 31.4574C85.4741 31.4574 82.1982 28.1631 82.1982 24.1152C82.1982 20.0674 85.4758 16.773 89.502 16.773C93.5282 16.773 96.8058 20.0674 96.8058 24.1152C96.8058 28.1631 93.5282 31.4574 89.502 31.4574Z" fill="#002726"/> <path d="M44.175 5.32447H39.4391C39.0356 5.32447 38.717 5.64362 38.717 6.04965V8.15426C38.717 8.87943 39.0781 9.78014 39.4391 10.5053L40.1612 11.594C40.6956 12.3191 40.6956 13.3936 40.1612 14.1188L39.4391 15.2074C38.8905 15.9326 38.717 16.6578 38.717 17.5585V36.2606C38.717 36.6667 39.0338 36.9858 39.4391 36.9858H44.175C44.5785 36.9858 44.897 36.6667 44.897 36.2606V17.5585C44.897 16.8333 44.536 15.9326 44.175 15.2074L43.4529 14.1188C42.9184 13.3936 42.9184 12.3191 43.4529 11.594L44.175 10.5053C44.7236 9.78014 44.897 9.05497 44.897 8.15426V6.04965C44.897 5.64362 44.5803 5.32447 44.175 5.32447Z" fill="#002726"/></svg></svg>
+category: erp
+author: Heddle
+homepage: https://developer.bling.com.br/referencia
+base_url: https://api.bling.com.br/Api/v3/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Bling
+  auth:
+    type: oauth2
+    authorize_url: https://www.bling.com.br/Api/v3/oauth/authorize
+    token_url: https://api.bling.com.br/Api/v3/oauth/token
+    token_auth: basic
+
+errors:
+  message_path: error.description
+
+triggers:
+  - name: New Sales Order
+    description: Starts the flow for each new sales order, checking every 5 minutes.
+    request:
+      method: GET
+      path: pedidos/vendas
+      query: {limite: 100}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+  - name: New Contact
+    description: Starts the flow for each new contact, checking every 5 minutes.
+    request:
+      method: GET
+      path: contatos
+      query: {limite: 100}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+  - name: New Invoice
+    description: Starts the flow for each new NF-e, checking every 5 minutes.
+    request:
+      method: GET
+      path: nfe
+      query: {limite: 100}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+actions:
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a customer, supplier or other contact.
+    fields:
+      - {name: nome, label: Name, required: true}
+      - {name: tipo, label: Person, type: select, required: true, default: F, options: [{label: Individual (CPF), value: F}, {label: Company (CNPJ), value: J}, {label: Foreign, value: E}]}
+      - {name: numero_documento, label: CPF or CNPJ}
+      - {name: email, label: Email}
+      - {name: celular, label: Mobile}
+      - {name: telefone, label: Phone}
+      - {name: codigo, label: Your code}
+      - {name: endereco, label: Address, type: json, description: 'Like {"geral": {"endereco": "Rua A", "numero": "10", "bairro": "Centro", "cep": "01000-000", "municipio": "São Paulo", "uf": "SP"}}'}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: contatos
+      body: {nome: "{{fields.nome}}", tipo: "{{fields.tipo}}", numeroDocumento: "{{fields.numero_documento}}", email: "{{fields.email}}", celular: "{{fields.celular}}", telefone: "{{fields.telefone}}", codigo: "{{fields.codigo}}", situacao: A, endereco: "{{fields.endereco}}", _merge: "{{fields.extra}}"}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact.
+    fields:
+      - {name: id, label: Contact ID, required: true}
+    request: {method: GET, path: "contatos/{{fields.id}}"}
+    output: {path: data}
+
+  - name: List Contacts
+    resource: Contact
+    description: Lists contacts, by name, document or type.
+    fields:
+      - {name: pesquisa, label: Search, description: "Name, CPF/CNPJ, email or phone."}
+      - {name: numero_documento, label: CPF or CNPJ}
+      - {name: criterio, label: Which, type: select, default: "1", options: [{label: All but deleted, value: "1"}, {label: Active, value: "2"}, {label: Inactive, value: "3"}, {label: Deleted, value: "4"}, {label: All, value: "5"}]}
+    request:
+      method: GET
+      path: contatos
+      query: {pesquisa: "{{fields.pesquisa}}", numeroDocumento: "{{fields.numero_documento}}", criterio: "{{fields.criterio}}"}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  - name: Update Contact
+    resource: Contact
+    description: Replaces a contact. Send every field you want to keep.
+    fields:
+      - {name: id, label: Contact ID, required: true}
+      - {name: nome, label: Name, required: true}
+      - {name: tipo, label: Person, type: select, required: true, default: F, options: [{label: Individual (CPF), value: F}, {label: Company (CNPJ), value: J}, {label: Foreign, value: E}]}
+      - {name: numero_documento, label: CPF or CNPJ}
+      - {name: email, label: Email}
+      - {name: celular, label: Mobile}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "contatos/{{fields.id}}"
+      body: {nome: "{{fields.nome}}", tipo: "{{fields.tipo}}", numeroDocumento: "{{fields.numero_documento}}", email: "{{fields.email}}", celular: "{{fields.celular}}", situacao: A, _merge: "{{fields.extra}}"}
+
+  - name: Delete Contact
+    resource: Contact
+    description: Deletes a contact.
+    fields:
+      - {name: id, label: Contact ID, required: true}
+    request: {method: DELETE, path: "contatos/{{fields.id}}"}
+
+  # Products
+  - name: Create Product
+    resource: Product
+    description: Creates a product or service.
+    fields:
+      - {name: nome, label: Name, required: true}
+      - {name: codigo, label: SKU}
+      - {name: preco, label: Price, type: number, required: true}
+      - {name: tipo, label: Type, type: select, default: P, options: [{label: Product, value: P}, {label: Service, value: S}]}
+      - {name: formato, label: Format, type: select, default: S, options: [{label: Simple, value: S}, {label: With variations, value: V}, {label: Kit, value: E}]}
+      - {name: unidade, label: Unit, default: UN}
+      - {name: gtin, label: Barcode (GTIN)}
+      - {name: descricao_curta, label: Short description, type: textarea}
+      - {name: extra, label: More fields, type: json, description: 'Like {"pesoLiquido": 0.5, "tributacao": {"ncm": "6109.10.00"}}'}
+    request:
+      method: POST
+      path: produtos
+      body: {nome: "{{fields.nome}}", codigo: "{{fields.codigo}}", preco: "{{fields.preco}}", tipo: "{{fields.tipo}}", situacao: A, formato: "{{fields.formato}}", unidade: "{{fields.unidade}}", gtin: "{{fields.gtin}}", descricaoCurta: "{{fields.descricao_curta}}", _merge: "{{fields.extra}}"}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: "produtos/{{fields.id}}"}
+    output: {path: data}
+
+  - name: List Products
+    resource: Product
+    description: Lists products, by name, SKU or type.
+    fields:
+      - {name: nome, label: Name}
+      - {name: codigos, label: SKU}
+      - {name: tipo, label: Type, type: select, options: [{label: Products, value: P}, {label: Services, value: S}, {label: Simple, value: E}, {label: With variations, value: PS}, {label: Variations, value: C}, {label: Kits, value: V}]}
+      - {name: criterio, label: Which, type: select, default: "1", options: [{label: Active, value: "2"}, {label: All but deleted, value: "1"}, {label: Inactive, value: "3"}, {label: Deleted, value: "4"}, {label: All, value: "5"}]}
+    request:
+      method: GET
+      path: produtos
+      query: {nome: "{{fields.nome}}", "codigos[]": "{{fields.codigos}}", tipo: "{{fields.tipo}}", criterio: "{{fields.criterio}}"}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  - name: Update Product
+    resource: Product
+    description: Replaces a product. Send every field you want to keep.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: nome, label: Name, required: true}
+      - {name: codigo, label: SKU}
+      - {name: preco, label: Price, type: number, required: true}
+      - {name: tipo, label: Type, type: select, default: P, options: [{label: Product, value: P}, {label: Service, value: S}]}
+      - {name: formato, label: Format, type: select, default: S, options: [{label: Simple, value: S}, {label: With variations, value: V}, {label: Kit, value: E}]}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "produtos/{{fields.id}}"
+      body: {nome: "{{fields.nome}}", codigo: "{{fields.codigo}}", preco: "{{fields.preco}}", tipo: "{{fields.tipo}}", situacao: A, formato: "{{fields.formato}}", _merge: "{{fields.extra}}"}
+
+  - name: Delete Product
+    resource: Product
+    description: Deletes a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: DELETE, path: "produtos/{{fields.id}}"}
+
+  # Stock
+  - name: Get Stock
+    resource: Stock
+    description: Reads the stock of products, in every warehouse.
+    fields:
+      - {name: ids, label: Product IDs, type: json, required: true, description: "Like [123, 456]"}
+    request:
+      method: GET
+      path: estoques/saldos
+      query: {"idsProdutos[]": "{{fields.ids}}"}
+    output: {path: data}
+
+  - name: Change Stock
+    resource: Stock
+    description: Records stock coming in or going out, or sets a balance.
+    fields:
+      - {name: produto, label: Product ID, required: true}
+      - {name: deposito, label: Warehouse ID, required: true}
+      - {name: operacao, label: Operation, type: select, required: true, default: E, options: [{label: In, value: E}, {label: Out, value: S}, {label: Set balance, value: B}]}
+      - {name: quantidade, label: Quantity, type: number, required: true}
+      - {name: preco, label: Unit price, type: number}
+      - {name: observacoes, label: Notes}
+    request:
+      method: POST
+      path: estoques
+      body: {produto: {id: "{{fields.produto}}"}, deposito: {id: "{{fields.deposito}}"}, operacao: "{{fields.operacao}}", quantidade: "{{fields.quantidade}}", preco: "{{fields.preco}}", observacoes: "{{fields.observacoes}}"}
+
+  - name: List Warehouses
+    resource: Stock
+    description: Lists the warehouses.
+    request: {method: GET, path: depositos}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  # Sales orders
+  - name: Create Sales Order
+    resource: Sales Order
+    description: Creates a sales order.
+    fields:
+      - {name: contato, label: Contact ID, required: true}
+      - {name: itens, label: Items, type: json, required: true, description: 'Like [{"produto": {"id": 123}, "quantidade": 2, "valor": 49.9}]'}
+      - {name: data, label: Date, description: "Like 2026-02-10. Empty is today."}
+      - {name: numero_loja, label: Store order number}
+      - {name: parcelas, label: Installments, type: json, description: 'Like [{"dataVencimento": "2026-03-10", "valor": 99.8, "formaPagamento": {"id": 1}}]'}
+      - {name: observacoes, label: Notes, type: textarea}
+      - {name: extra, label: More fields, type: json, description: 'Like {"transporte": {...}, "desconto": {"valor": 10, "unidade": "REAL"}}'}
+    request:
+      method: POST
+      path: pedidos/vendas
+      body: {contato: {id: "{{fields.contato}}"}, itens: "{{fields.itens}}", data: "{{fields.data}}", numeroLoja: "{{fields.numero_loja}}", parcelas: "{{fields.parcelas}}", observacoes: "{{fields.observacoes}}", _merge: "{{fields.extra}}"}
+
+  - name: Get Sales Order
+    resource: Sales Order
+    description: Reads a sales order, with its items and installments.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: GET, path: "pedidos/vendas/{{fields.id}}"}
+    output: {path: data}
+
+  - name: List Sales Orders
+    resource: Sales Order
+    description: Lists sales orders, by contact, status or dates.
+    fields:
+      - {name: id_contato, label: Contact ID}
+      - {name: situacao, label: Status ID, description: "Like 6 (open), 9 (done) or 12 (canceled)"}
+      - {name: data_inicial, label: From}
+      - {name: data_final, label: To}
+      - {name: numero, label: Order number}
+    request:
+      method: GET
+      path: pedidos/vendas
+      query: {idContato: "{{fields.id_contato}}", "idsSituacoes[]": "{{fields.situacao}}", dataInicial: "{{fields.data_inicial}}", dataFinal: "{{fields.data_final}}", numero: "{{fields.numero}}"}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  - name: Change Order Status
+    resource: Sales Order
+    description: Moves a sales order to another status.
+    fields:
+      - {name: id, label: Order ID, required: true}
+      - {name: situacao, label: Status ID, required: true, description: "Like 9 (done) or 12 (canceled)"}
+    request: {method: PATCH, path: "pedidos/vendas/{{fields.id}}/situacoes/{{fields.situacao}}"}
+
+  - name: Delete Sales Order
+    resource: Sales Order
+    description: Deletes a sales order.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: DELETE, path: "pedidos/vendas/{{fields.id}}"}
+
+  - name: Create Invoice From Order
+    resource: Sales Order
+    description: Makes an NF-e from a sales order. Send it with Send Invoice.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: POST, path: "pedidos/vendas/{{fields.id}}/gerar-nfe"}
+    output: {path: data}
+
+  # Invoices
+  - name: Get Invoice
+    resource: Invoice
+    description: Reads an NF-e, with its status, key and links to the XML and DANFE.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: "nfe/{{fields.id}}"}
+    output: {path: data}
+
+  - name: List Invoices
+    resource: Invoice
+    description: Lists NF-e, by status or dates.
+    fields:
+      - {name: situacao, label: Status, type: select, options: [{label: Pending, value: "1"}, {label: Canceled, value: "2"}, {label: Waiting receipt, value: "3"}, {label: Rejected, value: "4"}, {label: Authorized, value: "5"}, {label: DANFE issued, value: "6"}, {label: Registered, value: "7"}, {label: Denied, value: "9"}]}
+      - {name: tipo, label: Type, type: select, options: [{label: Outgoing, value: "1"}, {label: Incoming, value: "0"}]}
+      - {name: data_emissao_inicial, label: Issued from, description: "Like 2026-02-01 00:00:00"}
+      - {name: data_emissao_final, label: Issued to}
+    request:
+      method: GET
+      path: nfe
+      query: {situacao: "{{fields.situacao}}", tipo: "{{fields.tipo}}", dataEmissaoInicial: "{{fields.data_emissao_inicial}}", dataEmissaoFinal: "{{fields.data_emissao_final}}"}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  - name: Send Invoice
+    resource: Invoice
+    description: Sends an NF-e to SEFAZ for authorization.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+      - {name: send_email, label: Email the customer, type: boolean, default: true}
+    request:
+      method: POST
+      path: "nfe/{{fields.id}}/enviar"
+      query: {enviarEmail: "{{fields.send_email}}"}
+
+  # Bills
+  - name: Create Receivable
+    resource: Bill
+    description: Creates a bill to receive.
+    fields:
+      - {name: contato, label: Contact ID, required: true}
+      - {name: valor, label: Amount, type: number, required: true}
+      - {name: vencimento, label: Due date, required: true, description: "Like 2026-02-10"}
+      - {name: forma_pagamento, label: Payment method ID}
+      - {name: historico, label: Description}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: contas/receber
+      body: {contato: {id: "{{fields.contato}}"}, valor: "{{fields.valor}}", vencimento: "{{fields.vencimento}}", formaPagamento: {_if: "{{fields.forma_pagamento}}", id: "{{fields.forma_pagamento}}"}, historico: "{{fields.historico}}", _merge: "{{fields.extra}}"}
+
+  - name: List Receivables
+    resource: Bill
+    description: Lists bills to receive, by status, contact or due dates.
+    fields:
+      - {name: situacao, label: Status, type: select, options: [{label: Open, value: "1"}, {label: Received, value: "2"}, {label: Partly received, value: "3"}, {label: Canceled, value: "5"}, {label: Overdue, value: "6"}]}
+      - {name: id_contato, label: Contact ID}
+      - {name: data_inicial, label: Due from}
+      - {name: data_final, label: Due to}
+    request:
+      method: GET
+      path: contas/receber
+      query: {"situacoes[]": "{{fields.situacao}}", idContato: "{{fields.id_contato}}", tipoFiltroData: V, dataInicial: "{{fields.data_inicial}}", dataFinal: "{{fields.data_final}}"}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  - name: Create Payable
+    resource: Bill
+    description: Creates a bill to pay.
+    fields:
+      - {name: contato, label: Supplier contact ID, required: true}
+      - {name: valor, label: Amount, type: number, required: true}
+      - {name: vencimento, label: Due date, required: true}
+      - {name: historico, label: Description}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: contas/pagar
+      body: {contato: {id: "{{fields.contato}}"}, valor: "{{fields.valor}}", vencimento: "{{fields.vencimento}}", historico: "{{fields.historico}}", _merge: "{{fields.extra}}"}
+
+  - name: List Payables
+    resource: Bill
+    description: Lists bills to pay, by status, contact or due dates.
+    fields:
+      - {name: situacao, label: Status, type: select, options: [{label: Open, value: "1"}, {label: Paid, value: "2"}, {label: Partly paid, value: "3"}, {label: Canceled, value: "5"}, {label: Overdue, value: "6"}]}
+      - {name: id_contato, label: Contact ID}
+      - {name: data_inicial, label: Due from}
+      - {name: data_final, label: Due to}
+    request:
+      method: GET
+      path: contas/pagar
+      query: {situacao: "{{fields.situacao}}", idContato: "{{fields.id_contato}}", dataVencimentoInicial: "{{fields.data_inicial}}", dataVencimentoFinal: "{{fields.data_final}}"}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+  - name: List Payment Methods
+    resource: Bill
+    description: Lists the payment methods, for their IDs.
+    request: {method: GET, path: formas-pagamentos}
+    pagination: {type: page, items_path: data, page_param: pagina, limit_param: limite, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: "Contatos, produtos, estoque, pedidos de venda, notas fiscais (NF-e) e contas no Bling ERP."
+    triggers:
+      New Sales Order: {name: "Novo pedido de venda", description: "Inicia o fluxo para cada pedido de venda novo, olhando a cada 5 minutos."}
+      New Contact: {name: "Novo contato", description: "Inicia o fluxo para cada contato novo, olhando a cada 5 minutos."}
+      New Invoice: {name: "Nova NF-e", description: "Inicia o fluxo para cada NF-e nova, olhando a cada 5 minutos."}
+    actions:
+      Create Contact: {name: "Criar contato", description: "Cria um cliente, fornecedor ou outro contato.", fields: {nome: "Nome", tipo: "Pessoa", numero_documento: "CPF ou CNPJ", email: "E-mail", celular: "Celular", telefone: "Telefone", codigo: "Seu código", endereco: "Endereço", extra: "Mais campos"}}
+      Get Contact: {name: "Ler contato", description: "Lê um contato.", fields: {id: "ID do contato"}}
+      List Contacts: {name: "Listar contatos", description: "Lista contatos, por nome, documento ou tipo.", fields: {pesquisa: "Busca", numero_documento: "CPF ou CNPJ", criterio: "Quais"}}
+      Update Contact: {name: "Atualizar contato", description: "Substitui um contato. Envie todos os campos que quer manter.", fields: {id: "ID do contato", nome: "Nome", tipo: "Pessoa", numero_documento: "CPF ou CNPJ", email: "E-mail", celular: "Celular", extra: "Mais campos"}}
+      Delete Contact: {name: "Excluir contato", description: "Exclui um contato.", fields: {id: "ID do contato"}}
+      Create Product: {name: "Criar produto", description: "Cria um produto ou serviço.", fields: {nome: "Nome", codigo: "SKU", preco: "Preço", tipo: "Tipo", formato: "Formato", unidade: "Unidade", gtin: "Código de barras (GTIN)", descricao_curta: "Descrição curta", extra: "Mais campos"}}
+      Get Product: {name: "Ler produto", description: "Lê um produto.", fields: {id: "ID do produto"}}
+      List Products: {name: "Listar produtos", description: "Lista produtos, por nome, SKU ou tipo.", fields: {nome: "Nome", codigos: "SKU", tipo: "Tipo", criterio: "Quais"}}
+      Update Product: {name: "Atualizar produto", description: "Substitui um produto. Envie todos os campos que quer manter.", fields: {id: "ID do produto", nome: "Nome", codigo: "SKU", preco: "Preço", tipo: "Tipo", formato: "Formato", extra: "Mais campos"}}
+      Delete Product: {name: "Excluir produto", description: "Exclui um produto.", fields: {id: "ID do produto"}}
+      Get Stock: {name: "Ler estoque", description: "Lê o estoque de produtos, em todos os depósitos.", fields: {ids: "IDs dos produtos"}}
+      Change Stock: {name: "Lançar estoque", description: "Registra entrada ou saída de estoque, ou define um saldo.", fields: {produto: "ID do produto", deposito: "ID do depósito", operacao: "Operação", quantidade: "Quantidade", preco: "Preço unitário", observacoes: "Observações"}}
+      List Warehouses: {name: "Listar depósitos", description: "Lista os depósitos."}
+      Create Sales Order: {name: "Criar pedido de venda", description: "Cria um pedido de venda.", fields: {contato: "ID do contato", itens: "Itens", data: "Data", numero_loja: "Número na loja", parcelas: "Parcelas", observacoes: "Observações", extra: "Mais campos"}}
+      Get Sales Order: {name: "Ler pedido de venda", description: "Lê um pedido de venda, com itens e parcelas.", fields: {id: "ID do pedido"}}
+      List Sales Orders: {name: "Listar pedidos de venda", description: "Lista pedidos de venda, por contato, situação ou datas.", fields: {id_contato: "ID do contato", situacao: "ID da situação", data_inicial: "De", data_final: "Até", numero: "Número do pedido"}}
+      Change Order Status: {name: "Mudar situação do pedido", description: "Muda a situação de um pedido de venda.", fields: {id: "ID do pedido", situacao: "ID da situação"}}
+      Delete Sales Order: {name: "Excluir pedido de venda", description: "Exclui um pedido de venda.", fields: {id: "ID do pedido"}}
+      Create Invoice From Order: {name: "Gerar NF-e do pedido", description: "Gera uma NF-e a partir de um pedido de venda. Envie com Enviar NF-e.", fields: {id: "ID do pedido"}}
+      Get Invoice: {name: "Ler NF-e", description: "Lê uma NF-e, com situação, chave e links do XML e da DANFE.", fields: {id: "ID da nota"}}
+      List Invoices: {name: "Listar NF-e", description: "Lista NF-e, por situação ou datas.", fields: {situacao: "Situação", tipo: "Tipo", data_emissao_inicial: "Emitida a partir de", data_emissao_final: "Emitida até"}}
+      Send Invoice: {name: "Enviar NF-e", description: "Envia uma NF-e à SEFAZ para autorização.", fields: {id: "ID da nota", send_email: "Enviar por e-mail ao cliente"}}
+      Create Receivable: {name: "Criar conta a receber", description: "Cria uma conta a receber.", fields: {contato: "ID do contato", valor: "Valor", vencimento: "Vencimento", forma_pagamento: "ID da forma de pagamento", historico: "Histórico", extra: "Mais campos"}}
+      List Receivables: {name: "Listar contas a receber", description: "Lista contas a receber, por situação, contato ou vencimento.", fields: {situacao: "Situação", id_contato: "ID do contato", data_inicial: "Vence a partir de", data_final: "Vence até"}}
+      Create Payable: {name: "Criar conta a pagar", description: "Cria uma conta a pagar.", fields: {contato: "ID do fornecedor", valor: "Valor", vencimento: "Vencimento", historico: "Histórico", extra: "Mais campos"}}
+      List Payables: {name: "Listar contas a pagar", description: "Lista contas a pagar, por situação, contato ou vencimento.", fields: {situacao: "Situação", id_contato: "ID do contato", data_inicial: "Vence a partir de", data_final: "Vence até"}}
+      List Payment Methods: {name: "Listar formas de pagamento", description: "Lista as formas de pagamento, para pegar os IDs."}
