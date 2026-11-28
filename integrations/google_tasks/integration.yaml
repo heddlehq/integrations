@@ -1,0 +1,187 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Tasks API v1 with Google OAuth. Due dates keep only the day. The triggers poll
+# the tasks changed or completed in the last day.
+id: google_tasks
+name: Google Tasks
+version: 1.0.0
+homepage: https://developers.google.com/workspace/tasks/reference/rest
+description: Add, update, complete and move Google Tasks, manage task lists, and start flows on new or completed tasks.
+icon: hero-check-circle
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 192 192"><g clip-path="url(#gtasks_a)"><rect width="152" height="130" x="20" y="52" fill="#bbe2ff" rx="65"/><rect width="172" height="152" x="10" y="14" fill="#3186ff" rx="74"/><mask id="gtasks_d" width="172" height="152" x="10" y="14" maskUnits="userSpaceOnUse" style="mask-type:alpha"><rect width="172" height="152" x="10" y="14" fill="#3c90ff" rx="74"/></mask><g filter="url(#gtasks_b)" mask="url(#gtasks_d)"><rect width="152" height="130" x="20" y="52" fill="url(#gtasks_e)" rx="65"/></g><g clip-path="url(#gtasks_f)"><path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" d="m61 90 22.172 22.172a4 4 0 0 0 5.656 0L138 63"/></g></g><defs><clipPath id="gtasks_a"><path fill="#fff" d="M0 0h192v192H0z"/></clipPath><clipPath id="gtasks_f"><path fill="#fff" d="M44 38h104v104H44z"/></clipPath><linearGradient id="gtasks_e" x1="96" x2="100.64" y1="166.9" y2="67.25" gradientUnits="userSpaceOnUse"><stop offset=".01" stop-color="#a9a8ff"/><stop offset=".79" stop-color="#a9a8ff" stop-opacity="0"/></linearGradient><filter id="gtasks_b" width="176" height="154" x="8" y="40" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_37601_9976" stdDeviation="6"/></filter></defs></svg></svg>
+category: productivity
+base_url: https://tasks.googleapis.com/tasks/v1/
+
+credential:
+  label: Google Tasks
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/tasks]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Task
+    description: Starts the flow for each new task in a list, checking every 5 minutes.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+    request:
+      method: GET
+      path: "lists/{{fields.tasklist}}/tasks"
+      query: {updatedMin: "{{time.day_ago}}", showCompleted: true, showHidden: true, maxResults: 100}
+    output: {path: items}
+    poll: {every: 5, id: id}
+
+  - name: Task Completed
+    description: Starts the flow when a task of a list is completed, checking every 5 minutes.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+    request:
+      method: GET
+      path: "lists/{{fields.tasklist}}/tasks"
+      query: {completedMin: "{{time.day_ago}}", showCompleted: true, showHidden: true, maxResults: 100}
+    output: {path: items}
+    poll: {every: 5, id: id}
+
+actions:
+  # Tasks
+  - name: Create Task
+    resource: Task
+    description: Adds a task to a list, at the top or under another task.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: title, label: Title, required: true}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: due, label: Due, type: datetime, description: Only the day is kept.}
+      - {name: parent, label: Under task ID, description: Makes it a subtask.}
+      - {name: previous, label: After task ID}
+    request:
+      method: POST
+      path: "lists/{{fields.tasklist}}/tasks"
+      query: {parent: "{{fields.parent}}", previous: "{{fields.previous}}"}
+      body: {title: "{{fields.title}}", notes: "{{fields.notes}}", due: "{{fields.due}}"}
+
+  - name: Get Task
+    resource: Task
+    description: Reads a task.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: task_id, label: Task ID, required: true}
+    request: {method: GET, path: "lists/{{fields.tasklist}}/tasks/{{fields.task_id}}"}
+
+  - name: List Tasks
+    resource: Task
+    description: Lists the tasks of a list, by due date and status.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: show_completed, label: Include completed, type: boolean, default: true}
+      - {name: due_min, label: Due from, type: datetime}
+      - {name: due_max, label: Due until, type: datetime}
+      - {name: max_results, label: Limit, type: number, default: 100}
+    request:
+      method: GET
+      path: "lists/{{fields.tasklist}}/tasks"
+      query: {showCompleted: "{{fields.show_completed}}", dueMin: "{{fields.due_min}}", dueMax: "{{fields.due_max}}", maxResults: "{{fields.max_results}}"}
+    output: {path: items}
+
+  - name: Update Task
+    resource: Task
+    description: Changes the fields you fill in a task; the others stay.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: task_id, label: Task ID, required: true}
+      - {name: title, label: Title}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: due, label: Due, type: datetime}
+      - {name: status, label: Status, type: select, options: [{label: To do, value: needsAction}, {label: Completed, value: completed}]}
+    request:
+      method: PATCH
+      path: "lists/{{fields.tasklist}}/tasks/{{fields.task_id}}"
+      body: {title: "{{fields.title}}", notes: "{{fields.notes}}", due: "{{fields.due}}", status: "{{fields.status}}"}
+
+  - name: Complete Task
+    resource: Task
+    description: Marks a task as completed.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: task_id, label: Task ID, required: true}
+    request: {method: PATCH, path: "lists/{{fields.tasklist}}/tasks/{{fields.task_id}}", body: {status: completed}}
+
+  - name: Delete Task
+    resource: Task
+    description: Deletes a task.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: task_id, label: Task ID, required: true}
+    request: {method: DELETE, path: "lists/{{fields.tasklist}}/tasks/{{fields.task_id}}"}
+
+  - name: Move Task
+    resource: Task
+    description: Moves a task under another one, after another one, or to the top.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: task_id, label: Task ID, required: true}
+      - {name: parent, label: Under task ID}
+      - {name: previous, label: After task ID}
+    request: {method: POST, path: "lists/{{fields.tasklist}}/tasks/{{fields.task_id}}/move", query: {parent: "{{fields.parent}}", previous: "{{fields.previous}}"}}
+
+  - name: Clear Completed
+    resource: Task
+    description: Hides the completed tasks of a list.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+    request: {method: POST, path: "lists/{{fields.tasklist}}/clear"}
+
+  # Lists
+  - name: List Task Lists
+    resource: Task List
+    description: Lists the user's task lists.
+    request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}
+    output: {path: items}
+
+  - name: Create Task List
+    resource: Task List
+    description: Creates a task list.
+    fields:
+      - {name: title, label: Title, required: true}
+    request: {method: POST, path: users/@me/lists, body: {title: "{{fields.title}}"}}
+
+  - name: Rename Task List
+    resource: Task List
+    description: Changes the title of a task list.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+      - {name: title, label: Title, required: true}
+    request: {method: PATCH, path: "users/@me/lists/{{fields.tasklist}}", body: {title: "{{fields.title}}"}}
+
+  - name: Delete Task List
+    resource: Task List
+    description: Deletes a task list and its tasks.
+    fields:
+      - {name: tasklist, label: List, type: select, required: true, default: "@default", options_from: {request: {method: GET, path: users/@me/lists, query: {maxResults: 100}}, path: items, label: title, value: id}}
+    request: {method: DELETE, path: "users/@me/lists/{{fields.tasklist}}"}
+
+i18n:
+  pt-BR:
+    description: "Adicione, atualize, conclua e mova tarefas do Google Tasks, gerencie listas e inicie fluxos com tarefas novas ou concluídas."
+    triggers:
+      New Task: {name: "Nova tarefa", description: "Inicia o fluxo a cada nova tarefa numa lista, verificando a cada 5 minutos.", fields: {tasklist: "Lista"}}
+      Task Completed: {name: "Tarefa concluída", description: "Inicia o fluxo quando uma tarefa da lista é concluída, verificando a cada 5 minutos.", fields: {tasklist: "Lista"}}
+    actions:
+      Create Task: {name: "Criar tarefa", description: "Adiciona uma tarefa a uma lista, no topo ou abaixo de outra tarefa.", fields: {tasklist: "Lista", title: "Título", notes: "Notas", due: "Prazo", parent: "Abaixo da tarefa (ID)", previous: "Depois da tarefa (ID)"}}
+      Get Task: {name: "Ler tarefa", description: "Lê uma tarefa.", fields: {tasklist: "Lista", task_id: "ID da tarefa"}}
+      List Tasks: {name: "Listar tarefas", description: "Lista as tarefas de uma lista, por prazo e status.", fields: {tasklist: "Lista", show_completed: "Incluir concluídas", due_min: "Prazo a partir de", due_max: "Prazo até", max_results: "Limite"}}
+      Update Task: {name: "Atualizar tarefa", description: "Muda os campos preenchidos de uma tarefa; os outros ficam.", fields: {tasklist: "Lista", task_id: "ID da tarefa", title: "Título", notes: "Notas", due: "Prazo", status: "Status"}}
+      Complete Task: {name: "Concluir tarefa", description: "Marca uma tarefa como concluída.", fields: {tasklist: "Lista", task_id: "ID da tarefa"}}
+      Delete Task: {name: "Excluir tarefa", description: "Exclui uma tarefa.", fields: {tasklist: "Lista", task_id: "ID da tarefa"}}
+      Move Task: {name: "Mover tarefa", description: "Move uma tarefa para baixo de outra, depois de outra ou para o topo.", fields: {tasklist: "Lista", task_id: "ID da tarefa", parent: "Abaixo da tarefa (ID)", previous: "Depois da tarefa (ID)"}}
+      Clear Completed: {name: "Limpar concluídas", description: "Oculta as tarefas concluídas de uma lista.", fields: {tasklist: "Lista"}}
+      List Task Lists: {name: "Listar listas", description: "Lista as listas de tarefas do usuário."}
+      Create Task List: {name: "Criar lista", description: "Cria uma lista de tarefas.", fields: {title: "Título"}}
+      Rename Task List: {name: "Renomear lista", description: "Muda o título de uma lista de tarefas.", fields: {tasklist: "Lista", title: "Título"}}
+      Delete Task List: {name: "Excluir lista", description: "Exclui uma lista de tarefas e suas tarefas.", fields: {tasklist: "Lista"}}
