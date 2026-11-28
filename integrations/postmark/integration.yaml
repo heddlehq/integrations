@@ -1,0 +1,266 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Postmark API with a server token in X-Postmark-Server-Token. The trigger registers a
+# webhook for a message stream with HTTP Basic credentials Postmark sends back on each
+# call; each event has a RecordType (Delivery, Bounce, Open, Click, SpamComplaint,
+# SubscriptionChange).
+id: postmark
+name: Postmark
+version: 1.0.0
+homepage: https://postmarkapp.com/developer
+description: Send transactional emails, plain or from templates, follow deliveries, bounces, opens and clicks, and manage Postmark suppressions.
+icon: hero-envelope
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFDE00"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 30 30"><path fill-rule="evenodd" clip-rule="evenodd" d="M30 27.4219V28.8281C29.3528 28.8281 28.8281 29.3528 28.8281 30H27.4219C27.4219 29.3528 26.8972 28.8281 26.25 28.8281C25.6028 28.8281 25.0781 29.3528 25.0781 30H23.6719C23.6719 29.3528 23.1472 28.8281 22.5 28.8281C21.8528 28.8281 21.3281 29.3528 21.3281 30H19.9219C19.9219 29.3528 19.3972 28.8281 18.75 28.8281C18.1028 28.8281 17.5781 29.3528 17.5781 30H16.1719C16.1719 29.3528 15.6472 28.8281 15 28.8281C14.3528 28.8281 13.8281 29.3528 13.8281 30H12.4219C12.4219 29.3528 11.8972 28.8281 11.25 28.8281C10.6028 28.8281 10.0781 29.3528 10.0781 30H8.67188C8.67188 29.3528 8.14721 28.8281 7.5 28.8281C6.85279 28.8281 6.32812 29.3528 6.32812 30H4.92188C4.92188 29.5813 4.69852 29.1945 4.33594 28.9851C3.97336 28.7758 3.52664 28.7758 3.16406 28.9851C2.80148 29.1945 2.57812 29.5813 2.57812 30H1.17188C1.17188 29.3528 0.647209 28.8281 0 28.8281V27.4219C0.647209 27.4219 1.17188 26.8972 1.17188 26.25C1.17188 25.6028 0.647209 25.0781 0 25.0781V23.6719C0.647209 23.6719 1.17188 23.1472 1.17188 22.5C1.17188 21.8528 0.647209 21.3281 0 21.3281V19.9219C0.647209 19.9219 1.17188 19.3972 1.17188 18.75C1.17188 18.1028 0.647209 17.5781 0 17.5781V16.1719C0.647209 16.1719 1.17188 15.6472 1.17188 15C1.17188 14.3528 0.647209 13.8281 0 13.8281V12.4219C0.647209 12.4219 1.17188 11.8972 1.17188 11.25C1.17188 10.6028 0.647209 10.0781 0 10.0781V8.67188C0.647209 8.67188 1.17188 8.14721 1.17188 7.5C1.17188 6.85279 0.647209 6.32812 0 6.32812V4.92188C0.647209 4.92187 1.17188 4.39721 1.17188 3.75C1.17188 3.10279 0.647209 2.57813 0 2.57812V1.17188C0.647209 1.17188 1.17188 0.647209 1.17188 0H2.57812C2.57813 0.647209 3.10279 1.17188 3.75 1.17188C4.39721 1.17188 4.92187 0.647209 4.92188 0H6.32812C6.32812 0.647209 6.85279 1.17188 7.5 1.17188C8.14721 1.17188 8.67188 0.647209 8.67188 0H10.0781C10.0781 0.647209 10.6028 1.17188 11.25 1.17188C11.8972 1.17188 12.4219 0.647209 12.4219 0H13.8281C13.8281 0.647209 14.3528 1.17188 15 1.17188C15.6472 1.17188 16.1719 0.647209 16.1719 0H17.5781C17.5781 0.647209 18.1028 1.17188 18.75 1.17188C19.3972 1.17188 19.9219 0.647209 19.9219 0H21.3281C21.3281 0.647209 21.8528 1.17188 22.5 1.17188C23.1472 1.17188 23.6719 0.647209 23.6719 0H25.0781C25.0781 0.647209 25.6028 1.17188 26.25 1.17188C26.8972 1.17188 27.4219 0.647209 27.4219 0H28.8281C28.8281 0.647209 29.3528 1.17188 30 1.17188V2.57812C29.3528 2.57812 28.8281 3.10279 28.8281 3.75C28.8281 4.39721 29.3528 4.92188 30 4.92188V6.32812C29.3528 6.32812 28.8281 6.85279 28.8281 7.5C28.8281 8.14721 29.3528 8.67188 30 8.67188V10.0781C29.3528 10.0781 28.8281 10.6028 28.8281 11.25C28.8281 11.8972 29.3528 12.4219 30 12.4219V13.8281C29.5813 13.8281 29.1945 14.0515 28.9851 14.4141C28.7758 14.7766 28.7758 15.2234 28.9851 15.5859C29.1945 15.9485 29.5813 16.1719 30 16.1719V17.5781C29.3528 17.5781 28.8281 18.1028 28.8281 18.75C28.8281 19.3972 29.3528 19.9219 30 19.9219V21.3281C29.3528 21.3281 28.8281 21.8528 28.8281 22.5C28.8281 23.1472 29.3528 23.6719 30 23.6719V25.0781C29.3528 25.0781 28.8281 25.6028 28.8281 26.25C28.8281 26.8972 29.3528 27.4219 30 27.4219V27.4219Z" fill="#FFDE00"/> <path d="M8.70312 21.3804H9.63846C10.1188 21.3804 10.4221 21.0705 10.4221 20.5798V9.62885C10.4221 9.13812 10.1188 8.82819 9.63846 8.82819H8.70312V6.40039H15.478C19.1182 6.40039 22 8.28581 22 11.8759C22 15.4917 19.1182 17.3772 15.478 17.3772H13.1523V20.5798C13.1523 21.0705 13.4556 21.3804 13.9612 21.3804H15.8571V23.8341H8.70312V21.3804ZM15.2757 14.846C17.6773 14.846 19.0676 13.8129 19.0676 11.9275C19.0676 9.99044 17.6773 9.00899 15.2757 9.00899H13.1523V14.8719H15.2757V14.846Z" fill="black"/></svg></svg>
+category: email
+base_url: https://api.postmarkapp.com/
+headers:
+  Accept: application/json
+
+credential:
+  label: Postmark server
+  fields:
+    - {name: server_token, label: Server API token, secret: true, required: true, description: Servers › your server › API Tokens.}
+  auth:
+    type: header
+    name: X-Postmark-Server-Token
+    value: "{{credential.server_token}}"
+
+errors:
+  message_path: Message
+
+triggers:
+  - name: Email Event
+    description: Starts the flow when Postmark reports a delivery, bounce, open, click, spam complaint or subscription change, by the events you pick.
+    fields:
+      - {name: message_stream, label: Message stream, default: outbound}
+      - {name: delivery, label: Deliveries, type: boolean, default: true}
+      - {name: bounce, label: Bounces, type: boolean, default: true}
+      - {name: open, label: Opens, type: boolean}
+      - {name: click, label: Clicks, type: boolean}
+      - {name: spam_complaint, label: Spam complaints, type: boolean}
+      - {name: subscription_change, label: Subscription changes, type: boolean}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body:
+            Url: "{{webhook.url}}"
+            MessageStream: "{{fields.message_stream}}"
+            HttpAuth: {Username: heddle, Password: "{{webhook.secret}}"}
+            Triggers:
+              Delivery: {Enabled: "{{fields.delivery}}"}
+              Bounce: {Enabled: "{{fields.bounce}}", IncludeContent: false}
+              Open: {Enabled: "{{fields.open}}", PostFirstOpenOnly: false}
+              Click: {Enabled: "{{fields.click}}"}
+              SpamComplaint: {Enabled: "{{fields.spam_complaint}}", IncludeContent: false}
+              SubscriptionChange: {Enabled: "{{fields.subscription_change}}"}
+        id_path: ID
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature:
+        basic: {username: heddle, password: "{{webhook.secret}}"}
+
+actions:
+  # Email
+  - name: Send Email
+    resource: Email
+    description: Sends an email with text, HTML or both.
+    fields:
+      - {name: from, label: From, required: true, description: "A confirmed sender signature, like Ana <ana@acme.com>."}
+      - {name: to, label: To, required: true, description: Up to 50 addresses separated by commas.}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: reply_to, label: Reply to}
+      - {name: subject, label: Subject, required: true}
+      - {name: text_body, label: Text, type: textarea}
+      - {name: html_body, label: HTML, type: textarea}
+      - {name: tag, label: Tag}
+      - {name: track_opens, label: Track opens, type: boolean}
+      - {name: track_links, label: Track links, type: select, options: [{label: "No", value: None}, {label: HTML and text, value: HtmlAndText}, {label: HTML only, value: HtmlOnly}, {label: Text only, value: TextOnly}]}
+      - {name: metadata, label: Metadata, type: json, description: "Your own keys, like {\"order\": \"123\"}."}
+      - {name: message_stream, label: Message stream, default: outbound}
+    request:
+      method: POST
+      path: email
+      body: {From: "{{fields.from}}", To: "{{fields.to}}", Cc: "{{fields.cc}}", Bcc: "{{fields.bcc}}", ReplyTo: "{{fields.reply_to}}", Subject: "{{fields.subject}}", TextBody: "{{fields.text_body}}", HtmlBody: "{{fields.html_body}}", Tag: "{{fields.tag}}", TrackOpens: "{{fields.track_opens}}", TrackLinks: "{{fields.track_links}}", Metadata: "{{fields.metadata}}", MessageStream: "{{fields.message_stream}}"}
+
+  - name: Send Template Email
+    resource: Email
+    description: Sends an email from a template, filling it with your data.
+    fields:
+      - {name: from, label: From, required: true}
+      - {name: to, label: To, required: true}
+      - {name: template, label: Template, type: select, required: true, options_from: {request: {method: GET, path: templates, query: {count: 500, offset: 0}}, path: Templates, label: Name, value: TemplateId}}
+      - {name: model, label: Template data, type: json, description: "The values for the template, like {\"name\": \"Ana\"}."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: reply_to, label: Reply to}
+      - {name: tag, label: Tag}
+      - {name: track_opens, label: Track opens, type: boolean}
+      - {name: metadata, label: Metadata, type: json}
+      - {name: message_stream, label: Message stream, default: outbound}
+    request:
+      method: POST
+      path: email/withTemplate
+      body: {From: "{{fields.from}}", To: "{{fields.to}}", TemplateId: "{{fields.template}}", TemplateModel: "{{fields.model}}", Cc: "{{fields.cc}}", Bcc: "{{fields.bcc}}", ReplyTo: "{{fields.reply_to}}", Tag: "{{fields.tag}}", TrackOpens: "{{fields.track_opens}}", Metadata: "{{fields.metadata}}", MessageStream: "{{fields.message_stream}}"}
+
+  - name: Send Batch
+    resource: Email
+    description: Sends up to 500 emails in one call; the answer has one result per email.
+    fields:
+      - {name: messages, label: Messages, type: json, required: true, description: "A list of emails, each like Send Email's body: [{\"From\": ..., \"To\": ..., \"Subject\": ..., \"TextBody\": ...}]."}
+    request: {method: POST, path: email/batch, body: "{{fields.messages}}"}
+
+  # Messages
+  - name: Search Sent Messages
+    resource: Message
+    description: Lists sent messages, by recipient, tag, status or date.
+    fields:
+      - {name: recipient, label: Recipient}
+      - {name: tag, label: Tag}
+      - {name: status, label: Status, type: select, options: [{label: Sent, value: sent}, {label: Queued, value: queued}]}
+      - {name: fromdate, label: From, description: As YYYY-MM-DD.}
+      - {name: todate, label: To, description: As YYYY-MM-DD.}
+      - {name: count, label: Limit, type: number, default: 100}
+      - {name: offset, label: Skip, type: number, default: 0}
+    request:
+      method: GET
+      path: messages/outbound
+      query: {recipient: "{{fields.recipient}}", tag: "{{fields.tag}}", status: "{{fields.status}}", fromdate: "{{fields.fromdate}}", todate: "{{fields.todate}}", count: "{{fields.count}}", offset: "{{fields.offset}}"}
+    output: {path: Messages}
+
+  - name: Get Sent Message
+    resource: Message
+    description: Reads a sent message, with its body and delivery events.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request: {method: GET, path: "messages/outbound/{{fields.message_id | path}}/details"}
+
+  # Templates
+  - name: List Templates
+    resource: Template
+    description: Lists the server's templates.
+    fields:
+      - {name: count, label: Limit, type: number, default: 100}
+      - {name: offset, label: Skip, type: number, default: 0}
+    request: {method: GET, path: templates, query: {count: "{{fields.count}}", offset: "{{fields.offset}}"}}
+    output: {path: Templates}
+
+  - name: Get Template
+    resource: Template
+    description: Reads a template by its ID or alias.
+    fields:
+      - {name: template, label: Template ID or alias, required: true}
+    request: {method: GET, path: "templates/{{fields.template | path}}"}
+
+  # Bounces
+  - name: List Bounces
+    resource: Bounce
+    description: Lists bounces, by type, email or date.
+    fields:
+      - {name: type, label: Type, type: select, options: [{label: Hard bounce, value: HardBounce}, {label: Soft bounce, value: SoftBounce}, {label: Spam complaint, value: SpamComplaint}, {label: Transient, value: Transient}, {label: Unsubscribe, value: Unsubscribe}, {label: Blocked, value: Blocked}]}
+      - {name: email_filter, label: Email}
+      - {name: tag, label: Tag}
+      - {name: fromdate, label: From, description: As YYYY-MM-DD.}
+      - {name: todate, label: To, description: As YYYY-MM-DD.}
+      - {name: count, label: Limit, type: number, default: 100}
+      - {name: offset, label: Skip, type: number, default: 0}
+    request:
+      method: GET
+      path: bounces
+      query: {type: "{{fields.type}}", emailFilter: "{{fields.email_filter}}", tag: "{{fields.tag}}", fromdate: "{{fields.fromdate}}", todate: "{{fields.todate}}", count: "{{fields.count}}", offset: "{{fields.offset}}"}
+    output: {path: Bounces}
+
+  - name: Get Bounce
+    resource: Bounce
+    description: Reads a bounce, with its reason.
+    fields:
+      - {name: bounce_id, label: Bounce ID, required: true}
+    request: {method: GET, path: "bounces/{{fields.bounce_id | path}}"}
+
+  - name: Activate Bounce
+    resource: Bounce
+    description: Reactivates an address that bounced, so mail goes to it again.
+    fields:
+      - {name: bounce_id, label: Bounce ID, required: true}
+    request: {method: PUT, path: "bounces/{{fields.bounce_id | path}}/activate"}
+
+  # Suppressions
+  - name: List Suppressions
+    resource: Suppression
+    description: Lists the addresses a message stream won't send to.
+    fields:
+      - {name: message_stream, label: Message stream, required: true, default: outbound}
+      - {name: email_address, label: Email}
+    request: {method: GET, path: "message-streams/{{fields.message_stream | path}}/suppressions/dump", query: {EmailAddress: "{{fields.email_address}}"}}
+    output: {path: Suppressions}
+
+  - name: Add Suppressions
+    resource: Suppression
+    description: Stops a message stream from sending to some addresses.
+    fields:
+      - {name: message_stream, label: Message stream, required: true, default: outbound}
+      - {name: emails, label: Emails, required: true, description: "One email, or several separated by commas."}
+    request:
+      method: POST
+      path: "message-streams/{{fields.message_stream | path}}/suppressions"
+      body: {Suppressions: {_each: "{{fields.emails}}", EmailAddress: "{{item}}"}}
+    output: {path: Suppressions}
+
+  - name: Remove Suppressions
+    resource: Suppression
+    description: Lets a message stream send to some addresses again.
+    fields:
+      - {name: message_stream, label: Message stream, required: true, default: outbound}
+      - {name: emails, label: Emails, required: true, description: "One email, or several separated by commas."}
+    request:
+      method: POST
+      path: "message-streams/{{fields.message_stream | path}}/suppressions/delete"
+      body: {Suppressions: {_each: "{{fields.emails}}", EmailAddress: "{{item}}"}}
+    output: {path: Suppressions}
+
+  # Stats
+  - name: Get Delivery Stats
+    resource: Stats
+    description: Counts the inactive addresses and bounces by type.
+    request: {method: GET, path: deliverystats}
+
+  - name: Get Sent Stats
+    resource: Stats
+    description: Reads sent, bounced, opened and clicked totals, by tag and date.
+    fields:
+      - {name: tag, label: Tag}
+      - {name: fromdate, label: From, description: As YYYY-MM-DD.}
+      - {name: todate, label: To, description: As YYYY-MM-DD.}
+      - {name: message_stream, label: Message stream}
+    request: {method: GET, path: stats/outbound, query: {tag: "{{fields.tag}}", fromdate: "{{fields.fromdate}}", todate: "{{fields.todate}}", messagestream: "{{fields.message_stream}}"}}
+
+  - name: Get Server
+    resource: Server
+    description: Reads the server's settings.
+    request: {method: GET, path: server}
+
+i18n:
+  pt-BR:
+    description: "Envie e-mails transacionais, simples ou de templates, acompanhe entregas, bounces, aberturas e cliques, e gerencie supressões da Postmark."
+    triggers:
+      Email Event: {name: "Evento de e-mail", description: "Inicia o fluxo quando a Postmark avisa uma entrega, bounce, abertura, clique, reclamação de spam ou mudança de inscrição, conforme os eventos escolhidos.", fields: {message_stream: "Message stream", delivery: "Entregas", bounce: "Bounces", open: "Aberturas", click: "Cliques", spam_complaint: "Reclamações de spam", subscription_change: "Mudanças de inscrição"}}
+    actions:
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail com texto, HTML ou os dois.", fields: {from: "De", to: "Para", cc: "Cc", bcc: "Cco", reply_to: "Responder para", subject: "Assunto", text_body: "Texto", html_body: "HTML", tag: "Tag", track_opens: "Rastrear aberturas", track_links: "Rastrear links", metadata: "Metadados", message_stream: "Message stream"}}
+      Send Template Email: {name: "Enviar e-mail de template", description: "Envia um e-mail a partir de um template, preenchido com seus dados.", fields: {from: "De", to: "Para", template: "Template", model: "Dados do template", cc: "Cc", bcc: "Cco", reply_to: "Responder para", tag: "Tag", track_opens: "Rastrear aberturas", metadata: "Metadados", message_stream: "Message stream"}}
+      Send Batch: {name: "Enviar em lote", description: "Envia até 500 e-mails numa chamada; a resposta traz um resultado por e-mail.", fields: {messages: "Mensagens"}}
+      Search Sent Messages: {name: "Pesquisar mensagens enviadas", description: "Lista mensagens enviadas por destinatário, tag, status ou data.", fields: {recipient: "Destinatário", tag: "Tag", status: "Status", fromdate: "De", todate: "Até", count: "Limite", offset: "Pular"}}
+      Get Sent Message: {name: "Ler mensagem enviada", description: "Lê uma mensagem enviada, com o corpo e os eventos de entrega.", fields: {message_id: "ID da mensagem"}}
+      List Templates: {name: "Listar templates", description: "Lista os templates do servidor.", fields: {count: "Limite", offset: "Pular"}}
+      Get Template: {name: "Ler template", description: "Lê um template pelo ID ou alias.", fields: {template: "ID ou alias do template"}}
+      List Bounces: {name: "Listar bounces", description: "Lista bounces por tipo, e-mail ou data.", fields: {type: "Tipo", email_filter: "E-mail", tag: "Tag", fromdate: "De", todate: "Até", count: "Limite", offset: "Pular"}}
+      Get Bounce: {name: "Ler bounce", description: "Lê um bounce, com o motivo.", fields: {bounce_id: "ID do bounce"}}
+      Activate Bounce: {name: "Reativar endereço", description: "Reativa um endereço que deu bounce, para voltar a receber e-mails.", fields: {bounce_id: "ID do bounce"}}
+      List Suppressions: {name: "Listar supressões", description: "Lista os endereços para os quais um message stream não envia.", fields: {message_stream: "Message stream", email_address: "E-mail"}}
+      Add Suppressions: {name: "Adicionar supressões", description: "Faz um message stream parar de enviar para alguns endereços.", fields: {message_stream: "Message stream", emails: "E-mails"}}
+      Remove Suppressions: {name: "Remover supressões", description: "Deixa um message stream voltar a enviar para alguns endereços.", fields: {message_stream: "Message stream", emails: "E-mails"}}
+      Get Delivery Stats: {name: "Estatísticas de entrega", description: "Conta os endereços inativos e os bounces por tipo."}
+      Get Sent Stats: {name: "Estatísticas de envio", description: "Lê totais de enviados, bounces, aberturas e cliques, por tag e data.", fields: {tag: "Tag", fromdate: "De", todate: "Até", message_stream: "Message stream"}}
+      Get Server: {name: "Ler servidor", description: "Lê as configurações do servidor."}

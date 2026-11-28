@@ -42,7 +42,7 @@ integrations:
   - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: header, n8n: Linear, kind: manifest, status: draft}
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: draft}
   - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: basic, n8n: Mailchimp, kind: manifest, status: draft}
-  - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: manifest, status: draft}
   - {id: microsoft_excel, name: Microsoft Excel 365, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Excel, kind: manifest, status: draft}
   - {id: microsoft_onedrive, name: Microsoft OneDrive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/OneDrive, kind: manifest, status: draft}
   - {id: microsoft_outlook, name: Microsoft Outlook, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Outlook, kind: manifest, status: draft}
@@ -56,13 +56,13 @@ integrations:
   - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: bearer, n8n: Odoo, host: true, kind: manifest, status: draft}
   - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
   - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: header, n8n: Pipedrive, kind: manifest, status: draft}
-  - {id: postmark, name: Postmark, category: email, phase: 1, origin: n8n, auth: header, n8n: Postmark, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: postmark, name: Postmark, category: email, phase: 1, origin: n8n, auth: header, n8n: Postmark, kind: manifest, status: draft}
   - {id: quickbooks, name: QuickBooks Online, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: QuickBooks, kind: manifest, status: draft}
   - {id: redis, name: Redis, category: database, phase: 1, origin: n8n, auth: basic, n8n: Redis, kind: package, lib: {name: redix, version: 1.10.0, released: 2026-10-22}, status: official}
   - {id: resend, name: Resend, category: email, phase: 1, origin: extra, auth: bearer, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: community}
   - {id: s3, name: Amazon S3, category: files, phase: 1, origin: n8n, auth: aws, n8n: Aws/S3, kind: package, lib: {name: ex_aws_s3, version: 2.5.9, released: 2025-12-09}, status: official}
   - {id: salesforce, name: Salesforce, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Salesforce, host: true, kind: manifest, status: draft}
-  - {id: sendgrid, name: SendGrid, category: email, phase: 1, origin: n8n, auth: bearer, n8n: SendGrid, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
+  - {id: sendgrid, name: SendGrid, category: email, phase: 1, origin: n8n, auth: bearer, n8n: SendGrid, kind: manifest, status: draft}
   - {id: shopify, name: Shopify, category: ecommerce, phase: 1, origin: n8n, auth: header, n8n: Shopify, host: true, kind: manifest, status: draft}
   - {id: slack, name: Slack, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Slack, kind: package, lib: {name: slack_elixir, version: 1.2.2, released: 2026-09-14}, status: official}
   - {id: sql, name: "SQL (Postgres, MySQL, SQL Server, SQLite, Oracle)", category: database, phase: 1, origin: n8n, auth: basic, n8n: Postgres, kind: package, lib: {name: exqlite, version: 0.43.0, released: 2026-10-20}, status: official}
