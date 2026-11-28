@@ -23,7 +23,8 @@ defmodule HeddleIntegrations.Nodes.Agents.SetState do
   def handler(context, _input) do
     with {:ok, agent} <- Agents.agent(context),
          {:ok, changes} <- changes(context),
-         {:ok, state} <- Agents.change_state(agent["state"], agent["declared"] || %{}, changes),
+         current = Agents.current_state(context, agent),
+         {:ok, state} <- Agents.change_state(current, agent["declared"] || %{}, changes),
          {:ok, _instance} <- Agents.update_instance(context, agent, %{"state" => state}) do
       context
       |> Map.put("agent", Map.put(agent, "state", state))

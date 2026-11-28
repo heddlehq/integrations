@@ -14,6 +14,7 @@ defmodule HeddleIntegrations.Agents.Bridge do
   """
 
   @timeout :timer.minutes(10)
+  @spent {__MODULE__, :spent}
 
   @doc """
   Calls `fun`, which runs Jido, and answers its calls: a model call with `connection`
@@ -51,12 +52,23 @@ defmodule HeddleIntegrations.Agents.Bridge do
     end
   end
 
-  defp answer({:generate_text, context, options}, connection, _call) do
+  defp answer({:generate_text, context, options}, connection, _call),
+    do: generate(connection, context, options)
+
+  defp answer({:tool, name, arguments}, _connection, call), do: call.(name, arguments)
+
+  @doc """
+  Calls the model with `connection`, from the node's process, and charges the call to
+  the step. What every call costs adds up in `spent/0`.
+  """
+  def generate(connection, context, options \\ []) do
     options = Keyword.merge(options, connection.options)
 
     case model().generate_text(connection.model, context, options) do
       {:ok, response} = ok ->
-        Bobbin.Host.record_usage(ReqLLM.Response.usage(response) || %{})
+        usage = ReqLLM.Response.usage(response) || %{}
+        Bobbin.Host.record_usage(usage)
+        Process.put(@spent, spent() + cost(usage))
         ok
 
       {:error, _reason} = error ->
@@ -64,7 +76,12 @@ defmodule HeddleIntegrations.Agents.Bridge do
     end
   end
 
-  defp answer({:tool, name, arguments}, _connection, call), do: call.(name, arguments)
+  @doc "What the model calls of this process cost so far, in US dollars."
+  def spent, do: Process.get(@spent, 0)
+
+  defp cost(%{total_cost: cost}) when is_number(cost), do: cost
+  defp cost(%{"total_cost" => cost}) when is_number(cost), do: cost
+  defp cost(_usage), do: 0
 
   @doc """
   Asks the node's process for `request`, from a process Jido started. Answers

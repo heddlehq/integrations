@@ -1,8 +1,8 @@
 defmodule HeddleIntegrations.Nodes.Agents.Reply do
   @moduledoc """
   Answers who sent the message. When an Agent: Ask node waits for the agent, its run
-  goes on with the reply. A message sent with Agent: Send Message waits for no reply,
-  and `result.answered` is false.
+  goes on with the reply. A message sent
+  with Agent: Send Message waits for no reply, and `result.answered` is false.
   """
 
   use Bobbin.Node
@@ -30,7 +30,9 @@ defmodule HeddleIntegrations.Nodes.Agents.Reply do
     end
   end
 
-  defp answer(context, agent, reply) do
+  defp answer(context, agent, reply), do: answer_asking(context, agent, reply)
+
+  defp answer_asking(context, agent, reply) do
     case agent["reply_to"] do
       %{"run_id" => run_id, "key" => key} ->
         value = %{"reply" => reply, "agent" => agent["name"], "key" => agent["key"]}
