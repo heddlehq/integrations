@@ -1,0 +1,256 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# NocoDB's API v3, in app.nocodb.com or a server of your own. Make an API token in
+# NocoDB, under Account settings > Tokens.
+id: nocodb
+name: NocoDB
+version: 1.0.0
+description: Records of NocoDB tables, their links, and the bases they live in.
+icon: hero-table-cells
+category: database
+author: Heddle
+homepage: https://nocodb.com/apis/v3/data
+base_url: "{{credential.url}}/api/"
+
+credential:
+  label: NocoDB
+  fields:
+    - {name: url, label: Address, required: true, default: "https://app.nocodb.com", description: "https://app.nocodb.com, or your server's address"}
+    - {name: token, label: API token, secret: true, required: true}
+  auth:
+    type: header
+    name: xc-token
+    value: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Record
+    description: Starts the flow for each new record of a table, checking every 5 minutes.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: "v3/meta/bases/{{fields.base_id}}/tables"}, path: list, label: title, value: id}}
+      - {name: where, label: Filter, description: "NocoDB's where, like (Status,eq,Open)"}
+    request:
+      method: GET
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      query: {where: "{{fields.where}}", sort: "-id", limit: 100}
+    output:
+      path: records
+    poll:
+      every: 5
+      id: id
+
+actions:
+  - name: Create Record
+    resource: Record
+    description: Adds a record to a table.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: values, label: Values, type: json, required: true, description: "By field name, like {\"Name\": \"Ana\", \"Age\": 30}"}
+    request:
+      method: POST
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      body: [{fields: "{{fields.values}}"}]
+    output:
+      path: records
+
+  - name: Create Records
+    resource: Record
+    description: Adds several records at once.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: records, label: Records, type: json, required: true, description: "A list like [{\"fields\": {\"Name\": \"Ana\"}}, {\"fields\": {\"Name\": \"Bia\"}}]"}
+    request:
+      method: POST
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      body: "{{fields.records}}"
+    output:
+      path: records
+
+  - name: Get Record
+    resource: Record
+    description: Reads a record.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: fields, label: Only these fields, description: Field names separated by commas.}
+    request:
+      method: GET
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records/{{fields.record_id}}"
+      query: {fields: "{{fields.fields}}"}
+
+  - name: Search Records
+    resource: Record
+    description: Lists the records of a table, all of them or those a filter finds.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: where, label: Filter, description: "NocoDB's where, like (Status,eq,Open)~and(Age,gt,18)"}
+      - {name: sort, label: Sort, type: json, description: "A list like [{\"field\": \"Name\", \"direction\": \"asc\"}]"}
+      - {name: view_id, label: View ID}
+      - {name: fields, label: Only these fields, description: Field names separated by commas.}
+    request:
+      method: GET
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      query: {where: "{{fields.where}}", sort: "{{fields.sort}}", viewId: "{{fields.view_id}}", fields: "{{fields.fields}}"}
+    pagination: {type: offset, items_path: records, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Count Records
+    resource: Record
+    description: Counts the records of a table, all of them or those a filter finds.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: where, label: Filter, description: "NocoDB's where, like (Status,eq,Open)"}
+      - {name: view_id, label: View ID}
+    request:
+      method: GET
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/count"
+      query: {where: "{{fields.where}}", viewId: "{{fields.view_id}}"}
+
+  - name: Update Record
+    resource: Record
+    description: Changes the fields given of a record. The others stay as they are.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: values, label: Values, type: json, required: true, description: "By field name, like {\"Status\": \"Done\"}"}
+    request:
+      method: PATCH
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      body: [{id: "{{fields.record_id}}", fields: "{{fields.values}}"}]
+    output:
+      path: records
+
+  - name: Upsert Record
+    resource: Record
+    description: Changes a record when given its ID, or adds one when not.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID}
+      - {name: values, label: Values, type: json, required: true}
+    request:
+      method: PATCH
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      body: [{id: "{{fields.record_id}}", fields: "{{fields.values}}"}]
+    output:
+      path: records
+
+  - name: Delete Record
+    resource: Record
+    description: Deletes a record.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+    request:
+      method: DELETE
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/records"
+      body: [{id: "{{fields.record_id}}"}]
+    output:
+      path: records
+
+  - name: Upload Attachment
+    resource: Record
+    description: Uploads a file to NocoDB, to put in an attachment field with Update Record.
+    fields:
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: path, label: Folder, description: Where NocoDB keeps it.}
+    request:
+      method: POST
+      path: v2/storage/upload
+      query: {path: "{{fields.path}}"}
+      body_type: multipart
+      body: {files: "{{fields.file}}"}
+
+  - name: Get Linked Records
+    resource: Link
+    description: Lists the records linked to a record through a link field.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: link_field_id, label: Link field ID, required: true}
+    request: {method: GET, path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/links/{{fields.link_field_id}}/{{fields.record_id}}"}
+    pagination: {type: offset, items_path: records, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Link Records
+    resource: Link
+    description: Links records to a record through a link field.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: link_field_id, label: Link field ID, required: true}
+      - {name: ids, label: Records to link, type: json, required: true, description: "A list like [{\"id\": 1}, {\"id\": 2}]"}
+    request:
+      method: POST
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/links/{{fields.link_field_id}}/{{fields.record_id}}"
+      body: "{{fields.ids}}"
+
+  - name: Unlink Records
+    resource: Link
+    description: Takes links off a record.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+      - {name: record_id, label: Record ID, required: true}
+      - {name: link_field_id, label: Link field ID, required: true}
+      - {name: ids, label: Records to link, type: json, required: true, description: 'A list like [{"id": 1}, {"id": 2}]'}
+    request:
+      method: DELETE
+      path: "v3/data/{{fields.base_id}}/{{fields.table_id}}/links/{{fields.link_field_id}}/{{fields.record_id}}"
+      body: "{{fields.ids}}"
+
+  - name: Get Bases
+    resource: Base
+    description: Lists the bases the token can reach.
+    request: {method: GET, path: v2/meta/bases/}
+    output:
+      path: list
+
+  - name: Get Base
+    resource: Base
+    description: Reads a base, with its tables.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+    request: {method: GET, path: "v3/meta/bases/{{fields.base_id}}/tables"}
+    output:
+      path: list
+
+  - name: Get Table
+    resource: Base
+    description: Reads a table, with its fields and views.
+    fields:
+      - {name: base_id, label: Base, type: select, required: true, options_from: {request: {method: GET, path: v2/meta/bases/}, path: list, label: title, value: id}}
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: 'v3/meta/bases/{{fields.base_id}}/tables'}, path: list, label: title, value: id}}
+    request: {method: GET, path: "v3/meta/bases/{{fields.base_id}}/tables/{{fields.table_id}}"}
+
+i18n:
+  pt-BR:
+    description: Registros de tabelas do NocoDB, seus vínculos e as bases onde ficam.
+    triggers:
+      New Record: {name: Novo registro, description: "Inicia o fluxo para cada registro novo de uma tabela, olhando a cada 5 minutos.", fields: {base_id: Base, table_id: Tabela, where: Filtro}}
+    actions:
+      Create Record: {name: Criar registro, description: Adiciona um registro a uma tabela., fields: {base_id: Base, table_id: Tabela, values: Valores}}
+      Create Records: {name: Criar registros, description: Adiciona vários registros de uma vez., fields: {base_id: Base, table_id: Tabela, records: Registros}}
+      Get Record: {name: Ler registro, description: Lê um registro., fields: {base_id: Base, table_id: Tabela, record_id: ID do registro, fields: Só estes campos}}
+      Search Records: {name: Buscar registros, description: "Lista os registros de uma tabela, todos ou os que um filtro encontra.", fields: {base_id: Base, table_id: Tabela, where: Filtro, sort: Ordem, view_id: ID da visão, fields: Só estes campos}}
+      Count Records: {name: Contar registros, description: "Conta os registros de uma tabela, todos ou os que um filtro encontra.", fields: {base_id: Base, table_id: Tabela, where: Filtro, view_id: ID da visão}}
+      Update Record: {name: Atualizar registro, description: Muda os campos dados de um registro. Os outros ficam como estão., fields: {base_id: Base, table_id: Tabela, record_id: ID do registro, values: Valores}}
+      Upsert Record: {name: Criar ou atualizar registro, description: "Muda um registro quando recebe o ID, ou cria um quando não.", fields: {base_id: Base, table_id: Tabela, record_id: ID do registro, values: Valores}}
+      Delete Record: {name: Apagar registro, description: Apaga um registro., fields: {base_id: Base, table_id: Tabela, record_id: ID do registro}}
+      Upload Attachment: {name: Enviar anexo, description: "Envia um arquivo ao NocoDB, para pôr num campo de anexo com Atualizar registro.", fields: {file: Arquivo, path: Pasta}}
+      Get Linked Records: {name: Listar registros vinculados, description: Lista os registros ligados a um registro por um campo de vínculo., fields: {base_id: Base, table_id: Tabela, record_id: ID do registro, link_field_id: ID do campo de vínculo}}
+      Link Records: {name: Vincular registros, description: Liga registros a um registro por um campo de vínculo., fields: {base_id: Base, table_id: Tabela, record_id: ID do registro, link_field_id: ID do campo de vínculo, ids: Registros a vincular}}
+      Unlink Records: {name: Desvincular registros, description: Tira vínculos de um registro., fields: {base_id: Base, table_id: Tabela, record_id: ID do registro, link_field_id: ID do campo de vínculo, ids: Registros a desvincular}}
+      Get Bases: {name: Listar bases, description: Lista as bases que o token alcança.}
+      Get Base: {name: Ler base, description: "Lê uma base, com suas tabelas.", fields: {base_id: Base}}
+      Get Table: {name: Ler tabela, description: "Lê uma tabela, com seus campos e visões.", fields: {base_id: Base, table_id: Tabela}}

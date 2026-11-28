@@ -1,0 +1,194 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Baserow's REST API, in baserow.io or a server of your own. Make a database token in
+# Baserow, under Settings > Database tokens.
+id: baserow
+name: Baserow
+version: 1.0.0
+description: Rows of Baserow tables, one at a time or in batches.
+icon: hero-table-cells
+category: database
+author: Heddle
+homepage: https://baserow.io/api-docs
+base_url: "{{credential.url}}/api/"
+
+credential:
+  label: Baserow
+  fields:
+    - {name: url, label: Address, required: true, default: "https://api.baserow.io", description: "https://api.baserow.io, or your server's address"}
+    - {name: token, label: Database token, secret: true, required: true}
+  auth:
+    type: header
+    name: Authorization
+    value: "Token {{credential.token}}"
+
+errors:
+  message_path: detail
+
+triggers:
+  - name: New Row
+    description: Starts the flow for each new row of a table, checking every 5 minutes.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: view_id, label: View ID, description: Only the rows this view shows.}
+    request:
+      method: GET
+      path: "database/rows/table/{{fields.table_id}}/"
+      query: {user_field_names: true, order_by: "-id", size: 100, view_id: "{{fields.view_id}}"}
+    output:
+      path: results
+    poll:
+      every: 5
+      id: id
+
+actions:
+  - name: Create Row
+    resource: Row
+    description: Adds a row to a table.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: values, label: Values, type: json, required: true, description: "By field name, like {\"Name\": \"Ana\", \"Age\": 30}"}
+      - {name: before, label: Before row ID, description: The new row goes above this one.}
+    request:
+      method: POST
+      path: "database/rows/table/{{fields.table_id}}/"
+      query: {user_field_names: true, before: "{{fields.before}}"}
+      body: "{{fields.values}}"
+
+  - name: Get Row
+    resource: Row
+    description: Reads a row.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: row_id, label: Row ID, required: true}
+    request:
+      method: GET
+      path: "database/rows/table/{{fields.table_id}}/{{fields.row_id}}/"
+      query: {user_field_names: true}
+
+  - name: Get Rows
+    resource: Row
+    description: Lists the rows of a table, all of them or those a search or filter finds.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: search, label: Search, description: Rows with this text in any field.}
+      - {name: filters, label: Filters, type: json, description: "Baserow's filter tree, like {\"filter_type\": \"AND\", \"filters\": [{\"type\": \"equal\", \"field\": \"Status\", \"value\": \"Open\"}]}"}
+      - {name: order_by, label: Order by, description: "Field names separated by commas, - first for descending, like -Created,Name"}
+      - {name: view_id, label: View ID}
+      - {name: include, label: Only these fields, description: Field names separated by commas.}
+    request:
+      method: GET
+      path: "database/rows/table/{{fields.table_id}}/"
+      query:
+        user_field_names: true
+        search: "{{fields.search}}"
+        filters: "{{fields.filters}}"
+        order_by: "{{fields.order_by}}"
+        view_id: "{{fields.view_id}}"
+        include: "{{fields.include}}"
+    pagination: {type: page, items_path: results, page_param: page, limit_param: size, page_size: 200}
+
+  - name: Update Row
+    resource: Row
+    description: Changes the fields given of a row. The others stay as they are.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: row_id, label: Row ID, required: true}
+      - {name: values, label: Values, type: json, required: true, description: "By field name, like {\"Status\": \"Done\"}"}
+    request:
+      method: PATCH
+      path: "database/rows/table/{{fields.table_id}}/{{fields.row_id}}/"
+      query: {user_field_names: true}
+      body: "{{fields.values}}"
+
+  - name: Move Row
+    resource: Row
+    description: Moves a row above another, or to the end when that's left empty.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: row_id, label: Row ID, required: true}
+      - {name: before, label: Before row ID, description: The new row goes above this one.}
+    request:
+      method: PATCH
+      path: "database/rows/table/{{fields.table_id}}/{{fields.row_id}}/move/"
+      query: {user_field_names: true, before_id: "{{fields.before}}"}
+
+  - name: Delete Row
+    resource: Row
+    description: Deletes a row.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: row_id, label: Row ID, required: true}
+    request: {method: DELETE, path: "database/rows/table/{{fields.table_id}}/{{fields.row_id}}/"}
+    output: {value: {id: "{{fields.row_id}}", deleted: true}}
+
+  - name: Create Rows
+    resource: Row
+    description: Adds up to 200 rows at once.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: items, label: Rows, type: json, required: true, description: "A list like [{\"Name\": \"Ana\"}, {\"Name\": \"Bia\"}]"}
+      - {name: before, label: Before row ID, description: The new row goes above this one.}
+    request:
+      method: POST
+      path: "database/rows/table/{{fields.table_id}}/batch/"
+      query: {user_field_names: true, before: "{{fields.before}}"}
+      body: {items: "{{fields.items}}"}
+    output:
+      path: items
+
+  - name: Update Rows
+    resource: Row
+    description: Changes up to 200 rows at once, each with its id.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: items, label: Rows, type: json, required: true, description: "A list like [{\"id\": 1, \"Status\": \"Done\"}]"}
+    request:
+      method: PATCH
+      path: "database/rows/table/{{fields.table_id}}/batch/"
+      query: {user_field_names: true}
+      body: {items: "{{fields.items}}"}
+    output:
+      path: items
+
+  - name: Delete Rows
+    resource: Row
+    description: Deletes up to 200 rows at once.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+      - {name: items, label: Row IDs, type: json, required: true, description: "A list like [1, 2, 3]"}
+    request:
+      method: POST
+      path: "database/rows/table/{{fields.table_id}}/batch-delete/"
+      body: {items: "{{fields.items}}"}
+    output: {value: {ids: "{{fields.items}}", deleted: true}}
+
+  - name: Get Tables
+    resource: Table
+    description: Lists the tables the token can reach.
+    request: {method: GET, path: database/tables/all-tables/}
+
+  - name: Get Fields
+    resource: Table
+    description: Lists the fields of a table.
+    fields:
+      - {name: table_id, label: Table, type: select, required: true, options_from: {request: {method: GET, path: database/tables/all-tables/}, label: name, value: id}}
+    request: {method: GET, path: "database/fields/table/{{fields.table_id}}/"}
+
+i18n:
+  pt-BR:
+    description: Linhas de tabelas do Baserow, uma a uma ou em lotes.
+    triggers:
+      New Row: {name: Nova linha, description: "Inicia o fluxo para cada linha nova de uma tabela, olhando a cada 5 minutos.", fields: {table_id: Tabela, view_id: ID da visão}}
+    actions:
+      Create Row: {name: Criar linha, description: Adiciona uma linha a uma tabela., fields: {table_id: Tabela, values: Valores, before: Antes da linha (ID)}}
+      Get Row: {name: Ler linha, description: Lê uma linha., fields: {table_id: Tabela, row_id: ID da linha}}
+      Get Rows: {name: Listar linhas, description: "Lista as linhas de uma tabela, todas ou as que uma busca ou filtro encontra.", fields: {table_id: Tabela, search: Busca, filters: Filtros, order_by: Ordenar por, view_id: ID da visão, include: Só estes campos}}
+      Update Row: {name: Atualizar linha, description: Muda os campos dados de uma linha. Os outros ficam como estão., fields: {table_id: Tabela, row_id: ID da linha, values: Valores}}
+      Move Row: {name: Mover linha, description: "Move uma linha para cima de outra, ou para o fim quando vazio.", fields: {table_id: Tabela, row_id: ID da linha, before: Antes da linha (ID)}}
+      Delete Row: {name: Apagar linha, description: Apaga uma linha., fields: {table_id: Tabela, row_id: ID da linha}}
+      Create Rows: {name: Criar linhas, description: Adiciona até 200 linhas de uma vez., fields: {table_id: Tabela, items: Linhas, before: Antes da linha (ID)}}
+      Update Rows: {name: Atualizar linhas, description: "Muda até 200 linhas de uma vez, cada uma com seu id.", fields: {table_id: Tabela, items: Linhas}}
+      Delete Rows: {name: Apagar linhas, description: Apaga até 200 linhas de uma vez., fields: {table_id: Tabela, items: IDs das linhas}}
+      Get Tables: {name: Listar tabelas, description: Lista as tabelas que o token alcança.}
+      Get Fields: {name: Listar campos, description: Lista os campos de uma tabela., fields: {table_id: Tabela}}

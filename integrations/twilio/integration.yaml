@@ -1,0 +1,234 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Twilio's REST API. The Account SID and Auth Token are on the Twilio Console's home
+# page. An API key works too: its SID as the user and its secret as the token.
+id: twilio
+name: Twilio
+version: 1.0.0
+description: SMS, MMS and WhatsApp messages and phone calls with Twilio.
+icon: hero-chat-bubble-left-right
+category: messaging
+author: Heddle
+homepage: https://www.twilio.com/docs/usage/api
+base_url: "https://api.twilio.com/2010-04-01/Accounts/{{credential.account_sid}}/"
+
+credential:
+  label: Twilio
+  fields:
+    - {name: account_sid, label: Account SID, required: true}
+    - {name: username, label: Account SID or API key SID, required: true, description: "The Account SID again, unless you use an API key."}
+    - {name: token, label: Auth Token or API key secret, secret: true, required: true}
+  auth:
+    type: basic
+    username: "{{credential.username}}"
+    password: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Message
+    description: "Starts the flow for each message to your number. Paste the address in the number's settings, under A message comes in."
+    webhook: {}
+
+actions:
+  # Messages
+  - name: Send SMS
+    resource: Message
+    description: Sends an SMS, or an MMS when it has media.
+    fields:
+      - {name: to, label: To, required: true, description: "In E.164, like +5511999999999"}
+      - {name: from, label: From, description: "Your Twilio number, like +15005550006. Or give a messaging service."}
+      - {name: messaging_service_sid, label: Messaging service SID}
+      - {name: body, label: Message, type: textarea, required: true}
+      - {name: media_url, label: Media URL, description: An image or file Twilio downloads and sends.}
+      - {name: status_callback, label: Status callback URL}
+    request:
+      method: POST
+      path: Messages.json
+      body_type: form
+      body:
+        To: "{{fields.to}}"
+        From: "{{fields.from}}"
+        MessagingServiceSid: "{{fields.messaging_service_sid}}"
+        Body: "{{fields.body}}"
+        MediaUrl: "{{fields.media_url}}"
+        StatusCallback: "{{fields.status_callback}}"
+
+  - name: Send WhatsApp Message
+    resource: Message
+    description: "Sends a WhatsApp message. Outside a 24-hour conversation, only an approved template goes."
+    fields:
+      - {name: to, label: To, required: true, description: "In E.164, like +5511999999999"}
+      - {name: from, label: From, required: true, description: Your WhatsApp sender number.}
+      - {name: body, label: Message, type: textarea}
+      - {name: content_sid, label: Template SID, description: "An approved template, like HX..."}
+      - {name: content_variables, label: Template variables, type: textarea, description: "JSON, like {\"1\": \"Ana\"}"}
+      - {name: media_url, label: Media URL, description: An image or file Twilio downloads and sends.}
+      - {name: status_callback, label: Status callback URL}
+    request:
+      method: POST
+      path: Messages.json
+      body_type: form
+      body:
+        To: "whatsapp:{{fields.to}}"
+        From: "whatsapp:{{fields.from}}"
+        Body: "{{fields.body}}"
+        ContentSid: "{{fields.content_sid}}"
+        ContentVariables: "{{fields.content_variables}}"
+        MediaUrl: "{{fields.media_url}}"
+        StatusCallback: "{{fields.status_callback}}"
+
+  - name: Schedule SMS
+    resource: Message
+    description: Sends an SMS at a set time, from 15 minutes to 35 days ahead.
+    fields:
+      - {name: to, label: To, required: true, description: 'In E.164, like +5511999999999'}
+      - {name: messaging_service_sid, label: Messaging service SID, required: true}
+      - {name: body, label: Message, type: textarea, required: true}
+      - {name: send_at, label: Send at, type: datetime, required: true}
+      - {name: media_url, label: Media URL, description: An image or file Twilio downloads and sends.}
+    request:
+      method: POST
+      path: Messages.json
+      body_type: form
+      body:
+        To: "{{fields.to}}"
+        MessagingServiceSid: "{{fields.messaging_service_sid}}"
+        Body: "{{fields.body}}"
+        MediaUrl: "{{fields.media_url}}"
+        ScheduleType: fixed
+        SendAt: "{{fields.send_at}}"
+
+  - name: Cancel Scheduled SMS
+    resource: Message
+    description: Cancels an SMS scheduled before it goes.
+    fields:
+      - {name: sid, label: Message SID, required: true}
+    request:
+      method: POST
+      path: "Messages/{{fields.sid}}.json"
+      body_type: form
+      body: {Status: canceled}
+
+  - name: Get Message
+    resource: Message
+    description: Reads a message, with its status.
+    fields:
+      - {name: sid, label: Message SID, required: true}
+    request: {method: GET, path: "Messages/{{fields.sid}}.json"}
+
+  - name: Get Messages
+    resource: Message
+    description: Lists messages, the latest first, all of them or those that match.
+    fields:
+      - {name: to, label: To}
+      - {name: from, label: From}
+      - {name: date_sent, label: Sent on, description: "A date, like 2026-01-31"}
+      - {name: sent_after, label: Sent after, description: "A date, like 2026-01-31"}
+      - {name: sent_before, label: Sent before, description: "A date, like 2026-01-31"}
+    request:
+      method: GET
+      path: Messages.json
+      query:
+        To: "{{fields.to}}"
+        From: "{{fields.from}}"
+        DateSent: "{{fields.date_sent}}"
+        DateSent>: "{{fields.sent_after}}"
+        DateSent<: "{{fields.sent_before}}"
+    pagination: {type: link, items_path: messages, next_path: next_page_uri, limit_param: PageSize, page_size: 100}
+
+  - name: Delete Message
+    resource: Message
+    description: Deletes a message from your account's logs.
+    fields:
+      - {name: sid, label: Message SID, required: true}
+    request: {method: DELETE, path: "Messages/{{fields.sid}}.json"}
+    output: {value: {sid: "{{fields.sid}}", deleted: true}}
+
+  # Calls
+  - name: Make Call
+    resource: Call
+    description: Calls a number and runs TwiML, given here or at a URL.
+    fields:
+      - {name: to, label: To, required: true, description: 'In E.164, like +5511999999999'}
+      - {name: from, label: From, required: true, description: Your Twilio number.}
+      - {name: twiml, label: TwiML, type: textarea, description: "Like <Response><Say>Hi</Say></Response>"}
+      - {name: url, label: TwiML URL}
+      - {name: status_callback, label: Status callback URL}
+      - {name: record, label: Record, type: boolean}
+      - {name: timeout, label: Ring for (seconds), type: number}
+      - {name: machine_detection, label: Detect answering machines, type: select, options: [{label: Enable, value: Enable}, {label: Wait for the beep, value: DetectMessageEnd}]}
+    request:
+      method: POST
+      path: Calls.json
+      body_type: form
+      body:
+        To: "{{fields.to}}"
+        From: "{{fields.from}}"
+        Twiml: "{{fields.twiml}}"
+        Url: "{{fields.url}}"
+        StatusCallback: "{{fields.status_callback}}"
+        Record: "{{fields.record}}"
+        Timeout: "{{fields.timeout}}"
+        MachineDetection: "{{fields.machine_detection}}"
+
+  - name: Get Call
+    resource: Call
+    description: Reads a call, with its status and duration.
+    fields:
+      - {name: sid, label: Call SID, required: true}
+    request: {method: GET, path: "Calls/{{fields.sid}}.json"}
+
+  - name: Get Calls
+    resource: Call
+    description: Lists calls, the latest first, all of them or those that match.
+    fields:
+      - {name: to, label: To}
+      - {name: from, label: From}
+      - {name: status, label: Status, type: select, options: [{label: Queued, value: queued}, {label: Ringing, value: ringing}, {label: In progress, value: in-progress}, {label: Completed, value: completed}, {label: Busy, value: busy}, {label: Failed, value: failed}, {label: No answer, value: no-answer}, {label: Canceled, value: canceled}]}
+      - {name: started_after, label: Started after, description: "A date, like 2026-01-31"}
+    request:
+      method: GET
+      path: Calls.json
+      query: {To: "{{fields.to}}", From: "{{fields.from}}", Status: "{{fields.status}}", StartTime>: "{{fields.started_after}}"}
+    pagination: {type: link, items_path: calls, next_path: next_page_uri, limit_param: PageSize, page_size: 100}
+
+  - name: End Call
+    resource: Call
+    description: Hangs up a call in progress, or cancels one still ringing.
+    fields:
+      - {name: sid, label: Call SID, required: true}
+    request:
+      method: POST
+      path: "Calls/{{fields.sid}}.json"
+      body_type: form
+      body: {Status: completed}
+
+  - name: Get Recordings
+    resource: Call
+    description: Lists the recordings of a call.
+    fields:
+      - {name: sid, label: Call SID, required: true}
+    request: {method: GET, path: "Calls/{{fields.sid}}/Recordings.json"}
+    output:
+      path: recordings
+
+i18n:
+  pt-BR:
+    description: Mensagens de SMS, MMS e WhatsApp e ligações com o Twilio.
+    triggers:
+      New Message: {name: Nova mensagem, description: "Inicia o fluxo para cada mensagem ao seu número. Cole o endereço nas configurações do número, em A message comes in."}
+    actions:
+      Send SMS: {name: Enviar SMS, description: "Envia um SMS, ou um MMS quando tem mídia.", fields: {to: Para, from: De, messaging_service_sid: SID do serviço de mensagens, body: Mensagem, media_url: URL da mídia, status_callback: URL de retorno de status}}
+      Send WhatsApp Message: {name: Enviar mensagem no WhatsApp, description: "Envia uma mensagem no WhatsApp. Fora de uma conversa de 24 horas, só vai um modelo aprovado.", fields: {to: Para, from: De, body: Mensagem, content_sid: SID do modelo, content_variables: Variáveis do modelo, media_url: URL da mídia, status_callback: URL de retorno de status}}
+      Schedule SMS: {name: Agendar SMS, description: "Envia um SMS numa hora marcada, de 15 minutos a 35 dias à frente.", fields: {to: Para, messaging_service_sid: SID do serviço de mensagens, body: Mensagem, send_at: Enviar em, media_url: URL da mídia}}
+      Cancel Scheduled SMS: {name: Cancelar SMS agendado, description: Cancela um SMS agendado antes que vá., fields: {sid: SID da mensagem}}
+      Get Message: {name: Ler mensagem, description: "Lê uma mensagem, com seu status.", fields: {sid: SID da mensagem}}
+      Get Messages: {name: Listar mensagens, description: "Lista mensagens, as mais novas primeiro, todas ou as que batem.", fields: {to: Para, from: De, date_sent: Enviadas em, sent_after: Enviadas depois de, sent_before: Enviadas antes de}}
+      Delete Message: {name: Apagar mensagem, description: Apaga uma mensagem do registro da conta., fields: {sid: SID da mensagem}}
+      Make Call: {name: Fazer ligação, description: "Liga para um número e roda um TwiML, dado aqui ou numa URL.", fields: {to: Para, from: De, twiml: TwiML, url: URL do TwiML, status_callback: URL de retorno de status, record: Gravar, timeout: Tocar por (segundos), machine_detection: Detectar secretária eletrônica}}
+      Get Call: {name: Ler ligação, description: "Lê uma ligação, com status e duração.", fields: {sid: SID da ligação}}
+      Get Calls: {name: Listar ligações, description: "Lista ligações, as mais novas primeiro, todas ou as que batem.", fields: {to: Para, from: De, status: Status, started_after: Começaram depois de}}
+      End Call: {name: Encerrar ligação, description: "Desliga uma ligação em andamento, ou cancela uma que ainda toca.", fields: {sid: SID da ligação}}
+      Get Recordings: {name: Listar gravações, description: Lista as gravações de uma ligação., fields: {sid: SID da ligação}}

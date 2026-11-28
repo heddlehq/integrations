@@ -1,0 +1,479 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Freshdesk's API v2. The API key is in Freshdesk, under Profile settings > View API key.
+id: freshdesk
+name: Freshdesk
+version: 1.0.0
+description: Tickets, their replies and notes, contacts and companies in Freshdesk.
+icon: hero-lifebuoy
+category: support
+author: Heddle
+homepage: https://developers.freshdesk.com/api/
+base_url: "https://{{credential.domain}}.freshdesk.com/api/v2/"
+
+credential:
+  label: Freshdesk
+  fields:
+    - {name: domain, label: Domain, required: true, description: "acme, for acme.freshdesk.com"}
+    - {name: api_key, label: API key, secret: true, required: true}
+  auth:
+    type: basic
+    username: "{{credential.api_key}}"
+    password: X
+
+errors:
+  message_path: description
+
+triggers:
+  - name: New Ticket
+    description: Starts the flow for each new ticket, checking every 5 minutes.
+    fields:
+      - {name: filter, label: Which, type: select, options: [{label: New and my open, value: new_and_my_open}, {label: Watching, value: watching}, {label: Spam, value: spam}, {label: Deleted, value: deleted}]}
+    request:
+      method: GET
+      path: tickets
+      query: {filter: "{{fields.filter}}", order_by: created_at, order_type: desc, per_page: 100}
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Tickets
+  - name: Create Ticket
+    resource: Ticket
+    description: Opens a ticket. Give the requester's email, phone or ID.
+    fields:
+      - {name: subject, label: Subject, required: true}
+      - {name: description, label: Description, type: textarea, required: true, description: HTML is fine.}
+      - {name: email, label: Requester email}
+      - {name: phone, label: Requester phone}
+      - {name: requester_id, label: Requester ID, type: number}
+      - {name: name, label: Requester name, description: For a new requester given by phone.}
+      - {name: status, label: Status, type: select, default: 2, options: [{label: Open, value: 2}, {label: Pending, value: 3}, {label: Resolved, value: 4}, {label: Closed, value: 5}]}
+      - {name: priority, label: Priority, type: select, default: 1, options: [{label: Low, value: 1}, {label: Medium, value: 2}, {label: High, value: 3}, {label: Urgent, value: 4}]}
+      - {name: source, label: Source, type: select, default: 2, options: [{label: Email, value: 1}, {label: Portal, value: 2}, {label: Phone, value: 3}, {label: Chat, value: 7}, {label: Feedback widget, value: 9}, {label: Outbound email, value: 10}]}
+      - {name: type, label: Type, description: "Like Question, Incident, Problem or Feature Request"}
+      - {name: tags, label: Tags, type: json, description: "A list like [\"vip\", \"billing\"]"}
+      - {name: cc_emails, label: CC emails, type: json, description: "A list like [\"ana@acme.test\"]"}
+      - {name: group_id, label: Group, type: select, options_from: {request: {method: GET, path: groups}, label: name, value: id}}
+      - {name: responder_id, label: Agent, type: select, options_from: {request: {method: GET, path: agents}, label: contact.name, value: id}}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: product_id, label: Product ID, type: number}
+      - {name: due_by, label: Due by, type: datetime}
+      - {name: fr_due_by, label: First response due by, type: datetime}
+      - {name: email_config_id, label: Email config ID, type: number}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By field name, like {\"cf_order\": \"1234\"}"}
+    request:
+      method: POST
+      path: tickets
+      body:
+        subject: "{{fields.subject}}"
+        description: "{{fields.description}}"
+        email: "{{fields.email}}"
+        phone: "{{fields.phone}}"
+        requester_id: "{{fields.requester_id}}"
+        name: "{{fields.name}}"
+        status: "{{fields.status}}"
+        priority: "{{fields.priority}}"
+        source: "{{fields.source}}"
+        type: "{{fields.type}}"
+        tags: "{{fields.tags}}"
+        cc_emails: "{{fields.cc_emails}}"
+        group_id: "{{fields.group_id}}"
+        responder_id: "{{fields.responder_id}}"
+        company_id: "{{fields.company_id}}"
+        product_id: "{{fields.product_id}}"
+        due_by: "{{fields.due_by}}"
+        fr_due_by: "{{fields.fr_due_by}}"
+        email_config_id: "{{fields.email_config_id}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Get Ticket
+    resource: Ticket
+    description: Reads a ticket.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+      - {name: include, label: Include, type: multiselect, options: [{label: Conversations, value: conversations}, {label: Requester, value: requester}, {label: Company, value: company}, {label: Stats, value: stats}]}
+    request:
+      method: GET
+      path: "tickets/{{fields.ticket_id}}"
+      query: {include: "{{fields.include}}"}
+
+  - name: Get Tickets
+    resource: Ticket
+    description: Lists tickets, all of them or those that match.
+    fields:
+      - {name: filter, label: Which, type: select, options: [{label: New and my open, value: new_and_my_open}, {label: Watching, value: watching}, {label: Spam, value: spam}, {label: Deleted, value: deleted}]}
+      - {name: requester_id, label: Requester ID}
+      - {name: email, label: Requester email}
+      - {name: company_id, label: Company ID}
+      - {name: updated_since, label: Updated since, type: datetime}
+      - {name: order_by, label: Order by, type: select, options: [{label: Created, value: created_at}, {label: Due, value: due_by}, {label: Updated, value: updated_at}, {label: Status, value: status}]}
+      - {name: order_type, label: Direction, type: select, options: [{label: Descending, value: desc}, {label: Ascending, value: asc}]}
+      - {name: include, label: Include, type: multiselect, options: [{label: Requester, value: requester}, {label: Company, value: company}, {label: Stats, value: stats}, {label: Description, value: description}]}
+    request:
+      method: GET
+      path: tickets
+      query:
+        filter: "{{fields.filter}}"
+        requester_id: "{{fields.requester_id}}"
+        email: "{{fields.email}}"
+        company_id: "{{fields.company_id}}"
+        updated_since: "{{fields.updated_since}}"
+        order_by: "{{fields.order_by}}"
+        order_type: "{{fields.order_type}}"
+        include: "{{fields.include}}"
+    pagination: {type: page, limit_param: per_page, page_size: 100}
+
+  - name: Search Tickets
+    resource: Ticket
+    description: "Finds tickets with Freshdesk's query language, up to 300."
+    fields:
+      - {name: query, label: Query, required: true, description: "Like status:2 AND priority:4, or tag:'vip'"}
+    request:
+      method: GET
+      path: search/tickets
+      query: {query: "\"{{fields.query}}\""}
+    pagination: {type: page, items_path: results, page_size: 30}
+
+  - name: Update Ticket
+    resource: Ticket
+    description: Changes a ticket. Empty fields stay as they are.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+      - {name: subject, label: Subject}
+      - {name: description, label: Description, type: textarea}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: 2}, {label: Pending, value: 3}, {label: Resolved, value: 4}, {label: Closed, value: 5}]}
+      - {name: priority, label: Priority, type: select, options: [{label: Low, value: 1}, {label: Medium, value: 2}, {label: High, value: 3}, {label: Urgent, value: 4}]}
+      - {name: source, label: Source, type: select, options: [{label: Email, value: 1}, {label: Portal, value: 2}, {label: Phone, value: 3}, {label: Chat, value: 7}, {label: Feedback widget, value: 9}, {label: Outbound email, value: 10}]}
+      - {name: type, label: Type, description: 'Like Question, Incident, Problem or Feature Request'}
+      - {name: tags, label: Tags, type: json, description: 'A list like ["vip", "billing"]'}
+      - {name: group_id, label: Group, type: select, options_from: {request: {method: GET, path: groups}, label: name, value: id}}
+      - {name: responder_id, label: Agent, type: select, options_from: {request: {method: GET, path: agents}, label: contact.name, value: id}}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: product_id, label: Product ID, type: number}
+      - {name: due_by, label: Due by, type: datetime}
+      - {name: fr_due_by, label: First response due by, type: datetime}
+      - {name: email_config_id, label: Email config ID, type: number}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'By field name, like {"cf_order": "1234"}'}
+    request:
+      method: PUT
+      path: "tickets/{{fields.ticket_id}}"
+      body:
+        subject: "{{fields.subject}}"
+        description: "{{fields.description}}"
+        status: "{{fields.status}}"
+        priority: "{{fields.priority}}"
+        source: "{{fields.source}}"
+        type: "{{fields.type}}"
+        tags: "{{fields.tags}}"
+        group_id: "{{fields.group_id}}"
+        responder_id: "{{fields.responder_id}}"
+        company_id: "{{fields.company_id}}"
+        product_id: "{{fields.product_id}}"
+        due_by: "{{fields.due_by}}"
+        fr_due_by: "{{fields.fr_due_by}}"
+        email_config_id: "{{fields.email_config_id}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Delete Ticket
+    resource: Ticket
+    description: Moves a ticket to the trash.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+    request: {method: DELETE, path: "tickets/{{fields.ticket_id}}"}
+    output: {value: {id: "{{fields.ticket_id}}", deleted: true}}
+
+  - name: Restore Ticket
+    resource: Ticket
+    description: Brings a ticket back from the trash.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+    request: {method: PUT, path: "tickets/{{fields.ticket_id}}/restore"}
+    output: {value: {id: "{{fields.ticket_id}}", restored: true}}
+
+  - name: Reply to Ticket
+    resource: Ticket
+    description: Replies to the requester of a ticket.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+      - {name: body, label: Reply, type: textarea, required: true, description: HTML is fine.}
+      - {name: cc_emails, label: CC emails, type: json, description: "A list like [\"ana@acme.test\"]"}
+      - {name: bcc_emails, label: BCC emails, type: json}
+      - {name: from_email, label: From email}
+    request:
+      method: POST
+      path: "tickets/{{fields.ticket_id}}/reply"
+      body: {body: "{{fields.body}}", cc_emails: "{{fields.cc_emails}}", bcc_emails: "{{fields.bcc_emails}}", from_email: "{{fields.from_email}}"}
+
+  - name: Add Note
+    resource: Ticket
+    description: Adds a note to a ticket, private unless said otherwise.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+      - {name: body, label: Note, type: textarea, required: true, description: HTML is fine.}
+      - {name: private, label: Private, type: boolean, default: true}
+      - {name: notify_emails, label: Notify agents, type: json, description: "Emails, like [\"bia@acme.test\"]"}
+    request:
+      method: POST
+      path: "tickets/{{fields.ticket_id}}/notes"
+      body: {body: "{{fields.body}}", private: "{{fields.private}}", notify_emails: "{{fields.notify_emails}}"}
+
+  - name: Get Conversations
+    resource: Ticket
+    description: Lists the replies and notes of a ticket.
+    fields:
+      - {name: ticket_id, label: Ticket ID, required: true}
+    request: {method: GET, path: "tickets/{{fields.ticket_id}}/conversations"}
+    pagination: {type: page, limit_param: per_page, page_size: 100}
+
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Adds a contact. Give an email, phone, mobile, Twitter ID or external ID.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: mobile, label: Mobile}
+      - {name: twitter_id, label: Twitter ID}
+      - {name: unique_external_id, label: External ID}
+      - {name: other_emails, label: Other emails, type: json, description: "A list like [\"ana@home.test\"]"}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: description, label: Description, type: textarea}
+      - {name: job_title, label: Job title}
+      - {name: address, label: Address}
+      - {name: language, label: Language, description: Like en or pt-BR}
+      - {name: time_zone, label: Time zone}
+      - {name: tags, label: Tags, type: json, description: 'A list like ["vip", "billing"]'}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'By field name, like {"cf_order": "1234"}'}
+    request:
+      method: POST
+      path: contacts
+      body:
+        name: "{{fields.name}}"
+        email: "{{fields.email}}"
+        phone: "{{fields.phone}}"
+        mobile: "{{fields.mobile}}"
+        twitter_id: "{{fields.twitter_id}}"
+        unique_external_id: "{{fields.unique_external_id}}"
+        other_emails: "{{fields.other_emails}}"
+        company_id: "{{fields.company_id}}"
+        description: "{{fields.description}}"
+        job_title: "{{fields.job_title}}"
+        address: "{{fields.address}}"
+        language: "{{fields.language}}"
+        time_zone: "{{fields.time_zone}}"
+        tags: "{{fields.tags}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: GET, path: "contacts/{{fields.contact_id}}"}
+
+  - name: Get Contacts
+    resource: Contact
+    description: Lists contacts, all of them or those that match.
+    fields:
+      - {name: email, label: Email}
+      - {name: mobile, label: Mobile}
+      - {name: phone, label: Phone}
+      - {name: company_id, label: Company ID}
+      - {name: state, label: State, type: select, options: [{label: Verified, value: verified}, {label: Unverified, value: unverified}, {label: Blocked, value: blocked}, {label: Deleted, value: deleted}]}
+      - {name: updated_since, label: Updated since, type: datetime}
+    request:
+      method: GET
+      path: contacts
+      query:
+        email: "{{fields.email}}"
+        mobile: "{{fields.mobile}}"
+        phone: "{{fields.phone}}"
+        company_id: "{{fields.company_id}}"
+        state: "{{fields.state}}"
+        _updated_since: "{{fields.updated_since}}"
+    pagination: {type: page, limit_param: per_page, page_size: 100}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: name, label: Name}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: mobile, label: Mobile}
+      - {name: twitter_id, label: Twitter ID}
+      - {name: unique_external_id, label: External ID}
+      - {name: other_emails, label: Other emails, type: json, description: 'A list like ["ana@home.test"]'}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: description, label: Description, type: textarea}
+      - {name: job_title, label: Job title}
+      - {name: address, label: Address}
+      - {name: language, label: Language, description: Like en or pt-BR}
+      - {name: time_zone, label: Time zone}
+      - {name: tags, label: Tags, type: json, description: 'A list like ["vip", "billing"]'}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'By field name, like {"cf_order": "1234"}'}
+    request:
+      method: PUT
+      path: "contacts/{{fields.contact_id}}"
+      body:
+        name: "{{fields.name}}"
+        email: "{{fields.email}}"
+        phone: "{{fields.phone}}"
+        mobile: "{{fields.mobile}}"
+        twitter_id: "{{fields.twitter_id}}"
+        unique_external_id: "{{fields.unique_external_id}}"
+        other_emails: "{{fields.other_emails}}"
+        company_id: "{{fields.company_id}}"
+        description: "{{fields.description}}"
+        job_title: "{{fields.job_title}}"
+        address: "{{fields.address}}"
+        language: "{{fields.language}}"
+        time_zone: "{{fields.time_zone}}"
+        tags: "{{fields.tags}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Delete Contact
+    resource: Contact
+    description: Moves a contact to the trash.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: DELETE, path: "contacts/{{fields.contact_id}}"}
+    output: {value: {id: "{{fields.contact_id}}", deleted: true}}
+
+  - name: Erase Contact
+    resource: Contact
+    description: "Deletes a contact for good, with their data in tickets. It can't be undone."
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: DELETE, path: "contacts/{{fields.contact_id}}/hard_delete", query: {force: true}}
+    output: {value: {id: "{{fields.contact_id}}", erased: true}}
+
+  # Companies
+  - name: Create Company
+    resource: Company
+    description: Adds a company.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: domains, label: Domains, type: json, description: "A list like [\"acme.test\"]. Contacts with these emails join the company."}
+      - {name: note, label: Note, type: textarea}
+      - {name: health_score, label: Health score}
+      - {name: account_tier, label: Account tier}
+      - {name: renewal_date, label: Renewal date, type: datetime}
+      - {name: industry, label: Industry}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'By field name, like {"cf_order": "1234"}'}
+    request:
+      method: POST
+      path: companies
+      body:
+        name: "{{fields.name}}"
+        description: "{{fields.description}}"
+        domains: "{{fields.domains}}"
+        note: "{{fields.note}}"
+        health_score: "{{fields.health_score}}"
+        account_tier: "{{fields.account_tier}}"
+        renewal_date: "{{fields.renewal_date}}"
+        industry: "{{fields.industry}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Get Company
+    resource: Company
+    description: Reads a company.
+    fields:
+      - {name: company_id, label: Company ID, required: true}
+    request: {method: GET, path: "companies/{{fields.company_id}}"}
+
+  - name: Get Companies
+    resource: Company
+    description: Lists the companies.
+    request: {method: GET, path: companies}
+    pagination: {type: page, limit_param: per_page, page_size: 100}
+
+  - name: Update Company
+    resource: Company
+    description: Changes a company. Empty fields stay as they are.
+    fields:
+      - {name: company_id, label: Company ID, required: true}
+      - {name: name, label: Name}
+      - {name: description, label: Description, type: textarea}
+      - {name: domains, label: Domains, type: json, description: 'A list like ["acme.test"]. Contacts with these emails join the company.'}
+      - {name: note, label: Note, type: textarea}
+      - {name: health_score, label: Health score}
+      - {name: account_tier, label: Account tier}
+      - {name: renewal_date, label: Renewal date, type: datetime}
+      - {name: industry, label: Industry}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'By field name, like {"cf_order": "1234"}'}
+    request:
+      method: PUT
+      path: "companies/{{fields.company_id}}"
+      body:
+        name: "{{fields.name}}"
+        description: "{{fields.description}}"
+        domains: "{{fields.domains}}"
+        note: "{{fields.note}}"
+        health_score: "{{fields.health_score}}"
+        account_tier: "{{fields.account_tier}}"
+        renewal_date: "{{fields.renewal_date}}"
+        industry: "{{fields.industry}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Delete Company
+    resource: Company
+    description: Deletes a company. Its contacts stay.
+    fields:
+      - {name: company_id, label: Company ID, required: true}
+    request: {method: DELETE, path: "companies/{{fields.company_id}}"}
+    output: {value: {id: "{{fields.company_id}}", deleted: true}}
+
+  # Agents and groups
+  - name: Get Agents
+    resource: Agent
+    description: Lists the agents.
+    fields:
+      - {name: email, label: Email}
+      - {name: state, label: State, type: select, options: [{label: Full time, value: fulltime}, {label: Occasional, value: occasional}]}
+    request:
+      method: GET
+      path: agents
+      query: {email: "{{fields.email}}", state: "{{fields.state}}"}
+    pagination: {type: page, limit_param: per_page, page_size: 100}
+
+  - name: Get Groups
+    resource: Agent
+    description: Lists the groups of agents.
+    request: {method: GET, path: groups}
+    pagination: {type: page, limit_param: per_page, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: Tickets, respostas e notas, contatos e empresas no Freshdesk.
+    triggers:
+      New Ticket: {name: Novo ticket, description: "Inicia o fluxo para cada ticket novo, olhando a cada 5 minutos.", fields: {filter: Quais}}
+    actions:
+      Create Ticket: {name: Criar ticket, description: "Abre um ticket. Dê o e-mail, telefone ou ID de quem pede.", fields: {subject: Assunto, description: Descrição, email: E-mail do solicitante, phone: Telefone do solicitante, requester_id: ID do solicitante, name: Nome do solicitante, status: Status, priority: Prioridade, source: Origem, type: Tipo, tags: Etiquetas, cc_emails: E-mails em cópia, group_id: Grupo, responder_id: Agente, company_id: ID da empresa, product_id: ID do produto, due_by: Prazo, fr_due_by: Prazo da primeira resposta, email_config_id: ID da configuração de e-mail, custom_fields: Campos personalizados}}
+      Get Ticket: {name: Ler ticket, description: Lê um ticket., fields: {ticket_id: ID do ticket, include: Incluir}}
+      Get Tickets: {name: Listar tickets, description: "Lista tickets, todos ou os que batem.", fields: {filter: Quais, requester_id: ID do solicitante, email: E-mail do solicitante, company_id: ID da empresa, updated_since: Atualizados desde, order_by: Ordenar por, order_type: Direção, include: Incluir}}
+      Search Tickets: {name: Buscar tickets, description: "Encontra tickets com a linguagem de busca do Freshdesk, até 300.", fields: {query: Busca}}
+      Update Ticket: {name: Atualizar ticket, description: Muda um ticket. Campos vazios ficam como estão., fields: {ticket_id: ID do ticket, subject: Assunto, description: Descrição, status: Status, priority: Prioridade, source: Origem, type: Tipo, tags: Etiquetas, group_id: Grupo, responder_id: Agente, company_id: ID da empresa, product_id: ID do produto, due_by: Prazo, fr_due_by: Prazo da primeira resposta, email_config_id: ID da configuração de e-mail, custom_fields: Campos personalizados}}
+      Delete Ticket: {name: Apagar ticket, description: Manda um ticket para a lixeira., fields: {ticket_id: ID do ticket}}
+      Restore Ticket: {name: Restaurar ticket, description: Traz um ticket de volta da lixeira., fields: {ticket_id: ID do ticket}}
+      Reply to Ticket: {name: Responder ticket, description: Responde a quem abriu um ticket., fields: {ticket_id: ID do ticket, body: Resposta, cc_emails: E-mails em cópia, bcc_emails: E-mails em cópia oculta, from_email: E-mail de envio}}
+      Add Note: {name: Adicionar nota, description: "Adiciona uma nota a um ticket, privada a não ser que diga o contrário.", fields: {ticket_id: ID do ticket, body: Nota, private: Privada, notify_emails: Avisar agentes}}
+      Get Conversations: {name: Listar conversa, description: Lista as respostas e notas de um ticket., fields: {ticket_id: ID do ticket}}
+      Create Contact: {name: Criar contato, description: "Adiciona um contato. Dê um e-mail, telefone, celular, ID do Twitter ou ID externo.", fields: {name: Nome, email: E-mail, phone: Telefone, mobile: Celular, twitter_id: ID do Twitter, unique_external_id: ID externo, other_emails: Outros e-mails, company_id: ID da empresa, description: Descrição, job_title: Cargo, address: Endereço, language: Idioma, time_zone: Fuso horário, tags: Etiquetas, custom_fields: Campos personalizados}}
+      Get Contact: {name: Ler contato, description: Lê um contato., fields: {contact_id: ID do contato}}
+      Get Contacts: {name: Listar contatos, description: "Lista contatos, todos ou os que batem.", fields: {email: E-mail, mobile: Celular, phone: Telefone, company_id: ID da empresa, state: Estado, updated_since: Atualizados desde}}
+      Update Contact: {name: Atualizar contato, description: Muda um contato. Campos vazios ficam como estão., fields: {contact_id: ID do contato, name: Nome, email: E-mail, phone: Telefone, mobile: Celular, twitter_id: ID do Twitter, unique_external_id: ID externo, other_emails: Outros e-mails, company_id: ID da empresa, description: Descrição, job_title: Cargo, address: Endereço, language: Idioma, time_zone: Fuso horário, tags: Etiquetas, custom_fields: Campos personalizados}}
+      Delete Contact: {name: Apagar contato, description: Manda um contato para a lixeira., fields: {contact_id: ID do contato}}
+      Erase Contact: {name: Eliminar contato, description: "Apaga um contato de vez, com seus dados nos tickets. Não dá para desfazer.", fields: {contact_id: ID do contato}}
+      Create Company: {name: Criar empresa, description: Adiciona uma empresa., fields: {name: Nome, description: Descrição, domains: Domínios, note: Nota, health_score: Saúde, account_tier: Nível da conta, renewal_date: Data de renovação, industry: Setor, custom_fields: Campos personalizados}}
+      Get Company: {name: Ler empresa, description: Lê uma empresa., fields: {company_id: ID da empresa}}
+      Get Companies: {name: Listar empresas, description: Lista as empresas.}
+      Update Company: {name: Atualizar empresa, description: Muda uma empresa. Campos vazios ficam como estão., fields: {company_id: ID da empresa, name: Nome, description: Descrição, domains: Domínios, note: Nota, health_score: Saúde, account_tier: Nível da conta, renewal_date: Data de renovação, industry: Setor, custom_fields: Campos personalizados}}
+      Delete Company: {name: Apagar empresa, description: Apaga uma empresa. Os contatos ficam., fields: {company_id: ID da empresa}}
+      Get Agents: {name: Listar agentes, description: Lista os agentes., fields: {email: E-mail, state: Tipo}}
+      Get Groups: {name: Listar grupos, description: Lista os grupos de agentes.}

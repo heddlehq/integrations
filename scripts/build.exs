@@ -5,7 +5,13 @@
 # Each integration lives in integrations/<id>/integration.yaml, and its folder must be
 # named after its id. The index holds the manifest itself, so an installed version
 # stays the same even after the folder changes.
-Mix.install([{:bobbin, "~> 0.5"}])
+# BOBBIN_PATH points at a Bobbin checkout, to try a change in both at once.
+Mix.install([
+  case System.get_env("BOBBIN_PATH") do
+    nil -> {:bobbin, "~> 0.6"}
+    path -> {:bobbin, path: path}
+  end
+])
 
 out = List.first(System.argv()) || "_site"
 paths = Path.wildcard("integrations/*/integration.yaml") |> Enum.sort()

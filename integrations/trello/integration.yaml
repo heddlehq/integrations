@@ -1,0 +1,642 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Trello's REST API. The key and the token come from https://trello.com/power-ups/admin:
+# make a Power-Up, generate its API key, then a token for it. The secret on the same page
+# signs webhooks.
+id: trello
+name: Trello
+version: 1.0.0
+description: Boards, lists, cards, checklists, labels, comments and attachments in Trello.
+icon: hero-view-columns
+category: project
+author: Heddle
+homepage: https://developer.atlassian.com/cloud/trello/rest/
+base_url: https://api.trello.com/1/
+
+credential:
+  label: Trello
+  fields:
+    - {name: api_key, label: API key, required: true}
+    - {name: token, label: Token, secret: true, required: true}
+    - {name: secret, label: Secret, secret: true, description: "Only for the trigger, which checks that each event came from Trello."}
+  auth:
+    type: header
+    name: Authorization
+    value: 'OAuth oauth_consumer_key="{{credential.api_key}}", oauth_token="{{credential.token}}"'
+
+triggers:
+  - name: Board Activity
+    description: Starts the flow for everything that happens in a board, a list or a card, as Trello tells it.
+    fields:
+      - name: model_id
+        label: Board
+        description: A board, or the ID of a list or card.
+        type: select
+        required: true
+        options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          query: {callbackURL: "{{webhook.url}}", idModel: "{{fields.model_id}}", description: Heddle}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      challenge: {method: HEAD}
+      signature:
+        header: X-Trello-Webhook
+        algorithm: sha1
+        encoding: base64
+        message: "{{request.body}}{{webhook.url}}"
+        secret: "{{credential.secret}}"
+
+actions:
+  # Boards
+  - name: Create Board
+    resource: Board
+    description: Creates a board.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: desc, label: Description, type: textarea}
+      - {name: idOrganization, label: Workspace ID}
+      - {name: idBoardSource, label: Board to copy (ID)}
+      - {name: defaultLists, label: Make the default lists, type: boolean}
+      - {name: defaultLabels, label: Make the default labels, type: boolean}
+      - name: prefs_permissionLevel
+        label: Who sees it
+        type: select
+        options:
+          - {label: Private, value: private}
+          - {label: Workspace, value: org}
+          - {label: Public, value: public}
+      - {name: prefs_background, label: Background, description: "A color like blue, or a background ID"}
+    request:
+      method: POST
+      path: boards
+      query:
+        name: "{{fields.name}}"
+        desc: "{{fields.desc}}"
+        idOrganization: "{{fields.idOrganization}}"
+        idBoardSource: "{{fields.idBoardSource}}"
+        defaultLists: "{{fields.defaultLists}}"
+        defaultLabels: "{{fields.defaultLabels}}"
+        prefs_permissionLevel: "{{fields.prefs_permissionLevel}}"
+        prefs_background: "{{fields.prefs_background}}"
+
+  - name: Get Board
+    resource: Board
+    description: Reads a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+    request: {method: GET, path: "boards/{{fields.board_id}}"}
+
+  - name: Get Boards
+    resource: Board
+    description: Lists the boards you're a member of.
+    fields:
+      - name: filter
+        label: Which
+        type: select
+        default: open
+        options:
+          - {label: Open, value: open}
+          - {label: Closed, value: closed}
+          - {label: Starred, value: starred}
+          - {label: All, value: all}
+    request: {method: GET, path: members/me/boards, query: {filter: "{{fields.filter}}"}}
+
+  - name: Update Board
+    resource: Board
+    description: Changes a board. Empty fields stay as they are.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: name, label: Name}
+      - {name: desc, label: Description, type: textarea}
+      - {name: closed, label: Closed, type: boolean}
+      - {name: subscribed, label: Subscribed, type: boolean}
+      - {name: idOrganization, label: Workspace ID}
+    request:
+      method: PUT
+      path: "boards/{{fields.board_id}}"
+      query:
+        name: "{{fields.name}}"
+        desc: "{{fields.desc}}"
+        closed: "{{fields.closed}}"
+        subscribed: "{{fields.subscribed}}"
+        idOrganization: "{{fields.idOrganization}}"
+
+  - name: Delete Board
+    resource: Board
+    description: Deletes a board for good.
+    fields:
+      - {name: board_id, label: Board ID, required: true}
+    request: {method: DELETE, path: "boards/{{fields.board_id}}"}
+    output: {value: {id: "{{fields.board_id}}", deleted: true}}
+
+  # Board members
+  - name: Get Board Members
+    resource: Board Member
+    description: Lists the members of a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+    request: {method: GET, path: "boards/{{fields.board_id}}/members"}
+
+  - name: Add Board Member
+    resource: Board Member
+    description: Adds a Trello member to a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: member_id, label: Member ID, required: true}
+      -
+        name: type
+        label: Role
+        type: select
+        default: normal
+        options:
+          - {label: Normal, value: normal}
+          - {label: Admin, value: admin}
+          - {label: Observer, value: observer}
+      - {name: allowBillableGuest, label: Allow a billable guest, type: boolean}
+    request:
+      method: PUT
+      path: "boards/{{fields.board_id}}/members/{{fields.member_id}}"
+      query: {type: "{{fields.type}}", allowBillableGuest: "{{fields.allowBillableGuest}}"}
+
+  - name: Invite to Board
+    resource: Board Member
+    description: Invites someone to a board by email.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - name: type
+        label: Role
+        type: select
+        default: normal
+        options:
+          - {label: Normal, value: normal}
+          - {label: Admin, value: admin}
+          - {label: Observer, value: observer}
+      - {name: fullName, label: Full name}
+    request:
+      method: PUT
+      path: "boards/{{fields.board_id}}/members"
+      query: {email: "{{fields.email}}", type: "{{fields.type}}", fullName: "{{fields.fullName}}"}
+
+  - name: Remove Board Member
+    resource: Board Member
+    description: Takes a member off a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: member_id, label: Member ID, required: true}
+    request: {method: DELETE, path: "boards/{{fields.board_id}}/members/{{fields.member_id}}"}
+
+  # Lists
+  - name: Create List
+    resource: List
+    description: Creates a list in a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: idListSource, label: List to copy (ID)}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+    request:
+      method: POST
+      path: lists
+      query: {idBoard: "{{fields.board_id}}", name: "{{fields.name}}", idListSource: "{{fields.idListSource}}", pos: "{{fields.pos}}"}
+
+  - name: Get List
+    resource: List
+    description: Reads a list.
+    fields:
+      - {name: list_id, label: List ID, required: true}
+    request: {method: GET, path: "lists/{{fields.list_id}}"}
+
+  - name: Get Lists
+    resource: List
+    description: Lists the lists of a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - name: filter
+        label: Which
+        type: select
+        default: open
+        options:
+          - {label: Open, value: open}
+          - {label: Closed, value: closed}
+          - {label: All, value: all}
+    request: {method: GET, path: "boards/{{fields.board_id}}/lists", query: {filter: "{{fields.filter}}"}}
+
+  - name: Get Cards in List
+    resource: List
+    description: Lists the cards of a list.
+    fields:
+      - {name: list_id, label: List ID, required: true}
+    request: {method: GET, path: "lists/{{fields.list_id}}/cards"}
+
+  - name: Update List
+    resource: List
+    description: Changes a list. Empty fields stay as they are.
+    fields:
+      - {name: list_id, label: List ID, required: true}
+      - {name: name, label: Name}
+      - {name: idBoard, label: Move to board (ID)}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+      - {name: closed, label: Archived, type: boolean}
+      - {name: subscribed, label: Subscribed, type: boolean}
+    request:
+      method: PUT
+      path: "lists/{{fields.list_id}}"
+      query: {name: "{{fields.name}}", idBoard: "{{fields.idBoard}}", pos: "{{fields.pos}}", closed: "{{fields.closed}}", subscribed: "{{fields.subscribed}}"}
+
+  - name: Archive List
+    resource: List
+    description: Archives a list, or brings it back.
+    fields:
+      - {name: list_id, label: List ID, required: true}
+      - {name: archive, label: Archive, type: boolean, default: true}
+    request: {method: PUT, path: "lists/{{fields.list_id}}/closed", query: {value: "{{fields.archive}}"}}
+
+  # Cards
+  - name: Create Card
+    resource: Card
+    description: Creates a card in a list.
+    fields:
+      - {name: board_id, label: Board, type: select, description: Only to pick the list., options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: list_id, label: List, type: select, required: true, options_from: {request: {method: GET, path: "boards/{{fields.board_id}}/lists", query: {fields: name}}, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: desc, label: Description, type: textarea}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+      - {name: due, label: Due, type: datetime}
+      - {name: start, label: Start, type: datetime}
+      - {name: dueComplete, label: Done, type: boolean}
+      - {name: idMembers, label: Member IDs, description: Separated by commas.}
+      - {name: idLabels, label: Label IDs, description: Separated by commas.}
+      - {name: urlSource, label: Attach a URL}
+      - {name: idCardSource, label: Card to copy (ID)}
+      - {name: address, label: Address}
+      - {name: locationName, label: Place name}
+      - {name: coordinates, label: Coordinates, description: "Like 51.5,-0.12"}
+    request:
+      method: POST
+      path: cards
+      query:
+        idList: "{{fields.list_id}}"
+        name: "{{fields.name}}"
+        desc: "{{fields.desc}}"
+        pos: "{{fields.pos}}"
+        due: "{{fields.due}}"
+        start: "{{fields.start}}"
+        dueComplete: "{{fields.dueComplete}}"
+        idMembers: "{{fields.idMembers}}"
+        idLabels: "{{fields.idLabels}}"
+        urlSource: "{{fields.urlSource}}"
+        idCardSource: "{{fields.idCardSource}}"
+        address: "{{fields.address}}"
+        locationName: "{{fields.locationName}}"
+        coordinates: "{{fields.coordinates}}"
+
+  - name: Get Card
+    resource: Card
+    description: Reads a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+    request: {method: GET, path: "cards/{{fields.card_id}}"}
+
+  - name: Update Card
+    resource: Card
+    description: Changes a card. Empty fields stay as they are.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: name, label: Name}
+      - {name: desc, label: Description, type: textarea}
+      - {name: idList, label: Move to list (ID)}
+      - {name: idBoard, label: Move to board (ID)}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+      - {name: due, label: Due, type: datetime}
+      - {name: start, label: Start, type: datetime}
+      - {name: dueComplete, label: Done, type: boolean}
+      - {name: closed, label: Archived, type: boolean}
+      - {name: subscribed, label: Subscribed, type: boolean}
+      - {name: idMembers, label: Member IDs, description: Separated by commas. Replaces the current ones.}
+      - {name: idLabels, label: Label IDs, description: Separated by commas. Replaces the current ones.}
+      - {name: idAttachmentCover, label: Cover attachment ID}
+    request:
+      method: PUT
+      path: "cards/{{fields.card_id}}"
+      query:
+        name: "{{fields.name}}"
+        desc: "{{fields.desc}}"
+        idList: "{{fields.idList}}"
+        idBoard: "{{fields.idBoard}}"
+        pos: "{{fields.pos}}"
+        due: "{{fields.due}}"
+        start: "{{fields.start}}"
+        dueComplete: "{{fields.dueComplete}}"
+        closed: "{{fields.closed}}"
+        subscribed: "{{fields.subscribed}}"
+        idMembers: "{{fields.idMembers}}"
+        idLabels: "{{fields.idLabels}}"
+        idAttachmentCover: "{{fields.idAttachmentCover}}"
+
+  - name: Delete Card
+    resource: Card
+    description: Deletes a card for good.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+    request: {method: DELETE, path: "cards/{{fields.card_id}}"}
+    output: {value: {id: "{{fields.card_id}}", deleted: true}}
+
+  # Comments
+  - name: Add Comment
+    resource: Card Comment
+    description: Comments on a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: text, label: Comment, type: textarea, required: true}
+    request: {method: POST, path: "cards/{{fields.card_id}}/actions/comments", query: {text: "{{fields.text}}"}}
+
+  - name: Update Comment
+    resource: Card Comment
+    description: Changes the text of a comment.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: comment_id, label: Comment ID, required: true}
+      - {name: text, label: Comment, type: textarea, required: true}
+    request: {method: PUT, path: "cards/{{fields.card_id}}/actions/{{fields.comment_id}}/comments", query: {text: "{{fields.text}}"}}
+
+  - name: Delete Comment
+    resource: Card Comment
+    description: Deletes a comment.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: comment_id, label: Comment ID, required: true}
+    request: {method: DELETE, path: "cards/{{fields.card_id}}/actions/{{fields.comment_id}}/comments"}
+    output: {value: {id: "{{fields.comment_id}}", deleted: true}}
+
+  # Attachments
+  - name: Attach to Card
+    resource: Attachment
+    description: Attaches a link or a file to a card. Fill one.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: url, label: URL}
+      - {name: file, label: File, type: file}
+      - {name: name, label: Name}
+      - {name: mimeType, label: Type, description: Like image/png}
+      - {name: setCover, label: Make it the cover, type: boolean}
+    request:
+      method: POST
+      path: "cards/{{fields.card_id}}/attachments"
+      body_type: multipart
+      body:
+        url: "{{fields.url}}"
+        file: "{{fields.file}}"
+        name: "{{fields.name}}"
+        mimeType: "{{fields.mimeType}}"
+        setCover: "{{fields.setCover}}"
+
+  - name: Get Attachment
+    resource: Attachment
+    description: Reads an attachment of a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: attachment_id, label: Attachment ID, required: true}
+    request: {method: GET, path: "cards/{{fields.card_id}}/attachments/{{fields.attachment_id}}"}
+
+  - name: Get Attachments
+    resource: Attachment
+    description: Lists the attachments of a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+    request: {method: GET, path: "cards/{{fields.card_id}}/attachments"}
+
+  - name: Delete Attachment
+    resource: Attachment
+    description: Takes an attachment off a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: attachment_id, label: Attachment ID, required: true}
+    request: {method: DELETE, path: "cards/{{fields.card_id}}/attachments/{{fields.attachment_id}}"}
+    output: {value: {id: "{{fields.attachment_id}}", deleted: true}}
+
+  # Checklists
+  - name: Create Checklist
+    resource: Checklist
+    description: Adds a checklist to a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: idChecklistSource, label: Checklist to copy (ID)}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+    request:
+      method: POST
+      path: "cards/{{fields.card_id}}/checklists"
+      query: {name: "{{fields.name}}", idChecklistSource: "{{fields.idChecklistSource}}", pos: "{{fields.pos}}"}
+
+  - name: Get Checklist
+    resource: Checklist
+    description: Reads a checklist.
+    fields:
+      - {name: checklist_id, label: Checklist ID, required: true}
+    request: {method: GET, path: "checklists/{{fields.checklist_id}}"}
+
+  - name: Get Checklists
+    resource: Checklist
+    description: Lists the checklists of a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+    request: {method: GET, path: "cards/{{fields.card_id}}/checklists"}
+
+  - name: Delete Checklist
+    resource: Checklist
+    description: Takes a checklist off a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: checklist_id, label: Checklist ID, required: true}
+    request: {method: DELETE, path: "cards/{{fields.card_id}}/checklists/{{fields.checklist_id}}"}
+    output: {value: {id: "{{fields.checklist_id}}", deleted: true}}
+
+  - name: Add Checklist Item
+    resource: Checklist
+    description: Adds an item to a checklist.
+    fields:
+      - {name: checklist_id, label: Checklist ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: checked, label: Checked, type: boolean}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+      - {name: due, label: Due, type: datetime}
+      - {name: idMember, label: Member ID}
+    request:
+      method: POST
+      path: "checklists/{{fields.checklist_id}}/checkItems"
+      query: {name: "{{fields.name}}", checked: "{{fields.checked}}", pos: "{{fields.pos}}", due: "{{fields.due}}", idMember: "{{fields.idMember}}"}
+
+  - name: Get Checklist Item
+    resource: Checklist
+    description: Reads an item of a checklist.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: item_id, label: Item ID, required: true}
+    request: {method: GET, path: "cards/{{fields.card_id}}/checkItem/{{fields.item_id}}"}
+
+  - name: Get Completed Checklist Items
+    resource: Checklist
+    description: Lists the checked items of a card's checklists.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+    request: {method: GET, path: "cards/{{fields.card_id}}/checkItemStates"}
+
+  - name: Update Checklist Item
+    resource: Checklist
+    description: Changes an item of a checklist. Empty fields stay as they are.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: item_id, label: Item ID, required: true}
+      - {name: name, label: Name}
+      - name: state
+        label: State
+        type: select
+        options:
+          - {label: Complete, value: complete}
+          - {label: Incomplete, value: incomplete}
+      - {name: pos, label: Position, description: "top, bottom or a number"}
+      - {name: idChecklist, label: Move to checklist (ID)}
+      - {name: due, label: Due, type: datetime}
+    request:
+      method: PUT
+      path: "cards/{{fields.card_id}}/checkItem/{{fields.item_id}}"
+      query: {name: "{{fields.name}}", state: "{{fields.state}}", pos: "{{fields.pos}}", idChecklist: "{{fields.idChecklist}}", due: "{{fields.due}}"}
+
+  - name: Delete Checklist Item
+    resource: Checklist
+    description: Takes an item off a checklist.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: item_id, label: Item ID, required: true}
+    request: {method: DELETE, path: "cards/{{fields.card_id}}/checkItem/{{fields.item_id}}"}
+    output: {value: {id: "{{fields.item_id}}", deleted: true}}
+
+  # Labels
+  - name: Create Label
+    resource: Label
+    description: Creates a label in a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+      -
+        name: color
+        label: Color
+        type: select
+        options:
+          - {label: Green, value: green}
+          - {label: Yellow, value: yellow}
+          - {label: Orange, value: orange}
+          - {label: Red, value: red}
+          - {label: Purple, value: purple}
+          - {label: Blue, value: blue}
+          - {label: Sky, value: sky}
+          - {label: Lime, value: lime}
+          - {label: Pink, value: pink}
+          - {label: Black, value: black}
+    request:
+      method: POST
+      path: labels
+      query: {idBoard: "{{fields.board_id}}", name: "{{fields.name}}", color: "{{fields.color}}"}
+
+  - name: Get Label
+    resource: Label
+    description: Reads a label.
+    fields:
+      - {name: label_id, label: Label ID, required: true}
+    request: {method: GET, path: "labels/{{fields.label_id}}"}
+
+  - name: Get Labels
+    resource: Label
+    description: Lists the labels of a board.
+    fields:
+      - {name: board_id, label: Board, type: select, required: true, options_from: {request: {method: GET, path: members/me/boards, query: {filter: open, fields: name}}, label: name, value: id}}
+    request: {method: GET, path: "boards/{{fields.board_id}}/labels"}
+
+  - name: Update Label
+    resource: Label
+    description: Changes a label. Empty fields stay as they are.
+    fields:
+      - {name: label_id, label: Label ID, required: true}
+      - {name: name, label: Name}
+      - {name: color, label: Color, type: select, options: [{label: Green, value: green}, {label: Yellow, value: yellow}, {label: Orange, value: orange}, {label: Red, value: red}, {label: Purple, value: purple}, {label: Blue, value: blue}, {label: Sky, value: sky}, {label: Lime, value: lime}, {label: Pink, value: pink}, {label: Black, value: black}]}
+    request: {method: PUT, path: "labels/{{fields.label_id}}", query: {name: "{{fields.name}}", color: "{{fields.color}}"}}
+
+  - name: Delete Label
+    resource: Label
+    description: Deletes a label from its board.
+    fields:
+      - {name: label_id, label: Label ID, required: true}
+    request: {method: DELETE, path: "labels/{{fields.label_id}}"}
+    output: {value: {id: "{{fields.label_id}}", deleted: true}}
+
+  - name: Add Label to Card
+    resource: Label
+    description: Puts a label on a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: label_id, label: Label ID, required: true}
+    request: {method: POST, path: "cards/{{fields.card_id}}/idLabels", query: {value: "{{fields.label_id}}"}}
+
+  - name: Remove Label from Card
+    resource: Label
+    description: Takes a label off a card.
+    fields:
+      - {name: card_id, label: Card ID, required: true}
+      - {name: label_id, label: Label ID, required: true}
+    request: {method: DELETE, path: "cards/{{fields.card_id}}/idLabels/{{fields.label_id}}"}
+    output: {value: {card_id: "{{fields.card_id}}", label_id: "{{fields.label_id}}", removed: true}}
+
+i18n:
+  pt-BR:
+    description: Quadros, listas, cartões, checklists, etiquetas, comentários e anexos no Trello.
+    triggers:
+      Board Activity: {name: Atividade no quadro, description: "Inicia o fluxo para tudo o que acontece num quadro, lista ou cartão, como o Trello avisa.", fields: {model_id: Quadro}}
+    actions:
+      Create Board: {name: Criar quadro, description: Cria um quadro., fields: {name: Nome, desc: Descrição, idOrganization: ID do espaço de trabalho, idBoardSource: Quadro a copiar (ID), defaultLists: Criar as listas padrão, defaultLabels: Criar as etiquetas padrão, prefs_permissionLevel: Quem vê, prefs_background: Fundo}}
+      Get Board: {name: Ler quadro, description: Lê um quadro., fields: {board_id: Quadro}}
+      Get Boards: {name: Listar quadros, description: Lista os quadros de que você é membro., fields: {filter: Quais}}
+      Update Board: {name: Atualizar quadro, description: Muda um quadro. Campos vazios ficam como estão., fields: {board_id: Quadro, name: Nome, desc: Descrição, closed: Fechado, subscribed: Seguindo, idOrganization: ID do espaço de trabalho}}
+      Delete Board: {name: Apagar quadro, description: Apaga um quadro de vez., fields: {board_id: ID do quadro}}
+      Get Board Members: {name: Listar membros do quadro, description: Lista os membros de um quadro., fields: {board_id: Quadro}}
+      Add Board Member: {name: Adicionar membro ao quadro, description: Adiciona um membro do Trello a um quadro., fields: {board_id: Quadro, member_id: ID do membro, type: Papel, allowBillableGuest: Permitir convidado cobrado}}
+      Invite to Board: {name: Convidar para o quadro, description: Convida alguém para um quadro por e-mail., fields: {board_id: Quadro, email: E-mail, type: Papel, fullName: Nome completo}}
+      Remove Board Member: {name: Remover membro do quadro, description: Tira um membro de um quadro., fields: {board_id: Quadro, member_id: ID do membro}}
+      Create List: {name: Criar lista, description: Cria uma lista num quadro., fields: {board_id: Quadro, name: Nome, idListSource: Lista a copiar (ID), pos: Posição}}
+      Get List: {name: Ler lista, description: Lê uma lista., fields: {list_id: ID da lista}}
+      Get Lists: {name: Listar listas, description: Lista as listas de um quadro., fields: {board_id: Quadro, filter: Quais}}
+      Get Cards in List: {name: Listar cartões da lista, description: Lista os cartões de uma lista., fields: {list_id: ID da lista}}
+      Update List: {name: Atualizar lista, description: Muda uma lista. Campos vazios ficam como estão., fields: {list_id: ID da lista, name: Nome, idBoard: Mover para o quadro (ID), pos: Posição, closed: Arquivada, subscribed: Seguindo}}
+      Archive List: {name: Arquivar lista, description: Arquiva uma lista ou a traz de volta., fields: {list_id: ID da lista, archive: Arquivar}}
+      Create Card: {name: Criar cartão, description: Cria um cartão numa lista., fields: {board_id: Quadro, list_id: Lista, name: Nome, desc: Descrição, pos: Posição, due: Prazo, start: Início, dueComplete: Concluído, idMembers: IDs dos membros, idLabels: IDs das etiquetas, urlSource: Anexar um link, idCardSource: Cartão a copiar (ID), address: Endereço, locationName: Nome do lugar, coordinates: Coordenadas}}
+      Get Card: {name: Ler cartão, description: Lê um cartão., fields: {card_id: ID do cartão}}
+      Update Card: {name: Atualizar cartão, description: Muda um cartão. Campos vazios ficam como estão., fields: {card_id: ID do cartão, name: Nome, desc: Descrição, idList: Mover para a lista (ID), idBoard: Mover para o quadro (ID), pos: Posição, due: Prazo, start: Início, dueComplete: Concluído, closed: Arquivado, subscribed: Seguindo, idMembers: IDs dos membros, idLabels: IDs das etiquetas, idAttachmentCover: ID do anexo de capa}}
+      Delete Card: {name: Apagar cartão, description: Apaga um cartão de vez., fields: {card_id: ID do cartão}}
+      Add Comment: {name: Comentar, description: Comenta num cartão., fields: {card_id: ID do cartão, text: Comentário}}
+      Update Comment: {name: Editar comentário, description: Muda o texto de um comentário., fields: {card_id: ID do cartão, comment_id: ID do comentário, text: Comentário}}
+      Delete Comment: {name: Apagar comentário, description: Apaga um comentário., fields: {card_id: ID do cartão, comment_id: ID do comentário}}
+      Attach to Card: {name: Anexar ao cartão, description: Anexa um link ou um arquivo a um cartão. Preencha um., fields: {card_id: ID do cartão, url: Link, file: Arquivo, name: Nome, mimeType: Tipo, setCover: Usar como capa}}
+      Get Attachment: {name: Ler anexo, description: Lê um anexo de um cartão., fields: {card_id: ID do cartão, attachment_id: ID do anexo}}
+      Get Attachments: {name: Listar anexos, description: Lista os anexos de um cartão., fields: {card_id: ID do cartão}}
+      Delete Attachment: {name: Apagar anexo, description: Tira um anexo de um cartão., fields: {card_id: ID do cartão, attachment_id: ID do anexo}}
+      Create Checklist: {name: Criar checklist, description: Adiciona uma checklist a um cartão., fields: {card_id: ID do cartão, name: Nome, idChecklistSource: Checklist a copiar (ID), pos: Posição}}
+      Get Checklist: {name: Ler checklist, description: Lê uma checklist., fields: {checklist_id: ID da checklist}}
+      Get Checklists: {name: Listar checklists, description: Lista as checklists de um cartão., fields: {card_id: ID do cartão}}
+      Delete Checklist: {name: Apagar checklist, description: Tira uma checklist de um cartão., fields: {card_id: ID do cartão, checklist_id: ID da checklist}}
+      Add Checklist Item: {name: Adicionar item à checklist, description: Adiciona um item a uma checklist., fields: {checklist_id: ID da checklist, name: Nome, checked: Marcado, pos: Posição, due: Prazo, idMember: ID do membro}}
+      Get Checklist Item: {name: Ler item da checklist, description: Lê um item de uma checklist., fields: {card_id: ID do cartão, item_id: ID do item}}
+      Get Completed Checklist Items: {name: Listar itens marcados, description: Lista os itens marcados das checklists de um cartão., fields: {card_id: ID do cartão}}
+      Update Checklist Item: {name: Atualizar item da checklist, description: Muda um item de uma checklist. Campos vazios ficam como estão., fields: {card_id: ID do cartão, item_id: ID do item, name: Nome, state: Estado, pos: Posição, idChecklist: Mover para a checklist (ID), due: Prazo}}
+      Delete Checklist Item: {name: Apagar item da checklist, description: Tira um item de uma checklist., fields: {card_id: ID do cartão, item_id: ID do item}}
+      Create Label: {name: Criar etiqueta, description: Cria uma etiqueta num quadro., fields: {board_id: Quadro, name: Nome, color: Cor}}
+      Get Label: {name: Ler etiqueta, description: Lê uma etiqueta., fields: {label_id: ID da etiqueta}}
+      Get Labels: {name: Listar etiquetas, description: Lista as etiquetas de um quadro., fields: {board_id: Quadro}}
+      Update Label: {name: Atualizar etiqueta, description: Muda uma etiqueta. Campos vazios ficam como estão., fields: {label_id: ID da etiqueta, name: Nome, color: Cor}}
+      Delete Label: {name: Apagar etiqueta, description: Apaga uma etiqueta do quadro., fields: {label_id: ID da etiqueta}}
+      Add Label to Card: {name: Pôr etiqueta no cartão, description: Põe uma etiqueta num cartão., fields: {card_id: ID do cartão, label_id: ID da etiqueta}}
+      Remove Label from Card: {name: Tirar etiqueta do cartão, description: Tira uma etiqueta de um cartão., fields: {card_id: ID do cartão, label_id: ID da etiqueta}}

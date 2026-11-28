@@ -1,0 +1,509 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Todoist's API v1. The token is in Todoist, Settings > Integrations > Developer.
+id: todoist
+name: Todoist
+version: 1.0.0
+description: Tasks, projects, sections, comments and labels in Todoist.
+icon: hero-check-circle
+category: productivity
+author: Heddle
+homepage: https://developer.todoist.com/api/v1/
+base_url: https://api.todoist.com/api/v1/
+
+credential:
+  label: Todoist
+  fields:
+    - {name: token, label: API token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error
+
+triggers:
+  - name: New Task
+    description: Starts the flow for each new task, in a project or in all of them, checking every 5 minutes.
+    fields:
+      - name: project_id
+        label: Project
+        type: select
+        options_from:
+          request: {method: GET, path: projects, query: {limit: 200}}
+          path: results
+          label: name
+          value: id
+          pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}
+    request:
+      method: GET
+      path: tasks
+      query: {project_id: "{{fields.project_id}}", limit: 200}
+    output:
+      path: results
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Tasks
+  - name: Create Task
+    resource: Task
+    description: Creates a task.
+    fields:
+      - {name: content, label: Content, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: project_id, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+      - {name: section_id, label: Section ID}
+      - {name: parent_id, label: Parent task ID}
+      - {name: labels, label: Labels, type: multiselect, options_from: {request: {method: GET, path: labels, query: {limit: 200}}, path: results, label: name, value: name}}
+      -
+        name: priority
+        label: Priority
+        type: select
+        options:
+          - {label: Normal, value: 1}
+          - {label: Medium, value: 2}
+          - {label: High, value: 3}
+          - {label: Urgent, value: 4}
+      - {name: due_string, label: Due (in words), description: "Like tomorrow at 9am or every monday"}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: due_lang, label: Language of the due words}
+      - {name: assignee_id, label: Assignee ID}
+      - {name: duration, label: Duration, type: number}
+      -
+        name: duration_unit
+        label: Duration unit
+        type: select
+        options:
+          - {label: Minutes, value: minute}
+          - {label: Days, value: day}
+      - {name: order, label: Order, type: number}
+    request:
+      method: POST
+      path: tasks
+      body:
+        content: "{{fields.content}}"
+        description: "{{fields.description}}"
+        project_id: "{{fields.project_id}}"
+        section_id: "{{fields.section_id}}"
+        parent_id: "{{fields.parent_id}}"
+        labels: "{{fields.labels}}"
+        priority: "{{fields.priority}}"
+        due_string: "{{fields.due_string}}"
+        due_datetime: "{{fields.due_date}}"
+        due_lang: "{{fields.due_lang}}"
+        assignee_id: "{{fields.assignee_id}}"
+        duration: "{{fields.duration}}"
+        duration_unit: "{{fields.duration_unit}}"
+        order: "{{fields.order}}"
+
+  - name: Quick Add Task
+    resource: Task
+    description: Adds a task from a line as you'd type it in Todoist, like "Call Ana tomorrow #Work p1".
+    fields:
+      - {name: text, label: Text, required: true}
+      - {name: note, label: Note, type: textarea}
+      - {name: reminder, label: Reminder (in words)}
+    request:
+      method: POST
+      path: tasks/quick
+      body:
+        text: "{{fields.text}}"
+        note: "{{fields.note}}"
+        reminder: "{{fields.reminder}}"
+
+  - name: Get Task
+    resource: Task
+    description: Reads a task.
+    fields:
+      - {name: task_id, label: Task ID, required: true}
+    request: {method: GET, path: "tasks/{{fields.task_id}}"}
+
+  - name: Get Tasks
+    resource: Task
+    description: Lists the open tasks, of a project, a section, a label or a filter.
+    fields:
+      - {name: project_id, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+      - {name: section_id, label: Section ID}
+      - {name: parent_id, label: Parent task ID}
+      - {name: label, label: Label}
+      - {name: ids, label: Task IDs, description: Separated by commas}
+    request:
+      method: GET
+      path: tasks
+      query:
+        project_id: "{{fields.project_id}}"
+        section_id: "{{fields.section_id}}"
+        parent_id: "{{fields.parent_id}}"
+        label: "{{fields.label}}"
+        ids: "{{fields.ids}}"
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Filter Tasks
+    resource: Task
+    description: Lists the tasks a Todoist filter finds, like "today | overdue".
+    fields:
+      - {name: query, label: Filter, required: true}
+      - {name: lang, label: Language of the filter}
+    request:
+      method: GET
+      path: tasks/filter
+      query: {query: "{{fields.query}}", lang: "{{fields.lang}}"}
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Update Task
+    resource: Task
+    description: Changes a task. Empty fields stay as they are.
+    fields:
+      - {name: task_id, label: Task ID, required: true}
+      - {name: content, label: Content}
+      - {name: description, label: Description, type: textarea}
+      - {name: labels, label: Labels, type: multiselect, options_from: {request: {method: GET, path: labels, query: {limit: 200}}, path: results, label: name, value: name}}
+      - {name: priority, label: Priority, type: select, options: [{label: Normal, value: 1}, {label: Medium, value: 2}, {label: High, value: 3}, {label: Urgent, value: 4}]}
+      - {name: due_string, label: Due (in words)}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: due_lang, label: Language of the due words}
+      - {name: assignee_id, label: Assignee ID}
+      - {name: duration, label: Duration, type: number}
+      - {name: duration_unit, label: Duration unit, type: select, options: [{label: Minutes, value: minute}, {label: Days, value: day}]}
+    request:
+      method: POST
+      path: "tasks/{{fields.task_id}}"
+      body:
+        content: "{{fields.content}}"
+        description: "{{fields.description}}"
+        labels: "{{fields.labels}}"
+        priority: "{{fields.priority}}"
+        due_string: "{{fields.due_string}}"
+        due_datetime: "{{fields.due_date}}"
+        due_lang: "{{fields.due_lang}}"
+        assignee_id: "{{fields.assignee_id}}"
+        duration: "{{fields.duration}}"
+        duration_unit: "{{fields.duration_unit}}"
+
+  - name: Move Task
+    resource: Task
+    description: Moves a task to another project, section or parent task. Fill in one.
+    fields:
+      - {name: task_id, label: Task ID, required: true}
+      - {name: project_id, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+      - {name: section_id, label: Section ID}
+      - {name: parent_id, label: Parent task ID}
+    request:
+      method: POST
+      path: "tasks/{{fields.task_id}}/move"
+      body:
+        project_id: "{{fields.project_id}}"
+        section_id: "{{fields.section_id}}"
+        parent_id: "{{fields.parent_id}}"
+
+  - name: Close Task
+    resource: Task
+    description: Completes a task. A recurring one moves to its next date.
+    fields: [{name: task_id, label: Task ID, required: true}]
+    request: {method: POST, path: "tasks/{{fields.task_id}}/close"}
+    output:
+      value: {id: "{{fields.task_id}}", closed: true}
+
+  - name: Reopen Task
+    resource: Task
+    description: Opens a completed task again.
+    fields: [{name: task_id, label: Task ID, required: true}]
+    request: {method: POST, path: "tasks/{{fields.task_id}}/reopen"}
+    output:
+      value: {id: "{{fields.task_id}}", reopened: true}
+
+  - name: Delete Task
+    resource: Task
+    description: Deletes a task and its subtasks.
+    fields: [{name: task_id, label: Task ID, required: true}]
+    request: {method: DELETE, path: "tasks/{{fields.task_id}}"}
+    output:
+      value: {id: "{{fields.task_id}}", deleted: true}
+
+  # Projects
+  - name: Create Project
+    resource: Project
+    description: Creates a project.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: parent_id, label: Parent project ID}
+      - {name: color, label: Color, description: "A Todoist color name, like berry_red"}
+      - {name: is_favorite, label: Favorite, type: boolean}
+      -
+        name: view_style
+        label: View
+        type: select
+        options:
+          - {label: List, value: list}
+          - {label: Board, value: board}
+          - {label: Calendar, value: calendar}
+    request:
+      method: POST
+      path: projects
+      body:
+        name: "{{fields.name}}"
+        parent_id: "{{fields.parent_id}}"
+        color: "{{fields.color}}"
+        is_favorite: "{{fields.is_favorite}}"
+        view_style: "{{fields.view_style}}"
+
+  - name: Get Project
+    resource: Project
+    description: Reads a project.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+    request: {method: GET, path: "projects/{{fields.project_id}}"}
+
+  - name: Get Projects
+    resource: Project
+    description: Lists the projects.
+    request: {method: GET, path: projects}
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Get Collaborators
+    resource: Project
+    description: Lists the people who share a project.
+    fields: [{name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}]
+    request: {method: GET, path: "projects/{{fields.project_id}}/collaborators"}
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Update Project
+    resource: Project
+    description: Changes a project. Empty fields stay as they are.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+      - {name: name, label: Name}
+      - {name: color, label: Color, description: 'A Todoist color name, like berry_red'}
+      - {name: is_favorite, label: Favorite, type: boolean}
+      - {name: view_style, label: View, type: select, options: [{label: List, value: list}, {label: Board, value: board}, {label: Calendar, value: calendar}]}
+    request:
+      method: POST
+      path: "projects/{{fields.project_id}}"
+      body:
+        name: "{{fields.name}}"
+        color: "{{fields.color}}"
+        is_favorite: "{{fields.is_favorite}}"
+        view_style: "{{fields.view_style}}"
+
+  - name: Archive Project
+    resource: Project
+    description: Archives a project and its tasks.
+    fields: [{name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}]
+    request: {method: POST, path: "projects/{{fields.project_id}}/archive"}
+
+  - name: Unarchive Project
+    resource: Project
+    description: Brings an archived project back.
+    fields: [{name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}]
+    request: {method: POST, path: "projects/{{fields.project_id}}/unarchive"}
+
+  - name: Delete Project
+    resource: Project
+    description: Deletes a project and everything in it.
+    fields: [{name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}]
+    request: {method: DELETE, path: "projects/{{fields.project_id}}"}
+    output:
+      value: {id: "{{fields.project_id}}", deleted: true}
+
+  # Sections
+  - name: Create Section
+    resource: Section
+    description: Creates a section in a project.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+      - {name: name, label: Name, required: true}
+      - {name: order, label: Order, type: number}
+    request:
+      method: POST
+      path: sections
+      body: {project_id: "{{fields.project_id}}", name: "{{fields.name}}", order: "{{fields.order}}"}
+
+  - name: Get Section
+    resource: Section
+    description: Reads a section.
+    fields:
+      - {name: section_id, label: Section ID, required: true}
+    request: {method: GET, path: "sections/{{fields.section_id}}"}
+
+  - name: Get Sections
+    resource: Section
+    description: Lists the sections, of a project or of all.
+    fields:
+      - {name: project_id, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+    request: {method: GET, path: sections, query: {project_id: "{{fields.project_id}}"}}
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Update Section
+    resource: Section
+    description: Renames a section.
+    fields:
+      - {name: section_id, label: Section ID, required: true}
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: "sections/{{fields.section_id}}"
+      body: {name: "{{fields.name}}"}
+
+  - name: Delete Section
+    resource: Section
+    description: Deletes a section and its tasks.
+    fields: [{name: section_id, label: Section ID, required: true}]
+    request: {method: DELETE, path: "sections/{{fields.section_id}}"}
+    output:
+      value: {id: "{{fields.section_id}}", deleted: true}
+
+  # Comments
+  - name: Create Comment
+    resource: Comment
+    description: Comments on a task or a project. Fill in one.
+    fields:
+      - {name: task_id, label: Task ID}
+      - {name: project_id, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+      - {name: content, label: Comment, type: textarea, required: true}
+    request:
+      method: POST
+      path: comments
+      body:
+        task_id: "{{fields.task_id}}"
+        project_id: "{{fields.project_id}}"
+        content: "{{fields.content}}"
+
+  - name: Get Comment
+    resource: Comment
+    description: Reads a comment.
+    fields:
+      - {name: comment_id, label: Comment ID, required: true}
+    request: {method: GET, path: "comments/{{fields.comment_id}}"}
+
+  - name: Get Comments
+    resource: Comment
+    description: Lists the comments of a task or a project. Fill in one.
+    fields:
+      - {name: task_id, label: Task ID}
+      - {name: project_id, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {limit: 200}}, path: results, label: name, value: id, pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor}}}
+    request:
+      method: GET
+      path: comments
+      query: {task_id: "{{fields.task_id}}", project_id: "{{fields.project_id}}"}
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Update Comment
+    resource: Comment
+    description: Changes the text of a comment.
+    fields:
+      - {name: comment_id, label: Comment ID, required: true}
+      - {name: content, label: Comment, type: textarea, required: true}
+    request:
+      method: POST
+      path: "comments/{{fields.comment_id}}"
+      body: {content: "{{fields.content}}"}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment.
+    fields: [{name: comment_id, label: Comment ID, required: true}]
+    request: {method: DELETE, path: "comments/{{fields.comment_id}}"}
+    output:
+      value: {id: "{{fields.comment_id}}", deleted: true}
+
+  # Labels
+  - name: Create Label
+    resource: Label
+    description: Creates a personal label.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: color, label: Color, description: 'A Todoist color name, like berry_red'}
+      - {name: order, label: Order, type: number}
+      - {name: is_favorite, label: Favorite, type: boolean}
+    request:
+      method: POST
+      path: labels
+      body:
+        name: "{{fields.name}}"
+        color: "{{fields.color}}"
+        order: "{{fields.order}}"
+        is_favorite: "{{fields.is_favorite}}"
+
+  - name: Get Label
+    resource: Label
+    description: Reads a personal label.
+    fields:
+      - {name: label_id, label: Label ID, required: true}
+    request: {method: GET, path: "labels/{{fields.label_id}}"}
+
+  - name: Get Labels
+    resource: Label
+    description: Lists the personal labels.
+    request: {method: GET, path: labels}
+    pagination: {type: cursor, items_path: results, next_path: next_cursor, cursor_param: cursor, limit_param: limit, page_size: 200}
+
+  - name: Update Label
+    resource: Label
+    description: Changes a personal label. Empty fields stay as they are.
+    fields:
+      - {name: label_id, label: Label ID, required: true}
+      - {name: name, label: Name}
+      - {name: color, label: Color, description: 'A Todoist color name, like berry_red'}
+      - {name: order, label: Order, type: number}
+      - {name: is_favorite, label: Favorite, type: boolean}
+    request:
+      method: POST
+      path: "labels/{{fields.label_id}}"
+      body:
+        name: "{{fields.name}}"
+        color: "{{fields.color}}"
+        order: "{{fields.order}}"
+        is_favorite: "{{fields.is_favorite}}"
+
+  - name: Delete Label
+    resource: Label
+    description: Deletes a personal label, and takes it off its tasks.
+    fields: [{name: label_id, label: Label ID, required: true}]
+    request: {method: DELETE, path: "labels/{{fields.label_id}}"}
+    output:
+      value: {id: "{{fields.label_id}}", deleted: true}
+
+i18n:
+  pt-BR:
+    description: Tarefas, projetos, seções, comentários e etiquetas no Todoist.
+    triggers:
+      New Task: {name: Nova tarefa, description: "Inicia o fluxo para cada tarefa nova, de um projeto ou de todos, olhando a cada 5 minutos.", fields: {project_id: Projeto}}
+    actions:
+      Create Task:
+        name: Criar tarefa
+        description: Cria uma tarefa.
+        fields: {content: Conteúdo, description: Descrição, project_id: Projeto, section_id: ID da seção, parent_id: ID da tarefa-mãe, labels: Etiquetas, priority: Prioridade, due_string: Prazo (em palavras), due_date: Prazo, due_lang: Idioma do prazo, assignee_id: ID do responsável, duration: Duração, duration_unit: Unidade da duração, order: Ordem}
+      Quick Add Task: {name: Adicionar tarefa rápida, description: "Adiciona uma tarefa a partir de uma linha como no Todoist, como \"Ligar para Ana amanhã #Trabalho p1\".", fields: {text: Texto, note: Nota, reminder: Lembrete (em palavras)}}
+      Get Task: {name: Ler tarefa, description: Lê uma tarefa., fields: {task_id: ID da tarefa}}
+      Get Tasks: {name: Listar tarefas, description: "Lista as tarefas abertas de um projeto, seção, etiqueta ou filtro.", fields: {project_id: Projeto, section_id: ID da seção, parent_id: ID da tarefa-mãe, label: Etiqueta, ids: IDs das tarefas}}
+      Filter Tasks: {name: Filtrar tarefas, description: "Lista as tarefas que um filtro do Todoist encontra, como \"today | overdue\".", fields: {query: Filtro, lang: Idioma do filtro}}
+      Update Task: {name: Atualizar tarefa, description: Muda uma tarefa. Campos vazios ficam como estão., fields: {task_id: ID da tarefa, content: Conteúdo, description: Descrição, labels: Etiquetas, priority: Prioridade, due_string: Prazo (em palavras), due_date: Prazo, due_lang: Idioma do prazo, assignee_id: ID do responsável, duration: Duração, duration_unit: Unidade da duração}}
+      Move Task: {name: Mover tarefa, description: "Move uma tarefa para outro projeto, seção ou tarefa-mãe. Preencha um.", fields: {task_id: ID da tarefa, project_id: Projeto, section_id: ID da seção, parent_id: ID da tarefa-mãe}}
+      Close Task: {name: Concluir tarefa, description: Conclui uma tarefa. Uma recorrente vai para a próxima data., fields: {task_id: ID da tarefa}}
+      Reopen Task: {name: Reabrir tarefa, description: Abre de novo uma tarefa concluída., fields: {task_id: ID da tarefa}}
+      Delete Task: {name: Apagar tarefa, description: Apaga uma tarefa e suas subtarefas., fields: {task_id: ID da tarefa}}
+      Create Project: {name: Criar projeto, description: Cria um projeto., fields: {name: Nome, parent_id: ID do projeto-pai, color: Cor, is_favorite: Favorito, view_style: Visualização}}
+      Get Project: {name: Ler projeto, description: Lê um projeto., fields: {project_id: Projeto}}
+      Get Projects: {name: Listar projetos, description: Lista os projetos.}
+      Get Collaborators: {name: Listar colaboradores, description: Lista as pessoas que compartilham um projeto., fields: {project_id: Projeto}}
+      Update Project: {name: Atualizar projeto, description: Muda um projeto. Campos vazios ficam como estão., fields: {project_id: Projeto, name: Nome, color: Cor, is_favorite: Favorito, view_style: Visualização}}
+      Archive Project: {name: Arquivar projeto, description: Arquiva um projeto e suas tarefas., fields: {project_id: Projeto}}
+      Unarchive Project: {name: Desarquivar projeto, description: Traz de volta um projeto arquivado., fields: {project_id: Projeto}}
+      Delete Project: {name: Apagar projeto, description: Apaga um projeto e tudo o que há nele., fields: {project_id: Projeto}}
+      Create Section: {name: Criar seção, description: Cria uma seção num projeto., fields: {project_id: Projeto, name: Nome, order: Ordem}}
+      Get Section: {name: Ler seção, description: Lê uma seção., fields: {section_id: ID da seção}}
+      Get Sections: {name: Listar seções, description: "Lista as seções de um projeto, ou de todos.", fields: {project_id: Projeto}}
+      Update Section: {name: Renomear seção, description: Renomeia uma seção., fields: {section_id: ID da seção, name: Nome}}
+      Delete Section: {name: Apagar seção, description: Apaga uma seção e suas tarefas., fields: {section_id: ID da seção}}
+      Create Comment: {name: Comentar, description: "Comenta numa tarefa ou num projeto. Preencha um.", fields: {task_id: ID da tarefa, project_id: Projeto, content: Comentário}}
+      Get Comment: {name: Ler comentário, description: Lê um comentário., fields: {comment_id: ID do comentário}}
+      Get Comments: {name: Listar comentários, description: "Lista os comentários de uma tarefa ou projeto. Preencha um.", fields: {task_id: ID da tarefa, project_id: Projeto}}
+      Update Comment: {name: Editar comentário, description: Muda o texto de um comentário., fields: {comment_id: ID do comentário, content: Comentário}}
+      Delete Comment: {name: Apagar comentário, description: Apaga um comentário., fields: {comment_id: ID do comentário}}
+      Create Label: {name: Criar etiqueta, description: Cria uma etiqueta pessoal., fields: {name: Nome, color: Cor, order: Ordem, is_favorite: Favorita}}
+      Get Label: {name: Ler etiqueta, description: Lê uma etiqueta pessoal., fields: {label_id: ID da etiqueta}}
+      Get Labels: {name: Listar etiquetas, description: Lista as etiquetas pessoais.}
+      Update Label: {name: Atualizar etiqueta, description: Muda uma etiqueta pessoal. Campos vazios ficam como estão., fields: {label_id: ID da etiqueta, name: Nome, color: Cor, order: Ordem, is_favorite: Favorita}}
+      Delete Label: {name: Apagar etiqueta, description: "Apaga uma etiqueta pessoal, e tira ela das tarefas.", fields: {label_id: ID da etiqueta}}

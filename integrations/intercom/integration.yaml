@@ -1,0 +1,460 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Intercom's REST API 2.11. Make an app in Intercom's Developer Hub and copy its access
+# token, under Authentication.
+id: intercom
+name: Intercom
+version: 1.0.0
+description: Contacts, companies, conversations, notes and tags in Intercom.
+icon: hero-chat-bubble-oval-left-ellipsis
+category: support
+author: Heddle
+homepage: https://developers.intercom.com/docs/references/rest-api/api.intercom.io
+base_url: "https://{{credential.region}}/"
+headers:
+  Intercom-Version: "2.11"
+  Accept: application/json
+
+credential:
+  label: Intercom
+  fields:
+    - {name: token, label: Access token, secret: true, required: true}
+    - {name: region, label: Region, required: true, default: api.intercom.io, description: "api.intercom.io, api.eu.intercom.io or api.au.intercom.io"}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: errors.0.message
+
+triggers:
+  - name: New Contact
+    description: Starts the flow for each new user or lead, checking every 5 minutes.
+    fields:
+      - {name: role, label: Role, type: select, required: true, default: user, options: [{label: User, value: user}, {label: Lead, value: lead}]}
+    request:
+      method: POST
+      path: contacts/search
+      body:
+        query: {operator: AND, value: [{field: created_at, operator: ">", value: 0}, {field: role, operator: "=", value: "{{fields.role}}"}]}
+        sort: {field: created_at, order: descending}
+        pagination: {per_page: 50}
+    output:
+      path: data
+    poll:
+      every: 5
+      id: id
+
+  - name: New Conversation
+    description: Starts the flow for each new conversation, checking every 5 minutes.
+    request:
+      method: POST
+      path: conversations/search
+      body:
+        query: {field: created_at, operator: ">", value: 0}
+        sort: {field: created_at, order: descending}
+        pagination: {per_page: 50}
+    output:
+      path: conversations
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Adds a user or a lead. Give an email or an external ID.
+    fields:
+      - {name: role, label: Role, type: select, required: true, default: user, options: [{label: User, value: user}, {label: Lead, value: lead}]}
+      - {name: email, label: Email}
+      - {name: external_id, label: External ID, description: Your own ID for them.}
+      - {name: name, label: Name}
+      - {name: phone, label: Phone}
+      - {name: avatar, label: Avatar URL}
+      - {name: owner_id, label: Owner, type: select, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+      - {name: signed_up_at, label: Signed up at (Unix seconds), type: number}
+      - {name: last_seen_at, label: Last seen at (Unix seconds), type: number}
+      - {name: unsubscribed_from_emails, label: Unsubscribed from emails, type: boolean}
+      - {name: custom_attributes, label: Custom attributes, type: json, description: "Like {\"plan\": \"pro\"}"}
+    request:
+      method: POST
+      path: contacts
+      body:
+        role: "{{fields.role}}"
+        email: "{{fields.email}}"
+        external_id: "{{fields.external_id}}"
+        name: "{{fields.name}}"
+        phone: "{{fields.phone}}"
+        avatar: "{{fields.avatar}}"
+        owner_id: "{{fields.owner_id}}"
+        signed_up_at: "{{fields.signed_up_at}}"
+        last_seen_at: "{{fields.last_seen_at}}"
+        unsubscribed_from_emails: "{{fields.unsubscribed_from_emails}}"
+        custom_attributes: "{{fields.custom_attributes}}"
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact by Intercom's ID.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: GET, path: "contacts/{{fields.contact_id}}"}
+
+  - name: Find Contact
+    resource: Contact
+    description: "Finds contacts by email, external ID, phone or name."
+    fields:
+      - {name: field, label: By, type: select, required: true, default: email, options: [{label: Email, value: email}, {label: External ID, value: external_id}, {label: Phone, value: phone}, {label: Name, value: name}]}
+      - {name: value, label: Value, required: true}
+    request:
+      method: POST
+      path: contacts/search
+      body:
+        query: {field: "{{fields.field}}", operator: "=", value: "{{fields.value}}"}
+        pagination: {per_page: 150}
+    output:
+      path: data
+
+  - name: Search Contacts
+    resource: Contact
+    description: Finds contacts with Intercom's query, up to 150.
+    fields:
+      - {name: query, label: Query, type: json, required: true, description: "Like {\"field\": \"custom_attributes.plan\", \"operator\": \"=\", \"value\": \"pro\"}"}
+      - {name: sort, label: Sort, type: json, description: "Like {\"field\": \"created_at\", \"order\": \"descending\"}"}
+    request:
+      method: POST
+      path: contacts/search
+      body: {query: "{{fields.query}}", sort: "{{fields.sort}}", pagination: {per_page: 150}}
+    output:
+      path: data
+
+  - name: Get Contacts
+    resource: Contact
+    description: Lists every contact.
+    request: {method: GET, path: contacts}
+    pagination: {type: cursor, items_path: data, next_path: pages.next.starting_after, cursor_param: starting_after, limit_param: per_page, page_size: 150}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: role, label: Role, type: select, options: [{label: User, value: user}, {label: Lead, value: lead}]}
+      - {name: email, label: Email}
+      - {name: external_id, label: External ID, description: Your own ID for them.}
+      - {name: name, label: Name}
+      - {name: phone, label: Phone}
+      - {name: avatar, label: Avatar URL}
+      - {name: owner_id, label: Owner, type: select, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+      - {name: signed_up_at, label: Signed up at (Unix seconds), type: number}
+      - {name: last_seen_at, label: Last seen at (Unix seconds), type: number}
+      - {name: unsubscribed_from_emails, label: Unsubscribed from emails, type: boolean}
+      - {name: custom_attributes, label: Custom attributes, type: json, description: 'Like {"plan": "pro"}'}
+    request:
+      method: PUT
+      path: "contacts/{{fields.contact_id}}"
+      body: {role: '{{fields.role}}', email: '{{fields.email}}', external_id: '{{fields.external_id}}', name: '{{fields.name}}', phone: '{{fields.phone}}', avatar: '{{fields.avatar}}', owner_id: '{{fields.owner_id}}', signed_up_at: '{{fields.signed_up_at}}', last_seen_at: '{{fields.last_seen_at}}', unsubscribed_from_emails: '{{fields.unsubscribed_from_emails}}', custom_attributes: '{{fields.custom_attributes}}'}
+
+  - name: Archive Contact
+    resource: Contact
+    description: Archives a contact, or brings one back.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: archive, label: Archive, type: select, default: archive, options: [{label: Archive, value: archive}, {label: Unarchive, value: unarchive}]}
+    request: {method: POST, path: "contacts/{{fields.contact_id}}/{{fields.archive}}"}
+
+  - name: Delete Contact
+    resource: Contact
+    description: Deletes a contact for good.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: DELETE, path: "contacts/{{fields.contact_id}}"}
+
+  - name: Add Note
+    resource: Contact
+    description: Adds a note to a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: body, label: Note, type: textarea, required: true}
+      - {name: admin_id, label: Admin, type: select, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+    request:
+      method: POST
+      path: "contacts/{{fields.contact_id}}/notes"
+      body: {body: "{{fields.body}}", admin_id: "{{fields.admin_id}}"}
+
+  - name: Get Notes
+    resource: Contact
+    description: Lists the notes of a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+    request: {method: GET, path: "contacts/{{fields.contact_id}}/notes"}
+    output:
+      path: data
+
+  - name: Tag Contact
+    resource: Contact
+    description: Puts a tag on a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: tag_id, label: Tag, type: select, required: true, options_from: {request: {method: GET, path: tags}, path: data, label: name, value: id}}
+    request:
+      method: POST
+      path: "contacts/{{fields.contact_id}}/tags"
+      body: {id: "{{fields.tag_id}}"}
+
+  - name: Untag Contact
+    resource: Contact
+    description: Takes a tag off a contact.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: tag_id, label: Tag, type: select, required: true, options_from: {request: {method: GET, path: tags}, path: data, label: name, value: id}}
+    request: {method: DELETE, path: "contacts/{{fields.contact_id}}/tags/{{fields.tag_id}}"}
+
+  - name: Add Contact to Company
+    resource: Contact
+    description: Makes a contact part of a company.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: company_id, label: Company ID, required: true, description: "Intercom's ID of the company, not yours."}
+    request:
+      method: POST
+      path: "contacts/{{fields.contact_id}}/companies"
+      body: {id: "{{fields.company_id}}"}
+
+  - name: Remove Contact from Company
+    resource: Contact
+    description: Takes a contact out of a company.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: company_id, label: Company ID, required: true, description: 'Intercom''s ID of the company, not yours.'}
+    request: {method: DELETE, path: "contacts/{{fields.contact_id}}/companies/{{fields.company_id}}"}
+
+  # Companies
+  - name: Create or Update Company
+    resource: Company
+    description: Adds a company, or changes the one with the same company ID.
+    fields:
+      - {name: company_id, label: Your company ID, required: true}
+      - {name: name, label: Name}
+      - {name: plan, label: Plan}
+      - {name: size, label: Employees, type: number}
+      - {name: website, label: Website}
+      - {name: industry, label: Industry}
+      - {name: monthly_spend, label: Monthly spend, type: number}
+      - {name: remote_created_at, label: Created at (Unix seconds), type: number}
+      - {name: custom_attributes, label: Custom attributes, type: json, description: 'Like {"plan": "pro"}'}
+    request:
+      method: POST
+      path: companies
+      body:
+        company_id: "{{fields.company_id}}"
+        name: "{{fields.name}}"
+        plan: "{{fields.plan}}"
+        size: "{{fields.size}}"
+        website: "{{fields.website}}"
+        industry: "{{fields.industry}}"
+        monthly_spend: "{{fields.monthly_spend}}"
+        remote_created_at: "{{fields.remote_created_at}}"
+        custom_attributes: "{{fields.custom_attributes}}"
+
+  - name: Get Company
+    resource: Company
+    description: Reads a company by Intercom's ID.
+    fields:
+      - {name: company_id, label: Company ID, required: true, description: 'Intercom''s ID of the company, not yours.'}
+    request: {method: GET, path: "companies/{{fields.company_id}}"}
+
+  - name: Find Company
+    resource: Company
+    description: Finds a company by your company ID or by name. Fill one.
+    fields:
+      - {name: company_id, label: Your company ID}
+      - {name: name, label: Name}
+    request:
+      method: GET
+      path: companies
+      query: {company_id: "{{fields.company_id}}", name: "{{fields.name}}"}
+
+  - name: Get Companies
+    resource: Company
+    description: Lists every company.
+    request: {method: POST, path: companies/list}
+    pagination: {type: page, items_path: data, page_param: page, limit_param: per_page, page_size: 60}
+
+  - name: Get Company Contacts
+    resource: Company
+    description: Lists the contacts of a company.
+    fields:
+      - {name: company_id, label: Company ID, required: true, description: 'Intercom''s ID of the company, not yours.'}
+    request: {method: GET, path: "companies/{{fields.company_id}}/contacts"}
+    output:
+      path: data
+
+  - name: Delete Company
+    resource: Company
+    description: Deletes a company. Its contacts stay.
+    fields:
+      - {name: company_id, label: Company ID, required: true, description: 'Intercom''s ID of the company, not yours.'}
+    request: {method: DELETE, path: "companies/{{fields.company_id}}"}
+
+  # Conversations
+  - name: Start Conversation
+    resource: Conversation
+    description: Starts a conversation as a contact, as if they wrote in.
+    fields:
+      - {name: contact_id, label: Contact ID, required: true}
+      - {name: contact_type, label: Contact is a, type: select, default: user, options: [{label: User, value: user}, {label: Lead, value: lead}]}
+      - {name: body, label: Message, type: textarea, required: true}
+    request:
+      method: POST
+      path: conversations
+      body:
+        from: {type: "{{fields.contact_type}}", id: "{{fields.contact_id}}"}
+        body: "{{fields.body}}"
+
+  - name: Send Message
+    resource: Conversation
+    description: Sends a message from an admin to a contact, in the app or by email.
+    fields:
+      - {name: admin_id, label: From admin, type: select, required: true, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+      - {name: contact_id, label: To contact ID, required: true}
+      - {name: message_type, label: As, type: select, required: true, default: inapp, options: [{label: In-app message, value: inapp}, {label: Email, value: email}]}
+      - {name: subject, label: Subject, description: For an email.}
+      - {name: body, label: Message, type: textarea, required: true}
+    request:
+      method: POST
+      path: messages
+      body:
+        message_type: "{{fields.message_type}}"
+        subject: "{{fields.subject}}"
+        body: "{{fields.body}}"
+        from: {type: admin, id: "{{fields.admin_id}}"}
+        to: {type: user, id: "{{fields.contact_id}}"}
+
+  - name: Get Conversation
+    resource: Conversation
+    description: Reads a conversation, with its parts.
+    fields:
+      - {name: conversation_id, label: Conversation ID, required: true}
+    request: {method: GET, path: "conversations/{{fields.conversation_id}}", query: {display_as: plaintext}}
+
+  - name: Get Conversations
+    resource: Conversation
+    description: Lists every conversation.
+    request: {method: GET, path: conversations}
+    pagination: {type: cursor, items_path: conversations, next_path: pages.next.starting_after, cursor_param: starting_after, limit_param: per_page, page_size: 150}
+
+  - name: Reply to Conversation
+    resource: Conversation
+    description: Replies in a conversation as an admin, or adds a note only admins see.
+    fields:
+      - {name: conversation_id, label: Conversation ID, required: true}
+      - {name: admin_id, label: Admin, type: select, required: true, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+      - {name: message_type, label: As, type: select, required: true, default: comment, options: [{label: Reply, value: comment}, {label: Note, value: note}]}
+      - {name: body, label: Message, type: textarea, required: true}
+    request:
+      method: POST
+      path: "conversations/{{fields.conversation_id}}/reply"
+      body: {type: admin, admin_id: "{{fields.admin_id}}", message_type: "{{fields.message_type}}", body: "{{fields.body}}"}
+
+  - name: Assign Conversation
+    resource: Conversation
+    description: Gives a conversation to an admin or a team.
+    fields:
+      - {name: conversation_id, label: Conversation ID, required: true}
+      - {name: admin_id, label: By admin, type: select, required: true, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+      - {name: type, label: To a, type: select, required: true, default: admin, options: [{label: Admin, value: admin}, {label: Team, value: team}]}
+      - {name: assignee_id, label: Admin or team ID, required: true, description: 0 leaves it unassigned.}
+      - {name: body, label: Note, type: textarea}
+    request:
+      method: POST
+      path: "conversations/{{fields.conversation_id}}/parts"
+      body: {message_type: assignment, type: "{{fields.type}}", admin_id: "{{fields.admin_id}}", assignee_id: "{{fields.assignee_id}}", body: "{{fields.body}}"}
+
+  - name: Close Conversation
+    resource: Conversation
+    description: Closes a conversation.
+    fields:
+      - {name: conversation_id, label: Conversation ID, required: true}
+      - {name: admin_id, label: Admin, type: select, required: true, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+      - {name: body, label: Closing message, type: textarea}
+    request:
+      method: POST
+      path: "conversations/{{fields.conversation_id}}/parts"
+      body: {message_type: close, type: admin, admin_id: "{{fields.admin_id}}", body: "{{fields.body}}"}
+
+  - name: Open Conversation
+    resource: Conversation
+    description: Opens a closed or snoozed conversation again.
+    fields:
+      - {name: conversation_id, label: Conversation ID, required: true}
+      - {name: admin_id, label: Admin, type: select, required: true, options_from: {request: {method: GET, path: admins}, path: admins, label: name, value: id}}
+    request:
+      method: POST
+      path: "conversations/{{fields.conversation_id}}/parts"
+      body: {message_type: open, admin_id: "{{fields.admin_id}}"}
+
+  # Tags and admins
+  - name: Create Tag
+    resource: Tag
+    description: Makes a tag, or renames one given its ID.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: id, label: Tag ID, description: To rename it.}
+    request:
+      method: POST
+      path: tags
+      body: {name: "{{fields.name}}", id: "{{fields.id}}"}
+
+  - name: Get Tags
+    resource: Tag
+    description: Lists the tags.
+    request: {method: GET, path: tags}
+    output:
+      path: data
+
+  - name: Get Admins
+    resource: Admin
+    description: Lists the admins and teammates.
+    request: {method: GET, path: admins}
+    output:
+      path: admins
+
+i18n:
+  pt-BR:
+    description: Contatos, empresas, conversas, notas e etiquetas no Intercom.
+    triggers:
+      New Contact: {name: Novo contato, description: "Inicia o fluxo para cada usuário ou lead novo, olhando a cada 5 minutos.", fields: {role: Papel}}
+      New Conversation: {name: Nova conversa, description: "Inicia o fluxo para cada conversa nova, olhando a cada 5 minutos."}
+    actions:
+      Create Contact: {name: Criar contato, description: "Adiciona um usuário ou lead. Dê um e-mail ou ID externo.", fields: {role: Papel, email: E-mail, external_id: ID externo, name: Nome, phone: Telefone, avatar: URL do avatar, owner_id: Dono, signed_up_at: Cadastro em (segundos Unix), last_seen_at: Visto por último em (segundos Unix), unsubscribed_from_emails: Descadastrado dos e-mails, custom_attributes: Atributos personalizados}}
+      Get Contact: {name: Ler contato, description: Lê um contato pelo ID do Intercom., fields: {contact_id: ID do contato}}
+      Find Contact: {name: Encontrar contato, description: "Encontra contatos por e-mail, ID externo, telefone ou nome.", fields: {field: Por, value: Valor}}
+      Search Contacts: {name: Buscar contatos, description: "Encontra contatos com a busca do Intercom, até 150.", fields: {query: Busca, sort: Ordem}}
+      Get Contacts: {name: Listar contatos, description: Lista todos os contatos.}
+      Update Contact: {name: Atualizar contato, description: Muda um contato. Campos vazios ficam como estão., fields: {contact_id: ID do contato, role: Papel, email: E-mail, external_id: ID externo, name: Nome, phone: Telefone, avatar: URL do avatar, owner_id: Dono, signed_up_at: Cadastro em (segundos Unix), last_seen_at: Visto por último em (segundos Unix), unsubscribed_from_emails: Descadastrado dos e-mails, custom_attributes: Atributos personalizados}}
+      Archive Contact: {name: Arquivar contato, description: "Arquiva um contato, ou traz de volta.", fields: {contact_id: ID do contato, archive: Ação}}
+      Delete Contact: {name: Apagar contato, description: Apaga um contato de vez., fields: {contact_id: ID do contato}}
+      Add Note: {name: Adicionar nota, description: Adiciona uma nota a um contato., fields: {contact_id: ID do contato, body: Nota, admin_id: Admin}}
+      Get Notes: {name: Listar notas, description: Lista as notas de um contato., fields: {contact_id: ID do contato}}
+      Tag Contact: {name: Etiquetar contato, description: Põe uma etiqueta num contato., fields: {contact_id: ID do contato, tag_id: Etiqueta}}
+      Untag Contact: {name: Tirar etiqueta do contato, description: Tira uma etiqueta de um contato., fields: {contact_id: ID do contato, tag_id: Etiqueta}}
+      Add Contact to Company: {name: Pôr contato na empresa, description: Faz um contato parte de uma empresa., fields: {contact_id: ID do contato, company_id: ID da empresa}}
+      Remove Contact from Company: {name: Tirar contato da empresa, description: Tira um contato de uma empresa., fields: {contact_id: ID do contato, company_id: ID da empresa}}
+      Create or Update Company: {name: Criar ou atualizar empresa, description: "Adiciona uma empresa, ou muda a que tem o mesmo ID.", fields: {company_id: Seu ID da empresa, name: Nome, plan: Plano, size: Funcionários, website: Site, industry: Setor, monthly_spend: Gasto mensal, remote_created_at: Criada em (segundos Unix), custom_attributes: Atributos personalizados}}
+      Get Company: {name: Ler empresa, description: Lê uma empresa pelo ID do Intercom., fields: {company_id: ID da empresa}}
+      Find Company: {name: Encontrar empresa, description: Encontra uma empresa pelo seu ID ou pelo nome. Preencha um., fields: {company_id: Seu ID da empresa, name: Nome}}
+      Get Companies: {name: Listar empresas, description: Lista todas as empresas.}
+      Get Company Contacts: {name: Listar contatos da empresa, description: Lista os contatos de uma empresa., fields: {company_id: ID da empresa}}
+      Delete Company: {name: Apagar empresa, description: Apaga uma empresa. Os contatos ficam., fields: {company_id: ID da empresa}}
+      Start Conversation: {name: Iniciar conversa, description: "Inicia uma conversa como um contato, como se ele tivesse escrito.", fields: {contact_id: ID do contato, contact_type: O contato é, body: Mensagem}}
+      Send Message: {name: Enviar mensagem, description: "Envia uma mensagem de um admin a um contato, no app ou por e-mail.", fields: {admin_id: Do admin, contact_id: Para o contato (ID), message_type: Como, subject: Assunto, body: Mensagem}}
+      Get Conversation: {name: Ler conversa, description: "Lê uma conversa, com suas partes.", fields: {conversation_id: ID da conversa}}
+      Get Conversations: {name: Listar conversas, description: Lista todas as conversas.}
+      Reply to Conversation: {name: Responder conversa, description: "Responde numa conversa como admin, ou adiciona uma nota que só admins veem.", fields: {conversation_id: ID da conversa, admin_id: Admin, message_type: Como, body: Mensagem}}
+      Assign Conversation: {name: Atribuir conversa, description: Passa uma conversa a um admin ou time., fields: {conversation_id: ID da conversa, admin_id: Pelo admin, type: Para um, assignee_id: ID do admin ou time, body: Nota}}
+      Close Conversation: {name: Fechar conversa, description: Fecha uma conversa., fields: {conversation_id: ID da conversa, admin_id: Admin, body: Mensagem de encerramento}}
+      Open Conversation: {name: Reabrir conversa, description: Abre de novo uma conversa fechada ou adiada., fields: {conversation_id: ID da conversa, admin_id: Admin}}
+      Create Tag: {name: Criar etiqueta, description: "Cria uma etiqueta, ou renomeia uma dado o ID.", fields: {name: Nome, id: ID da etiqueta}}
+      Get Tags: {name: Listar etiquetas, description: Lista as etiquetas.}
+      Get Admins: {name: Listar admins, description: Lista os admins e colegas de equipe.}

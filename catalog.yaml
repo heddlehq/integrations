@@ -6,10 +6,10 @@ checked: 2026-11-22
 integrations:
 
   # Phase 1: the most used
-  - {id: activecampaign, name: ActiveCampaign, category: marketing, phase: 1, origin: n8n, auth: header, n8n: ActiveCampaign, host: true, kind: manifest, status: planned}
-  - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: planned}
+  - {id: activecampaign, name: ActiveCampaign, category: marketing, phase: 1, origin: n8n, auth: header, n8n: ActiveCampaign, host: true, kind: manifest, status: draft}
+  - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: draft}
   - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: planned}
-  - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: planned}
+  - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: draft}
   - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: planned}
   - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Calendly, kind: manifest, status: planned}
@@ -20,10 +20,10 @@ integrations:
   - {id: email, name: Email (IMAP/SMTP), category: email, phase: 1, origin: n8n, auth: basic, n8n: EmailReadImap, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: official}
   - {id: facebook_lead_ads, name: Facebook Lead Ads, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: FacebookLeadAds, kind: manifest, status: planned}
   - {id: facebook_pages, name: Facebook Pages, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Facebook, kind: manifest, status: planned}
-  - {id: freshdesk, name: Freshdesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Freshdesk, host: true, kind: manifest, status: planned}
+  - {id: freshdesk, name: Freshdesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Freshdesk, host: true, kind: manifest, status: draft}
   - {id: ftp, name: FTP / SFTP, category: files, phase: 1, origin: n8n, auth: basic, n8n: Ftp, kind: package, status: official}
   - {id: github, name: GitHub, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Github, kind: package, lib: {name: tentacat, version: 2.5.0, released: 2024-12-20}, status: community}
-  - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: planned}
+  - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: draft}
   - {id: gmail, name: Gmail, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Gmail, kind: package, lib: {name: google_api_gmail, version: 0.17.0, released: 2025-04-15}, status: planned}
   - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: package, lib: {name: google_api_analytics_admin, version: 0.26.0, released: 2025-04-15}, status: planned}
   - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: package, lib: {name: google_api_big_query, version: 0.88.0, released: 2025-04-15}, status: planned}
@@ -37,7 +37,7 @@ integrations:
   - {id: google_tasks, name: Google Tasks, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Task, kind: package, lib: {name: google_api_tasks, version: 0.17.0, released: 2025-04-15}, status: planned}
   - {id: hubspot, name: HubSpot, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Hubspot, kind: manifest, status: planned}
   - {id: instagram, name: Instagram, category: social, phase: 1, origin: extra, auth: oauth2, kind: manifest, status: planned}
-  - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: planned}
+  - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: draft}
   - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: planned}
   - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Linear, kind: manifest, status: planned}
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
@@ -51,7 +51,7 @@ integrations:
   - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: planned}
   - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: bearer, n8n: MondayCom, kind: manifest, status: planned}
   - {id: mongodb, name: MongoDB, category: database, phase: 1, origin: n8n, auth: basic, n8n: MongoDb, kind: package, lib: {name: mongodb_driver, version: 1.6.4, released: 2026-07-24}, status: official}
-  - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: planned}
+  - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: draft}
   - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
   - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: login, n8n: Odoo, host: true, kind: manifest, status: planned}
   - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
@@ -69,9 +69,9 @@ integrations:
   - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: package, lib: {name: stripity_stripe, version: 3.3.3, released: 2026-10-29}, status: planned}
   - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: package, lib: {name: supabase_potion, version: 1.0.0, released: 2026-07-17}, status: planned}
   - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: package, lib: {name: ex_gram, version: 0.71.0, released: 2026-10-01}, status: planned}
-  - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: planned}
-  - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: planned}
-  - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: planned}
+  - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
+  - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: draft}
+  - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: draft}
   - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: oauth2, n8n: Typeform, kind: manifest, status: planned}
   - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: oauth2, n8n: Webflow, kind: manifest, status: planned}
   - {id: whatsapp, name: WhatsApp Business Cloud, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: WhatsApp, kind: package, lib: {name: whatsapp_elixir, version: 0.1.10, released: 2026-11-12}, status: planned}
