@@ -1,0 +1,251 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# eNotas, now called Nota Gateway, for service invoices (NFS-e) across Brazilian
+# cities. Connect with the API key from the Nota Gateway dashboard. Each invoice is
+# issued by a company of the account, named by its ID. Issuing is asynchronous: an
+# invoice starts "Pendente" and becomes "Autorizada" or "Negada". To be told, paste
+# the trigger's address in the dashboard, under Webhooks › Novo webhook, with the
+# webhook token below as its Token.
+id: enotas
+name: eNotas (Nota Gateway)
+version: 1.0.0
+description: Issue, read, cancel and download service invoices (NFS-e), manage the issuing companies and their certificates, and receive invoice status changes, through eNotas' Nota Gateway.
+icon: hero-document-text
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="10.25" width="18.00" height="3.50" viewBox="0 0 203 39.5"><path d="M21.5 16.5V.2h16.3c-7.9 2.3-14 8.5-16.3 16.3zM0 38V21.6h16.3A24.37 24.37 0 0 0 0 38zm0-21.5V.2h16.3C8.4 2.5 2.3 8.7 0 16.5zm56.3 10.2a3.12 3.12 0 0 0 3.1-3.1v-.1c0-.9-.1-1.9-.2-2.8C58 14.2 52.3 8.3 45.7 8.3c-9.4 0-15.5 6.8-15.5 15.4 0 7.6 5.5 14.1 13 15.3.8.1 1.7.2 2.5.2 4 0 7.8-1.5 10.7-4.2l.1-.1c.8-.8 1-2.1.5-3.2-.7-1.3-2.4-1.8-3.7-1.1-.2.1-.4.3-.6.5-4.1 3.9-10.5 3.7-14.4-.4-.9-1-1.6-2.1-2.1-3.3-.1-.3 0-.6.3-.7h19.8zm-19.3-6c-.2 0-.4-.2-.4-.4v-.1c1.6-4.6 6.6-7 11.2-5.4 2.5.9 4.5 2.8 5.4 5.3.1.2 0 .5-.3.6H37zm55.6 15.5c0 .3 0 .6-.1.9-.5 1.2-1.6 2.1-2.9 2.3H89c-1.7 0-3.2-1.2-3.6-2.9V21.3a7.4 7.4 0 0 0-5.8-7.2c-.5-.1-1-.2-1.5-.2-4 0-7.3 3.3-7.3 7.3v14.4c0 .4-.1.8-.2 1.2a3.68 3.68 0 0 1-3.4 2.4H67a4.2 4.2 0 0 1-2.5-1.2c-1.2-1.2-1.1-3.2.1-4.3l.2-.1V14.2c-.9-.7-1.4-1.9-1.2-3 .2-1.3 1.2-2.3 2.4-2.6 2.9-.7 4.4 2.4 4.4 2.4 2.5-1.9 5.5-2.8 8.7-2.7 3.8 0 7.4 1.8 9.7 4.9 1.4 1.8 2.2 4.1 2.4 6.4v14c.9.5 1.4 1.5 1.4 2.6zm19.2-27.9c-8.6 0-15.5 7-15.5 15.5s7 15.5 15.5 15.5 15.5-7 15.5-15.5c0-8.6-7-15.5-15.5-15.5zm0 25.5c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10zm37.3 2.5c0 1.7-1.3 3-3 3h-4.5c-4.8 0-8.6-3.1-8.5-9.6l-.1-15.5c-1.7 0-3-1.3-3-3s1.3-3 3-3V5.6c0-.2-.1-.4-.2-.6-1.1-1.2-1-3.1.2-4.2.4-.4.9-.7 1.5-.8h.1c2.5-.3 4.4 1.9 4.4 4.8v3.4h4.8c1.7 0 3 1.3 3 3s-1.3 3-3 3H139v16a3.12 3.12 0 0 0 3.1 3.1h4c1.6.1 3 1.4 3 3zm27.7-2.3c-.2-.2-.4-.5-.4-.9V17.3c0-4.5-3.4-9-12-9s-9.7 2.6-9.7 2.6c-.8 1.3-.3 3 1 3.8.8.5 1.8.5 2.6.1.4-.2.7-.3 1.1-.5 1.7-.5 3.4-.6 5.2-.5 4.5.3 6 1.9 5.9 4.9 0 0-9.2-2.6-14.8 1.9s-5.7 12.7.3 17c5 3.7 12.5.6 14.7-.5.3-.1.6 0 .7.3a3.31 3.31 0 0 0 4.2 2 3.31 3.31 0 0 0 2-4.2c-.2-.4-.5-.9-.8-1.2zm-8-2.4c-2.2 2.1-5.4 2.9-8.4 1.9-2.9-1-5-5.4-1.1-8.5 3.3-2.6 9-.9 10.7-.3.3.1.5.4.5.7.1 1.2 0 4.5-1.7 6.2zm18.5-15c.1-3.7 6.3-3.9 9.3-1.4.7.6 1.6.9 2.6.8a2.87 2.87 0 0 0 2.4-2.6c0-1.2-.5-2.3-1.5-3-1.5-1-3.5-2.2-7.8-2.2 0 0-10.6-.4-10.8 8.7s15.7 7.5 15.6 13.6c-.1 3-3 3.2-5.2 3.2-4 0-5.2-2.4-7.5-2.1A2.58 2.58 0 0 0 182 34c-.1 1 .3 2.1 1.1 2.7 1.2 1.1 3.9 2.7 8.9 2.7 7.8 0 10.9-3.4 11.2-7.6.4-11.5-16-10-15.9-15.2z"/></svg></svg>
+category: fiscal
+author: Heddle
+homepage: https://docs.enotasgw.com.br
+base_url: https://api.notagateway.com.br/v1/
+headers:
+  User-Agent: Heddle
+  Accept: application/json
+
+credential:
+  label: Nota Gateway
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true, description: "From the Nota Gateway dashboard."}
+    - {name: webhook_token, label: Webhook token, secret: true, description: "Any secret text, for the Invoice Status trigger. Give the same as the webhook's Token in the dashboard."}
+  auth:
+    type: header
+    name: Authorization
+    value: "Basic {{credential.api_key}}"
+
+errors:
+  message_path: 0.mensagem
+
+triggers:
+  - name: Invoice Status
+    description: Starts the flow when an invoice is authorized, denied or cancelled, or its cancellation is denied. Paste the address in the dashboard's Webhooks.
+    webhook:
+      signature: {header: x-token, token: "{{credential.webhook_token}}"}
+
+actions:
+  # Invoices
+  - name: Issue Service Invoice
+    resource: Invoice
+    description: Sends a service invoice to the city, for a client.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true, description: "From List Companies."}
+      - {name: valorTotal, label: Amount, type: number, required: true}
+      - {name: descricao, label: Service description, type: textarea, required: true}
+      - {name: cliente_nome, label: Client name, required: true}
+      - {name: cliente_cpfCnpj, label: Client CPF or CNPJ}
+      - {name: cliente_email, label: Client email}
+      - name: cliente_tipoPessoa
+        label: Client kind
+        type: select
+        options: [{label: Person, value: F}, {label: Company, value: J}]
+      - {name: cliente_endereco, label: Client address, type: json, description: 'Like {"uf": "SP", "cidade": "São Paulo", "logradouro": "Av. Paulista", "numero": "1000", "bairro": "Bela Vista", "cep": "01310100"}'}
+      - {name: idExterno, label: Your reference, description: "Prevents issuing twice, and reads the invoice back."}
+      - name: ambienteEmissao
+        label: Environment
+        type: select
+        default: Producao
+        options: [{label: Production, value: Producao}, {label: Testing, value: Homologacao}]
+      - {name: enviarPorEmail, label: Email the client, type: boolean}
+      - {name: aliquotaIss, label: ISS rate, type: number, description: "Like 2 for 2%."}
+      - {name: codigoServicoMunicipio, label: City service code}
+      - {name: issRetidoFonte, label: ISS withheld, type: boolean}
+      - {name: dataCompetencia, label: Competence date, description: "Like 2026-01-31"}
+      - {name: observacoes, label: Notes, type: textarea}
+      - {name: extra, label: More attributes, type: json, description: 'Any other attribute of the invoice, like {"deducoes": 10, "naturezaOperacao": "1"}'}
+    request:
+      method: POST
+      path: "empresas/{{fields.empresa_id}}/nfes"
+      body:
+        _merge: "{{fields.extra}}"
+        tipo: NFS-e
+        idExterno: "{{fields.idExterno}}"
+        ambienteEmissao: "{{fields.ambienteEmissao}}"
+        enviarPorEmail: "{{fields.enviarPorEmail}}"
+        valorTotal: "{{fields.valorTotal}}"
+        dataCompetencia: "{{fields.dataCompetencia}}"
+        observacoes: "{{fields.observacoes}}"
+        cliente:
+          tipoPessoa: "{{fields.cliente_tipoPessoa}}"
+          nome: "{{fields.cliente_nome}}"
+          cpfCnpj: "{{fields.cliente_cpfCnpj}}"
+          email: "{{fields.cliente_email}}"
+          endereco: "{{fields.cliente_endereco}}"
+        servico:
+          descricao: "{{fields.descricao}}"
+          aliquotaIss: "{{fields.aliquotaIss}}"
+          codigoServicoMunicipio: "{{fields.codigoServicoMunicipio}}"
+          issRetidoFonte: "{{fields.issRetidoFonte}}"
+
+  - name: List Invoices
+    resource: Invoice
+    description: Lists a company's invoices, by status.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: filter, label: Filter, default: "status eq 'Autorizada'", description: "Like status eq 'Negada'"}
+      - {name: pageNumber, label: Page, type: number, default: 0, description: "0 is the first."}
+      - {name: pageSize, label: Per page, type: number, default: 50, description: "Up to 150."}
+    request:
+      method: GET
+      path: "empresas/{{fields.empresa_id}}/nfes"
+      query: {filter: "{{fields.filter}}", pageNumber: "{{fields.pageNumber}}", pageSize: "{{fields.pageSize}}"}
+    output: {path: data}
+
+  - name: Get Invoice
+    resource: Invoice
+    description: Reads an invoice, with its status, number and links.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: "empresas/{{fields.empresa_id}}/nfes/{{fields.id}}"}
+
+  - name: Get Invoice By Reference
+    resource: Invoice
+    description: Reads an invoice by the reference you gave it.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: idExterno, label: Your reference, required: true}
+    request: {method: GET, path: "empresas/{{fields.empresa_id}}/nfes/porIdExterno/{{fields.idExterno}}"}
+
+  - name: Cancel Invoice
+    resource: Invoice
+    description: Asks the city to cancel an invoice.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: DELETE, path: "empresas/{{fields.empresa_id}}/nfes/{{fields.id}}"}
+
+  - name: Cancel Invoice By Reference
+    resource: Invoice
+    description: Asks the city to cancel an invoice, named by the reference you gave it.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: idExterno, label: Your reference, required: true}
+    request: {method: DELETE, path: "empresas/{{fields.empresa_id}}/nfes/porIdExterno/{{fields.idExterno}}"}
+
+  - name: Download Invoice PDF
+    resource: Invoice
+    description: Downloads an invoice as a PDF.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: "empresas/{{fields.empresa_id}}/nfes/{{fields.id}}/pdf"}
+    output:
+      file: {name: "nfse-{{fields.id}}.pdf"}
+
+  - name: Download Invoice XML
+    resource: Invoice
+    description: Downloads an invoice's XML.
+    fields:
+      - {name: empresa_id, label: Company ID, required: true}
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: "empresas/{{fields.empresa_id}}/nfes/{{fields.id}}/xml"}
+    output:
+      file: {name: "nfse-{{fields.id}}.xml"}
+
+  # Companies
+  - name: List Companies
+    resource: Company
+    description: Searches the account's issuing companies by name or CNPJ.
+    fields:
+      - name: searchBy
+        label: Search by
+        type: select
+        default: nome_fantasia
+        options: [{label: Trade name, value: nome_fantasia}, {label: Legal name, value: razao_social}, {label: CNPJ, value: CNPJ}]
+      - {name: searchTerm, label: Search}
+      - {name: pageNumber, label: Page, type: number, default: 0}
+      - {name: pageSize, label: Per page, type: number, default: 50, description: "Up to 150."}
+    request:
+      method: GET
+      path: empresas
+      query: {searchBy: "{{fields.searchBy}}", searchTerm: "{{fields.searchTerm}}", sortBy: nome_fantasia, sortDirection: asc, pageNumber: "{{fields.pageNumber}}", pageSize: "{{fields.pageSize}}"}
+    output: {path: data}
+
+  - name: Get Company
+    resource: Company
+    description: Reads an issuing company, with its settings.
+    fields:
+      - {name: id, label: Company ID, required: true}
+    request: {method: GET, path: "empresas/{{fields.id}}"}
+
+  - name: Save Company
+    resource: Company
+    description: Creates an issuing company, or changes one when the attributes have its id.
+    fields:
+      - {name: company, label: Company, type: json, required: true, description: 'Like {"cnpj": "11222333000181", "razaoSocial": "Acme Ltda", "nomeFantasia": "Acme", "inscricaoMunicipal": "12345", "optanteSimplesNacional": true, "email": "fiscal@acme.com", "endereco": {"codigoIbgeCidade": 3550308, "uf": "SP", "cidade": "São Paulo", "logradouro": "Av. Paulista", "numero": "1000", "bairro": "Bela Vista", "cep": "01310100"}}'}
+    request: {method: POST, path: empresas, body: "{{fields.company}}"}
+
+  - name: Upload Certificate
+    resource: Company
+    description: Sends a company's A1 digital certificate, the .pfx file and its password.
+    fields:
+      - {name: id, label: Company ID, required: true}
+      - {name: arquivo, label: Certificate (.pfx), type: file, required: true}
+      - {name: senha, label: Certificate password, required: true}
+    request:
+      method: POST
+      path: "empresas/{{fields.id}}/certificadoDigital"
+      body_type: multipart
+      body: {arquivo: "{{fields.arquivo}}", senha: "{{fields.senha}}"}
+
+  - name: Enable Company
+    resource: Company
+    description: Enables a company to issue invoices.
+    fields:
+      - {name: id, label: Company ID, required: true}
+    request: {method: POST, path: "empresas/{{fields.id}}/habilitar"}
+
+  - name: Disable Company
+    resource: Company
+    description: Stops a company from issuing invoices.
+    fields:
+      - {name: id, label: Company ID, required: true}
+    request: {method: POST, path: "empresas/{{fields.id}}/desabilitar"}
+
+  # Cities
+  - name: Get City Provider
+    resource: City
+    description: Reads what a city's invoice system asks for, like a certificate or a login, by its IBGE code.
+    fields:
+      - {name: codigoIBGECidade, label: City IBGE code, required: true, description: "Like 3550308 for São Paulo."}
+    request: {method: GET, path: "estados/cidades/{{fields.codigoIBGECidade}}/provedor"}
+
+i18n:
+  pt-BR:
+    description: "Emita, consulte, cancele e baixe notas fiscais de serviço (NFS-e), gerencie as empresas emissoras e seus certificados e receba mudanças de status das notas pela Nota Gateway da eNotas."
+    triggers:
+      Invoice Status: {name: "Status da nota", description: "Inicia o fluxo quando uma nota é autorizada, negada ou cancelada, ou tem o cancelamento negado. Cole o endereço em Webhooks no painel."}
+    actions:
+      Issue Service Invoice: {name: "Emitir NFS-e", description: "Envia uma nota de serviço à prefeitura, para um cliente.", fields: {empresa_id: "ID da empresa", valorTotal: "Valor", descricao: "Descrição do serviço", cliente_nome: "Nome do cliente", cliente_cpfCnpj: "CPF ou CNPJ do cliente", cliente_email: "E-mail do cliente", cliente_tipoPessoa: "Tipo de cliente", cliente_endereco: "Endereço do cliente", idExterno: "Sua referência", ambienteEmissao: "Ambiente", enviarPorEmail: "Enviar ao cliente por e-mail", aliquotaIss: "Alíquota de ISS", codigoServicoMunicipio: "Código do serviço no município", issRetidoFonte: "ISS retido", dataCompetencia: "Data de competência", observacoes: "Observações", extra: "Mais atributos"}}
+      List Invoices: {name: "Listar notas", description: "Lista as notas de uma empresa, por status.", fields: {empresa_id: "ID da empresa", filter: "Filtro", pageNumber: "Página", pageSize: "Por página"}}
+      Get Invoice: {name: "Obter nota", description: "Lê uma nota, com status, número e links.", fields: {empresa_id: "ID da empresa", id: "ID da nota"}}
+      Get Invoice By Reference: {name: "Obter nota pela referência", description: "Lê uma nota pela referência que você deu a ela.", fields: {empresa_id: "ID da empresa", idExterno: "Sua referência"}}
+      Cancel Invoice: {name: "Cancelar nota", description: "Pede à prefeitura o cancelamento de uma nota.", fields: {empresa_id: "ID da empresa", id: "ID da nota"}}
+      Cancel Invoice By Reference: {name: "Cancelar nota pela referência", description: "Pede à prefeitura o cancelamento de uma nota, pela referência que você deu a ela.", fields: {empresa_id: "ID da empresa", idExterno: "Sua referência"}}
+      Download Invoice PDF: {name: "Baixar PDF da nota", description: "Baixa uma nota em PDF.", fields: {empresa_id: "ID da empresa", id: "ID da nota"}}
+      Download Invoice XML: {name: "Baixar XML da nota", description: "Baixa o XML de uma nota.", fields: {empresa_id: "ID da empresa", id: "ID da nota"}}
+      List Companies: {name: "Listar empresas", description: "Pesquisa as empresas emissoras da conta por nome ou CNPJ.", fields: {searchBy: "Pesquisar por", searchTerm: "Pesquisa", pageNumber: "Página", pageSize: "Por página"}}
+      Get Company: {name: "Obter empresa", description: "Lê uma empresa emissora, com suas configurações.", fields: {id: "ID da empresa"}}
+      Save Company: {name: "Salvar empresa", description: "Cria uma empresa emissora, ou altera uma quando os atributos têm o id dela.", fields: {company: "Empresa"}}
+      Upload Certificate: {name: "Enviar certificado", description: "Envia o certificado digital A1 de uma empresa, o arquivo .pfx e a senha.", fields: {id: "ID da empresa", arquivo: "Certificado (.pfx)", senha: "Senha do certificado"}}
+      Enable Company: {name: "Habilitar empresa", description: "Habilita uma empresa a emitir notas.", fields: {id: "ID da empresa"}}
+      Disable Company: {name: "Desabilitar empresa", description: "Impede uma empresa de emitir notas.", fields: {id: "ID da empresa"}}
+      Get City Provider: {name: "Consultar prefeitura", description: "Lê o que o sistema de notas de uma cidade pede, como certificado ou login, pelo código IBGE.", fields: {codigoIBGECidade: "Código IBGE da cidade"}}
