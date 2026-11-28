@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          [cassandra, dynamodb, elasticsearch, email, ftp, google_sheets, mongodb, neo4j, redis, s3, slack, sql]
+          [cassandra, dynamodb, elasticsearch, email, ftp, google_sheets, jido, mongodb, neo4j, redis, s3, slack, sql]
     services:
       postgres:
         image: postgres:16
