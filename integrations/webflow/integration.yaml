@@ -1,0 +1,319 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Webflow, through the Data API v2. Connect with a site API token, made in the site's
+# Settings › Apps & integrations › API access, with access to sites, CMS, forms and
+# e-commerce. Webflow signs webhooks with the site's webhook secret, shown under the
+# same settings, which the triggers need.
+id: webflow
+name: Webflow
+version: 1.0.0
+description: CMS items, forms and orders of a Webflow site.
+icon: hero-globe-alt
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#146EF5" d="m24 4.515l-7.658 14.97H9.149l3.205-6.204h-.144C9.566 16.713 5.621 18.973 0 19.485v-6.118s3.596-.213 5.71-2.435H0V4.515h6.417v5.278l.144-.001l2.622-5.277h4.854v5.244h.144l2.72-5.244z"/></svg>
+category: cms
+author: Heddle
+homepage: https://developers.webflow.com/data/reference
+base_url: https://api.webflow.com/v2/
+
+credential:
+  label: Webflow
+  fields:
+    - {name: token, label: Site API token, secret: true, required: true}
+    - {name: webhook_secret, label: Webhook secret, secret: true, description: "Signs the webhooks. Needed for the triggers."}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Site Event
+    description: Starts the flow when a form is submitted, the site is published, or a CMS item or an order changes.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - name: event
+        label: Event
+        type: select
+        required: true
+        default: form_submission
+        options:
+          - {label: Form submitted, value: form_submission}
+          - {label: Site published, value: site_publish}
+          - {label: Page created, value: page_created}
+          - {label: CMS item created, value: collection_item_created}
+          - {label: CMS item changed, value: collection_item_changed}
+          - {label: CMS item deleted, value: collection_item_deleted}
+          - {label: CMS item unpublished, value: collection_item_unpublished}
+          - {label: New order, value: ecomm_new_order}
+          - {label: Order changed, value: ecomm_order_changed}
+          - {label: Inventory changed, value: ecomm_inventory_changed}
+          - {label: User account added, value: user_account_added}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "sites/{{fields.site}}/webhooks"
+          body: {triggerType: "{{fields.event}}", url: "{{webhook.url}}"}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature:
+        header: x-webflow-signature
+        timestamp_header: x-webflow-timestamp
+        message: "{{request.timestamp}}:{{request.body}}"
+        secret: "{{credential.webhook_secret}}"
+        tolerance: 300
+      output:
+        path: payload
+
+actions:
+  # Sites
+  - name: List Sites
+    resource: Site
+    description: Lists the sites the token reaches.
+    request: {method: GET, path: sites}
+    output: {path: sites}
+
+  - name: Get Site
+    resource: Site
+    description: Reads a site, with its domains.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+    request: {method: GET, path: "sites/{{fields.site}}"}
+
+  - name: Publish Site
+    resource: Site
+    description: Publishes the site to its Webflow subdomain and its custom domains.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: domains, label: Custom domain IDs, description: "Like 589a331aa51e760df7ccb89d. All when empty."}
+      - {name: subdomain, label: To the webflow.io subdomain, type: boolean, default: true}
+    request:
+      method: POST
+      path: "sites/{{fields.site}}/publish"
+      body: {customDomains: {_each: "{{fields.domains}}", _value: "{{item}}"}, publishToWebflowSubdomain: "{{fields.subdomain}}"}
+
+  # Collections
+  - name: List Collections
+    resource: Collection
+    description: Lists the CMS collections of a site.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+    request: {method: GET, path: "sites/{{fields.site}}/collections"}
+    output: {path: collections}
+
+  - name: Get Collection
+    resource: Collection
+    description: Reads a collection, with its fields and their slugs.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+    request: {method: GET, path: "collections/{{fields.collection}}"}
+
+  # Items
+  - name: Create Item
+    resource: Item
+    description: Adds an item to a collection, as a draft or published.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: slug, label: Slug}
+      - {name: fields, label: Other fields, type: json, description: 'By slug, like {"price": 10, "summary": "..."}'}
+      - {name: draft, label: Draft, type: boolean, default: false}
+    request:
+      method: POST
+      path: "collections/{{fields.collection}}/items"
+      body:
+        isDraft: "{{fields.draft}}"
+        fieldData: {name: "{{fields.name}}", slug: "{{fields.slug}}", _merge: "{{fields.fields}}"}
+
+  - name: Get Item
+    resource: Item
+    description: Reads an item of a collection.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+      - {name: item, label: Item ID, required: true}
+    request: {method: GET, path: "collections/{{fields.collection}}/items/{{fields.item}}"}
+
+  - name: List Items
+    resource: Item
+    description: Lists the items of a collection.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+      - {name: name, label: Name is}
+      - {name: slug, label: Slug is}
+    request:
+      method: GET
+      path: "collections/{{fields.collection}}/items"
+      query: {name: "{{fields.name}}", slug: "{{fields.slug}}"}
+    pagination: {type: offset, items_path: items, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Item
+    resource: Item
+    description: Changes an item. Fields left out stay as they are.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+      - {name: item, label: Item ID, required: true}
+      - {name: name, label: Name}
+      - {name: slug, label: Slug}
+      - {name: fields, label: Other fields, type: json, description: 'By slug, like {"price": 12}'}
+      - {name: draft, label: Draft, type: boolean}
+    request:
+      method: PATCH
+      path: "collections/{{fields.collection}}/items/{{fields.item}}"
+      body:
+        isDraft: "{{fields.draft}}"
+        fieldData: {name: "{{fields.name}}", slug: "{{fields.slug}}", _merge: "{{fields.fields}}"}
+
+  - name: Delete Item
+    resource: Item
+    description: Deletes an item of a collection.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+      - {name: item, label: Item ID, required: true}
+    request: {method: DELETE, path: "collections/{{fields.collection}}/items/{{fields.item}}"}
+    output:
+      value: {id: "{{fields.item}}", deleted: true}
+
+  - name: Publish Items
+    resource: Item
+    description: Publishes some items of a collection to the live site.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: collection, label: Collection, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/collections"}, path: collections, label: displayName, value: id}}
+      - {name: items, label: Item IDs, required: true, description: "Like 580e64008c9a982ac9b8b754, 580e64008c9a982ac9b8b755"}
+    request:
+      method: POST
+      path: "collections/{{fields.collection}}/items/publish"
+      body: {itemIds: {_each: "{{fields.items}}", _value: "{{item}}"}}
+
+  # Forms
+  - name: List Forms
+    resource: Form
+    description: Lists the forms of a site.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+    request: {method: GET, path: "sites/{{fields.site}}/forms"}
+    pagination: {type: offset, items_path: forms, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: List Form Submissions
+    resource: Form
+    description: Lists what was sent through a form.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: form, label: Form, type: select, required: true, options_from: {request: {method: GET, path: "sites/{{fields.site}}/forms"}, path: forms, label: displayName, value: id}}
+    request: {method: GET, path: "forms/{{fields.form}}/submissions"}
+    pagination: {type: offset, items_path: formSubmissions, offset_param: offset, limit_param: limit, page_size: 100}
+
+  # E-commerce
+  - name: List Products
+    resource: Product
+    description: Lists the products of a site's store, with their SKUs.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+    request: {method: GET, path: "sites/{{fields.site}}/products"}
+    pagination: {type: offset, items_path: items, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Inventory
+    resource: Product
+    description: Sets or changes the stock of a SKU.
+    fields:
+      - {name: collection, label: SKU collection ID, required: true}
+      - {name: sku, label: SKU item ID, required: true}
+      - {name: type, label: Stock, type: select, default: finite, options: [{label: A number, value: finite}, {label: Unlimited, value: infinite}]}
+      - {name: quantity, label: Set to, type: number}
+      - {name: change, label: Or change by, type: number, description: "Like 5, or -2."}
+    request:
+      method: PATCH
+      path: "collections/{{fields.collection}}/items/{{fields.sku}}/inventory"
+      body: {inventoryType: "{{fields.type}}", quantity: "{{fields.quantity}}", updateQuantity: "{{fields.change}}"}
+
+  - name: List Orders
+    resource: Order
+    description: Lists the orders of a site's store.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: status, label: Status, type: select, options: [{label: Pending, value: pending}, {label: Unfulfilled, value: unfulfilled}, {label: Fulfilled, value: fulfilled}, {label: Disputed, value: disputed}, {label: Refunded, value: refunded}]}
+    request: {method: GET, path: "sites/{{fields.site}}/orders", query: {status: "{{fields.status}}"}}
+    pagination: {type: offset, items_path: orders, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: order, label: Order ID, required: true}
+    request: {method: GET, path: "sites/{{fields.site}}/orders/{{fields.order}}"}
+
+  - name: Fulfill Order
+    resource: Order
+    description: Marks an order as shipped.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: order, label: Order ID, required: true}
+      - {name: email, label: Tell the customer, type: boolean, default: true}
+    request:
+      method: POST
+      path: "sites/{{fields.site}}/orders/{{fields.order}}/fulfill"
+      body: {sendOrderFulfilledEmail: "{{fields.email}}"}
+
+  - name: Update Order
+    resource: Order
+    description: Writes a comment or the shipping tracking on an order.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: order, label: Order ID, required: true}
+      - {name: comment, label: Comment, type: textarea}
+      - {name: provider, label: Carrier}
+      - {name: tracking, label: Tracking number}
+      - {name: tracking_url, label: Tracking URL}
+    request:
+      method: PATCH
+      path: "sites/{{fields.site}}/orders/{{fields.order}}"
+      body: {comment: "{{fields.comment}}", shippingProvider: "{{fields.provider}}", shippingTracking: "{{fields.tracking}}", shippingTrackingURL: "{{fields.tracking_url}}"}
+
+  - name: Refund Order
+    resource: Order
+    description: Refunds an order in full and restocks it.
+    fields:
+      - {name: site, label: Site, type: select, required: true, options_from: {request: {method: GET, path: sites}, path: sites, label: displayName, value: id}}
+      - {name: order, label: Order ID, required: true}
+      - {name: reason, label: Reason, type: select, options: [{label: Duplicate, value: duplicate}, {label: Fraudulent, value: fraudulent}, {label: Requested, value: requested}]}
+    request:
+      method: POST
+      path: "sites/{{fields.site}}/orders/{{fields.order}}/refund"
+      body: {reason: "{{fields.reason}}"}
+
+i18n:
+  pt-BR:
+    description: Itens do CMS, formulários e pedidos de um site Webflow.
+    triggers:
+      Site Event: {name: Evento do site, description: "Inicia o fluxo quando um formulário é enviado, o site é publicado, ou um item do CMS ou pedido muda.", fields: {site: Site, event: Evento}}
+    actions:
+      List Sites: {name: Listar sites, description: Lista os sites que o token alcança.}
+      Get Site: {name: Ler site, description: "Lê um site, com os domínios.", fields: {site: Site}}
+      Publish Site: {name: Publicar site, description: Publica o site no subdomínio do Webflow e nos domínios próprios., fields: {site: Site, domains: IDs dos domínios, subdomain: No subdomínio webflow.io}}
+      List Collections: {name: Listar coleções, description: Lista as coleções do CMS de um site., fields: {site: Site}}
+      Get Collection: {name: Ler coleção, description: "Lê uma coleção, com os campos e os slugs.", fields: {site: Site, collection: Coleção}}
+      Create Item: {name: Criar item, description: "Adiciona um item a uma coleção, como rascunho ou publicado.", fields: {site: Site, collection: Coleção, name: Nome, slug: Slug, fields: Outros campos, draft: Rascunho}}
+      Get Item: {name: Ler item, description: Lê um item de uma coleção., fields: {site: Site, collection: Coleção, item: ID do item}}
+      List Items: {name: Listar itens, description: Lista os itens de uma coleção., fields: {site: Site, collection: Coleção, name: Nome é, slug: Slug é}}
+      Update Item: {name: Atualizar item, description: Altera um item. Campos de fora ficam como estão., fields: {site: Site, collection: Coleção, item: ID do item, name: Nome, slug: Slug, fields: Outros campos, draft: Rascunho}}
+      Delete Item: {name: Excluir item, description: Exclui um item de uma coleção., fields: {site: Site, collection: Coleção, item: ID do item}}
+      Publish Items: {name: Publicar itens, description: Publica itens de uma coleção no site., fields: {site: Site, collection: Coleção, items: IDs dos itens}}
+      List Forms: {name: Listar formulários, description: Lista os formulários de um site., fields: {site: Site}}
+      List Form Submissions: {name: Listar envios de formulário, description: Lista o que foi enviado por um formulário., fields: {site: Site, form: Formulário}}
+      List Products: {name: Listar produtos, description: "Lista os produtos da loja de um site, com os SKUs.", fields: {site: Site}}
+      Update Inventory: {name: Atualizar estoque, description: Define ou altera o estoque de um SKU., fields: {collection: ID da coleção de SKUs, sku: ID do SKU, type: Estoque, quantity: Definir para, change: Ou alterar em}}
+      List Orders: {name: Listar pedidos, description: Lista os pedidos da loja de um site., fields: {site: Site, status: Status}}
+      Get Order: {name: Ler pedido, description: Lê um pedido., fields: {site: Site, order: ID do pedido}}
+      Fulfill Order: {name: Marcar pedido como enviado, description: Marca um pedido como enviado., fields: {site: Site, order: ID do pedido, email: Avisar o cliente}}
+      Update Order: {name: Atualizar pedido, description: Escreve um comentário ou o rastreio num pedido., fields: {site: Site, order: ID do pedido, comment: Comentário, provider: Transportadora, tracking: Código de rastreio, tracking_url: URL de rastreio}}
+      Refund Order: {name: Reembolsar pedido, description: Reembolsa um pedido inteiro e devolve ao estoque., fields: {site: Site, order: ID do pedido, reason: Motivo}}
