@@ -1,0 +1,341 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Z-API, an API for WhatsApp. Connect with the instance ID and token from the instance
+# page in Z-API's panel, and the account security token from Segurança. Phone numbers
+# go with country and area code, like 5511999990000; groups by their ID, like
+# 120363019502650977-group.
+id: z_api
+name: Z-API
+version: 1.0.0
+description: Send WhatsApp messages, media and reactions, manage groups and contacts, and get messages through Z-API.
+icon: hero-chat-bubble-left-right
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#111111"/><svg x="3.00" y="8.49" width="18.00" height="7.01" viewBox="0 0 441.92 172.12"><defs> <style> .cls-1 { fill: #9bde5a; } .cls-3 { fill: #fff; } </style> </defs> <g id="Camada_1" data-name="Camada 1"> <g> <path class="cls-3" d="M273.55,135.56v-12.18c-7.42,7.58-17.13,12.18-27.76,12.18-23.33,0-42.25-22.17-42.25-49.5s18.92-49.5,42.25-49.5c10.62,0,20.33,4.6,27.76,12.18h0c0-6.73,5.45-12.18,12.18-12.18h16.81v99h-28.99ZM254.38,65.6c-12.37-.78-22.58,9.42-21.8,21.8.65,10.2,8.93,18.49,19.13,19.13,12.37.78,22.58-9.42,21.8-21.8-.65-10.21-8.93-18.49-19.13-19.13Z"/> <path class="cls-3" d="M337.91,48.74h0c7.42-7.58,17.13-12.18,27.75-12.18,23.33,0,42.25,22.17,42.25,49.5s-18.92,49.5-42.25,49.5c-10.62,0-20.33-4.6-27.75-12.18v48.74h-28.99V36.56h16.81c6.73,0,12.18,5.45,12.18,12.18ZM378.89,87.39c.78-12.37-9.42-22.58-21.8-21.8-10.21.65-18.49,8.93-19.13,19.13-.78,12.37,9.42,22.58,21.8,21.8,10.21-.65,18.49-8.93,19.13-19.13Z"/> <rect class="cls-1" x="412.93" y="0" width="28.99" height="28.99" rx="14.5" ry="14.5"/> <path class="cls-3" d="M441.92,36.56v99h-28.99V52.33c0-8.71,7.06-15.77,15.77-15.77h13.22Z"/> <path class="cls-1" d="M98.73,46.05c-1.58,0-2.17-2.21-1.87-3.39.75-2.94,2.4-2.61,4.67-2.61h49.9c1.94,0,4.06.22,5.92-.54,2.01-.82,3.63-2.73,4.79-4.5.11-.16.88-1.36,1.49-3.11.46-1.32.74-2.18.33-2.72-.36-.48-1.06-.45-2.66-.44-1.3.01-2.61,0-3.91,0-5.05,0-10.1,0-15.15,0h-64.27c-1.65,0-4.45.58-5.94-.31-1.77-1.06-1.34-3.96.57-4.97.61-.32,2.02-.09,2.68-.09,4.98-.03,9.95,0,14.93,0h84.34c1.63,0,3.1.2,4.59-.55,3.75-1.9,6.12-6.06,6.14-10.2v-.72c0-.99-.8-1.8-1.79-1.8-13.5-.04-27-.23-40.49-.23H43.41c-13.48,0-18.84,11.48-22.2,22.14-.5,1.6-6.82,23.27-6.72,23.29.15,0,23.15,0,46.25,0-9.85,9.73-19.95,19.7-30.18,29.7l-.15.15c-1.74,1.74-3.51,3.46-5.22,5.13-4.43,4.31-9.01,8.78-13.51,13.91l.19.17c-7.34,6.87-11.87,16.32-11.87,26.75v3.17h103.83c13.18,0,18.42-10.42,21.7-20.09.49-1.45,6.67-21.12,6.57-21.14h-56.27c5.07-5,10.1-9.96,15.04-14.84,7.5-7.41,15.15-14.97,22.85-22.53l17.11.05c6.41.02,11.62-2.63,11.64-9.04l.03-.42c0-.35-.32-.22-.67-.22h-43.11Z"/> <rect class="cls-3" x="154.76" y="54.5" width="28.61" height="50.07" rx="14.31" ry="14.31" transform="translate(248.6 -89.53) rotate(90)"/> </g> <g> <g> </g> </g> </g></svg></svg>
+category: messaging
+author: Heddle
+homepage: https://developer.z-api.io
+base_url: "https://api.z-api.io/instances/{{credential.instance}}/token/{{credential.token}}/"
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Z-API
+  fields:
+    - {name: instance, label: Instance ID, required: true}
+    - {name: token, label: Instance token, secret: true, required: true}
+    - {name: client_token, label: Security token, secret: true, required: true, description: "From Segurança › Token de segurança da conta."}
+  auth:
+    type: header
+    name: Client-Token
+    value: "{{credential.client_token}}"
+
+errors:
+  message_path: error
+
+triggers:
+  - name: WhatsApp Event
+    description: Starts the flow when a message arrives, a message changes status or the phone connects or disconnects. Z-API keeps one address per event, so this replaces the one set in its panel.
+    fields:
+      - name: event
+        label: Event
+        type: select
+        required: true
+        default: received
+        options:
+          - {label: Message received or sent, value: received}
+          - {label: Message delivered, value: delivery}
+          - {label: Message status changed, value: message-status}
+          - {label: Phone connected, value: connected}
+          - {label: Phone disconnected, value: disconnected}
+          - {label: Contact typing or online, value: chat-presence}
+    webhook:
+      register:
+        request:
+          method: PUT
+          path: "update-webhook-{{fields.event}}"
+          body: {value: "{{webhook.url}}"}
+
+actions:
+  # Messages
+  - name: Send Text
+    resource: Message
+    description: Sends a text message to a contact or group.
+    fields:
+      - {name: phone, label: To, required: true, description: "A number like 5511999990000, or a group ID"}
+      - {name: message, label: Text, type: textarea, required: true}
+      - {name: delay_message, label: Wait before sending (seconds), type: number, description: "1 to 15"}
+      - {name: delay_typing, label: Show typing for (seconds), type: number, description: "1 to 15"}
+      - {name: message_id, label: Reply to message ID}
+    request:
+      method: POST
+      path: send-text
+      body: {phone: "{{fields.phone}}", message: "{{fields.message}}", delayMessage: "{{fields.delay_message}}", delayTyping: "{{fields.delay_typing}}", messageId: "{{fields.message_id}}"}
+
+  - name: Send Image
+    resource: Message
+    description: Sends an image from a link.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: image, label: Image address, required: true}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: view_once, label: View once, type: boolean, default: false}
+    request:
+      method: POST
+      path: send-image
+      body: {phone: "{{fields.phone}}", image: "{{fields.image}}", caption: "{{fields.caption}}", viewOnce: "{{fields.view_once}}"}
+
+  - name: Send Document
+    resource: Message
+    description: Sends a document from a link.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: document, label: Document address, required: true}
+      - {name: extension, label: Extension, required: true, default: pdf, description: "Like pdf, docx or xlsx"}
+      - {name: file_name, label: File name}
+      - {name: caption, label: Caption}
+    request:
+      method: POST
+      path: "send-document/{{fields.extension}}"
+      body: {phone: "{{fields.phone}}", document: "{{fields.document}}", fileName: "{{fields.file_name}}", caption: "{{fields.caption}}"}
+
+  - name: Send Audio
+    resource: Message
+    description: Sends an audio from a link, as a voice message if you like.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: audio, label: Audio address, required: true}
+      - {name: waveform, label: As a voice message, type: boolean, default: true}
+    request:
+      method: POST
+      path: send-audio
+      body: {phone: "{{fields.phone}}", audio: "{{fields.audio}}", waveform: "{{fields.waveform}}"}
+
+  - name: Send Video
+    resource: Message
+    description: Sends a video from a link.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: video, label: Video address, required: true}
+      - {name: caption, label: Caption}
+    request:
+      method: POST
+      path: send-video
+      body: {phone: "{{fields.phone}}", video: "{{fields.video}}", caption: "{{fields.caption}}"}
+
+  - name: Send Link
+    resource: Message
+    description: Sends a link with a preview.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: message, label: Text, required: true, description: Must hold the link.}
+      - {name: link_url, label: Link, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: link_description, label: Description, required: true}
+      - {name: image, label: Image address}
+    request:
+      method: POST
+      path: send-link
+      body: {phone: "{{fields.phone}}", message: "{{fields.message}}", linkUrl: "{{fields.link_url}}", title: "{{fields.title}}", linkDescription: "{{fields.link_description}}", image: "{{fields.image}}"}
+
+  - name: Send Location
+    resource: Message
+    description: Sends a place on the map.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: title, label: Name, required: true}
+      - {name: address, label: Address, required: true}
+      - {name: latitude, label: Latitude, required: true}
+      - {name: longitude, label: Longitude, required: true}
+    request:
+      method: POST
+      path: send-location
+      body: {phone: "{{fields.phone}}", title: "{{fields.title}}", address: "{{fields.address}}", latitude: "{{fields.latitude}}", longitude: "{{fields.longitude}}"}
+
+  - name: Send Contact
+    resource: Message
+    description: Sends a contact card.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: contact_name, label: Contact name, required: true}
+      - {name: contact_phone, label: Contact phone, required: true}
+    request:
+      method: POST
+      path: send-contact
+      body: {phone: "{{fields.phone}}", contactName: "{{fields.contact_name}}", contactPhone: "{{fields.contact_phone}}"}
+
+  - name: Send Option List
+    resource: Message
+    description: Sends a list of options to pick from.
+    fields:
+      - {name: phone, label: To, required: true}
+      - {name: message, label: Text, required: true}
+      - {name: title, label: List title, required: true}
+      - {name: button_label, label: Button, required: true, default: Ver opções}
+      - {name: options, label: Options, type: json, required: true, description: 'Like [{"id": "1", "title": "Comprar", "description": "Fazer um pedido"}]'}
+    request:
+      method: POST
+      path: send-option-list
+      body: {phone: "{{fields.phone}}", message: "{{fields.message}}", optionList: {title: "{{fields.title}}", buttonLabel: "{{fields.button_label}}", options: "{{fields.options}}"}}
+
+  - name: Send Reaction
+    resource: Message
+    description: Reacts to a message with an emoji.
+    fields:
+      - {name: phone, label: Chat, required: true}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: reaction, label: Emoji, required: true}
+    request:
+      method: POST
+      path: send-reaction
+      body: {phone: "{{fields.phone}}", messageId: "{{fields.message_id}}", reaction: "{{fields.reaction}}"}
+
+  - name: Delete Message
+    resource: Message
+    description: Deletes a message, for everyone when it's yours.
+    fields:
+      - {name: phone, label: Chat, required: true}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: owner, label: Sent by me, type: boolean, default: true}
+    request:
+      method: DELETE
+      path: messages
+      query: {phone: "{{fields.phone}}", messageId: "{{fields.message_id}}", owner: "{{fields.owner}}"}
+
+  - name: Mark as Read
+    resource: Message
+    description: Marks a message as read.
+    fields:
+      - {name: phone, label: Chat, required: true}
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: read-message
+      body: {phone: "{{fields.phone}}", messageId: "{{fields.message_id}}"}
+
+  # Contacts and chats
+  - name: Check Number
+    resource: Contact
+    description: Checks whether a number has WhatsApp.
+    fields:
+      - {name: phone, label: Number, required: true}
+    request: {method: GET, path: "phone-exists/{{fields.phone}}"}
+
+  - name: List Contacts
+    resource: Contact
+    description: Lists the phone's contacts.
+    request: {method: GET, path: contacts}
+    pagination: {type: page, page_param: page, limit_param: pageSize, page_size: 100}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact's name and picture.
+    fields:
+      - {name: phone, label: Number, required: true}
+    request: {method: GET, path: "contacts/{{fields.phone}}"}
+
+  - name: List Chats
+    resource: Chat
+    description: Lists the chats, newest first.
+    request: {method: GET, path: chats}
+    pagination: {type: page, page_param: page, limit_param: pageSize, page_size: 100}
+
+  # Groups
+  - name: Create Group
+    resource: Group
+    description: Creates a group with some participants.
+    fields:
+      - {name: group_name, label: Name, required: true}
+      - {name: phones, label: Participants, type: json, required: true, description: 'Like ["5511999990000"]'}
+    request:
+      method: POST
+      path: create-group
+      body: {groupName: "{{fields.group_name}}", phones: "{{fields.phones}}", autoInvite: true}
+
+  - name: Get Group
+    resource: Group
+    description: Reads a group, with its participants.
+    fields:
+      - {name: group, label: Group ID, required: true}
+    request: {method: GET, path: "group-metadata/{{fields.group}}"}
+
+  - name: Add Participants
+    resource: Group
+    description: Adds people to a group.
+    fields:
+      - {name: group, label: Group ID, required: true}
+      - {name: phones, label: Numbers, type: json, required: true}
+    request:
+      method: POST
+      path: add-participant
+      body: {groupId: "{{fields.group}}", phones: "{{fields.phones}}", autoInvite: true}
+
+  - name: Remove Participants
+    resource: Group
+    description: Removes people from a group.
+    fields:
+      - {name: group, label: Group ID, required: true}
+      - {name: phones, label: Numbers, type: json, required: true}
+    request:
+      method: POST
+      path: remove-participant
+      body: {groupId: "{{fields.group}}", phones: "{{fields.phones}}"}
+
+  - name: Get Invite Link
+    resource: Group
+    description: Reads a group's invite link.
+    fields:
+      - {name: group, label: Group ID, required: true}
+    request: {method: GET, path: "group-invitation-link/{{fields.group}}"}
+
+  # Instance
+  - name: Get Status
+    resource: Instance
+    description: Says whether the phone is connected.
+    request: {method: GET, path: status}
+
+  - name: Get QR Code
+    resource: Instance
+    description: Reads the QR code to connect the phone, as an image in base64.
+    request: {method: GET, path: qr-code/image}
+
+  - name: Restart
+    resource: Instance
+    description: Restarts the instance.
+    request: {method: GET, path: restart}
+
+  - name: Disconnect
+    resource: Instance
+    description: Disconnects the phone.
+    request: {method: GET, path: disconnect}
+
+i18n:
+  pt-BR:
+    description: "Envie mensagens, mídias e reações no WhatsApp, gerencie grupos e contatos e receba mensagens pela Z-API."
+    triggers:
+      WhatsApp Event: {name: "Evento do WhatsApp", description: "Inicia o fluxo quando chega uma mensagem, uma mensagem muda de status ou o celular conecta ou desconecta. A Z-API guarda um endereço por evento, então este substitui o do painel.", fields: {event: "Evento"}}
+    actions:
+      Send Text: {name: "Enviar texto", description: "Envia uma mensagem de texto a um contato ou grupo.", fields: {phone: "Para", message: "Texto", delay_message: "Esperar antes de enviar (segundos)", delay_typing: "Mostrar digitando por (segundos)", message_id: "Responder à mensagem"}}
+      Send Image: {name: "Enviar imagem", description: "Envia uma imagem de um link.", fields: {phone: "Para", image: "Endereço da imagem", caption: "Legenda", view_once: "Visualização única"}}
+      Send Document: {name: "Enviar documento", description: "Envia um documento de um link.", fields: {phone: "Para", document: "Endereço do documento", extension: "Extensão", file_name: "Nome do arquivo", caption: "Legenda"}}
+      Send Audio: {name: "Enviar áudio", description: "Envia um áudio de um link, como mensagem de voz se quiser.", fields: {phone: "Para", audio: "Endereço do áudio", waveform: "Como mensagem de voz"}}
+      Send Video: {name: "Enviar vídeo", description: "Envia um vídeo de um link.", fields: {phone: "Para", video: "Endereço do vídeo", caption: "Legenda"}}
+      Send Link: {name: "Enviar link", description: "Envia um link com prévia.", fields: {phone: "Para", message: "Texto", link_url: "Link", title: "Título", link_description: "Descrição", image: "Endereço da imagem"}}
+      Send Location: {name: "Enviar localização", description: "Envia um lugar no mapa.", fields: {phone: "Para", title: "Nome", address: "Endereço", latitude: "Latitude", longitude: "Longitude"}}
+      Send Contact: {name: "Enviar contato", description: "Envia um cartão de contato.", fields: {phone: "Para", contact_name: "Nome do contato", contact_phone: "Telefone do contato"}}
+      Send Option List: {name: "Enviar lista de opções", description: "Envia uma lista de opções para escolher.", fields: {phone: "Para", message: "Texto", title: "Título da lista", button_label: "Botão", options: "Opções"}}
+      Send Reaction: {name: "Reagir", description: "Reage a uma mensagem com um emoji.", fields: {phone: "Conversa", message_id: "ID da mensagem", reaction: "Emoji"}}
+      Delete Message: {name: "Apagar mensagem", description: "Apaga uma mensagem, para todos quando é sua.", fields: {phone: "Conversa", message_id: "ID da mensagem", owner: "Enviada por mim"}}
+      Mark as Read: {name: "Marcar como lida", description: "Marca uma mensagem como lida.", fields: {phone: "Conversa", message_id: "ID da mensagem"}}
+      Check Number: {name: "Verificar número", description: "Verifica se um número tem WhatsApp.", fields: {phone: "Número"}}
+      List Contacts: {name: "Listar contatos", description: "Lista os contatos do celular."}
+      Get Contact: {name: "Ler contato", description: "Lê o nome e a foto de um contato.", fields: {phone: "Número"}}
+      List Chats: {name: "Listar conversas", description: "Lista as conversas, as mais novas primeiro."}
+      Create Group: {name: "Criar grupo", description: "Cria um grupo com alguns participantes.", fields: {group_name: "Nome", phones: "Participantes"}}
+      Get Group: {name: "Ler grupo", description: "Lê um grupo, com os participantes.", fields: {group: "ID do grupo"}}
+      Add Participants: {name: "Adicionar participantes", description: "Adiciona pessoas a um grupo.", fields: {group: "ID do grupo", phones: "Números"}}
+      Remove Participants: {name: "Remover participantes", description: "Remove pessoas de um grupo.", fields: {group: "ID do grupo", phones: "Números"}}
+      Get Invite Link: {name: "Ler link de convite", description: "Lê o link de convite de um grupo.", fields: {group: "ID do grupo"}}
+      Get Status: {name: "Ler status", description: "Diz se o celular está conectado."}
+      Get QR Code: {name: "Ler QR Code", description: "Lê o QR Code para conectar o celular, como imagem em base64."}
+      Restart: {name: "Reiniciar", description: "Reinicia a instância."}
+      Disconnect: {name: "Desconectar", description: "Desconecta o celular."}

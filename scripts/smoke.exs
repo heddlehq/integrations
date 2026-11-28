@@ -39,7 +39,7 @@ end
 
 cred_sample = fn
   %{default: d} when is_binary(d) and d != "" -> d
-  %{name: n} -> if n =~ ~r/url/, do: "https://svc.test", else: if(n =~ ~r/domain|host|region|shop|instance|subdomain|account|site/, do: "acme", else: "#{n}_c")
+  %{name: n} -> if n =~ ~r/url/, do: "https://svc.test", else: if(n =~ ~r/domain|host|region|shop|instance|subdomain|account|site/, do: "acme", else: String.replace(n, "_", "") <> "c")
 end
 credential = Map.new(integration.credential.fields, &{&1.name, cred_sample.(&1)}) |> Map.put("access_token", "tok")
 
