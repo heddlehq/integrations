@@ -1,0 +1,472 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# WooCommerce, through the REST API v3 of the store's WordPress. Connect with a key
+# made in WooCommerce › Settings › Advanced › REST API, with Read/Write permission.
+# The store must answer on HTTPS.
+id: woocommerce
+name: WooCommerce
+version: 1.0.0
+description: Orders, products, customers and coupons in a WooCommerce store.
+icon: hero-shopping-cart
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#96588A" d="M.754 9.58a.754.754 0 0 0-.754.758v2.525c0 .42.339.758.758.758h3.135l1.431.799l-.326-.799h2.373a.757.757 0 0 0 .758-.758v-2.525a.757.757 0 0 0-.758-.758zm2.709.445h.03a.3.3 0 0 1 .179.067a.26.26 0 0 1 .103.19a.3.3 0 0 1-.033.16q-.194.36-.322 1.199q-.124.813-.094 1.267a.4.4 0 0 1-.039.219a.21.21 0 0 1-.176.12c-.086.006-.177-.034-.263-.124q-.465-.474-.735-1.416q-.324.638-.478.957q-.294.563-.502.578q-.134.01-.233-.228q-.254-.654-.548-2.524a.3.3 0 0 1 .054-.222c.047-.064.116-.095.21-.102q.253-.02.288.238q.156 1.043.336 1.766l.727-1.387q.1-.189.25-.199q.219-.015.273.28q.125.66.315 1.136q.13-1.266.44-1.828a.26.26 0 0 1 .218-.147m1.293.36a1 1 0 0 1 .18.02q.35.074.53.386c.107.18.161.395.161.654q0 .513-.26.94q-.299.499-.781.5a1 1 0 0 1-.18-.022a.76.76 0 0 1-.531-.384a1.3 1.3 0 0 1-.158-.659q0-.514.258-.937q.303-.499.78-.498zm2.084 0a1 1 0 0 1 .18.02q.353.074.53.386c.107.18.16.395.16.654q0 .513-.259.94q-.299.499-.781.5a1 1 0 0 1-.18-.022a.76.76 0 0 1-.531-.384a1.3 1.3 0 0 1-.16-.659q0-.514.26-.937q.303-.499.78-.498zm4.437.047q-.459 0-.718.304q-.258.306-.256.856q0 .592.256.906q.255.316.744.316q.473-.001.728-.316q.256-.315.256-.883c0-.568-.087-.673-.26-.879q-.262-.303-.75-.304m-1.466.002a1.13 1.13 0 0 0-.84.326q-.333.33-.332.838q-.001.545.328.88t.861.336q.156.001.346-.052v-.54a1.1 1.1 0 0 1-.303.051a.55.55 0 0 1-.422-.177a.7.7 0 0 1-.16-.48q0-.287.156-.468a.5.5 0 0 1 .397-.181q.153-.001.332.049v-.537a1.4 1.4 0 0 0-.363-.045m12.414 0a1.14 1.14 0 0 0-.84.326q-.333.33-.332.838q-.001.545.328.88q.33.335.861.336q.156.001.346-.052v-.54a1.1 1.1 0 0 1-.303.051a.55.55 0 0 1-.422-.177a.7.7 0 0 1-.16-.48q0-.287.156-.468a.5.5 0 0 1 .397-.181q.153-.001.332.049v-.537a1.4 1.4 0 0 0-.363-.045m-9.598.06l-.29 2.264h.579l.156-1.559l.395 1.559h.412l.379-1.555l.164 1.555h.603l-.304-2.264h-.791l-.12.508q-.046.195-.087.4l-.067.352a30 30 0 0 0-.258-1.26zm2.768 0l-.29 2.264h.579l.156-1.559l.396 1.559h.412l.375-1.555l.165 1.555h.603l-.305-2.264h-.789l-.119.508q-.046.195-.086.4l-.066.352a30 30 0 0 0-.26-1.26zm3.988 0v2.264h.611v-1.031h.012l.494 1.03h.645l-.489-1.019a.61.61 0 0 0 .37-.552a.6.6 0 0 0-.25-.506q-.25-.185-.68-.186zm3.377 0v2.264H24v-.483h-.63v-.414h.54v-.468h-.54v-.416h.626v-.483zm-4.793.004v2.264h1.24v-.483h-.627v-.416h.541v-.468h-.54v-.415h.622v-.482zm2.025.432q.219.003.313.072q.093.068.091.227q0 .234-.404.24zm-15.22.011q-.156-.001-.301.211a1.08 1.08 0 0 0-.2.639c0 .096.02.2.06.303c.049.13.117.198.196.215q.125.023.27-.106q.183-.164.252-.492q.023-.116.023-.246q0-.147-.06-.303c-.05-.13-.116-.198-.196-.215l-.045-.006zm2.083 0q-.155-.001-.3.211a1.08 1.08 0 0 0-.2.639c0 .096.02.2.06.303c.049.13.117.198.196.215q.125.023.27-.106q.183-.164.252-.492q.021-.116.023-.246q0-.147-.06-.303c-.05-.13-.116-.198-.196-.215zm4.428.006c.233 0 .354.218.354.66c-.004.273-.038.46-.098.553a.29.29 0 0 1-.262.139a.27.27 0 0 1-.242-.139q-.084-.14-.084-.562c0-.436.11-.65.332-.65Z"/></svg>
+category: ecommerce
+author: Heddle
+homepage: https://woocommerce.github.io/woocommerce-rest-api-docs/
+base_url: "{{credential.url}}/wp-json/wc/v3/"
+
+credential:
+  label: WooCommerce
+  fields:
+    - {name: url, label: Store URL, required: true, description: "Like https://acme.com"}
+    - {name: consumer_key, label: Consumer key, required: true}
+    - {name: consumer_secret, label: Consumer secret, secret: true, required: true}
+  auth:
+    type: basic
+    username: "{{credential.consumer_key}}"
+    password: "{{credential.consumer_secret}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Store Event
+    description: Starts the flow when an order, product, customer or coupon is created, changed or deleted.
+    fields:
+      - name: topic
+        label: Event
+        type: select
+        required: true
+        default: order.created
+        options:
+          - {label: Order created, value: order.created}
+          - {label: Order updated, value: order.updated}
+          - {label: Order deleted, value: order.deleted}
+          - {label: Order restored, value: order.restored}
+          - {label: Product created, value: product.created}
+          - {label: Product updated, value: product.updated}
+          - {label: Product deleted, value: product.deleted}
+          - {label: Customer created, value: customer.created}
+          - {label: Customer updated, value: customer.updated}
+          - {label: Customer deleted, value: customer.deleted}
+          - {label: Coupon created, value: coupon.created}
+          - {label: Coupon updated, value: coupon.updated}
+          - {label: Coupon deleted, value: coupon.deleted}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body: {name: Heddle, topic: "{{fields.topic}}", delivery_url: "{{webhook.url}}", secret: "{{webhook.secret}}", status: active}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}", query: {force: true}}
+      signature:
+        header: X-WC-Webhook-Signature
+        encoding: base64
+        secret: "{{webhook.secret}}"
+
+actions:
+  # Orders
+  - name: Create Order
+    resource: Order
+    description: Creates an order.
+    fields:
+      - {name: line_items, label: Items, type: json, required: true, description: 'Like [{"product_id": 93, "quantity": 2}]'}
+      - {name: status, label: Status, type: select, default: pending, options: [{label: Pending payment, value: pending}, {label: Processing, value: processing}, {label: On hold, value: on-hold}, {label: Completed, value: completed}, {label: Canceled, value: cancelled}, {label: Refunded, value: refunded}, {label: Failed, value: failed}]}
+      - {name: customer_id, label: Customer ID, type: number}
+      - {name: billing, label: Billing, type: json, description: 'Like {"first_name": "Ana", "email": "ana@acme.com", "phone": "11999990000"}'}
+      - {name: shipping, label: Shipping, type: json}
+      - {name: payment_method, label: Payment method, description: "Like bacs or cod"}
+      - {name: set_paid, label: Mark as paid, type: boolean, default: false}
+      - {name: note, label: Customer note, type: textarea}
+      - {name: coupons, label: Coupons, description: "Like BLACK10, FRETE"}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: orders
+      body:
+        line_items: "{{fields.line_items}}"
+        status: "{{fields.status}}"
+        customer_id: "{{fields.customer_id}}"
+        billing: "{{fields.billing}}"
+        shipping: "{{fields.shipping}}"
+        payment_method: "{{fields.payment_method}}"
+        set_paid: "{{fields.set_paid}}"
+        customer_note: "{{fields.note}}"
+        coupon_lines: {_each: "{{fields.coupons}}", code: "{{item}}"}
+        _merge: "{{fields.extra}}"
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order.
+    fields:
+      - {name: order, label: Order ID, required: true}
+    request: {method: GET, path: "orders/{{fields.order}}"}
+
+  - name: List Orders
+    resource: Order
+    description: Lists the orders, newest first.
+    fields:
+      - {name: status, label: Status, type: multiselect, options: [{label: Pending payment, value: pending}, {label: Processing, value: processing}, {label: On hold, value: on-hold}, {label: Completed, value: completed}, {label: Canceled, value: cancelled}, {label: Refunded, value: refunded}, {label: Failed, value: failed}]}
+      - {name: customer, label: Customer ID, type: number}
+      - {name: product, label: Has product ID, type: number}
+      - {name: after, label: Created after, type: datetime}
+      - {name: before, label: Created before, type: datetime}
+      - {name: search, label: Search}
+    request:
+      method: GET
+      path: orders
+      query: {status: "{{fields.status}}", customer: "{{fields.customer}}", product: "{{fields.product}}", after: "{{fields.after}}", before: "{{fields.before}}", search: "{{fields.search}}"}
+    pagination: {type: page, page_param: page, limit_param: per_page, page_size: 100}
+
+  - name: Update Order
+    resource: Order
+    description: Changes an order, like its status. Empty fields stay as they are.
+    fields:
+      - {name: order, label: Order ID, required: true}
+      - {name: status, label: Status, type: select, options: [{label: Pending payment, value: pending}, {label: Processing, value: processing}, {label: On hold, value: on-hold}, {label: Completed, value: completed}, {label: Canceled, value: cancelled}, {label: Refunded, value: refunded}, {label: Failed, value: failed}]}
+      - {name: billing, label: Billing, type: json}
+      - {name: shipping, label: Shipping, type: json}
+      - {name: note, label: Customer note, type: textarea}
+      - {name: set_paid, label: Mark as paid, type: boolean}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "orders/{{fields.order}}"
+      body:
+        status: "{{fields.status}}"
+        billing: "{{fields.billing}}"
+        shipping: "{{fields.shipping}}"
+        customer_note: "{{fields.note}}"
+        set_paid: "{{fields.set_paid}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Delete Order
+    resource: Order
+    description: Moves an order to the trash, or deletes it for good.
+    fields:
+      - {name: order, label: Order ID, required: true}
+      - {name: force, label: Delete for good, type: boolean, default: false}
+    request: {method: DELETE, path: "orders/{{fields.order}}", query: {force: "{{fields.force}}"}}
+
+  - name: Add Order Note
+    resource: Order
+    description: Writes a note on an order, for the store or for the customer.
+    fields:
+      - {name: order, label: Order ID, required: true}
+      - {name: note, label: Note, type: textarea, required: true}
+      - {name: customer_note, label: Show it to the customer, type: boolean, default: false}
+    request:
+      method: POST
+      path: "orders/{{fields.order}}/notes"
+      body: {note: "{{fields.note}}", customer_note: "{{fields.customer_note}}"}
+
+  - name: List Order Notes
+    resource: Order
+    description: Lists the notes of an order.
+    fields:
+      - {name: order, label: Order ID, required: true}
+    request: {method: GET, path: "orders/{{fields.order}}/notes"}
+
+  - name: Refund Order
+    resource: Order
+    description: Refunds an amount of an order, through the payment gateway when it can.
+    fields:
+      - {name: order, label: Order ID, required: true}
+      - {name: amount, label: Amount, required: true, description: "Like 49.90"}
+      - {name: reason, label: Reason}
+      - {name: api_refund, label: Refund through the gateway, type: boolean, default: true}
+    request:
+      method: POST
+      path: "orders/{{fields.order}}/refunds"
+      body: {amount: "{{fields.amount}}", reason: "{{fields.reason}}", api_refund: "{{fields.api_refund}}"}
+
+  # Products
+  - name: Create Product
+    resource: Product
+    description: Creates a product.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: type, label: Type, type: select, default: simple, options: [{label: Simple, value: simple}, {label: Variable, value: variable}, {label: Grouped, value: grouped}, {label: External, value: external}]}
+      - {name: status, label: Status, type: select, default: publish, options: [{label: Published, value: publish}, {label: Draft, value: draft}, {label: Pending review, value: pending}, {label: Private, value: private}]}
+      - {name: regular_price, label: Price, description: "Like 49.90"}
+      - {name: sale_price, label: Sale price}
+      - {name: sku, label: SKU}
+      - {name: description, label: Description, type: textarea}
+      - {name: short_description, label: Short description, type: textarea}
+      - {name: manage_stock, label: Track stock, type: boolean}
+      - {name: stock_quantity, label: Stock, type: number}
+      - {name: categories, label: Category IDs, description: "Like 9, 14"}
+      - {name: images, label: Image URLs, description: "Like https://acme.com/a.jpg, https://acme.com/b.jpg"}
+      - {name: extra, label: More fields, type: json, description: 'Like {"weight": "1.2", "attributes": [...]}'}
+    request:
+      method: POST
+      path: products
+      body:
+        name: "{{fields.name}}"
+        type: "{{fields.type}}"
+        status: "{{fields.status}}"
+        regular_price: "{{fields.regular_price}}"
+        sale_price: "{{fields.sale_price}}"
+        sku: "{{fields.sku}}"
+        description: "{{fields.description}}"
+        short_description: "{{fields.short_description}}"
+        manage_stock: "{{fields.manage_stock}}"
+        stock_quantity: "{{fields.stock_quantity}}"
+        categories: {_each: "{{fields.categories}}", id: "{{item}}"}
+        images: {_each: "{{fields.images}}", src: "{{item}}"}
+        _merge: "{{fields.extra}}"
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product.
+    fields:
+      - {name: product, label: Product ID, required: true}
+    request: {method: GET, path: "products/{{fields.product}}"}
+
+  - name: List Products
+    resource: Product
+    description: Lists the products.
+    fields:
+      - {name: search, label: Search}
+      - {name: sku, label: SKU}
+      - {name: status, label: Status, type: select, options: [{label: Published, value: publish}, {label: Draft, value: draft}, {label: Pending review, value: pending}, {label: Private, value: private}]}
+      - {name: category, label: Category ID}
+      - {name: stock_status, label: Stock, type: select, options: [{label: In stock, value: instock}, {label: Out of stock, value: outofstock}, {label: On backorder, value: onbackorder}]}
+      - {name: on_sale, label: Only on sale, type: boolean}
+    request:
+      method: GET
+      path: products
+      query: {search: "{{fields.search}}", sku: "{{fields.sku}}", status: "{{fields.status}}", category: "{{fields.category}}", stock_status: "{{fields.stock_status}}", on_sale: "{{fields.on_sale}}"}
+    pagination: {type: page, page_param: page, limit_param: per_page, page_size: 100}
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product, like its price or stock. Empty fields stay as they are.
+    fields:
+      - {name: product, label: Product ID, required: true}
+      - {name: name, label: Name}
+      - {name: status, label: Status, type: select, options: [{label: Published, value: publish}, {label: Draft, value: draft}, {label: Pending review, value: pending}, {label: Private, value: private}]}
+      - {name: regular_price, label: Price}
+      - {name: sale_price, label: Sale price}
+      - {name: sku, label: SKU}
+      - {name: description, label: Description, type: textarea}
+      - {name: stock_quantity, label: Stock, type: number}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "products/{{fields.product}}"
+      body:
+        name: "{{fields.name}}"
+        status: "{{fields.status}}"
+        regular_price: "{{fields.regular_price}}"
+        sale_price: "{{fields.sale_price}}"
+        sku: "{{fields.sku}}"
+        description: "{{fields.description}}"
+        stock_quantity: "{{fields.stock_quantity}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Delete Product
+    resource: Product
+    description: Moves a product to the trash, or deletes it for good.
+    fields:
+      - {name: product, label: Product ID, required: true}
+      - {name: force, label: Delete for good, type: boolean, default: false}
+    request: {method: DELETE, path: "products/{{fields.product}}", query: {force: "{{fields.force}}"}}
+
+  - name: List Variations
+    resource: Product
+    description: Lists the variations of a variable product.
+    fields:
+      - {name: product, label: Product ID, required: true}
+    request: {method: GET, path: "products/{{fields.product}}/variations"}
+    pagination: {type: page, page_param: page, limit_param: per_page, page_size: 100}
+
+  - name: Update Variation
+    resource: Product
+    description: Changes a variation's price, SKU or stock.
+    fields:
+      - {name: product, label: Product ID, required: true}
+      - {name: variation, label: Variation ID, required: true}
+      - {name: regular_price, label: Price}
+      - {name: sale_price, label: Sale price}
+      - {name: sku, label: SKU}
+      - {name: stock_quantity, label: Stock, type: number}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "products/{{fields.product}}/variations/{{fields.variation}}"
+      body:
+        regular_price: "{{fields.regular_price}}"
+        sale_price: "{{fields.sale_price}}"
+        sku: "{{fields.sku}}"
+        stock_quantity: "{{fields.stock_quantity}}"
+        _merge: "{{fields.extra}}"
+
+  - name: List Categories
+    resource: Product
+    description: Lists the product categories.
+    request: {method: GET, path: products/categories}
+    pagination: {type: page, page_param: page, limit_param: per_page, page_size: 100}
+
+  # Customers
+  - name: Create Customer
+    resource: Customer
+    description: Creates a customer.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: username, label: Username}
+      - {name: password, label: Password, description: "Made by WooCommerce when empty."}
+      - {name: billing, label: Billing, type: json}
+      - {name: shipping, label: Shipping, type: json}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: customers
+      body:
+        email: "{{fields.email}}"
+        first_name: "{{fields.first_name}}"
+        last_name: "{{fields.last_name}}"
+        username: "{{fields.username}}"
+        password: "{{fields.password}}"
+        billing: "{{fields.billing}}"
+        shipping: "{{fields.shipping}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Get Customer
+    resource: Customer
+    description: Reads a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request: {method: GET, path: "customers/{{fields.customer}}"}
+
+  - name: List Customers
+    resource: Customer
+    description: Lists the customers.
+    fields:
+      - {name: email, label: Email}
+      - {name: search, label: Search}
+      - {name: role, label: Role, default: all}
+    request:
+      method: GET
+      path: customers
+      query: {email: "{{fields.email}}", search: "{{fields.search}}", role: "{{fields.role}}"}
+    pagination: {type: page, page_param: page, limit_param: per_page, page_size: 100}
+
+  - name: Update Customer
+    resource: Customer
+    description: Changes a customer. Empty fields stay as they are.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: email, label: Email}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: billing, label: Billing, type: json}
+      - {name: shipping, label: Shipping, type: json}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "customers/{{fields.customer}}"
+      body:
+        email: "{{fields.email}}"
+        first_name: "{{fields.first_name}}"
+        last_name: "{{fields.last_name}}"
+        billing: "{{fields.billing}}"
+        shipping: "{{fields.shipping}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Delete Customer
+    resource: Customer
+    description: Deletes a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request: {method: DELETE, path: "customers/{{fields.customer}}", query: {force: true}}
+
+  # Coupons
+  - name: Create Coupon
+    resource: Coupon
+    description: Creates a coupon.
+    fields:
+      - {name: code, label: Code, required: true}
+      - {name: discount_type, label: Discount, type: select, default: percent, options: [{label: Percent, value: percent}, {label: Fixed on the cart, value: fixed_cart}, {label: Fixed per product, value: fixed_product}]}
+      - {name: amount, label: Amount, required: true, description: "Like 10 for 10%"}
+      - {name: expires, label: Expires, type: datetime}
+      - {name: usage_limit, label: Uses, type: number}
+      - {name: free_shipping, label: Free shipping, type: boolean}
+      - {name: minimum_amount, label: Minimum spend}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: coupons
+      body:
+        code: "{{fields.code}}"
+        discount_type: "{{fields.discount_type}}"
+        amount: "{{fields.amount}}"
+        date_expires: "{{fields.expires}}"
+        usage_limit: "{{fields.usage_limit}}"
+        free_shipping: "{{fields.free_shipping}}"
+        minimum_amount: "{{fields.minimum_amount}}"
+        _merge: "{{fields.extra}}"
+
+  - name: List Coupons
+    resource: Coupon
+    description: Lists the coupons.
+    fields:
+      - {name: code, label: Code}
+    request: {method: GET, path: coupons, query: {code: "{{fields.code}}"}}
+    pagination: {type: page, page_param: page, limit_param: per_page, page_size: 100}
+
+  - name: Delete Coupon
+    resource: Coupon
+    description: Deletes a coupon.
+    fields:
+      - {name: coupon, label: Coupon ID, required: true}
+    request: {method: DELETE, path: "coupons/{{fields.coupon}}", query: {force: true}}
+
+  # Reports
+  - name: Get Sales Report
+    resource: Report
+    description: Reads the sales of a period, with totals by day.
+    fields:
+      - {name: period, label: Period, type: select, default: month, options: [{label: This week, value: week}, {label: This month, value: month}, {label: Last month, value: last_month}, {label: This year, value: year}]}
+      - {name: date_min, label: From, description: "Like 2026-01-01. In place of the period."}
+      - {name: date_max, label: To}
+    request:
+      method: GET
+      path: reports/sales
+      query: {period: "{{fields.period}}", date_min: "{{fields.date_min}}", date_max: "{{fields.date_max}}"}
+
+i18n:
+  pt-BR:
+    description: Pedidos, produtos, clientes e cupons numa loja WooCommerce.
+    triggers:
+      Store Event: {name: Evento da loja, description: "Inicia o fluxo quando um pedido, produto, cliente ou cupom é criado, alterado ou excluído.", fields: {topic: Evento}}
+    actions:
+      Create Order: {name: Criar pedido, description: Cria um pedido., fields: {line_items: Itens, status: Status, customer_id: ID do cliente, billing: Cobrança, shipping: Entrega, payment_method: Forma de pagamento, set_paid: Marcar como pago, note: Observação do cliente, coupons: Cupons, extra: Mais campos}}
+      Get Order: {name: Ler pedido, description: Lê um pedido., fields: {order: ID do pedido}}
+      List Orders: {name: Listar pedidos, description: "Lista os pedidos, dos mais novos.", fields: {status: Status, customer: ID do cliente, product: Tem o produto, after: Criado depois de, before: Criado antes de, search: Busca}}
+      Update Order: {name: Atualizar pedido, description: "Altera um pedido, como o status. Campos vazios ficam como estão.", fields: {order: ID do pedido, status: Status, billing: Cobrança, shipping: Entrega, note: Observação do cliente, set_paid: Marcar como pago, extra: Mais campos}}
+      Delete Order: {name: Excluir pedido, description: "Manda um pedido para a lixeira, ou exclui de vez.", fields: {order: ID do pedido, force: Excluir de vez}}
+      Add Order Note: {name: Adicionar nota ao pedido, description: "Escreve uma nota num pedido, para a loja ou para o cliente.", fields: {order: ID do pedido, note: Nota, customer_note: Mostrar ao cliente}}
+      List Order Notes: {name: Listar notas do pedido, description: Lista as notas de um pedido., fields: {order: ID do pedido}}
+      Refund Order: {name: Reembolsar pedido, description: "Reembolsa um valor de um pedido, pelo meio de pagamento quando dá.", fields: {order: ID do pedido, amount: Valor, reason: Motivo, api_refund: Reembolsar pelo meio de pagamento}}
+      Create Product: {name: Criar produto, description: Cria um produto., fields: {name: Nome, type: Tipo, status: Status, regular_price: Preço, sale_price: Preço promocional, sku: SKU, description: Descrição, short_description: Descrição curta, manage_stock: Controlar estoque, stock_quantity: Estoque, categories: IDs das categorias, images: URLs das imagens, extra: Mais campos}}
+      Get Product: {name: Ler produto, description: Lê um produto., fields: {product: ID do produto}}
+      List Products: {name: Listar produtos, description: Lista os produtos., fields: {search: Busca, sku: SKU, status: Status, category: ID da categoria, stock_status: Estoque, on_sale: Só em promoção}}
+      Update Product: {name: Atualizar produto, description: "Altera um produto, como preço ou estoque. Campos vazios ficam como estão.", fields: {product: ID do produto, name: Nome, status: Status, regular_price: Preço, sale_price: Preço promocional, sku: SKU, description: Descrição, stock_quantity: Estoque, extra: Mais campos}}
+      Delete Product: {name: Excluir produto, description: "Manda um produto para a lixeira, ou exclui de vez.", fields: {product: ID do produto, force: Excluir de vez}}
+      List Variations: {name: Listar variações, description: Lista as variações de um produto variável., fields: {product: ID do produto}}
+      Update Variation: {name: Atualizar variação, description: "Altera o preço, o SKU ou o estoque de uma variação.", fields: {product: ID do produto, variation: ID da variação, regular_price: Preço, sale_price: Preço promocional, sku: SKU, stock_quantity: Estoque, extra: Mais campos}}
+      List Categories: {name: Listar categorias, description: Lista as categorias de produto.}
+      Create Customer: {name: Criar cliente, description: Cria um cliente., fields: {email: E-mail, first_name: Nome, last_name: Sobrenome, username: Usuário, password: Senha, billing: Cobrança, shipping: Entrega, extra: Mais campos}}
+      Get Customer: {name: Ler cliente, description: Lê um cliente., fields: {customer: ID do cliente}}
+      List Customers: {name: Listar clientes, description: Lista os clientes., fields: {email: E-mail, search: Busca, role: Papel}}
+      Update Customer: {name: Atualizar cliente, description: Altera um cliente. Campos vazios ficam como estão., fields: {customer: ID do cliente, email: E-mail, first_name: Nome, last_name: Sobrenome, billing: Cobrança, shipping: Entrega, extra: Mais campos}}
+      Delete Customer: {name: Excluir cliente, description: Exclui um cliente., fields: {customer: ID do cliente}}
+      Create Coupon: {name: Criar cupom, description: Cria um cupom., fields: {code: Código, discount_type: Desconto, amount: Valor, expires: Expira em, usage_limit: Usos, free_shipping: Frete grátis, minimum_amount: Gasto mínimo, extra: Mais campos}}
+      List Coupons: {name: Listar cupons, description: Lista os cupons., fields: {code: Código}}
+      Delete Coupon: {name: Excluir cupom, description: Exclui um cupom., fields: {coupon: ID do cupom}}
+      Get Sales Report: {name: Ler relatório de vendas, description: "Lê as vendas de um período, com totais por dia.", fields: {period: Período, date_min: De, date_max: Até}}

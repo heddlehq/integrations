@@ -1,0 +1,285 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Calendly, through the API v2. Connect with a personal access token, made in
+# Calendly's Integrations › API & Webhooks. Calendly names things by URI, like
+# https://api.calendly.com/users/AAAA, and the nodes take the whole URI.
+# Webhooks need a paid plan.
+id: calendly
+name: Calendly
+version: 1.0.0
+description: Bookings, event types and invitees in Calendly.
+icon: hero-calendar-days
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#006BFF" d="M19.655 14.262q.421.001.828.064c0 .005-.005.01-.005.014a6 6 0 0 1-.381.786l-1.219 2.106a6.24 6.24 0 0 1-5.411 3.127h-2.432a6.25 6.25 0 0 1-5.412-3.127l-1.218-2.106a6.25 6.25 0 0 1 0-6.252l1.218-2.106a6.24 6.24 0 0 1 5.412-3.127h2.432a6.25 6.25 0 0 1 5.411 3.127l1.219 2.106c.147.252.271.519.381.786c0 .004.005.009.005.014a5.5 5.5 0 0 1-.828.064c-1.816 0-2.501-.607-3.291-1.306c-.764-.676-1.711-1.517-3.44-1.517h-1.029c-1.251 0-2.387.455-3.2 1.278c-.796.805-1.233 1.904-1.233 3.099v1.411c0 1.196.437 2.295 1.233 3.099c.813.823 1.949 1.278 3.2 1.278h1.034c1.729 0 2.676-.841 3.439-1.517c.791-.703 1.471-1.306 3.287-1.301m.005-3.237q.6 0 1.179-.11q-.003-.007-.002-.014a6.3 6.3 0 0 0-.349-1.218a4.6 4.6 0 0 0 1.986-.819c0-.004-.005-.013-.005-.018a10.6 10.6 0 0 0-1.489-3.03a10.9 10.9 0 0 0-2.331-2.395a10.64 10.64 0 0 0-6.428-2.138c-1.448 0-2.855.28-4.175.841c-1.273.543-2.423 1.315-3.407 2.299S2.878 6.552 2.341 7.83a10.7 10.7 0 0 0-.842 4.175c0 1.448.281 2.855.842 4.174c.542 1.274 1.314 2.423 2.298 3.407s2.129 1.761 3.407 2.299c1.324.556 2.727.841 4.175.841c2.34 0 4.561-.74 6.428-2.137a10.8 10.8 0 0 0 2.331-2.396a10.8 10.8 0 0 0 1.489-3.03c0-.004.005-.014.005-.018a4.6 4.6 0 0 0-1.986-.819c.161-.395.276-.804.349-1.218c.005-.009.005-.014.005-.023a5.85 5.85 0 0 1 2.404 1.035c.685.505.552 1.075.446 1.416C22.184 20.437 17.619 24 12.221 24c-6.625 0-12-5.375-12-12s5.37-12 12-12c5.398 0 9.963 3.563 11.471 8.464c.106.341.239.915-.446 1.421a5.8 5.8 0 0 1-2.404 1.034c.128.716.128 1.45 0 2.166a6.3 6.3 0 0 0-1.182-.11c-4.184 0-3.968 2.823-6.736 2.823h-1.029c-1.899 0-3.15-1.357-3.15-3.095v-1.411c0-1.738 1.251-3.094 3.15-3.094h1.034c2.768 0 2.552 2.823 6.731 2.827"/></svg>
+category: scheduling
+author: Heddle
+homepage: https://developer.calendly.com/api-docs
+base_url: https://api.calendly.com/
+
+credential:
+  label: Calendly
+  fields:
+    - {name: token, label: Personal access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Invitee Event
+    description: Starts the flow when someone books or cancels a meeting.
+    fields:
+      - {name: organization, label: Organization URI, required: true, description: "current_organization, from Get Current User."}
+      - {name: scope, label: For, type: select, default: organization, options: [{label: The whole organization, value: organization}, {label: One user, value: user}]}
+      - {name: user, label: User URI, description: "Only when it's for one user."}
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [invitee.created]
+        options:
+          - {label: Meeting booked, value: invitee.created}
+          - {label: Meeting canceled, value: invitee.canceled}
+          - {label: Marked as no-show, value: invitee_no_show.created}
+          - {label: Routing form submitted, value: routing_form_submission.created}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhook_subscriptions
+          body:
+            url: "{{webhook.url}}"
+            events: "{{fields.events}}"
+            organization: "{{fields.organization}}"
+            user: "{{fields.user}}"
+            scope: "{{fields.scope}}"
+            signing_key: "{{webhook.secret}}"
+        id_path: resource.uri
+      unregister:
+        request: {method: DELETE, path: "webhook_subscriptions/{{webhook.id | name}}"}
+      signature:
+        header: Calendly-Webhook-Signature
+        pattern: "t=(?<timestamp>\\d+),v1=(?<signature>[0-9a-f]+)"
+        message: "{{request.timestamp}}.{{request.body}}"
+        secret: "{{webhook.secret}}"
+        tolerance: 180
+      output:
+        path: payload
+
+  - name: New Scheduled Event
+    description: Starts the flow for each new meeting of a user, checking every 5 minutes.
+    fields:
+      - {name: user, label: User URI, required: true, description: "uri, from Get Current User."}
+    request:
+      method: GET
+      path: scheduled_events
+      query: {user: "{{fields.user}}", sort: "start_time:desc", count: 100}
+    output:
+      path: collection
+    poll:
+      every: 5
+      id: uri
+
+actions:
+  # Users
+  - name: Get Current User
+    resource: User
+    description: Reads the connected user, with its URI and its organization's.
+    request: {method: GET, path: users/me}
+    output: {path: resource}
+
+  - name: Get User
+    resource: User
+    description: Reads a user.
+    fields:
+      - {name: user, label: User URI, required: true}
+    request: {method: GET, path: "users/{{fields.user | name}}"}
+    output: {path: resource}
+
+  - name: List Organization Members
+    resource: User
+    description: Lists the members of an organization.
+    fields:
+      - {name: organization, label: Organization URI, required: true}
+      - {name: email, label: Email}
+    request:
+      method: GET
+      path: organization_memberships
+      query: {organization: "{{fields.organization}}", email: "{{fields.email}}"}
+    pagination: {type: cursor, items_path: collection, cursor_param: page_token, next_path: pagination.next_page_token, limit_param: count, page_size: 100}
+
+  - name: Invite to Organization
+    resource: User
+    description: Invites someone to the organization by email.
+    fields:
+      - {name: organization, label: Organization URI, required: true}
+      - {name: email, label: Email, required: true}
+    request:
+      method: POST
+      path: "organizations/{{fields.organization | name}}/invitations"
+      body: {email: "{{fields.email}}"}
+    output: {path: resource}
+
+  # Event types
+  - name: List Event Types
+    resource: Event Type
+    description: Lists the kinds of meeting people can book with a user or an organization.
+    fields:
+      - {name: user, label: User URI, description: "Give a user or an organization."}
+      - {name: organization, label: Organization URI}
+      - {name: active, label: Only active, type: boolean, default: true}
+    request:
+      method: GET
+      path: event_types
+      query:
+        user: "{{fields.user}}"
+        organization: "{{fields.organization}}"
+        active: "{{fields.active}}"
+    pagination: {type: cursor, items_path: collection, cursor_param: page_token, next_path: pagination.next_page_token, limit_param: count, page_size: 100}
+
+  - name: Get Event Type
+    resource: Event Type
+    description: Reads a kind of meeting.
+    fields:
+      - {name: event_type, label: Event type URI, required: true}
+    request: {method: GET, path: "event_types/{{fields.event_type | name}}"}
+    output: {path: resource}
+
+  - name: List Available Times
+    resource: Event Type
+    description: Lists the free times of an event type in a window of up to 7 days.
+    fields:
+      - {name: event_type, label: Event type URI, required: true}
+      - {name: start, label: From, type: datetime, required: true}
+      - {name: end, label: To, type: datetime, required: true}
+    request:
+      method: GET
+      path: event_type_available_times
+      query: {event_type: "{{fields.event_type}}", start_time: "{{fields.start}}", end_time: "{{fields.end}}"}
+    output: {path: collection}
+
+  - name: Create Scheduling Link
+    resource: Event Type
+    description: Makes a booking link for an event type that works a set number of times.
+    fields:
+      - {name: event_type, label: Event type URI, required: true}
+      - {name: max_count, label: Bookings it allows, type: number, default: 1}
+    request:
+      method: POST
+      path: scheduling_links
+      body: {owner: "{{fields.event_type}}", owner_type: EventType, max_event_count: "{{fields.max_count}}"}
+    output: {path: resource}
+
+  # Scheduled events
+  - name: List Scheduled Events
+    resource: Event
+    description: Lists the meetings of a user or an organization.
+    fields:
+      - {name: user, label: User URI, description: "Give a user or an organization."}
+      - {name: organization, label: Organization URI}
+      - {name: email, label: Invitee email}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: active}, {label: Canceled, value: canceled}]}
+      - {name: min_start, label: Starting after, type: datetime}
+      - {name: max_start, label: Starting before, type: datetime}
+    request:
+      method: GET
+      path: scheduled_events
+      query:
+        user: "{{fields.user}}"
+        organization: "{{fields.organization}}"
+        invitee_email: "{{fields.email}}"
+        status: "{{fields.status}}"
+        min_start_time: "{{fields.min_start}}"
+        max_start_time: "{{fields.max_start}}"
+    pagination: {type: cursor, items_path: collection, cursor_param: page_token, next_path: pagination.next_page_token, limit_param: count, page_size: 100}
+
+  - name: Get Scheduled Event
+    resource: Event
+    description: Reads a meeting.
+    fields:
+      - {name: event, label: Event URI, required: true}
+    request: {method: GET, path: "scheduled_events/{{fields.event | name}}"}
+    output: {path: resource}
+
+  - name: Cancel Event
+    resource: Event
+    description: Cancels a meeting and tells the invitees.
+    fields:
+      - {name: event, label: Event URI, required: true}
+      - {name: reason, label: Reason, type: textarea}
+    request:
+      method: POST
+      path: "scheduled_events/{{fields.event | name}}/cancellation"
+      body: {reason: "{{fields.reason}}"}
+    output: {path: resource}
+
+  # Invitees
+  - name: List Invitees
+    resource: Invitee
+    description: Lists who booked a meeting, with their answers.
+    fields:
+      - {name: event, label: Event URI, required: true}
+      - {name: email, label: Email}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: active}, {label: Canceled, value: canceled}]}
+    request:
+      method: GET
+      path: "scheduled_events/{{fields.event | name}}/invitees"
+      query: {email: "{{fields.email}}", status: "{{fields.status}}"}
+    pagination: {type: cursor, items_path: collection, cursor_param: page_token, next_path: pagination.next_page_token, limit_param: count, page_size: 100}
+
+  - name: Get Invitee
+    resource: Invitee
+    description: Reads one invitee of a meeting.
+    fields:
+      - {name: event, label: Event URI, required: true}
+      - {name: invitee, label: Invitee URI, required: true}
+    request: {method: GET, path: "scheduled_events/{{fields.event | name}}/invitees/{{fields.invitee | name}}"}
+    output: {path: resource}
+
+  - name: Mark No-Show
+    resource: Invitee
+    description: Marks that an invitee didn't come.
+    fields:
+      - {name: invitee_uri, label: Invitee URI, required: true, description: "The whole uri of the invitee."}
+    request:
+      method: POST
+      path: invitee_no_shows
+      body: {invitee: "{{fields.invitee_uri}}"}
+    output: {path: resource}
+
+  - name: Delete Invitee Data
+    resource: Invitee
+    description: Erases everything Calendly keeps about some emails, for privacy requests. It can't be undone.
+    fields:
+      - {name: emails, label: Emails, required: true, description: "Like ana@acme.com, bia@acme.com"}
+    request:
+      method: POST
+      path: data_compliance/deletion/invitees
+      body: {emails: {_each: "{{fields.emails}}", _value: "{{item}}"}}
+    output:
+      value: {deleted: true}
+
+i18n:
+  pt-BR:
+    description: Agendamentos, tipos de evento e convidados no Calendly.
+    triggers:
+      Invitee Event: {name: Evento de convidado, description: Inicia o fluxo quando alguém agenda ou cancela uma reunião., fields: {organization: URI da organização, scope: Para, user: URI do usuário, events: Eventos}}
+      New Scheduled Event: {name: Nova reunião agendada, description: "Inicia o fluxo para cada nova reunião de um usuário, olhando a cada 5 minutos.", fields: {user: URI do usuário}}
+    actions:
+      Get Current User: {name: Ler usuário conectado, description: "Lê o usuário conectado, com o URI dele e o da organização."}
+      Get User: {name: Ler usuário, description: Lê um usuário., fields: {user: URI do usuário}}
+      List Organization Members: {name: Listar membros da organização, description: Lista os membros de uma organização., fields: {organization: URI da organização, email: E-mail}}
+      Invite to Organization: {name: Convidar para a organização, description: Convida alguém para a organização por e-mail., fields: {organization: URI da organização, email: E-mail}}
+      List Event Types: {name: Listar tipos de evento, description: Lista os tipos de reunião que dá para agendar com um usuário ou organização., fields: {user: URI do usuário, organization: URI da organização, active: Só ativos}}
+      Get Event Type: {name: Ler tipo de evento, description: Lê um tipo de reunião., fields: {event_type: URI do tipo de evento}}
+      List Available Times: {name: Listar horários livres, description: "Lista os horários livres de um tipo de evento numa janela de até 7 dias.", fields: {event_type: URI do tipo de evento, start: De, end: Até}}
+      Create Scheduling Link: {name: Criar link de agendamento, description: Cria um link de agendamento que vale um número definido de vezes., fields: {event_type: URI do tipo de evento, max_count: Agendamentos permitidos}}
+      List Scheduled Events: {name: Listar reuniões, description: Lista as reuniões de um usuário ou organização., fields: {user: URI do usuário, organization: URI da organização, email: E-mail do convidado, status: Status, min_start: Começando depois de, max_start: Começando antes de}}
+      Get Scheduled Event: {name: Ler reunião, description: Lê uma reunião., fields: {event: URI do evento}}
+      Cancel Event: {name: Cancelar reunião, description: Cancela uma reunião e avisa os convidados., fields: {event: URI do evento, reason: Motivo}}
+      List Invitees: {name: Listar convidados, description: "Lista quem agendou uma reunião, com as respostas.", fields: {event: URI do evento, email: E-mail, status: Status}}
+      Get Invitee: {name: Ler convidado, description: Lê um convidado de uma reunião., fields: {event: URI do evento, invitee: URI do convidado}}
+      Mark No-Show: {name: Marcar falta, description: Marca que um convidado não veio., fields: {invitee_uri: URI do convidado}}
+      Delete Invitee Data: {name: Apagar dados de convidados, description: "Apaga tudo o que o Calendly guarda sobre alguns e-mails, para pedidos de privacidade. Não dá para desfazer.", fields: {emails: E-mails}}

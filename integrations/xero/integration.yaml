@@ -1,0 +1,363 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Xero, through the Accounting API. Connect with a web app made in Xero's developer
+# portal, with the redirect URL Heddle shows. Each request names the organisation by
+# its tenant ID, which https://api.xero.com/connections lists after connecting.
+# Xero's webhooks are set in the app and need an intent-to-receive check, so the
+# triggers check for news every 5 minutes.
+id: xero
+name: Xero
+version: 1.0.0
+description: Contacts, invoices, payments and items in Xero.
+icon: hero-calculator
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#13B5EA" d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12s12-5.373 12-12S18.627 0 12 0m6.585 14.655a2.69 2.69 0 0 1-2.69-2.689a2.693 2.693 0 0 1 2.69-2.691c1.485 0 2.69 1.207 2.69 2.691s-1.207 2.689-2.69 2.689M7.53 14.644a.38.38 0 0 1-.267-.116l-2.043-2.04l-2.052 2.047a.367.367 0 1 1-.515-.523l2.04-2.05l-2.038-2.047a.35.35 0 0 1-.113-.261a.367.367 0 0 1 .626-.261l2.055 2.048l2.048-2.045a.36.36 0 0 1 .26-.108c.211 0 .375.165.375.366a.34.34 0 0 1-.104.258l-2.056 2.055l2.055 2.051a.368.368 0 0 1-.261.626zm8.017-4.591c-.796.101-.882.476-.882 1.404v2.787a.367.367 0 0 1-.734 0v-4.53c0-.204.16-.366.362-.366c.166 0 .316.125.346.289c.27-.209.6-.317.93-.317h.105c.195 0 .359.165.359.368c0 .201-.164.352-.375.359c0 0-.09 0-.164.008zm-3.091 2.205H8.625q0 .028.006.057q.028.16.083.31c.194.531.765 1.275 1.829 1.29c.33-.003.631-.086.9-.229c.21-.12.391-.271.525-.428c.045-.058.09-.112.12-.168c.18-.229.405-.186.54-.083c.164.135.18.391.045.57l-.016.016c-.21.27-.435.495-.689.66a2.4 2.4 0 0 1-.811.345c-.33.09-.645.104-.975.06a2.69 2.69 0 0 1-2.28-2.01a2.3 2.3 0 0 1-.09-.645c0-.855.421-1.695 1.125-2.205c.885-.615 2.085-.66 3-.075c.63.405 1.035 1.021 1.185 1.771c.075.419-.21.794-.734.81zm6.129-2.223a1.933 1.933 0 0 0-1.931 1.931c0 1.064.866 1.931 1.931 1.931s1.931-.867 1.931-1.931a1.935 1.935 0 0 0-1.931-1.933zm0 2.595a.666.666 0 1 1 0-1.332a.666.666 0 0 1 0 1.332m-8.04-2.603c-.91 0-1.672.623-1.886 1.466v.03h3.776a1.946 1.946 0 0 0-1.891-1.494z"/></svg>
+category: accounting
+author: Heddle
+homepage: https://developer.xero.com/documentation/api/accounting/overview
+base_url: https://api.xero.com/api.xro/2.0/
+headers:
+  xero-tenant-id: "{{credential.tenant_id}}"
+  Accept: application/json
+
+credential:
+  label: Xero
+  fields:
+    - {name: tenant_id, label: Tenant ID, required: true, description: "The organisation's ID, from https://api.xero.com/connections."}
+  auth:
+    type: oauth2
+    authorize_url: https://login.xero.com/identity/connect/authorize
+    token_url: https://identity.xero.com/connect/token
+    scopes: [offline_access, accounting.transactions, accounting.contacts, accounting.settings]
+
+errors:
+  message_path: Detail
+
+triggers:
+  - name: New Invoice
+    description: Starts the flow for each new invoice or bill, checking every 5 minutes.
+    fields:
+      - {name: type, label: Kind, type: select, default: ACCREC, options: [{label: Sales invoice, value: ACCREC}, {label: Bill, value: ACCPAY}]}
+    request:
+      method: GET
+      path: Invoices
+      query: {where: "Type==\"{{fields.type}}\"", order: "Date DESC", summaryOnly: true}
+    output: {path: Invoices}
+    poll: {every: 5, id: InvoiceID}
+
+  - name: New Contact
+    description: Starts the flow for each new contact, checking every 5 minutes.
+    request:
+      method: GET
+      path: Contacts
+      query: {order: "UpdatedDateUTC DESC", summaryOnly: true}
+    output: {path: Contacts}
+    poll: {every: 5, id: ContactID}
+
+  - name: New Payment
+    description: Starts the flow for each new payment, checking every 5 minutes.
+    request:
+      method: GET
+      path: Payments
+      query: {order: "UpdatedDateUTC DESC"}
+    output: {path: Payments}
+    poll: {every: 5, id: PaymentID}
+
+actions:
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a customer or supplier.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: account_number, label: Account number}
+      - {name: tax_number, label: Tax number}
+      - {name: phone, label: Phone}
+      - {name: addresses, label: Addresses, type: json, description: 'Like [{"AddressType": "POBOX", "AddressLine1": "...", "City": "...", "Country": "..."}]'}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: Contacts
+      body:
+        Contacts:
+          - Name: "{{fields.name}}"
+            EmailAddress: "{{fields.email}}"
+            FirstName: "{{fields.first_name}}"
+            LastName: "{{fields.last_name}}"
+            AccountNumber: "{{fields.account_number}}"
+            TaxNumber: "{{fields.tax_number}}"
+            Phones: [{PhoneType: DEFAULT, PhoneNumber: "{{fields.phone}}"}]
+            Addresses: "{{fields.addresses}}"
+            _merge: "{{fields.extra}}"
+    output: {path: Contacts.0}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact.
+    fields:
+      - {name: contact, label: Contact ID, required: true}
+    request: {method: GET, path: "Contacts/{{fields.contact}}"}
+    output: {path: Contacts.0}
+
+  - name: List Contacts
+    resource: Contact
+    description: Lists the contacts.
+    fields:
+      - {name: search, label: Search, description: "Finds in the name, email and account number."}
+      - {name: where, label: Filter, description: 'In Xero''s syntax, like IsCustomer==true'}
+      - {name: archived, label: With archived, type: boolean, default: false}
+    request:
+      method: GET
+      path: Contacts
+      query: {searchTerm: "{{fields.search}}", where: "{{fields.where}}", includeArchived: "{{fields.archived}}"}
+    pagination: {type: page, items_path: Contacts, page_param: page, limit_param: pageSize, page_size: 100}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: contact, label: Contact ID, required: true}
+      - {name: name, label: Name}
+      - {name: email, label: Email}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: account_number, label: Account number}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: ACTIVE}, {label: Archived, value: ARCHIVED}]}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "Contacts/{{fields.contact}}"
+      body:
+        Contacts:
+          - ContactID: "{{fields.contact}}"
+            Name: "{{fields.name}}"
+            EmailAddress: "{{fields.email}}"
+            FirstName: "{{fields.first_name}}"
+            LastName: "{{fields.last_name}}"
+            AccountNumber: "{{fields.account_number}}"
+            ContactStatus: "{{fields.status}}"
+            _merge: "{{fields.extra}}"
+    output: {path: Contacts.0}
+
+  # Invoices
+  - name: Create Invoice
+    resource: Invoice
+    description: Creates a sales invoice or a bill, as a draft unless another status is picked.
+    fields:
+      - {name: type, label: Kind, type: select, default: ACCREC, options: [{label: Sales invoice, value: ACCREC}, {label: Bill, value: ACCPAY}]}
+      - {name: contact, label: Contact ID, required: true}
+      - {name: line_items, label: Lines, type: json, required: true, description: 'Like [{"Description": "Consulting", "Quantity": 2, "UnitAmount": 150, "AccountCode": "200"}]'}
+      - {name: date, label: Date, type: datetime}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: reference, label: Reference}
+      - {name: number, label: Number, description: "Made by Xero when empty."}
+      - {name: status, label: Status, type: select, default: DRAFT, options: [{label: Draft, value: DRAFT}, {label: Awaiting approval, value: SUBMITTED}, {label: Approved, value: AUTHORISED}]}
+      - {name: amounts, label: Amounts are, type: select, default: Exclusive, options: [{label: Tax exclusive, value: Exclusive}, {label: Tax inclusive, value: Inclusive}, {label: No tax, value: NoTax}]}
+      - {name: currency, label: Currency, description: "Like BRL or USD"}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: Invoices
+      body:
+        Invoices:
+          - Type: "{{fields.type}}"
+            Contact: {ContactID: "{{fields.contact}}"}
+            LineItems: "{{fields.line_items}}"
+            Date: "{{fields.date}}"
+            DueDate: "{{fields.due_date}}"
+            Reference: "{{fields.reference}}"
+            InvoiceNumber: "{{fields.number}}"
+            Status: "{{fields.status}}"
+            LineAmountTypes: "{{fields.amounts}}"
+            CurrencyCode: "{{fields.currency}}"
+            _merge: "{{fields.extra}}"
+    output: {path: Invoices.0}
+
+  - name: Get Invoice
+    resource: Invoice
+    description: Reads an invoice, by its ID or number.
+    fields:
+      - {name: invoice, label: Invoice ID or number, required: true}
+    request: {method: GET, path: "Invoices/{{fields.invoice}}"}
+    output: {path: Invoices.0}
+
+  - name: List Invoices
+    resource: Invoice
+    description: Lists the invoices and bills.
+    fields:
+      - {name: statuses, label: Status, type: multiselect, options: [{label: Draft, value: DRAFT}, {label: Awaiting approval, value: SUBMITTED}, {label: Awaiting payment, value: AUTHORISED}, {label: Paid, value: PAID}, {label: Voided, value: VOIDED}, {label: Deleted, value: DELETED}]}
+      - {name: contacts, label: Contact IDs}
+      - {name: where, label: Filter, description: 'In Xero''s syntax, like Type=="ACCREC" AND AmountDue>0'}
+      - {name: modified_since, label: Changed since, type: datetime}
+    request:
+      method: GET
+      path: Invoices
+      headers: {If-Modified-Since: "{{fields.modified_since}}"}
+      query: {Statuses: "{{fields.statuses}}", ContactIDs: "{{fields.contacts}}", where: "{{fields.where}}"}
+    pagination: {type: page, items_path: Invoices, page_param: page, limit_param: pageSize, page_size: 100}
+
+  - name: Update Invoice
+    resource: Invoice
+    description: Changes an invoice. Only drafts and invoices awaiting approval can change their lines.
+    fields:
+      - {name: invoice, label: Invoice ID, required: true}
+      - {name: line_items, label: Lines, type: json}
+      - {name: due_date, label: Due date, type: datetime}
+      - {name: reference, label: Reference}
+      - {name: status, label: Status, type: select, options: [{label: Draft, value: DRAFT}, {label: Awaiting approval, value: SUBMITTED}, {label: Approved, value: AUTHORISED}, {label: Deleted, value: DELETED}, {label: Voided, value: VOIDED}]}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "Invoices/{{fields.invoice}}"
+      body:
+        Invoices:
+          - InvoiceID: "{{fields.invoice}}"
+            LineItems: "{{fields.line_items}}"
+            DueDate: "{{fields.due_date}}"
+            Reference: "{{fields.reference}}"
+            Status: "{{fields.status}}"
+            _merge: "{{fields.extra}}"
+    output: {path: Invoices.0}
+
+  - name: Email Invoice
+    resource: Invoice
+    description: Emails an approved sales invoice to its contact.
+    fields:
+      - {name: invoice, label: Invoice ID, required: true}
+    request: {method: POST, path: "Invoices/{{fields.invoice}}/Email", body: {}}
+    output:
+      value: {id: "{{fields.invoice}}", emailed: true}
+
+  - name: Get Online Invoice Link
+    resource: Invoice
+    description: Reads the link where the customer sees and pays an invoice.
+    fields:
+      - {name: invoice, label: Invoice ID, required: true}
+    request: {method: GET, path: "Invoices/{{fields.invoice}}/OnlineInvoice"}
+    output: {path: OnlineInvoices.0}
+
+  - name: Download Invoice PDF
+    resource: Invoice
+    description: Downloads an invoice as a PDF.
+    fields:
+      - {name: invoice, label: Invoice ID, required: true}
+    request:
+      method: GET
+      path: "Invoices/{{fields.invoice}}"
+      headers: {Accept: application/pdf}
+    output:
+      file: {name: "invoice-{{fields.invoice}}.pdf"}
+
+  # Payments
+  - name: Create Payment
+    resource: Payment
+    description: Records a payment against an invoice.
+    fields:
+      - {name: invoice, label: Invoice ID, required: true}
+      - {name: account, label: Bank account code, required: true, description: "Like 090"}
+      - {name: amount, label: Amount, type: number, required: true}
+      - {name: date, label: Date, type: datetime}
+      - {name: reference, label: Reference}
+    request:
+      method: PUT
+      path: Payments
+      body:
+        Payments:
+          - Invoice: {InvoiceID: "{{fields.invoice}}"}
+            Account: {Code: "{{fields.account}}"}
+            Amount: "{{fields.amount}}"
+            Date: "{{fields.date}}"
+            Reference: "{{fields.reference}}"
+    output: {path: Payments.0}
+
+  - name: List Payments
+    resource: Payment
+    description: Lists the payments.
+    fields:
+      - {name: where, label: Filter, description: 'In Xero''s syntax, like Status=="AUTHORISED"'}
+    request: {method: GET, path: Payments, query: {where: "{{fields.where}}"}}
+    pagination: {type: page, items_path: Payments, page_param: page, limit_param: pageSize, page_size: 100}
+
+  - name: Delete Payment
+    resource: Payment
+    description: Deletes a payment, so its invoice is due again.
+    fields:
+      - {name: payment, label: Payment ID, required: true}
+    request:
+      method: POST
+      path: "Payments/{{fields.payment}}"
+      body: {Payments: [{Status: DELETED}]}
+    output: {path: Payments.0}
+
+  # Settings
+  - name: List Accounts
+    resource: Setting
+    description: Lists the chart of accounts.
+    fields:
+      - {name: where, label: Filter, description: 'Like Type=="BANK"'}
+    request: {method: GET, path: Accounts, query: {where: "{{fields.where}}"}}
+    output: {path: Accounts}
+
+  - name: List Items
+    resource: Setting
+    description: Lists the products and services.
+    request: {method: GET, path: Items}
+    output: {path: Items}
+
+  - name: Create Item
+    resource: Setting
+    description: Creates a product or service.
+    fields:
+      - {name: code, label: Code, required: true}
+      - {name: name, label: Name}
+      - {name: description, label: Description}
+      - {name: sale_price, label: Sale price, type: number}
+      - {name: sale_account, label: Sales account code}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: Items
+      body:
+        Items:
+          - Code: "{{fields.code}}"
+            Name: "{{fields.name}}"
+            Description: "{{fields.description}}"
+            SalesDetails: {UnitPrice: "{{fields.sale_price}}", AccountCode: "{{fields.sale_account}}"}
+            _merge: "{{fields.extra}}"
+    output: {path: Items.0}
+
+  - name: Get Organisation
+    resource: Setting
+    description: Reads the connected organisation.
+    request: {method: GET, path: Organisation}
+    output: {path: Organisations.0}
+
+i18n:
+  pt-BR:
+    description: Contatos, faturas, pagamentos e itens no Xero.
+    triggers:
+      New Invoice: {name: Nova fatura, description: "Inicia o fluxo para cada fatura ou conta a pagar nova, olhando a cada 5 minutos.", fields: {type: Tipo}}
+      New Contact: {name: Novo contato, description: "Inicia o fluxo para cada contato novo, olhando a cada 5 minutos."}
+      New Payment: {name: Novo pagamento, description: "Inicia o fluxo para cada pagamento novo, olhando a cada 5 minutos."}
+    actions:
+      Create Contact: {name: Criar contato, description: Cria um cliente ou fornecedor., fields: {name: Nome, email: E-mail, first_name: Nome, last_name: Sobrenome, account_number: Número da conta, tax_number: Número fiscal, phone: Telefone, addresses: Endereços, extra: Mais campos}}
+      Get Contact: {name: Ler contato, description: Lê um contato., fields: {contact: ID do contato}}
+      List Contacts: {name: Listar contatos, description: Lista os contatos., fields: {search: Busca, where: Filtro, archived: Com arquivados}}
+      Update Contact: {name: Atualizar contato, description: Altera um contato. Campos vazios ficam como estão., fields: {contact: ID do contato, name: Nome, email: E-mail, first_name: Nome, last_name: Sobrenome, account_number: Número da conta, status: Status, extra: Mais campos}}
+      Create Invoice: {name: Criar fatura, description: "Cria uma fatura de venda ou conta a pagar, como rascunho se outro status não for escolhido.", fields: {type: Tipo, contact: ID do contato, line_items: Linhas, date: Data, due_date: Vencimento, reference: Referência, number: Número, status: Status, amounts: Valores, currency: Moeda, extra: Mais campos}}
+      Get Invoice: {name: Ler fatura, description: "Lê uma fatura, pelo ID ou número.", fields: {invoice: ID ou número da fatura}}
+      List Invoices: {name: Listar faturas, description: Lista as faturas e contas a pagar., fields: {statuses: Status, contacts: IDs dos contatos, where: Filtro, modified_since: Alterada desde}}
+      Update Invoice: {name: Atualizar fatura, description: Altera uma fatura. Só rascunhos e faturas aguardando aprovação podem mudar as linhas., fields: {invoice: ID da fatura, line_items: Linhas, due_date: Vencimento, reference: Referência, status: Status, extra: Mais campos}}
+      Email Invoice: {name: Enviar fatura por e-mail, description: Envia uma fatura de venda aprovada para o contato., fields: {invoice: ID da fatura}}
+      Get Online Invoice Link: {name: Ler link da fatura, description: Lê o link onde o cliente vê e paga uma fatura., fields: {invoice: ID da fatura}}
+      Download Invoice PDF: {name: Baixar PDF da fatura, description: Baixa uma fatura em PDF., fields: {invoice: ID da fatura}}
+      Create Payment: {name: Registrar pagamento, description: Registra um pagamento numa fatura., fields: {invoice: ID da fatura, account: Código da conta bancária, amount: Valor, date: Data, reference: Referência}}
+      List Payments: {name: Listar pagamentos, description: Lista os pagamentos., fields: {where: Filtro}}
+      Delete Payment: {name: Excluir pagamento, description: "Exclui um pagamento, e a fatura volta a ficar em aberto.", fields: {payment: ID do pagamento}}
+      List Accounts: {name: Listar contas contábeis, description: Lista o plano de contas., fields: {where: Filtro}}
+      List Items: {name: Listar itens, description: Lista os produtos e serviços.}
+      Create Item: {name: Criar item, description: Cria um produto ou serviço., fields: {code: Código, name: Nome, description: Descrição, sale_price: Preço de venda, sale_account: Código da conta de vendas, extra: Mais campos}}
+      Get Organisation: {name: Ler organização, description: Lê a organização conectada.}
