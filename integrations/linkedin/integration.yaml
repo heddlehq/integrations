@@ -1,0 +1,111 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# LinkedIn, through the Posts API. Connect with an app made in LinkedIn's
+# developer portal, with the products "Share on LinkedIn" and "Sign In with LinkedIn
+# using OpenID Connect", and the redirect URL Heddle shows. Posting as a company
+# page also needs the Community Management API and the w_organization_social scope.
+# Images need an upload to an address LinkedIn gives, which Bobbin can't take
+# from a field yet, so posts carry text and links.
+# Text is LinkedIn's little format: escape ( ) [ ] { } < > @ | ~ _ * with a backslash.
+id: linkedin
+name: LinkedIn
+version: 1.0.0
+description: Posts with text, links and images on LinkedIn, as a person or a page.
+icon: hero-briefcase
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037c-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85c3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.06 2.06 0 0 1-2.063-2.065a2.064 2.064 0 1 1 2.063 2.065m1.782 13.019H3.555V9h3.564zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+category: social
+author: Heddle
+homepage: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
+base_url: https://api.linkedin.com/
+headers:
+  LinkedIn-Version: "202510"
+  X-Restli-Protocol-Version: 2.0.0
+
+credential:
+  label: LinkedIn
+  auth:
+    type: oauth2
+    authorize_url: https://www.linkedin.com/oauth/v2/authorization
+    token_url: https://www.linkedin.com/oauth/v2/accessToken
+    token_auth: body
+    scopes: [openid, profile, email, w_member_social]
+
+errors:
+  message_path: message
+
+actions:
+  - name: Get Profile
+    resource: Profile
+    description: "Reads the connected person. Their author URN is urn:li:person: followed by sub."
+    request: {method: GET, path: v2/userinfo}
+
+
+  - name: Create Post
+    resource: Post
+    description: Publishes a text post.
+    fields:
+      - {name: author, label: Author, required: true, description: "urn:li:person:… from Get Profile (sub), or urn:li:organization:123 for a page you admin."}
+      - {name: visibility, label: Visible to, type: select, default: PUBLIC, options: [{label: Anyone, value: PUBLIC}, {label: Connections, value: CONNECTIONS}]}
+      - {name: text, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: rest/posts
+      body:
+        author: "{{fields.author}}"
+        commentary: "{{fields.text}}"
+        visibility: "{{fields.visibility}}"
+        distribution: {feedDistribution: MAIN_FEED, targetEntities: [], thirdPartyDistributionChannels: []}
+        lifecycleState: PUBLISHED
+        isReshareDisabledByAuthor: false
+    output:
+      value: {author: "{{fields.author}}", posted: true}
+
+  - name: Share Link
+    resource: Post
+    description: Publishes a post with a link, shown as a card.
+    fields:
+      - {name: author, label: Author, required: true, description: "urn:li:person:… from Get Profile (sub), or urn:li:organization:123 for a page you admin."}
+      - {name: visibility, label: Visible to, type: select, default: PUBLIC, options: [{label: Anyone, value: PUBLIC}, {label: Connections, value: CONNECTIONS}]}
+      - {name: text, label: Text, type: textarea}
+      - {name: url, label: Link, required: true}
+      - {name: title, label: Card title}
+      - {name: description_text, label: Card description}
+    request:
+      method: POST
+      path: rest/posts
+      body:
+        author: "{{fields.author}}"
+        commentary: "{{fields.text}}"
+        visibility: "{{fields.visibility}}"
+        distribution: {feedDistribution: MAIN_FEED, targetEntities: [], thirdPartyDistributionChannels: []}
+        lifecycleState: PUBLISHED
+        isReshareDisabledByAuthor: false
+        content: {article: {source: "{{fields.url}}", title: "{{fields.title}}", description: "{{fields.description_text}}"}}
+
+
+  - name: Get Post
+    resource: Post
+    description: Reads a post, by its URN.
+    fields:
+      - {name: post, label: Post URN, required: true, description: "Like urn:li:share:123 or urn:li:ugcPost:123"}
+    request: {method: GET, path: "rest/posts/{{fields.post}}"}
+
+  - name: Delete Post
+    resource: Post
+    description: Deletes a post.
+    fields:
+      - {name: post, label: Post URN, required: true}
+    request: {method: DELETE, path: "rest/posts/{{fields.post}}"}
+    output:
+      value: {post: "{{fields.post}}", deleted: true}
+
+i18n:
+  pt-BR:
+    description: "Posts com texto e links no LinkedIn, como pessoa ou página."
+    actions:
+      Get Profile: {name: "Ler perfil", description: "Lê a pessoa conectada. O URN de autor dela é urn:li:person: seguido do sub."}
+      Create Post: {name: "Criar post", description: "Publica um post de texto.", fields: {author: "Autor", visibility: "Visível para", text: "Texto"}}
+      Share Link: {name: "Compartilhar link", description: "Publica um post com um link, mostrado como cartão.", fields: {author: "Autor", visibility: "Visível para", text: "Texto", url: "Link", title: "Título do cartão", description_text: "Descrição do cartão"}}
+      Get Post: {name: "Ler post", description: "Lê um post, pelo URN.", fields: {post: "URN do post"}}
+      Delete Post: {name: "Excluir post", description: "Exclui um post.", fields: {post: "URN do post"}}
