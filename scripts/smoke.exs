@@ -43,9 +43,24 @@ cred_sample = fn
 end
 credential = Map.new(integration.credential.fields, &{&1.name, cred_sample.(&1)}) |> Map.put("access_token", "tok")
 
+# A client certificate (credential.tls) gets a real one, made here, in the fields it names.
+credential =
+  case integration.credential.tls do
+    %{"cert" => cert, "key" => key} ->
+      %{cert: der, key: private} = :public_key.pkix_test_root_cert(~c"Smoke", digest: :sha256)
+      name = fn template -> with [_, n] <- Regex.run(~r/credential\.(\w+)/, template), do: n end
+      cert_pem = :public_key.pem_encode([{:Certificate, der, :not_encrypted}])
+      key_pem = :public_key.pem_encode([:public_key.pem_entry_encode(elem(private, 0), private)])
+      credential |> Map.put(name.(cert), cert_pem) |> Map.put(name.(key), key_pem)
+
+    _none ->
+      credential
+  end
+
 plug = fn conn ->
   {:ok, body, conn} = Plug.Conn.read_body(conn)
-  unless conn.request_path =~ ~r/token|login|auth/ and conn.method == "POST" and conn.host =~ ~r/sec|auth|login|oauth|identity/,
+  token? = conn.method == "POST" and (conn.request_path =~ ~r/oauth.*token|token$/ or (conn.request_path =~ ~r/token|login|auth/ and conn.host =~ ~r/sec|auth|login|oauth|identity/))
+  unless token?,
     do: send(self(), {:req, conn.method, conn.request_path, conn.query_string, body})
   # Logins and client credentials get a token back, so the action after them runs.
   reply = if conn.request_path =~ ~r/token|login|auth/, do: ~s({"access_token": "tok", "token": "tok", "expires_in": 3600}), else: "{}"
