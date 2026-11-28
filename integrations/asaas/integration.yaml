@@ -1,0 +1,393 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Asaas, through the API v3. Connect with an API key from Asaas' Integrações › Chave
+# de API. Use https://api-sandbox.asaas.com for a sandbox account. Customers are
+# named by their Asaas ID, like cus_000005219613; amounts are in reais, like 49.90.
+id: asaas
+name: Asaas
+version: 1.0.0
+description: Charges by Pix, boleto and card, customers, subscriptions and transfers in Asaas.
+icon: hero-banknotes
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#0030B9"/><svg x="3.00" y="10.47" width="18.00" height="3.06" viewBox="0 0 100 17"><path d="M67.0144 10.2322L71.1732 2.8531L75.291 10.2116C74.1232 9.6817 72.6687 9.41646 71.0912 9.41646C69.6159 9.41646 68.2023 9.68169 67.0144 10.2316M45.6871 10.2322L49.8459 2.8531L53.9638 10.2116C52.796 9.6817 51.3414 9.41646 49.764 9.41646C48.2887 9.41646 46.8751 9.68169 45.6871 10.2316M5.98205 10.2322L10.1409 2.69007L14.2997 10.2122C13.1319 9.68231 11.6566 9.41707 10.0791 9.41707C8.60379 9.41707 7.17003 9.6823 5.98144 10.2322M99.9988 12.067C99.9988 15.1653 97.1508 17 92.0498 17C88.4034 17 85.3096 16.3272 82.1339 14.3294L83.1788 12.4746C86.1497 14.3501 88.6901 15.0022 92.0296 15.0022C95.7378 15.0022 97.684 13.9218 97.684 12.0262C97.684 10.4975 96.2704 9.86542 93.4842 9.5801L88.5672 9.091C84.9819 8.74425 82.7081 7.37853 82.7081 4.87157C82.7081 1.89558 85.9247 0 91.0257 0C94.2014 0 96.721 0.61138 99.2412 2.18089L98.2171 4.11723C96.2092 2.79227 93.8535 2.07869 90.7597 2.07869C87.1542 2.07869 85.0235 3.21993 85.0235 4.79005C85.0235 6.27805 86.56 6.84867 88.7934 7.07314L93.8131 7.56225C97.8491 7.94976 100 9.397 100 12.067M81.3758 16.6332L72.2181 0.386904H70.1491L61.0115 16.6332H63.47L64.4739 14.7784C65.6417 12.6175 67.6698 11.4763 71.0912 11.4763C74.5127 11.4763 76.6637 12.5975 77.8522 14.799L78.8354 16.6338H81.3758V16.6332ZM60.0486 16.6332L50.8908 0.386904H48.8218L39.6843 16.6332H42.1428L43.1467 14.7784C44.3145 12.6175 46.3425 11.4763 49.764 11.4763C53.1854 11.4763 55.3364 12.5975 56.525 14.799L57.5081 16.6338H60.0486V16.6332ZM38.9873 12.067C38.9873 15.1653 36.1393 17 31.0383 17C27.3918 17 24.2981 16.3272 21.1224 14.3294L22.1673 12.4746C25.1382 14.3501 27.6786 15.0022 31.0181 15.0022C34.7263 15.0022 36.6725 13.9218 36.6725 12.0262C36.6725 10.4975 35.2589 9.86542 32.4727 9.5801L27.5557 9.091C23.9704 8.74425 21.6966 7.37853 21.6966 4.87157C21.6966 1.89558 24.9132 0 30.0142 0C33.1898 0 35.7095 0.61138 38.2297 2.18089L37.2056 4.11723C35.1977 2.79227 32.842 2.07869 29.7482 2.07869C26.1427 2.07869 24.012 3.21993 24.012 4.79005C24.012 6.27805 25.5484 6.84867 27.7819 7.07314L32.8016 7.56225C36.8375 7.94976 38.9885 9.397 38.9885 12.067M8.05167 2.30256L0 16.6326H2.45848L3.46243 14.7777C4.63023 12.6376 6.6381 11.4757 10.0797 11.4757C13.5214 11.4757 15.6729 12.6376 16.8407 14.7984L17.8239 16.6332H20.3643L11.8009 1.42655C11.3912 0.692898 10.8177 0.386904 9.87491 0.386904H2.97085L4.02493 1.45879C4.66691 2.09755 5.1707 2.30256 6.0652 2.30256H8.05167Z" fill="white"/></svg></svg>
+category: payments
+author: Heddle
+homepage: https://docs.asaas.com/reference
+base_url: "{{credential.url}}/v3/"
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Asaas
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true}
+    - {name: url, label: API address, default: "https://api.asaas.com", description: "https://api-sandbox.asaas.com for the sandbox."}
+  auth:
+    type: header
+    name: access_token
+    value: "{{credential.api_key}}"
+
+errors:
+  message_path: errors.0.description
+
+triggers:
+  - name: Asaas Event
+    description: Starts the flow when a charge is paid, overdue or refunded, or a subscription or transfer changes.
+    fields:
+      - {name: email, label: Email for failures, required: true, description: "Asaas writes here when it can't reach Heddle."}
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [PAYMENT_RECEIVED, PAYMENT_CONFIRMED]
+        options:
+          - {label: Charge created, value: PAYMENT_CREATED}
+          - {label: Charge paid (Pix or boleto), value: PAYMENT_RECEIVED}
+          - {label: Charge confirmed (card), value: PAYMENT_CONFIRMED}
+          - {label: Charge overdue, value: PAYMENT_OVERDUE}
+          - {label: Charge updated, value: PAYMENT_UPDATED}
+          - {label: Charge deleted, value: PAYMENT_DELETED}
+          - {label: Charge refunded, value: PAYMENT_REFUNDED}
+          - {label: Chargeback requested, value: PAYMENT_CHARGEBACK_REQUESTED}
+          - {label: Card declined, value: PAYMENT_CREDIT_CARD_CAPTURE_REFUSED}
+          - {label: Subscription created, value: SUBSCRIPTION_CREATED}
+          - {label: Subscription updated, value: SUBSCRIPTION_UPDATED}
+          - {label: Subscription deleted, value: SUBSCRIPTION_DELETED}
+          - {label: Transfer done, value: TRANSFER_DONE}
+          - {label: Transfer failed, value: TRANSFER_FAILED}
+          - {label: Invoice (NFS-e) issued, value: INVOICE_AUTHORIZED}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body: {name: Heddle, url: "{{webhook.url}}", email: "{{fields.email}}", enabled: true, interrupted: false, apiVersion: 3, authToken: "{{webhook.secret}}", sendType: SEQUENTIALLY, events: "{{fields.events}}"}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature: {header: asaas-access-token, token: "{{webhook.secret}}"}
+
+actions:
+  # Customers
+  - name: Create Customer
+    resource: Customer
+    description: Creates a customer, a person or company you charge.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: cpf_cnpj, label: CPF or CNPJ, required: true}
+      - {name: email, label: Email}
+      - {name: mobile, label: Mobile, description: "Like 11999990000"}
+      - {name: postal_code, label: CEP}
+      - {name: address_number, label: Number}
+      - {name: complement, label: Complement}
+      - {name: external_reference, label: Your ID}
+      - {name: quiet, label: "Don't let Asaas notify them", type: boolean, default: false}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: customers
+      body: {name: "{{fields.name}}", cpfCnpj: "{{fields.cpf_cnpj}}", email: "{{fields.email}}", mobilePhone: "{{fields.mobile}}", postalCode: "{{fields.postal_code}}", addressNumber: "{{fields.address_number}}", complement: "{{fields.complement}}", externalReference: "{{fields.external_reference}}", notificationDisabled: "{{fields.quiet}}", _merge: "{{fields.extra}}"}
+
+  - name: Get Customer
+    resource: Customer
+    description: Reads a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request: {method: GET, path: "customers/{{fields.customer}}"}
+
+  - name: List Customers
+    resource: Customer
+    description: Lists the customers, optionally by name, email or CPF/CNPJ.
+    fields:
+      - {name: name, label: Name}
+      - {name: email, label: Email}
+      - {name: cpf_cnpj, label: CPF or CNPJ}
+      - {name: external_reference, label: Your ID}
+    request:
+      method: GET
+      path: customers
+      query: {name: "{{fields.name}}", email: "{{fields.email}}", cpfCnpj: "{{fields.cpf_cnpj}}", externalReference: "{{fields.external_reference}}"}
+    pagination: {type: offset, items_path: data, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Customer
+    resource: Customer
+    description: Changes a customer. Empty fields stay as they are.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: name, label: Name}
+      - {name: email, label: Email}
+      - {name: mobile, label: Mobile}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "customers/{{fields.customer}}"
+      body: {name: "{{fields.name}}", email: "{{fields.email}}", mobilePhone: "{{fields.mobile}}", _merge: "{{fields.extra}}"}
+
+  - name: Delete Customer
+    resource: Customer
+    description: Deletes a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request: {method: DELETE, path: "customers/{{fields.customer}}"}
+
+  # Charges
+  - name: Create Charge
+    resource: Charge
+    description: Charges a customer by Pix, boleto or card, once or in installments.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: billing_type, label: Method, type: select, required: true, default: PIX, options: [{label: Pix, value: PIX}, {label: Boleto, value: BOLETO}, {label: Credit card, value: CREDIT_CARD}, {label: Customer picks, value: UNDEFINED}]}
+      - {name: value, label: Amount, type: number, required: true, description: "Like 49.90"}
+      - {name: due_date, label: Due date, required: true, description: "Like 2026-02-10"}
+      - {name: description, label: Description}
+      - {name: external_reference, label: Your ID}
+      - {name: installments, label: Installments, type: number, description: "For card or boleto in installments."}
+      - {name: discount, label: Discount, type: json, description: 'Like {"value": 10, "dueDateLimitDays": 0, "type": "PERCENTAGE"}'}
+      - {name: fine, label: Late fee (%), type: number}
+      - {name: interest, label: Monthly interest (%), type: number}
+      - {name: extra, label: More fields, type: json, description: 'Like {"split": [...]} or creditCard data.'}
+    request:
+      method: POST
+      path: payments
+      body:
+        customer: "{{fields.customer}}"
+        billingType: "{{fields.billing_type}}"
+        value: "{{fields.value}}"
+        dueDate: "{{fields.due_date}}"
+        description: "{{fields.description}}"
+        externalReference: "{{fields.external_reference}}"
+        installmentCount: "{{fields.installments}}"
+        discount: "{{fields.discount}}"
+        fine: {value: "{{fields.fine}}"}
+        interest: {value: "{{fields.interest}}"}
+        _merge: "{{fields.extra}}"
+
+  - name: Get Charge
+    resource: Charge
+    description: Reads a charge, with its status and links.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+    request: {method: GET, path: "payments/{{fields.charge}}"}
+
+  - name: List Charges
+    resource: Charge
+    description: Lists the charges, by customer, status, method or dates.
+    fields:
+      - {name: customer, label: Customer ID}
+      - {name: status, label: Status, type: select, options: [{label: Pending, value: PENDING}, {label: Received, value: RECEIVED}, {label: Confirmed, value: CONFIRMED}, {label: Overdue, value: OVERDUE}, {label: Refunded, value: REFUNDED}, {label: Received in cash, value: RECEIVED_IN_CASH}]}
+      - {name: billing_type, label: Method, type: select, options: [{label: Pix, value: PIX}, {label: Boleto, value: BOLETO}, {label: Credit card, value: CREDIT_CARD}, {label: Customer picks, value: UNDEFINED}]}
+      - {name: external_reference, label: Your ID}
+      - {name: due_from, label: Due from, description: "Like 2026-01-01"}
+      - {name: due_to, label: Due until}
+      - {name: paid_from, label: Paid from}
+      - {name: paid_to, label: Paid until}
+    request:
+      method: GET
+      path: payments
+      query: {customer: "{{fields.customer}}", status: "{{fields.status}}", billingType: "{{fields.billing_type}}", externalReference: "{{fields.external_reference}}", "dueDate[ge]": "{{fields.due_from}}", "dueDate[le]": "{{fields.due_to}}", "paymentDate[ge]": "{{fields.paid_from}}", "paymentDate[le]": "{{fields.paid_to}}"}
+    pagination: {type: offset, items_path: data, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Get Pix QR Code
+    resource: Charge
+    description: Reads the Pix QR code and copy-and-paste code of a charge.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+    request: {method: GET, path: "payments/{{fields.charge}}/pixQrCode"}
+
+  - name: Get Boleto Line
+    resource: Charge
+    description: Reads the typeable line and barcode of a boleto.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+    request: {method: GET, path: "payments/{{fields.charge}}/identificationField"}
+
+  - name: Update Charge
+    resource: Charge
+    description: Changes a pending charge. Empty fields stay as they are.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+      - {name: value, label: Amount, type: number}
+      - {name: due_date, label: Due date}
+      - {name: description, label: Description}
+      - {name: billing_type, label: Method, type: select, options: [{label: Pix, value: PIX}, {label: Boleto, value: BOLETO}, {label: Credit card, value: CREDIT_CARD}, {label: Customer picks, value: UNDEFINED}]}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "payments/{{fields.charge}}"
+      body: {value: "{{fields.value}}", dueDate: "{{fields.due_date}}", description: "{{fields.description}}", billingType: "{{fields.billing_type}}", _merge: "{{fields.extra}}"}
+
+  - name: Delete Charge
+    resource: Charge
+    description: Deletes a pending charge.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+    request: {method: DELETE, path: "payments/{{fields.charge}}"}
+
+  - name: Refund Charge
+    resource: Charge
+    description: Refunds a paid charge, in full or in part.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+      - {name: value, label: Amount, type: number, description: "All when empty."}
+      - {name: description, label: Reason}
+    request:
+      method: POST
+      path: "payments/{{fields.charge}}/refund"
+      body: {value: "{{fields.value}}", description: "{{fields.description}}"}
+
+  - name: Confirm Cash Payment
+    resource: Charge
+    description: Marks a charge as paid outside Asaas, like in cash.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+      - {name: date, label: Paid on, required: true, description: "Like 2026-02-10"}
+      - {name: value, label: Amount, type: number, required: true}
+      - {name: notify, label: Tell the customer, type: boolean, default: false}
+    request:
+      method: POST
+      path: "payments/{{fields.charge}}/receiveInCash"
+      body: {paymentDate: "{{fields.date}}", value: "{{fields.value}}", notifyCustomer: "{{fields.notify}}"}
+
+  # Subscriptions
+  - name: Create Subscription
+    resource: Subscription
+    description: Charges a customer again every period.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: billing_type, label: Method, type: select, required: true, default: PIX, options: [{label: Pix, value: PIX}, {label: Boleto, value: BOLETO}, {label: Credit card, value: CREDIT_CARD}, {label: Customer picks, value: UNDEFINED}]}
+      - {name: value, label: Amount, type: number, required: true}
+      - {name: next_due_date, label: First due date, required: true, description: "Like 2026-02-10"}
+      - {name: cycle, label: Every, type: select, required: true, default: MONTHLY, options: [{label: Week, value: WEEKLY}, {label: Two weeks, value: BIWEEKLY}, {label: Month, value: MONTHLY}, {label: Two months, value: BIMONTHLY}, {label: Three months, value: QUARTERLY}, {label: Six months, value: SEMIANNUALLY}, {label: Year, value: YEARLY}]}
+      - {name: description, label: Description}
+      - {name: end_date, label: Ends on}
+      - {name: max_payments, label: Number of charges, type: number}
+      - {name: external_reference, label: Your ID}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: subscriptions
+      body: {customer: "{{fields.customer}}", billingType: "{{fields.billing_type}}", value: "{{fields.value}}", nextDueDate: "{{fields.next_due_date}}", cycle: "{{fields.cycle}}", description: "{{fields.description}}", endDate: "{{fields.end_date}}", maxPayments: "{{fields.max_payments}}", externalReference: "{{fields.external_reference}}", _merge: "{{fields.extra}}"}
+
+  - name: Get Subscription
+    resource: Subscription
+    description: Reads a subscription.
+    fields:
+      - {name: subscription, label: Subscription ID, required: true}
+    request: {method: GET, path: "subscriptions/{{fields.subscription}}"}
+
+  - name: List Subscriptions
+    resource: Subscription
+    description: Lists the subscriptions.
+    fields:
+      - {name: customer, label: Customer ID}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: ACTIVE}, {label: Expired, value: EXPIRED}, {label: Inactive, value: INACTIVE}]}
+    request: {method: GET, path: subscriptions, query: {customer: "{{fields.customer}}", status: "{{fields.status}}"}}
+    pagination: {type: offset, items_path: data, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: List Subscription Charges
+    resource: Subscription
+    description: Lists the charges a subscription made.
+    fields:
+      - {name: subscription, label: Subscription ID, required: true}
+    request: {method: GET, path: "subscriptions/{{fields.subscription}}/payments"}
+    pagination: {type: offset, items_path: data, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Subscription
+    resource: Subscription
+    description: Changes a subscription. Empty fields stay as they are.
+    fields:
+      - {name: subscription, label: Subscription ID, required: true}
+      - {name: value, label: Amount, type: number}
+      - {name: next_due_date, label: Next due date}
+      - {name: billing_type, label: Method, type: select, options: [{label: Pix, value: PIX}, {label: Boleto, value: BOLETO}, {label: Credit card, value: CREDIT_CARD}, {label: Customer picks, value: UNDEFINED}]}
+      - {name: update_pending, label: Also change pending charges, type: boolean, default: false}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "subscriptions/{{fields.subscription}}"
+      body: {value: "{{fields.value}}", nextDueDate: "{{fields.next_due_date}}", billingType: "{{fields.billing_type}}", updatePendingPayments: "{{fields.update_pending}}", _merge: "{{fields.extra}}"}
+
+  - name: Cancel Subscription
+    resource: Subscription
+    description: Ends a subscription and deletes its pending charges.
+    fields:
+      - {name: subscription, label: Subscription ID, required: true}
+    request: {method: DELETE, path: "subscriptions/{{fields.subscription}}"}
+
+  # Payment links
+  - name: Create Payment Link
+    resource: Payment Link
+    description: Makes a link anyone can pay, for a sale or a donation.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: billing_type, label: Method, type: select, required: true, default: UNDEFINED, options: [{label: Pix, value: PIX}, {label: Boleto, value: BOLETO}, {label: Credit card, value: CREDIT_CARD}, {label: Customer picks, value: UNDEFINED}]}
+      - {name: charge_type, label: Kind, type: select, required: true, default: DETACHED, options: [{label: Single, value: DETACHED}, {label: Recurrent, value: RECURRENT}, {label: In installments, value: INSTALLMENT}]}
+      - {name: value, label: Amount, type: number, description: "Empty lets the payer pick."}
+      - {name: description, label: Description}
+      - {name: due_date_limit_days, label: Boleto due in (days), type: number, default: 3}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: paymentLinks
+      body: {name: "{{fields.name}}", billingType: "{{fields.billing_type}}", chargeType: "{{fields.charge_type}}", value: "{{fields.value}}", description: "{{fields.description}}", dueDateLimitDays: "{{fields.due_date_limit_days}}", _merge: "{{fields.extra}}"}
+
+  # Pix and transfers
+  - name: Transfer
+    resource: Transfer
+    description: Sends money from the Asaas balance by Pix key or to a bank account.
+    fields:
+      - {name: value, label: Amount, type: number, required: true}
+      - {name: pix_key, label: Pix key, description: "Give a Pix key or a bank account."}
+      - {name: pix_key_type, label: Key type, type: select, options: [{label: CPF, value: CPF}, {label: CNPJ, value: CNPJ}, {label: Email, value: EMAIL}, {label: Phone, value: PHONE}, {label: Random key, value: EVP}]}
+      - {name: bank_account, label: Bank account, type: json, description: 'Like {"bank": {"code": "001"}, "agency": "1234", "account": "12345", "accountDigit": "6", "cpfCnpj": "...", "ownerName": "..."}'}
+      - {name: description, label: Description}
+      - {name: schedule_date, label: On, description: "Like 2026-02-10. Now when empty."}
+    request:
+      method: POST
+      path: transfers
+      body: {value: "{{fields.value}}", pixAddressKey: "{{fields.pix_key}}", pixAddressKeyType: "{{fields.pix_key_type}}", bankAccount: "{{fields.bank_account}}", description: "{{fields.description}}", scheduleDate: "{{fields.schedule_date}}"}
+
+  - name: Get Balance
+    resource: Transfer
+    description: Reads the account's balance.
+    request: {method: GET, path: finance/balance}
+
+  - name: List Transactions
+    resource: Transfer
+    description: Lists the account statement between two dates.
+    fields:
+      - {name: start_date, label: From, description: "Like 2026-01-01"}
+      - {name: finish_date, label: To}
+    request: {method: GET, path: financialTransactions, query: {startDate: "{{fields.start_date}}", finishDate: "{{fields.finish_date}}"}}
+    pagination: {type: offset, items_path: data, offset_param: offset, limit_param: limit, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: "Cobranças por Pix, boleto e cartão, clientes, assinaturas e transferências no Asaas."
+    triggers:
+      Asaas Event: {name: "Evento do Asaas", description: "Inicia o fluxo quando uma cobrança é paga, vence ou é estornada, ou uma assinatura ou transferência muda.", fields: {email: "E-mail para falhas", events: "Eventos"}}
+    actions:
+      Create Customer: {name: "Criar cliente", description: "Cria um cliente, pessoa ou empresa que você cobra.", fields: {name: "Nome", cpf_cnpj: "CPF ou CNPJ", email: "E-mail", mobile: "Celular", postal_code: "CEP", address_number: "Número", complement: "Complemento", external_reference: "Seu ID", quiet: "Não deixar o Asaas notificar", extra: "Mais campos"}}
+      Get Customer: {name: "Ler cliente", description: "Lê um cliente.", fields: {customer: "ID do cliente"}}
+      List Customers: {name: "Listar clientes", description: "Lista os clientes, por nome, e-mail ou CPF/CNPJ se quiser.", fields: {name: "Nome", email: "E-mail", cpf_cnpj: "CPF ou CNPJ", external_reference: "Seu ID"}}
+      Update Customer: {name: "Atualizar cliente", description: "Altera um cliente. Campos vazios ficam como estão.", fields: {customer: "ID do cliente", name: "Nome", email: "E-mail", mobile: "Celular", extra: "Mais campos"}}
+      Delete Customer: {name: "Excluir cliente", description: "Exclui um cliente.", fields: {customer: "ID do cliente"}}
+      Create Charge: {name: "Criar cobrança", description: "Cobra um cliente por Pix, boleto ou cartão, à vista ou parcelado.", fields: {customer: "ID do cliente", billing_type: "Forma", value: "Valor", due_date: "Vencimento", description: "Descrição", external_reference: "Seu ID", installments: "Parcelas", discount: "Desconto", fine: "Multa (%)", interest: "Juros ao mês (%)", extra: "Mais campos"}}
+      Get Charge: {name: "Ler cobrança", description: "Lê uma cobrança, com status e links.", fields: {charge: "ID da cobrança"}}
+      List Charges: {name: "Listar cobranças", description: "Lista as cobranças, por cliente, status, forma ou datas.", fields: {customer: "ID do cliente", status: "Status", billing_type: "Forma", external_reference: "Seu ID", due_from: "Vence a partir de", due_to: "Vence até", paid_from: "Pago a partir de", paid_to: "Pago até"}}
+      Get Pix QR Code: {name: "Ler QR Code Pix", description: "Lê o QR Code e o copia-e-cola Pix de uma cobrança.", fields: {charge: "ID da cobrança"}}
+      Get Boleto Line: {name: "Ler linha digitável", description: "Lê a linha digitável e o código de barras de um boleto.", fields: {charge: "ID da cobrança"}}
+      Update Charge: {name: "Atualizar cobrança", description: "Altera uma cobrança pendente. Campos vazios ficam como estão.", fields: {charge: "ID da cobrança", value: "Valor", due_date: "Vencimento", description: "Descrição", billing_type: "Forma", extra: "Mais campos"}}
+      Delete Charge: {name: "Excluir cobrança", description: "Exclui uma cobrança pendente.", fields: {charge: "ID da cobrança"}}
+      Refund Charge: {name: "Estornar cobrança", description: "Estorna uma cobrança paga, inteira ou em parte.", fields: {charge: "ID da cobrança", value: "Valor", description: "Motivo"}}
+      Confirm Cash Payment: {name: "Confirmar recebimento em dinheiro", description: "Marca uma cobrança como paga fora do Asaas, como em dinheiro.", fields: {charge: "ID da cobrança", date: "Pago em", value: "Valor", notify: "Avisar o cliente"}}
+      Create Subscription: {name: "Criar assinatura", description: "Cobra um cliente de novo a cada período.", fields: {customer: "ID do cliente", billing_type: "Forma", value: "Valor", next_due_date: "Primeiro vencimento", cycle: "A cada", description: "Descrição", end_date: "Termina em", max_payments: "Número de cobranças", external_reference: "Seu ID", extra: "Mais campos"}}
+      Get Subscription: {name: "Ler assinatura", description: "Lê uma assinatura.", fields: {subscription: "ID da assinatura"}}
+      List Subscriptions: {name: "Listar assinaturas", description: "Lista as assinaturas.", fields: {customer: "ID do cliente", status: "Status"}}
+      List Subscription Charges: {name: "Listar cobranças da assinatura", description: "Lista as cobranças que uma assinatura gerou.", fields: {subscription: "ID da assinatura"}}
+      Update Subscription: {name: "Atualizar assinatura", description: "Altera uma assinatura. Campos vazios ficam como estão.", fields: {subscription: "ID da assinatura", value: "Valor", next_due_date: "Próximo vencimento", billing_type: "Forma", update_pending: "Alterar também as cobranças pendentes", extra: "Mais campos"}}
+      Cancel Subscription: {name: "Cancelar assinatura", description: "Encerra uma assinatura e exclui as cobranças pendentes.", fields: {subscription: "ID da assinatura"}}
+      Create Payment Link: {name: "Criar link de pagamento", description: "Cria um link que qualquer um paga, para uma venda ou doação.", fields: {name: "Nome", billing_type: "Forma", charge_type: "Tipo", value: "Valor", description: "Descrição", due_date_limit_days: "Boleto vence em (dias)", extra: "Mais campos"}}
+      Transfer: {name: "Transferir", description: "Envia dinheiro do saldo Asaas por chave Pix ou para uma conta bancária.", fields: {value: "Valor", pix_key: "Chave Pix", pix_key_type: "Tipo de chave", bank_account: "Conta bancária", description: "Descrição", schedule_date: "Em"}}
+      Get Balance: {name: "Ler saldo", description: "Lê o saldo da conta."}
+      List Transactions: {name: "Listar extrato", description: "Lista o extrato da conta entre duas datas.", fields: {start_date: "De", finish_date: "Até"}}
