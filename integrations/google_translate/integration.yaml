@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Cloud Translation (Basic, v2) with Google OAuth; the Google Cloud project needs the
+# Translation API turned on and billing set up.
+id: google_translate
+name: Google Translate
+version: 1.0.0
+homepage: https://cloud.google.com/translate/docs/reference/rest/v2/translate
+description: Translate texts between more than a hundred languages and detect the language of a text.
+icon: hero-language
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 64 64"><defs> <linearGradient id="gtr_back" x1="22%" y1="0%" x2="48%" y2="56%"> <stop stop-color="#9fd3ff"/> <stop offset="1" stop-color="#bbe2ff"/> </linearGradient> <radialGradient id="gtr_front" gradientUnits="userSpaceOnUse" cx="44" cy="48" r="31" gradientTransform="translate(0 -38.4) scale(1 1.8)"> <stop stop-color="#b3aaff"/> <stop offset=".23" stop-color="#99a3ff"/> <stop offset=".47" stop-color="#7399ff"/> <stop offset=".70" stop-color="#4b8dff"/> <stop offset=".94" stop-color="#3186ff"/> </radialGradient> <linearGradient id="gtr_fade" x1="0%" y1="0%" x2="100%" y2="0%"> <stop offset=".55" stop-color="#3186ff"/> <stop offset=".75" stop-color="#3186ff" stop-opacity=".55"/> <stop offset="1" stop-color="#3186ff" stop-opacity="0"/> </linearGradient> </defs> <path fill="url(#gtr_back)" d="M32.1 15.4 H53.7 C57.9 15.4 61.3 18.8 61.3 23 V47.7 C61.3 51.9 57.9 55.3 53.7 55.3 H37.3 C33 55.3 29.7 51.9 29.7 47.7 V20 Z"/> <g fill="none" stroke="#336ef3" stroke-width="3.15" stroke-linecap="round" stroke-linejoin="round"> <path d="M46.3 25.2 V28.7 M35.5 28.9 H55.2"/> <path d="M39.6 29.2 C41.7 35.9 46 40.2 53.4 43.1"/> <path d="M51.6 29.2 C49.6 35.7 45.3 40.2 38.3 43"/> </g> <path fill="#3186ff" d="M10 8.7 H26.4 C29.4 8.7 31.3 10.5 32.1 13.5 L40.55 47.02 Q41 48.8 39.17 48.8 H10 C5.8 48.8 2.5 45.4 2.5 41.2 V16.3 C2.5 12.1 5.8 8.7 10 8.7 Z"/> <path fill="url(#gtr_front)" d="M10 8.7 H26.4 C29.4 8.7 31.3 10.5 32.1 13.5 L40.55 47.02 Q41 48.8 39.17 48.8 H10 C5.8 48.8 2.5 45.4 2.5 41.2 V16.3 C2.5 12.1 5.8 8.7 10 8.7 Z"/> <path fill="url(#gtr_fade)" d="M10 8.7 H26.4 C29.4 8.7 31.3 10.5 32.1 13.5 L40.55 47.02 Q41 48.8 39.17 48.8 H10 C5.8 48.8 2.5 45.4 2.5 41.2 V16.3 C2.5 12.1 5.8 8.7 10 8.7 Z"/> <path fill="#fff" d="M20.2 18.8 C22.7 18.8 25 19.7 26.7 21.3 L24.4 23.7 C23.3 22.7 21.8 22.1 20.2 22.1 C16.5 22.1 13.6 25 13.6 28.7 C13.6 32.4 16.5 35.3 20.2 35.3 C23.5 35.3 25.6 33.3 26 30.7 H20.1 V27.4 H29.2 C29.3 28 29.4 28.7 29.4 29.4 C29.4 34.8 25.6 38.5 20.2 38.5 C14.8 38.5 10.4 34.1 10.4 28.7 C10.4 23.3 14.8 18.8 20.2 18.8Z"/></svg></svg>
+category: ai
+base_url: https://translation.googleapis.com/language/translate/
+
+credential:
+  label: Google Translate
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/cloud-translation]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+actions:
+  - name: Translate Text
+    resource: Text
+    description: Translates a text into another language.
+    fields:
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: target, label: To, required: true, default: pt, type: select, options_from: {request: {method: GET, path: v2/languages, query: {target: en}}, path: data.languages, label: name, value: language}}
+      - {name: source, label: From, type: select, description: "Empty detects it.", options_from: {request: {method: GET, path: v2/languages, query: {target: en}}, path: data.languages, label: name, value: language}}
+      - {name: format, label: Format, type: select, default: text, options: [{label: Text, value: text}, {label: HTML, value: html}]}
+    request:
+      method: POST
+      path: v2
+      body: {q: "{{fields.text}}", target: "{{fields.target}}", source: "{{fields.source}}", format: "{{fields.format}}"}
+    output: {path: data.translations.0}
+
+  - name: Detect Language
+    resource: Text
+    description: Tells the language of a text, with how sure it is.
+    fields:
+      - {name: text, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: v2/detect
+      body: {q: "{{fields.text}}"}
+    output: {path: data.detections.0.0}
+
+  - name: List Languages
+    resource: Language
+    description: Lists the languages it translates, with their names in a language of your choice.
+    fields:
+      - {name: names_in, label: Names in, default: pt, description: "A language code, like pt or en."}
+    request:
+      method: GET
+      path: v2/languages
+      query: {target: "{{fields.names_in}}"}
+    output: {path: data.languages}
+
+i18n:
+  pt-BR:
+    description: "Traduza textos entre mais de cem idiomas e detecte o idioma de um texto."
+    actions:
+      Translate Text: {name: "Traduzir texto", description: "Traduz um texto para outro idioma.", fields: {text: "Texto", target: "Para", source: "De", format: "Formato"}}
+      Detect Language: {name: "Detectar idioma", description: "Diz o idioma de um texto, com o grau de certeza.", fields: {text: "Texto"}}
+      List Languages: {name: "Listar idiomas", description: "Lista os idiomas que traduz, com os nomes num idioma à escolha.", fields: {names_in: "Nomes em"}}

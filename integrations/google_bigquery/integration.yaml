@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# BigQuery API v2 with Google OAuth. Query results come as BigQuery returns them:
+# the schema, then each row as {f: [{v: value}, ...]} in the schema's order.
+id: google_bigquery
+name: Google BigQuery
+version: 1.0.0
+homepage: https://cloud.google.com/bigquery/docs/reference/rest
+description: Run SQL in BigQuery, stream rows into tables and list projects, datasets and tables.
+icon: hero-circle-stack
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#669DF6" d="M5.676 10.595h2.052v5.244a5.892 5.892 0 0 1-2.052-2.088v-3.156zm18.179 10.836a.504.504 0 0 1 0 .708l-1.716 1.716a.504.504 0 0 1-.708 0l-4.248-4.248a.206.206 0 0 1-.007-.007c-.02-.02-.028-.045-.043-.066a10.736 10.736 0 0 1-6.334 2.065C4.835 21.599 0 16.764 0 10.799S4.835 0 10.8 0s10.799 4.835 10.799 10.8c0 2.369-.772 4.553-2.066 6.333.025.017.052.028.074.05l4.248 4.248zm-5.028-10.632a8.015 8.015 0 1 0-8.028 8.028h.024a8.016 8.016 0 0 0 8.004-8.028zm-4.86 4.98a6.002 6.002 0 0 0 2.04-2.184v-1.764h-2.04v3.948zm-4.5.948c.442.057.887.08 1.332.072.4.025.8.025 1.2 0V7.692H9.468v9.035z"/></svg></svg>
+category: database
+base_url: https://bigquery.googleapis.com/bigquery/v2/
+
+credential:
+  label: Google BigQuery
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/bigquery]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+actions:
+  - name: Run Query
+    resource: Query
+    description: Runs a SQL query and waits up to the timeout; if it isn't done, read it later with Get Query Results.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: query, label: SQL, type: textarea, required: true, description: "Standard SQL, like SELECT name FROM `project.dataset.table` LIMIT 10."}
+      - {name: location, label: Location, description: "Where the data is, like US, EU or southamerica-east1; empty guesses it."}
+      - {name: limit, label: Limit, type: number, default: 1000, description: Rows in the answer.}
+      - {name: timeout, label: Wait up to (ms), type: number, default: 30000}
+      - {name: dry_run, label: Only estimate, type: boolean, default: false, description: "Checks the query and tells the bytes it would read, without running it."}
+    request:
+      method: POST
+      path: "projects/{{fields.project_id}}/queries"
+      body: {query: "{{fields.query}}", useLegacySql: false, location: "{{fields.location}}", maxResults: "{{fields.limit}}", timeoutMs: "{{fields.timeout}}", dryRun: "{{fields.dry_run}}"}
+
+  - name: Get Query Results
+    resource: Query
+    description: Reads the results of a query by its job, a page at a time.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: job_id, label: Job ID, required: true, description: "From Run Query: jobReference.jobId."}
+      - {name: location, label: Location}
+      - {name: limit, label: Limit, type: number, default: 1000}
+      - {name: page_token, label: Page token, description: "From pageToken in the last answer."}
+    request:
+      method: GET
+      path: "projects/{{fields.project_id}}/queries/{{fields.job_id}}"
+      query: {location: "{{fields.location}}", maxResults: "{{fields.limit}}", pageToken: "{{fields.page_token}}"}
+
+  - name: Insert Rows
+    resource: Table
+    description: Streams rows into a table; each row is an object with the table's columns.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true}
+      - {name: table_id, label: Table ID, required: true}
+      - {name: rows, label: Rows, type: json, required: true, default: "{{result}}", description: "A list like [{\"name\": \"Ana\", \"age\": 30}]."}
+      - {name: skip_invalid, label: Skip invalid rows, type: boolean, default: false}
+      - {name: ignore_unknown, label: Ignore unknown columns, type: boolean, default: false}
+    request:
+      method: POST
+      path: "projects/{{fields.project_id}}/datasets/{{fields.dataset_id}}/tables/{{fields.table_id}}/insertAll"
+      body: {rows: {_each: "{{fields.rows}}", json: "{{item}}"}, skipInvalidRows: "{{fields.skip_invalid}}", ignoreUnknownValues: "{{fields.ignore_unknown}}"}
+
+  - name: List Projects
+    resource: Project
+    description: Lists the projects the connected account can use.
+    request: {method: GET, path: projects, query: {maxResults: 1000}}
+    output: {path: projects}
+
+  - name: List Datasets
+    resource: Dataset
+    description: Lists the datasets of a project.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+    request: {method: GET, path: "projects/{{fields.project_id}}/datasets", query: {maxResults: 1000}}
+    output: {path: datasets}
+
+  - name: Create Dataset
+    resource: Dataset
+    description: Creates a dataset in a project.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true, description: "Letters, digits and underscores."}
+      - {name: location, label: Location, default: US}
+      - {name: description, label: Description}
+    request:
+      method: POST
+      path: "projects/{{fields.project_id}}/datasets"
+      body: {datasetReference: {projectId: "{{fields.project_id}}", datasetId: "{{fields.dataset_id}}"}, location: "{{fields.location}}", description: "{{fields.description}}"}
+
+  - name: Delete Dataset
+    resource: Dataset
+    description: Deletes a dataset; with Delete tables too it takes its tables along.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true}
+      - {name: delete_contents, label: Delete tables too, type: boolean, default: false}
+    request:
+      method: DELETE
+      path: "projects/{{fields.project_id}}/datasets/{{fields.dataset_id}}"
+      query: {deleteContents: "{{fields.delete_contents}}"}
+
+  - name: List Tables
+    resource: Table
+    description: Lists the tables and views of a dataset.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true}
+    request: {method: GET, path: "projects/{{fields.project_id}}/datasets/{{fields.dataset_id}}/tables", query: {maxResults: 1000}}
+    output: {path: tables}
+
+  - name: Get Table
+    resource: Table
+    description: Reads a table, with its schema and how many rows and bytes it holds.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true}
+      - {name: table_id, label: Table ID, required: true}
+    request: {method: GET, path: "projects/{{fields.project_id}}/datasets/{{fields.dataset_id}}/tables/{{fields.table_id}}"}
+
+  - name: Create Table
+    resource: Table
+    description: Creates a table from a list of columns.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true}
+      - {name: table_id, label: Table ID, required: true}
+      - {name: fields, label: Columns, type: json, required: true, description: "A list like [{\"name\": \"email\", \"type\": \"STRING\", \"mode\": \"REQUIRED\"}, {\"name\": \"at\", \"type\": \"TIMESTAMP\"}]."}
+      - {name: description, label: Description}
+    request:
+      method: POST
+      path: "projects/{{fields.project_id}}/datasets/{{fields.dataset_id}}/tables"
+      body: {tableReference: {projectId: "{{fields.project_id}}", datasetId: "{{fields.dataset_id}}", tableId: "{{fields.table_id}}"}, schema: {fields: "{{fields.fields}}"}, description: "{{fields.description}}"}
+
+  - name: Delete Table
+    resource: Table
+    description: Deletes a table and its rows.
+    fields:
+      - {name: project_id, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {maxResults: 1000}}, path: projects, label: friendlyName, value: id}}
+      - {name: dataset_id, label: Dataset ID, required: true}
+      - {name: table_id, label: Table ID, required: true}
+    request: {method: DELETE, path: "projects/{{fields.project_id}}/datasets/{{fields.dataset_id}}/tables/{{fields.table_id}}"}
+
+i18n:
+  pt-BR:
+    description: "Execute SQL no BigQuery, envie linhas para tabelas e liste projetos, datasets e tabelas."
+    actions:
+      Run Query: {name: "Executar consulta", description: "Executa uma consulta SQL e espera até o tempo limite; se não terminar, leia depois com Ler resultados.", fields: {project_id: "Projeto", query: "SQL", location: "Localização", limit: "Limite", timeout: "Esperar até (ms)", dry_run: "Só estimar"}}
+      Get Query Results: {name: "Ler resultados", description: "Lê os resultados de uma consulta pelo job, uma página por vez.", fields: {project_id: "Projeto", job_id: "ID do job", location: "Localização", limit: "Limite", page_token: "Token da página"}}
+      Insert Rows: {name: "Inserir linhas", description: "Envia linhas para uma tabela; cada linha é um objeto com as colunas da tabela.", fields: {project_id: "Projeto", dataset_id: "ID do dataset", table_id: "ID da tabela", rows: "Linhas", skip_invalid: "Pular linhas inválidas", ignore_unknown: "Ignorar colunas desconhecidas"}}
+      List Projects: {name: "Listar projetos", description: "Lista os projetos que a conta conectada pode usar."}
+      List Datasets: {name: "Listar datasets", description: "Lista os datasets de um projeto.", fields: {project_id: "Projeto"}}
+      Create Dataset: {name: "Criar dataset", description: "Cria um dataset num projeto.", fields: {project_id: "Projeto", dataset_id: "ID do dataset", location: "Localização", description: "Descrição"}}
+      Delete Dataset: {name: "Apagar dataset", description: "Apaga um dataset; com Apagar tabelas também, leva as tabelas junto.", fields: {project_id: "Projeto", dataset_id: "ID do dataset", delete_contents: "Apagar tabelas também"}}
+      List Tables: {name: "Listar tabelas", description: "Lista as tabelas e views de um dataset.", fields: {project_id: "Projeto", dataset_id: "ID do dataset"}}
+      Get Table: {name: "Ler tabela", description: "Lê uma tabela, com o esquema e quantas linhas e bytes ela tem.", fields: {project_id: "Projeto", dataset_id: "ID do dataset", table_id: "ID da tabela"}}
+      Create Table: {name: "Criar tabela", description: "Cria uma tabela a partir de uma lista de colunas.", fields: {project_id: "Projeto", dataset_id: "ID do dataset", table_id: "ID da tabela", fields: "Colunas", description: "Descrição"}}
+      Delete Table: {name: "Apagar tabela", description: "Apaga uma tabela e suas linhas.", fields: {project_id: "Projeto", dataset_id: "ID do dataset", table_id: "ID da tabela"}}
