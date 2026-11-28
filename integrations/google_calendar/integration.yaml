@@ -1,0 +1,244 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Calendar API v3 with Google OAuth. The triggers poll the events changed in
+# the last day (updatedMin), so a flow sees each new or changed event once.
+id: google_calendar
+name: Google Calendar
+version: 1.0.0
+homepage: https://developers.google.com/workspace/calendar/api/v3/reference
+description: Create, update and find Google Calendar events, check when people are free, manage calendars, and start flows on new or changed events.
+icon: hero-calendar-days
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.62" y="3.00" width="16.76" height="18.00" viewBox="0 0 800 859.0954"><path fill="#bbe2ff" d="M 64.743253,150.86554 C 64.743253,67.543758 132.28701,0 215.60879,0 h 368.78242 c 83.32178,0 150.86554,67.543758 150.86554,150.86554 v 159.24695 c 0,83.32178 -67.54376,150.86554 -150.86554,150.86554 H 215.60879 c -83.32178,0 -150.865537,-67.54376 -150.865537,-150.86554 z" style="stroke-width:5.23839" /> <path fill="#3c90ff" d="M 1.1859076,216.8273 C -9.5475474,135.25514 53.952176,62.86064 136.22104,62.86064 h 527.55792 c 82.2741,0 145.76859,72.3945 135.03513,153.96666 l -32.12702,244.15073 32.12702,244.15072 c 10.73346,81.57216 -52.76103,153.96666 -135.03513,153.96666 H 136.22104 c -82.274102,0 -145.7685874,-72.3945 -135.0351324,-153.96666 L 33.312933,460.97803 Z" style="stroke-width:5.23839" /> <mask id="gcal_a" width="154" height="152" x="19" y="20" maskUnits="userSpaceOnUse"> <path fill="#3c90ff" d="M 19.867,49.392 C 17.818,33.82 29.94,20 45.645,20 h 100.71 c 15.706,0 27.827,13.82 25.778,29.392 L 166,96 l 6.133,46.608 C 174.182,158.18 162.061,172 146.355,172 H 45.645 C 29.939,172 17.818,158.18 19.867,142.608 L 26,96 Z" /> </mask> <g mask="url(#gcal_a)" transform="matrix(5.2383867,0,0,5.2383867,-102.88512,-41.907093)"> <path fill="url(#gcal_b)" d="M 0,0 H 166 V 76 H 0 Z" transform="matrix(1,0,0,-1,13,172)" style="fill:url(#gcal_b)" /> </g> <mask id="gcal_c" width="154" height="152" x="19" y="20" maskUnits="userSpaceOnUse"> <path fill="#3186ff" d="M 19.867,49.392 C 17.818,33.82 29.94,20 45.645,20 h 100.71 c 15.706,0 27.827,13.82 25.778,29.392 L 166,96 l 6.133,46.608 C 174.182,158.18 162.061,172 146.355,172 H 45.645 C 29.939,172 17.818,158.18 19.867,142.608 L 26,96 Z" /> </mask> <g mask="url(#gcal_c)" transform="matrix(5.2383867,0,0,5.2383867,-102.88512,-41.907093)"> <path fill="url(#gcal_d)" d="M 32,27.2 C 32,16.596 40.596,8 51.2,8 h 89.6 C 151.404,8 160,16.596 160,27.2 V 96 H 32 Z" filter="url(#gcal_e)" style="fill:url(#gcal_d)" /> </g> <path fill="#ffffff" d="m 291.84303,656.55843 q -32.90754,0 -56.45409,-10.70202 -23.54655,-10.70203 -39.86412,-28.62779 -16.05566,-18.19815 -22.74508,-35.58436 -6.68942,-17.3862 -5.34839,-21.13689 a 10.84346,10.84346 0 0 1 5.34839,-5.88794 l 29.70165,-11.77066 q 3.74021,-1.8701 7.4909,-0.53431 3.74021,1.06863 8.82668,12.30497 5.35363,11.23634 14.98178,23.8137 a 74.908929,74.908929 0 0 0 23.54655,19.52871 q 13.65124,6.95658 33.70902,6.95658 32.37323,0 51.37286,-18.72724 19.26155,-18.72723 19.26155,-47.62217 0,-31.3046 -20.33542,-48.16173 Q 321.00513,473.283 287.55803,473.283 H 259.4698 a 9.9529347,9.9529347 0 0 1 -6.95657,-2.67158 q -2.67158,-2.94397 -2.67682,-6.68942 v -28.62778 q 0,-4.01785 2.67158,-6.68942 a 9.5338637,9.5338637 0 0 1 6.96181,-2.94398 h 24.34279 q 29.96881,0 48.16172,-16.32281 18.19292,-16.32281 18.19292,-42.27378 0,-25.67857 -16.32281,-41.46707 -16.32282,-15.7885 -44.94536,-15.7885 -16.05566,0 -27.82631,5.35364 a 60.241447,60.241447 0 0 0 -20.33542,14.98178 118.91138,118.91138 0 0 0 -14.71463,19.8011 q -6.14986,10.16771 -9.90055,11.23634 -3.7402,0.80148 -7.22373,-1.33579 l -28.09347,-13.64599 q -3.47829,-1.87535 -4.54692,-5.88795 -1.06863,-4.0126 6.42226,-18.72723 7.75805,-14.98179 23.54131,-30.50313 a 110.00612,110.00612 0 0 1 36.92539,-24.08086 q 21.13689,-8.56476 49.23036,-8.55953 52.17433,0 82.67222,27.55392 30.50312,27.29199 30.50312,72.24259 0,31.03744 -14.98178,53.77728 -14.71987,22.7346 -41.73947,32.11131 v 1.06863 q 32.64039,9.62815 51.36762,35.31196 18.99963,25.42189 18.99439,60.73386 0,50.57138 -35.3172,82.94461 -35.30673,32.37323 -92.03846,32.37323 z m 268.46732,-6.1551 q -4.54692,0 -8.03045,-3.47829 a 11.78637,11.78637 0 0 1 -3.20589,-8.29237 V 341.11326 l -60.19954,43.34241 q -3.21637,2.40966 -7.49613,1.60819 a 10.267238,10.267238 0 0 1 -6.41702,-4.0126 l -17.39145,-24.62042 a 10.372006,10.372006 0 0 1 -1.87534,-7.4909 q 0.80147,-4.27452 4.27976,-6.68418 l 106.75308,-76.25519 q 1.34103,-1.06863 2.94398,-1.60295 1.60818,-0.80147 3.74544,-0.80147 h 22.47792 q 4.54692,0 7.22374,3.21113 2.94397,2.9335 2.94397,7.49089 v 363.3345 q 0,4.81932 -3.47829,8.29237 a 10.476773,10.476773 0 0 1 -8.03045,3.47829 z" style="stroke-width:5.23839" /> <defs > <linearGradient id="gcal_b" x1="83" x2="83" y1="76" gradientUnits="userSpaceOnUse"> <stop stop-color="#4fa0ff" /> <stop offset="1" stop-color="#3186ff" /> </linearGradient> <linearGradient id="gcal_d" x1="89.059998" x2="89.059998" y1="21.75" y2="96.389999" gradientUnits="userSpaceOnUse"> <stop stop-color="#a9a8ff" /> <stop offset=".8" stop-color="#3c90ff" /> </linearGradient> <filter id="gcal_e" width="152" height="112" x="20" y="-4" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"> <feFlood flood-opacity="0" result="BackgroundImageFix" /> <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape" mode="normal" /> <feGaussianBlur result="effect1_foregroundBlur_37330_7673" stdDeviation="6" /> </filter> </defs></svg></svg>
+category: scheduling
+base_url: https://www.googleapis.com/calendar/v3/
+
+credential:
+  label: Google Calendar
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/calendar]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Event
+    description: Starts the flow for each new event in a calendar, checking every 5 minutes.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+    request:
+      method: GET
+      path: "calendars/{{fields.calendar_id}}/events"
+      query: {updatedMin: "{{time.day_ago}}", singleEvents: true, maxResults: 250}
+    output: {path: items}
+    poll: {every: 5, id: id}
+
+  - name: Event Changed
+    description: Starts the flow when an event is created, changed or cancelled, checking every 5 minutes.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+    request:
+      method: GET
+      path: "calendars/{{fields.calendar_id}}/events"
+      query: {updatedMin: "{{time.day_ago}}", singleEvents: true, showDeleted: true, maxResults: 250}
+    output: {path: items}
+    poll: {every: 5, id: etag}
+
+actions:
+  # Events
+  - name: Create Event
+    resource: Event
+    description: Adds an event, timed or all-day, and invites guests.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: summary, label: Title, required: true}
+      - {name: start, label: Start, type: datetime, description: For a timed event.}
+      - {name: end, label: End, type: datetime}
+      - {name: start_date, label: Start date, description: "For an all-day event, as YYYY-MM-DD."}
+      - {name: end_date, label: End date, description: "The day after the last day, as YYYY-MM-DD."}
+      - {name: time_zone, label: Time zone, description: "Like America/Sao_Paulo; the calendar's when empty."}
+      - {name: description, label: Description, type: textarea}
+      - {name: location, label: Location}
+      - {name: attendees, label: Guests, description: "Emails separated by commas."}
+      - {name: send_updates, label: Notify guests, type: select, default: all, options: [{label: All, value: all}, {label: Outside the domain, value: externalOnly}, {label: None, value: none}]}
+      - {name: color_id, label: Color, type: select, options: [{label: Lavender, value: "1"}, {label: Sage, value: "2"}, {label: Grape, value: "3"}, {label: Flamingo, value: "4"}, {label: Banana, value: "5"}, {label: Tangerine, value: "6"}, {label: Peacock, value: "7"}, {label: Graphite, value: "8"}, {label: Blueberry, value: "9"}, {label: Basil, value: "10"}, {label: Tomato, value: "11"}]}
+      - {name: visibility, label: Visibility, type: select, options: [{label: Default, value: default}, {label: Public, value: public}, {label: Private, value: private}]}
+      - {name: transparency, label: Show as, type: select, options: [{label: Busy, value: opaque}, {label: Free, value: transparent}]}
+    request:
+      method: POST
+      path: "calendars/{{fields.calendar_id}}/events"
+      query: {sendUpdates: "{{fields.send_updates}}"}
+      body:
+        summary: "{{fields.summary}}"
+        description: "{{fields.description}}"
+        location: "{{fields.location}}"
+        start: {dateTime: "{{fields.start}}", date: "{{fields.start_date}}", timeZone: "{{fields.time_zone}}"}
+        end: {dateTime: "{{fields.end}}", date: "{{fields.end_date}}", timeZone: "{{fields.time_zone}}"}
+        attendees: {_each: "{{fields.attendees}}", email: "{{item}}"}
+        colorId: "{{fields.color_id}}"
+        visibility: "{{fields.visibility}}"
+        transparency: "{{fields.transparency}}"
+
+  - name: Quick Add Event
+    resource: Event
+    description: Adds an event from a sentence, like "Lunch with Ana tomorrow at 1pm".
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: text, label: Text, required: true}
+    request: {method: POST, path: "calendars/{{fields.calendar_id}}/events/quickAdd", query: {text: "{{fields.text}}"}}
+
+  - name: Get Event
+    resource: Event
+    description: Reads an event.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: event_id, label: Event ID, required: true}
+    request: {method: GET, path: "calendars/{{fields.calendar_id}}/events/{{fields.event_id}}"}
+
+  - name: List Events
+    resource: Event
+    description: Lists events in a time range, in start order, optionally matching a text.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: time_min, label: From, type: datetime}
+      - {name: time_max, label: To, type: datetime}
+      - {name: q, label: Text}
+      - {name: max_results, label: Limit, type: number, default: 250}
+    request:
+      method: GET
+      path: "calendars/{{fields.calendar_id}}/events"
+      query: {timeMin: "{{fields.time_min}}", timeMax: "{{fields.time_max}}", q: "{{fields.q}}", maxResults: "{{fields.max_results}}", singleEvents: true, orderBy: startTime}
+    output: {path: items}
+
+  - name: Update Event
+    resource: Event
+    description: Changes the fields you fill in an event; the others stay.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: event_id, label: Event ID, required: true}
+      - {name: summary, label: Title}
+      - {name: start, label: Start, type: datetime}
+      - {name: end, label: End, type: datetime}
+      - {name: start_date, label: Start date}
+      - {name: end_date, label: End date}
+      - {name: time_zone, label: Time zone}
+      - {name: description, label: Description, type: textarea}
+      - {name: location, label: Location}
+      - {name: attendees, label: Guests, description: "Emails separated by commas; replaces the guest list."}
+      - {name: send_updates, label: Notify guests, type: select, default: all, options: [{label: All, value: all}, {label: Outside the domain, value: externalOnly}, {label: None, value: none}]}
+    request:
+      method: PATCH
+      path: "calendars/{{fields.calendar_id}}/events/{{fields.event_id}}"
+      query: {sendUpdates: "{{fields.send_updates}}"}
+      body:
+        summary: "{{fields.summary}}"
+        description: "{{fields.description}}"
+        location: "{{fields.location}}"
+        start: {dateTime: "{{fields.start}}", date: "{{fields.start_date}}", timeZone: "{{fields.time_zone}}"}
+        end: {dateTime: "{{fields.end}}", date: "{{fields.end_date}}", timeZone: "{{fields.time_zone}}"}
+        attendees: {_each: "{{fields.attendees}}", email: "{{item}}"}
+
+  - name: Delete Event
+    resource: Event
+    description: Deletes an event, and tells the guests when asked.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: event_id, label: Event ID, required: true}
+      - {name: send_updates, label: Notify guests, type: select, default: all, options: [{label: All, value: all}, {label: Outside the domain, value: externalOnly}, {label: None, value: none}]}
+    request: {method: DELETE, path: "calendars/{{fields.calendar_id}}/events/{{fields.event_id}}", query: {sendUpdates: "{{fields.send_updates}}"}}
+
+  - name: Move Event
+    resource: Event
+    description: Moves an event to another calendar.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: event_id, label: Event ID, required: true}
+      - {name: destination, label: To calendar, type: select, required: true, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+    request: {method: POST, path: "calendars/{{fields.calendar_id}}/events/{{fields.event_id}}/move", query: {destination: "{{fields.destination}}"}}
+
+  - name: List Event Instances
+    resource: Event
+    description: Lists the occurrences of a recurring event.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+      - {name: event_id, label: Recurring event ID, required: true}
+      - {name: time_min, label: From, type: datetime}
+      - {name: time_max, label: To, type: datetime}
+    request: {method: GET, path: "calendars/{{fields.calendar_id}}/events/{{fields.event_id}}/instances", query: {timeMin: "{{fields.time_min}}", timeMax: "{{fields.time_max}}"}}
+    output: {path: items}
+
+  # Availability
+  - name: Check Availability
+    resource: Calendar
+    description: Lists the busy times of calendars or people in a time range.
+    fields:
+      - {name: calendars, label: Calendars or emails, required: true, default: primary, description: Separated by commas.}
+      - {name: time_min, label: From, type: datetime, required: true}
+      - {name: time_max, label: To, type: datetime, required: true}
+      - {name: time_zone, label: Time zone}
+    request:
+      method: POST
+      path: freeBusy
+      body: {timeMin: "{{fields.time_min}}", timeMax: "{{fields.time_max}}", timeZone: "{{fields.time_zone}}", items: {_each: "{{fields.calendars}}", id: "{{item}}"}}
+    output: {path: calendars}
+
+  # Calendars
+  - name: List Calendars
+    resource: Calendar
+    description: Lists the calendars in the user's list, with their access role.
+    request: {method: GET, path: users/me/calendarList}
+    output: {path: items}
+
+  - name: Get Calendar
+    resource: Calendar
+    description: Reads a calendar, with its time zone.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, default: primary, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+    request: {method: GET, path: "calendars/{{fields.calendar_id}}"}
+
+  - name: Create Calendar
+    resource: Calendar
+    description: Creates a secondary calendar.
+    fields:
+      - {name: summary, label: Name, required: true}
+      - {name: description, label: Description}
+      - {name: time_zone, label: Time zone}
+    request: {method: POST, path: calendars, body: {summary: "{{fields.summary}}", description: "{{fields.description}}", timeZone: "{{fields.time_zone}}"}}
+
+  - name: Delete Calendar
+    resource: Calendar
+    description: Deletes a secondary calendar and its events.
+    fields:
+      - {name: calendar_id, label: Calendar, type: select, required: true, options_from: {request: {method: GET, path: users/me/calendarList}, path: items, label: summary, value: id}}
+    request: {method: DELETE, path: "calendars/{{fields.calendar_id}}"}
+
+  - name: Clear Calendar
+    resource: Calendar
+    description: Deletes every event of the primary calendar.
+    request: {method: POST, path: calendars/primary/clear}
+
+i18n:
+  pt-BR:
+    description: "Crie, atualize e encontre eventos do Google Agenda, veja quando as pessoas estão livres, gerencie agendas e inicie fluxos com eventos novos ou alterados."
+    triggers:
+      New Event: {name: "Novo evento", description: "Inicia o fluxo a cada novo evento numa agenda, verificando a cada 5 minutos.", fields: {calendar_id: "Agenda"}}
+      Event Changed: {name: "Evento alterado", description: "Inicia o fluxo quando um evento é criado, alterado ou cancelado, verificando a cada 5 minutos.", fields: {calendar_id: "Agenda"}}
+    actions:
+      Create Event: {name: "Criar evento", description: "Adiciona um evento, com horário ou de dia inteiro, e convida pessoas.", fields: {calendar_id: "Agenda", summary: "Título", start: "Início", end: "Fim", start_date: "Data de início", end_date: "Data de fim", time_zone: "Fuso horário", description: "Descrição", location: "Local", attendees: "Convidados", send_updates: "Avisar convidados", color_id: "Cor", visibility: "Visibilidade", transparency: "Mostrar como"}}
+      Quick Add Event: {name: "Adicionar evento rápido", description: "Adiciona um evento a partir de uma frase, como \"Almoço com Ana amanhã às 13h\".", fields: {calendar_id: "Agenda", text: "Texto"}}
+      Get Event: {name: "Ler evento", description: "Lê um evento.", fields: {calendar_id: "Agenda", event_id: "ID do evento"}}
+      List Events: {name: "Listar eventos", description: "Lista os eventos de um período, em ordem de início, opcionalmente com um texto.", fields: {calendar_id: "Agenda", time_min: "De", time_max: "Até", q: "Texto", max_results: "Limite"}}
+      Update Event: {name: "Atualizar evento", description: "Muda os campos preenchidos de um evento; os outros ficam.", fields: {calendar_id: "Agenda", event_id: "ID do evento", summary: "Título", start: "Início", end: "Fim", start_date: "Data de início", end_date: "Data de fim", time_zone: "Fuso horário", description: "Descrição", location: "Local", attendees: "Convidados", send_updates: "Avisar convidados"}}
+      Delete Event: {name: "Excluir evento", description: "Exclui um evento e avisa os convidados quando pedido.", fields: {calendar_id: "Agenda", event_id: "ID do evento", send_updates: "Avisar convidados"}}
+      Move Event: {name: "Mover evento", description: "Move um evento para outra agenda.", fields: {calendar_id: "Agenda", event_id: "ID do evento", destination: "Para a agenda"}}
+      List Event Instances: {name: "Listar ocorrências", description: "Lista as ocorrências de um evento recorrente.", fields: {calendar_id: "Agenda", event_id: "ID do evento recorrente", time_min: "De", time_max: "Até"}}
+      Check Availability: {name: "Ver disponibilidade", description: "Lista os horários ocupados de agendas ou pessoas num período.", fields: {calendars: "Agendas ou e-mails", time_min: "De", time_max: "Até", time_zone: "Fuso horário"}}
+      List Calendars: {name: "Listar agendas", description: "Lista as agendas do usuário, com o nível de acesso."}
+      Get Calendar: {name: "Ler agenda", description: "Lê uma agenda, com o fuso horário.", fields: {calendar_id: "Agenda"}}
+      Create Calendar: {name: "Criar agenda", description: "Cria uma agenda secundária.", fields: {summary: "Nome", description: "Descrição", time_zone: "Fuso horário"}}
+      Delete Calendar: {name: "Excluir agenda", description: "Exclui uma agenda secundária e seus eventos.", fields: {calendar_id: "Agenda"}}
+      Clear Calendar: {name: "Limpar agenda", description: "Exclui todos os eventos da agenda principal."}
