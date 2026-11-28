@@ -1,0 +1,178 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Zenvia, through the API v2. Connect with an API token from Zenvia's
+# Integrações › Tokens e Webhooks. The sender is the WhatsApp number, SMS keyword or
+# other channel account set up in Zenvia; phone numbers are like 5511999990000.
+id: zenvia
+name: Zenvia
+version: 1.0.0
+description: Send WhatsApp, SMS, RCS, email and other channel messages and get the replies through Zenvia.
+icon: hero-chat-bubble-left-right
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#1E1E1E"/><svg x="3.00" y="10.11" width="18.00" height="3.78" viewBox="0 0 374.12 78.58"><defs><clipPath id="clip-path" transform="translate(0 0)"><rect width="374.12" height="78.58" style="fill:none"></rect></clipPath></defs><title>Ativo 1</title><g id="Camada_2" data-name="Camada 2"><g id="Modo_de_isolamento" data-name="Modo de isolamento"><g style="clip-path:url(#clip-path)"><polygon points="111.93 26.95 111.93 24.04 132.11 24.04 115.49 51.22 131.65 51.22 131.65 54.33 109.92 54.33 126.46 27.02 112.1 27.02 111.93 26.95" style="fill:#fff"></polygon><polygon points="176.46 26.98 176.46 23.96 163.99 23.96 160.74 23.96 160.74 26.98 160.74 36.11 160.74 39.28 160.74 51.26 160.74 54.28 163.99 54.28 176.46 54.28 176.46 51.26 163.99 51.26 163.99 39.28 176.03 39.28 176.03 36.11 163.99 36.11 163.99 26.98 176.46 26.98" style="fill:#fff"></polygon><polygon points="208.5 54.31 205.18 54.31 205.18 22.63 228.94 47.52 228.94 24.07 232.17 24.07 232.17 55.47 208.48 31.79 208.5 54.31" style="fill:#fff"></polygon><polygon points="260.93 24.04 273.23 56.13 285.56 24.04 281.99 24.04 273.24 46.77 264.56 24.04 260.93 24.04" style="fill:#fff"></polygon><rect x="314.3" y="24.04" width="3.46" height="30.27" style="fill:#fff"></rect><path d="M360.3,30.38l5.18,12.21H355.11ZM346.39,54.26h3.77l3.68-8.67h12.92l3.68,8.67h3.68l-13.65-31.8Z" transform="translate(0 0)" style="fill:#fff"></path><path d="M149.22,39.68a2.89,2.89,0,1,1-2.89-2.88,2.89,2.89,0,0,1,2.89,2.88" transform="translate(0 0)" style="fill:#fff"></path><path d="M193.67,39.68a2.89,2.89,0,1,1-2.89-2.88,2.89,2.89,0,0,1,2.89,2.88" transform="translate(0 0)" style="fill:#fff"></path><path d="M250.62,39.5a2.89,2.89,0,1,1-2.89-2.89,2.89,2.89,0,0,1,2.89,2.89" transform="translate(0 0)" style="fill:#fff"></path><path d="M299.47,39.63a2.89,2.89,0,1,1-2.89-2.89,2.89,2.89,0,0,1,2.89,2.89" transform="translate(0 0)" style="fill:#fff"></path><path d="M338.17,39.65a2.89,2.89,0,1,1-2.89-2.89,2.89,2.89,0,0,1,2.89,2.89" transform="translate(0 0)" style="fill:#fff"></path><path d="M0,78.58H80.76V0H0Zm78.33-2.4H2.4V2.39H78.33Z" transform="translate(0 0)" style="fill:#fff"></path><path d="M71.31,52.33H24.09c-.39,0-.33,0-.33.34,0,3,0,5.92,0,8.88,0,.37.05.25-.21.51-1.68,1.65-3.31,3.37-5,5a1.54,1.54,0,0,1-.43,0,.33.33,0,0,1-.29-.12l-4.87-4.86c-.28-.28-.24-.16-.24-.56V41.41c0-.42,0-.36.37-.36H71.33c.37,0,.34.06.34-.32V8c0-.4,0-.34-.35-.34H53.59c-.41,0-.35-.06-.35.36,0,4.76,0,9.52,0,14.29,0,.13-.21.06-.3.08H35c-.24,0-.21-.06-.21-.26,0-1.11,0-2.22,0-3.33a.1.1,0,0,1,.1-.11c3.6-.11,7.5.21,11-.1V15.33c0-.38,0-.33-.33-.33H35c-.19,0-.16-.09-.16-.23V11.55c0-.37.19-.22.42-.25H49.45c.15,0,.07-.2.09-.3V8c0-.38,0-.33-.34-.33H31.47c-.39,0-.34,0-.34.35V22.13c0,.26,0,.24-.25.24H27.11c-4.76,0-9.53,0-14.3,0-.09,0-.11,0-.12-.12V19c0-.38,0-.33.34-.33h14.2c.2,0,.2,0,.21-.21V8c0-.39,0-.33-.34-.33H9.29c-.24,0-.23,0-.23.24V11c0,.38-.06.33.33.33H23.62c.2,0,.12.22.13.34q0,1.52,0,3c0,.39.06.33-.33.33H9.36c-.34,0-.3,0-.3.31,0,3.53,0,7.06,0,10.59-.11.21.84.1,1,.13q21.71,0,43.42,0h3.35c.09,0,.11,0,.11-.12,0-1.77,0-3.53,0-5.3,0-3.06,0-6.12,0-9.17,0-.11,0-.14.12-.14H67.82c.47,8.27,0,17.26.16,25.77,0,.37,0,.33-.33.33H40c-10.22,0-20.44,0-30.66,0-.11,0-.3-.06-.32.1v.25c.17,8.57-.33,17.38.17,25.85l7,7a.53.53,0,0,0,.43.18h3.25c2.59-2.1,4.85-4.84,7.34-7.16.25-.25.21-.17.21-.49V56.29c0-.34,0-.31.31-.31,3.49,0,7,0,10.46,0,.32,0,.29,0,.29.29V66.94c0,.06,0,.1-.1.1h-7c-.1,0-.29-.08-.31.08,0,1.11,0,2.22,0,3.33,0,.1,0,.26.12.24H56.62c.3,0,.28,0,.28-.26,0-2.33,0-4.66,0-7,3.4-.32,7.19,0,10.72-.11.13,0,.36-.07.35.12,0,2.39,0,4.77,0,7.16,0,.11.14.08.22.09h3.25c.07,0,.19,0,.2-.08,0-6,0-12,0-17.94,0-.42,0-.36-.36-.36M53.24,61.51v5.24c0,.34,0,.3-.31.3H42.47c-.31,0-.3,0-.3-.31V56.3c0-.33,0-.3.31-.3,3.48,0,7,0,10.45,0,.35,0,.31,0,.31.31v5.22M68,56.32v3.06c0,.1,0,.29-.09.3H57.06c-.14,0-.15,0-.15-.16,0-1.12,0-2.25,0-3.38,0-.14,0-.15.16-.16H67.63c.41,0,.35,0,.35.34" transform="translate(0 0)" style="fill:#fff"></path></g></g></g></svg></svg>
+category: messaging
+author: Heddle
+homepage: https://zenvia.github.io/zenvia-openapi-spec/v2/
+base_url: https://api.zenvia.com/v2/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Zenvia
+  fields:
+    - {name: token, label: API token, secret: true, required: true}
+  auth:
+    type: header
+    name: X-API-TOKEN
+    value: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Message Event
+    description: Starts the flow when a message arrives or a sent message changes status.
+    fields:
+      - name: event
+        label: Event
+        type: select
+        required: true
+        default: MESSAGE
+        options:
+          - {label: Message received, value: MESSAGE}
+          - {label: Message status changed, value: MESSAGE_STATUS}
+      - name: channel
+        label: Channel
+        type: select
+        required: true
+        default: whatsapp
+        options: &channels
+          - {label: WhatsApp, value: whatsapp}
+          - {label: SMS, value: sms}
+          - {label: RCS, value: rcs}
+          - {label: Facebook, value: facebook}
+          - {label: Instagram, value: instagram}
+          - {label: Telegram, value: telegram}
+          - {label: Email, value: email}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: subscriptions
+          body: {eventType: "{{fields.event}}", criteria: {channel: "{{fields.channel}}"}, webhook: {url: "{{webhook.url}}", headers: {X-Heddle-Token: "{{webhook.secret}}"}}}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "subscriptions/{{webhook.id}}"}
+      signature: {header: X-Heddle-Token, token: "{{webhook.secret}}"}
+
+actions:
+  - name: Send Text
+    resource: Message
+    description: Sends a text message on a channel.
+    fields:
+      - {name: channel, label: Channel, type: select, required: true, default: whatsapp, options: [{label: WhatsApp, value: whatsapp}, {label: SMS, value: sms}, {label: RCS, value: rcs}, {label: Facebook, value: facebook}, {label: Instagram, value: instagram}, {label: Telegram, value: telegram}, {label: Email, value: email}]}
+      - {name: from, label: Sender, required: true, description: "The number or account set up in Zenvia."}
+      - {name: to, label: To, required: true, description: "Like 5511999990000"}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: external_id, label: Your ID}
+    request:
+      method: POST
+      path: "channels/{{fields.channel}}/messages"
+      body: {from: "{{fields.from}}", to: "{{fields.to}}", externalId: "{{fields.external_id}}", contents: [{type: text, text: "{{fields.text}}"}]}
+
+  - name: Send File
+    resource: Message
+    description: Sends an image, video, audio or document from a link.
+    fields:
+      - {name: channel, label: Channel, type: select, required: true, default: whatsapp, options: [{label: WhatsApp, value: whatsapp}, {label: SMS, value: sms}, {label: RCS, value: rcs}, {label: Facebook, value: facebook}, {label: Instagram, value: instagram}, {label: Telegram, value: telegram}, {label: Email, value: email}]}
+      - {name: from, label: Sender, required: true}
+      - {name: to, label: To, required: true}
+      - {name: file_url, label: File address, required: true}
+      - {name: file_mime_type, label: File type, required: true, description: "Like image/png or application/pdf"}
+      - {name: file_caption, label: Caption}
+    request:
+      method: POST
+      path: "channels/{{fields.channel}}/messages"
+      body: {from: "{{fields.from}}", to: "{{fields.to}}", contents: [{type: file, fileUrl: "{{fields.file_url}}", fileMimeType: "{{fields.file_mime_type}}", fileCaption: "{{fields.file_caption}}"}]}
+
+  - name: Send WhatsApp Template
+    resource: Message
+    description: Sends an approved WhatsApp template, needed to start a conversation.
+    fields:
+      - {name: from, label: Sender, required: true}
+      - {name: to, label: To, required: true}
+      - {name: template_id, label: Template ID, required: true}
+      - {name: fields, label: Template fields, type: json, description: 'Like {"name": "Ana", "order": "123"}'}
+    request:
+      method: POST
+      path: channels/whatsapp/messages
+      body: {from: "{{fields.from}}", to: "{{fields.to}}", contents: [{type: template, templateId: "{{fields.template_id}}", fields: "{{fields.fields}}"}]}
+
+  - name: Send Email
+    resource: Message
+    description: Sends an email through Zenvia.
+    fields:
+      - {name: from, label: Sender, required: true}
+      - {name: to, label: To, required: true}
+      - {name: subject, label: Subject, required: true}
+      - {name: html, label: Body (HTML), type: textarea, required: true}
+    request:
+      method: POST
+      path: channels/email/messages
+      body: {from: "{{fields.from}}", to: "{{fields.to}}", contents: [{type: email, subject: "{{fields.subject}}", html: "{{fields.html}}"}]}
+
+  - name: List Templates
+    resource: Template
+    description: Lists the message templates.
+    fields:
+      - {name: channel, label: Channel, type: select, options: [{label: WhatsApp, value: whatsapp}, {label: SMS, value: sms}, {label: RCS, value: rcs}, {label: Facebook, value: facebook}, {label: Instagram, value: instagram}, {label: Telegram, value: telegram}, {label: Email, value: email}]}
+      - name: status
+        label: Status
+        type: select
+        options:
+          - {label: Approved, value: APPROVED}
+          - {label: Waiting approval, value: WAITING_APPROVAL}
+          - {label: Refused, value: REFUSED}
+    request:
+      method: GET
+      path: templates
+      query: {channel: "{{fields.channel}}", status: "{{fields.status}}"}
+
+  - name: Get Template
+    resource: Template
+    description: Reads a template.
+    fields:
+      - {name: template, label: Template ID, required: true}
+    request: {method: GET, path: "templates/{{fields.template}}"}
+
+  - name: List Subscriptions
+    resource: Webhook
+    description: Lists the webhooks Zenvia calls.
+    request: {method: GET, path: subscriptions}
+
+  - name: Get Report
+    resource: Report
+    description: Counts the messages sent per channel between two dates.
+    fields:
+      - {name: start_date, label: From, required: true, description: "Like 2026-02-01"}
+      - {name: end_date, label: To, required: true, description: "Like 2026-02-28"}
+      - {name: channel, label: Channel, type: select, options: [{label: WhatsApp, value: whatsapp}, {label: SMS, value: sms}, {label: RCS, value: rcs}, {label: Facebook, value: facebook}, {label: Instagram, value: instagram}, {label: Telegram, value: telegram}, {label: Email, value: email}]}
+    request:
+      method: GET
+      path: reports/message-entries
+      query: {startDate: "{{fields.start_date}}", endDate: "{{fields.end_date}}", channels: "{{fields.channel}}"}
+
+i18n:
+  pt-BR:
+    description: "Envie mensagens de WhatsApp, SMS, RCS, e-mail e outros canais e receba as respostas pela Zenvia."
+    triggers:
+      Message Event: {name: "Evento de mensagem", description: "Inicia o fluxo quando chega uma mensagem ou uma mensagem enviada muda de status.", fields: {event: "Evento", channel: "Canal"}}
+    actions:
+      Send Text: {name: "Enviar texto", description: "Envia uma mensagem de texto em um canal.", fields: {channel: "Canal", from: "Remetente", to: "Para", text: "Texto", external_id: "Seu ID"}}
+      Send File: {name: "Enviar arquivo", description: "Envia imagem, vídeo, áudio ou documento a partir de um link.", fields: {channel: "Canal", from: "Remetente", to: "Para", file_url: "Endereço do arquivo", file_mime_type: "Tipo do arquivo", file_caption: "Legenda"}}
+      Send WhatsApp Template: {name: "Enviar modelo de WhatsApp", description: "Envia um modelo aprovado do WhatsApp, preciso para iniciar uma conversa.", fields: {from: "Remetente", to: "Para", template_id: "ID do modelo", fields: "Campos do modelo"}}
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail pela Zenvia.", fields: {from: "Remetente", to: "Para", subject: "Assunto", html: "Corpo (HTML)"}}
+      List Templates: {name: "Listar modelos", description: "Lista os modelos de mensagem.", fields: {channel: "Canal", status: "Status"}}
+      Get Template: {name: "Ler modelo", description: "Lê um modelo.", fields: {template: "ID do modelo"}}
+      List Subscriptions: {name: "Listar webhooks", description: "Lista os webhooks que a Zenvia chama."}
+      Get Report: {name: "Ler relatório", description: "Conta as mensagens enviadas por canal entre duas datas.", fields: {start_date: "De", end_date: "Até", channel: "Canal"}}
