@@ -1,0 +1,114 @@
+{
+  "name": "Collections",
+  "description": "Reminds each customer of a late invoice, records what they promise, and asks a person before offering a discount.",
+  "i18n": {
+    "pt-BR": {
+      "name": "Cobrança",
+      "description": "Lembra cada cliente de uma fatura atrasada, registra o que ele promete e pede aprovação antes de oferecer desconto."
+    }
+  },
+  "nodes": [
+    {
+      "id": "agent",
+      "type": "Agent",
+      "label": "Collections",
+      "controls": {
+        "name": "Collections",
+        "instructions": "You collect late invoices, kindly and firmly. Each instance is one customer. Remember the invoice, the amount and any date they promise to pay. You may offer a discount of up to 10% for payment this week, only through the offer_discount tool, which a person approves first.",
+        "credential": "",
+        "model": "",
+        "state": "{\"invoice\": \"\", \"amount\": 0, \"promised_date\": \"\", \"stage\": \"open\"}",
+        "max_messages": "30",
+        "max_cost": "1",
+        "allowed": "chat, flows"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "think",
+      "type": "Agent: Think",
+      "label": "Think",
+      "controls": {
+        "message": "{{agent.message}}",
+        "agents": "",
+        "approval": "offer_discount"
+      },
+      "position": {
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "reply",
+      "type": "Agent: Reply",
+      "label": "Reply",
+      "controls": {
+        "message": "{{result.reply}}"
+      },
+      "position": {
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
+      "id": "discount",
+      "type": "Logger",
+      "label": "Offer discount",
+      "controls": {
+        "level": "info",
+        "message": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 180
+      }
+    },
+    {
+      "id": "remind",
+      "type": "Agent: Schedule",
+      "label": "Remind in 2 days",
+      "controls": {
+        "message": "Follow up: check whether the invoice was paid or the promise kept, and remind them if not.",
+        "in": "2",
+        "unit": "days",
+        "at": "",
+        "key": "",
+        "replace": true,
+        "not_scheduled": true
+      },
+      "position": {
+        "x": 840,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "agent",
+      "sourceOutput": "exec",
+      "target": "think",
+      "targetInput": "exec"
+    },
+    {
+      "source": "think",
+      "sourceOutput": "success",
+      "target": "reply",
+      "targetInput": "exec"
+    },
+    {
+      "source": "think",
+      "sourceOutput": "tools",
+      "target": "discount",
+      "targetInput": "exec"
+    },
+    {
+      "source": "reply",
+      "sourceOutput": "success",
+      "target": "remind",
+      "targetInput": "exec"
+    }
+  ]
+}

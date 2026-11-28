@@ -1,0 +1,95 @@
+{
+  "name": "SDR Follow-up",
+  "description": "Talks to each lead, keeps their stage, and follows up three days later if they go quiet.",
+  "i18n": {
+    "pt-BR": {
+      "name": "SDR com follow-up",
+      "description": "Conversa com cada lead, guarda o estágio dele e faz follow-up três dias depois se ele sumir."
+    }
+  },
+  "nodes": [
+    {
+      "id": "agent",
+      "type": "Agent",
+      "label": "SDR",
+      "controls": {
+        "name": "SDR",
+        "instructions": "You are a friendly sales development rep. Learn the lead's company, need and timing, one question at a time. Keep the stage with the remember tool: new, talking, qualified or lost. A message that starts with 'Follow up:' means the lead went quiet: write a short, kind follow-up, without repeating yourself.",
+        "credential": "",
+        "model": "",
+        "state": "{\"stage\": \"new\", \"company\": \"\", \"need\": \"\", \"follow_ups\": 0}",
+        "max_messages": "30",
+        "max_cost": "1",
+        "allowed": "chat, flows"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "think",
+      "type": "Agent: Think",
+      "label": "Think",
+      "controls": {
+        "message": "{{agent.message}}",
+        "agents": "",
+        "approval": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "reply",
+      "type": "Agent: Reply",
+      "label": "Reply",
+      "controls": {
+        "message": "{{result.reply}}"
+      },
+      "position": {
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
+      "id": "later",
+      "type": "Agent: Schedule",
+      "label": "Follow up in 3 days",
+      "controls": {
+        "message": "Follow up: the lead hasn't answered in 3 days.",
+        "in": "3",
+        "unit": "days",
+        "at": "",
+        "key": "",
+        "replace": true,
+        "not_scheduled": true
+      },
+      "position": {
+        "x": 840,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "agent",
+      "sourceOutput": "exec",
+      "target": "think",
+      "targetInput": "exec"
+    },
+    {
+      "source": "think",
+      "sourceOutput": "success",
+      "target": "reply",
+      "targetInput": "exec"
+    },
+    {
+      "source": "reply",
+      "sourceOutput": "success",
+      "target": "later",
+      "targetInput": "exec"
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "name": "Triage Team",
+  "description": "A triage agent that answers people and asks the Billing and Tech agents when it needs them. Three agents in one flow.",
+  "i18n": {
+    "pt-BR": {
+      "name": "Time de triagem",
+      "description": "Um agente de triagem que atende as pessoas e pergunta aos agentes Billing e Tech quando precisa. Três agentes num fluxo só."
+    }
+  },
+  "nodes": [
+    {
+      "id": "triage",
+      "type": "Agent",
+      "label": "Triage",
+      "controls": {
+        "name": "Triage",
+        "instructions": "You are the first contact. Answer simple questions yourself. Ask the Billing agent about invoices, payments and plans, and the Tech agent about bugs and how the product works, then answer the person with what they said.",
+        "credential": "",
+        "model": "",
+        "state": "{\"topic\": \"\"}",
+        "max_messages": "30",
+        "max_cost": "1",
+        "allowed": "chat, flows"
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "triage_think",
+      "type": "Agent: Think",
+      "label": "Think",
+      "controls": {
+        "message": "{{agent.message}}",
+        "agents": "Billing, Tech",
+        "approval": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "triage_reply",
+      "type": "Agent: Reply",
+      "label": "Reply",
+      "controls": {
+        "message": "{{result.reply}}"
+      },
+      "position": {
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
+      "id": "billing",
+      "type": "Agent",
+      "label": "Billing",
+      "controls": {
+        "name": "Billing",
+        "instructions": "You answer questions about invoices, payments and plans, briefly, for the Triage agent.",
+        "credential": "",
+        "model": "",
+        "state": "{}",
+        "max_messages": "30",
+        "max_cost": "1",
+        "allowed": "Triage"
+      },
+      "position": {
+        "x": 0,
+        "y": 240
+      }
+    },
+    {
+      "id": "billing_think",
+      "type": "Agent: Think",
+      "label": "Think",
+      "controls": {
+        "message": "{{agent.message}}",
+        "agents": "",
+        "approval": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 240
+      }
+    },
+    {
+      "id": "billing_reply",
+      "type": "Agent: Reply",
+      "label": "Reply",
+      "controls": {
+        "message": "{{result.reply}}"
+      },
+      "position": {
+        "x": 560,
+        "y": 240
+      }
+    },
+    {
+      "id": "tech",
+      "type": "Agent",
+      "label": "Tech",
+      "controls": {
+        "name": "Tech",
+        "instructions": "You answer questions about bugs and how the product works, briefly, for the Triage agent.",
+        "credential": "",
+        "model": "",
+        "state": "{}",
+        "max_messages": "30",
+        "max_cost": "1",
+        "allowed": "Triage"
+      },
+      "position": {
+        "x": 0,
+        "y": 480
+      }
+    },
+    {
+      "id": "tech_think",
+      "type": "Agent: Think",
+      "label": "Think",
+      "controls": {
+        "message": "{{agent.message}}",
+        "agents": "",
+        "approval": ""
+      },
+      "position": {
+        "x": 280,
+        "y": 480
+      }
+    },
+    {
+      "id": "tech_reply",
+      "type": "Agent: Reply",
+      "label": "Reply",
+      "controls": {
+        "message": "{{result.reply}}"
+      },
+      "position": {
+        "x": 560,
+        "y": 480
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "triage",
+      "sourceOutput": "exec",
+      "target": "triage_think",
+      "targetInput": "exec"
+    },
+    {
+      "source": "triage_think",
+      "sourceOutput": "success",
+      "target": "triage_reply",
+      "targetInput": "exec"
+    },
+    {
+      "source": "billing",
+      "sourceOutput": "exec",
+      "target": "billing_think",
+      "targetInput": "exec"
+    },
+    {
+      "source": "billing_think",
+      "sourceOutput": "success",
+      "target": "billing_reply",
+      "targetInput": "exec"
+    },
+    {
+      "source": "tech",
+      "sourceOutput": "exec",
+      "target": "tech_think",
+      "targetInput": "exec"
+    },
+    {
+      "source": "tech_think",
+      "sourceOutput": "success",
+      "target": "tech_reply",
+      "targetInput": "exec"
+    }
+  ]
+}

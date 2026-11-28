@@ -176,6 +176,7 @@ integrations:
   - {id: wave, name: Wave, category: accounting, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
   - {id: zoho_books, name: Zoho Books, category: accounting, phase: 3, origin: extra, auth: oauth2, host: true, kind: manifest, status: planned}
   - {id: airtop, name: Airtop, category: ai, phase: 3, origin: n8n, auth: bearer, n8n: Airtop, kind: manifest, status: planned}
+  - {id: jido, name: Agents (Jido), category: ai, phase: 1, origin: extra, auth: none, kind: package, lib: {name: jido, version: 3.0.0-beta.3, released: 2026-11-19}, status: official}
   - {id: assemblyai, name: AssemblyAI, category: ai, phase: 3, origin: ai, auth: header, kind: package, lib: {name: assemblyai, version: 1.0.0, released: 2026-02-25}, status: planned}
   - {id: aws_comprehend, name: AWS Comprehend, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Comprehend, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
   - {id: aws_rekognition, name: AWS Rekognition, category: ai, phase: 3, origin: n8n, auth: aws, n8n: Aws/Rekognition, kind: package, lib: {name: aws, version: 1.0.16, released: 2026-11-16}, status: planned}
