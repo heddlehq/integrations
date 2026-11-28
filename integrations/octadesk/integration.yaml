@@ -94,7 +94,7 @@ actions:
     description: Lists tickets, filtered by one property if you like.
     fields:
       - {name: filter_property, label: Filter by, description: "A ticket property, like status.name or requester.email"}
-      - {name: filter_operator, label: Operator, type: select, description: Needed with Filter by., options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
+      - {name: filter_operator, label: Operator, type: select, description: "Needed with Filter by.", options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
       - {name: filter_value, label: Value}
       - {name: sort, label: Order by, default: number}
       - {name: direction, label: Direction, type: select, default: desc, options: [{label: Ascending, value: asc}, {label: Descending, value: desc}]}
@@ -200,7 +200,7 @@ actions:
     description: Lists contacts, filtered by one property if you like.
     fields:
       - {name: filter_property, label: Filter by, description: "A contact property, like name or email"}
-      - {name: filter_operator, label: Operator, type: select, description: Needed with Filter by., options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
+      - {name: filter_operator, label: Operator, type: select, description: "Needed with Filter by.", options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
       - {name: filter_value, label: Value}
       - {name: page, label: Page, type: number, default: 1}
       - {name: limit, label: Limit, type: number, default: 50}
@@ -228,7 +228,7 @@ actions:
     description: Lists chats, filtered by one property if you like.
     fields:
       - {name: filter_property, label: Filter by, description: "A chat property, like status or channel"}
-      - {name: filter_operator, label: Operator, type: select, description: Needed with Filter by., options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
+      - {name: filter_operator, label: Operator, type: select, description: "Needed with Filter by.", options: [{label: Equal, value: eq}, {label: Not equal, value: ne}, {label: Less than, value: lt}, {label: Greater than, value: gt}, {label: Less or equal, value: le}, {label: Greater or equal, value: ge}]}
       - {name: filter_value, label: Value}
       - {name: page, label: Page, type: number, default: 1}
       - {name: limit, label: Limit, type: number, default: 50}

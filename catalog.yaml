@@ -128,7 +128,7 @@ integrations:
   - {id: loja_integrada, name: Loja Integrada, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: magalu, name: Magalu Marketplace, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: melhor_envio, name: Melhor Envio, category: logistics, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
-  - {id: mercado_livre, name: Mercado Livre, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: mercado_livre, name: Mercado Livre, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: mercado_pago, name: Mercado Pago, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: monetizze, name: Monetizze, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: moskit, name: Moskit, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
