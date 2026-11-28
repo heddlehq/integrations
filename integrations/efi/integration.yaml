@@ -1,0 +1,475 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Efí (formerly Gerencianet) Cobranças API: boletos with Pix, card charges, payment
+# links, carnês and subscriptions. The token comes from /v1/authorize, with the client
+# ID and secret as Basic auth. Amounts are in cents. Efí posts a notification token
+# to the charge's notification_url; Get Notification reads what changed.
+id: efi
+name: Efí
+version: 1.0.0
+homepage: https://dev.efipay.com.br/docs/api-cobrancas/
+description: Issue boletos with Pix, card charges, payment links, carnês and subscriptions with Efí, and follow their status.
+icon: hero-banknotes
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="6.51" width="18.00" height="10.97" viewBox="0 0 251 153"><path d="M218.229 42.8952L250.313 31.1926V0L211.473 30.0801C209.03 31.9414 207.528 33.792 207.528 36.5839C207.528 41.4083 212.219 45.1309 218.219 42.8952H218.229ZM207.528 151.149H228.164V52.7365H207.528V151.149ZM113.893 151.149H134.529V113.271H186.124V94.701H134.529C134.15 79.2866 144.657 70.0015 159.11 70.0015C166.991 70.0015 173.747 72.7828 178.817 76.3128L191.951 61.6471C182.384 54.5871 172.06 50.8752 159.672 50.8752C132.464 50.8752 113.893 68.6965 113.893 94.701V151.149ZM21.0144 91.5454C24.0195 78.1741 34.7104 70.0015 49.5308 70.0015C64.3511 70.0015 74.4907 78.1741 76.3608 91.5454H21.0144ZM97.5698 99.8998C97.5698 77.2435 81.0523 50.8752 49.5308 50.8752C21.771 50.8752 0 71.4884 0 101.194C0 130.9 21.9548 153 51.6063 153C69.9938 153 84.8141 144.271 94.5754 131.467L80.1335 119.764C72.9989 129.049 63.2485 133.874 51.0441 133.874C34.905 133.874 24.0195 124.77 21.0252 110.105H87.3977C93.7755 110.105 97.5914 107.131 97.5914 99.8891" fill="#F37021"/></svg></svg>
+category: payments
+base_url: "https://{{credential.host}}/"
+
+credential:
+  label: Efí
+  fields:
+    - {name: client_id, label: Client ID, required: true}
+    - {name: client_secret, label: Client Secret, secret: true, required: true}
+    - {name: host, label: Environment, type: select, required: true, default: cobrancas.api.efipay.com.br, options: [{label: Production, value: cobrancas.api.efipay.com.br}, {label: Sandbox, value: cobrancas-h.api.efipay.com.br}]}
+  auth:
+    type: login
+    request:
+      method: POST
+      path: v1/authorize
+      basic: {username: "{{credential.client_id}}", password: "{{credential.client_secret}}"}
+      body: {grant_type: client_credentials}
+    token_path: access_token
+    expires_path: expires_in
+    apply: {type: bearer, token: "{{auth.token}}"}
+
+errors:
+  message_path: error_description
+
+triggers:
+  - name: Notification
+    description: Starts the flow when Efí notifies a change of a charge, carnê or subscription. Use this address as the charge's notification URL, then Get Notification with the token it brings.
+    fields: []
+    webhook: {}
+
+actions:
+  # Charges
+  - name: Create Boleto
+    resource: Charge
+    description: Issues a boleto the customer can also pay by Pix (Bolix). The answer has its barcode, Pix code and PDF link.
+    fields:
+      - {name: item_name, label: Item, required: true}
+      - {name: item_value, label: Price, type: number, required: true, description: In cents.}
+      - {name: item_amount, label: Quantity, type: number, default: 1}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_cpf, label: Customer CPF, description: Digits only. Or the company below.}
+      - {name: customer_email, label: Customer email}
+      - {name: customer_phone, label: Customer phone, description: "DDD and number, like 5144916523"}
+      - {name: company_name, label: Company name}
+      - {name: company_cnpj, label: Company CNPJ}
+      - {name: street, label: Street}
+      - {name: number, label: Number}
+      - {name: complement, label: Complement}
+      - {name: district, label: District}
+      - {name: zip_code, label: CEP}
+      - {name: city, label: City}
+      - {name: state, label: State, description: "Two letters, like MG"}
+      - {name: fine, label: Late fee, type: number, description: In hundredths of a percent; 200 is 2%.}
+      - {name: interest, label: Daily interest, type: number, description: In thousandths of a percent; 33 is 0.033% a day.}
+      - {name: message, label: Message, description: Up to 80 characters on the boleto.}
+      - {name: custom_id, label: Your ID, description: Your reference for it.}
+      - {name: notification_url, label: Notification URL, description: The address of the Notification trigger.}
+    request:
+      method: POST
+      path: v1/charge/one-step
+      body:
+        items: [{name: "{{fields.item_name}}", value: "{{fields.item_value}}", amount: "{{fields.item_amount}}"}]
+        metadata: {_if: "{{fields.notification_url}}{{fields.custom_id}}", custom_id: "{{fields.custom_id}}", notification_url: "{{fields.notification_url}}"}
+        payment:
+          banking_billet:
+            expire_at: "{{fields.due_date}}"
+            customer: {name: "{{fields.customer_name}}", cpf: "{{fields.customer_cpf}}", email: "{{fields.customer_email}}", phone_number: "{{fields.customer_phone}}", juridical_person: {_if: "{{fields.company_cnpj}}", corporate_name: "{{fields.company_name}}", cnpj: "{{fields.company_cnpj}}"}, address: {_if: "{{fields.zip_code}}", street: "{{fields.street}}", number: "{{fields.number}}", complement: "{{fields.complement}}", neighborhood: "{{fields.district}}", zipcode: "{{fields.zip_code}}", city: "{{fields.city}}", state: "{{fields.state}}"}}
+            configurations: {_if: "{{fields.fine}}{{fields.interest}}", fine: "{{fields.fine}}", interest: "{{fields.interest}}"}
+            message: "{{fields.message}}"
+
+  - name: Create Card Charge
+    resource: Charge
+    description: Charges a credit card through its payment token, made in the browser by Efí's JavaScript.
+    fields:
+      - {name: item_name, label: Item, required: true}
+      - {name: item_value, label: Price, type: number, required: true, description: In cents.}
+      - {name: item_amount, label: Quantity, type: number, default: 1}
+      - {name: payment_token, label: Payment token, required: true}
+      - {name: installments, label: Installments, type: number, default: 1}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_cpf, label: Customer CPF, description: Digits only. Or the company below.}
+      - {name: customer_email, label: Customer email}
+      - {name: customer_phone, label: Customer phone, description: "DDD and number, like 5144916523"}
+      - {name: company_name, label: Company name}
+      - {name: company_cnpj, label: Company CNPJ}
+      - {name: birth, label: Customer birth date, description: "YYYY-MM-DD"}
+      - {name: street, label: Street}
+      - {name: number, label: Number}
+      - {name: complement, label: Complement}
+      - {name: district, label: District}
+      - {name: zip_code, label: CEP}
+      - {name: city, label: City}
+      - {name: state, label: State, description: "Two letters, like MG"}
+      - {name: custom_id, label: Your ID, description: Your reference for it.}
+      - {name: notification_url, label: Notification URL, description: The address of the Notification trigger.}
+    request:
+      method: POST
+      path: v1/charge/one-step
+      body:
+        items: [{name: "{{fields.item_name}}", value: "{{fields.item_value}}", amount: "{{fields.item_amount}}"}]
+        metadata: {_if: "{{fields.notification_url}}{{fields.custom_id}}", custom_id: "{{fields.custom_id}}", notification_url: "{{fields.notification_url}}"}
+        payment:
+          credit_card:
+            payment_token: "{{fields.payment_token}}"
+            installments: "{{fields.installments}}"
+            customer: {name: "{{fields.customer_name}}", cpf: "{{fields.customer_cpf}}", email: "{{fields.customer_email}}", phone_number: "{{fields.customer_phone}}", juridical_person: {_if: "{{fields.company_cnpj}}", corporate_name: "{{fields.company_name}}", cnpj: "{{fields.company_cnpj}}"}, birth: "{{fields.birth}}"}
+            billing_address: {_if: "{{fields.zip_code}}", street: "{{fields.street}}", number: "{{fields.number}}", complement: "{{fields.complement}}", neighborhood: "{{fields.district}}", zipcode: "{{fields.zip_code}}", city: "{{fields.city}}", state: "{{fields.state}}"}
+
+  - name: Create Payment Link
+    resource: Charge
+    description: Makes a payment page where the customer pays by boleto, Pix or card. The answer has payment_url.
+    fields:
+      - {name: item_name, label: Item, required: true}
+      - {name: item_value, label: Price, type: number, required: true, description: In cents.}
+      - {name: item_amount, label: Quantity, type: number, default: 1}
+      - {name: expire_at, label: Expires on, required: true, description: "YYYY-MM-DD"}
+      - {name: payment_method, label: Pay by, type: select, default: all, options: [{label: Any, value: all}, {label: Boleto, value: banking_billet}, {label: Card, value: credit_card}]}
+      - {name: message, label: Message, description: Up to 80 characters.}
+      - {name: customer_email, label: Customer email}
+      - {name: delivery_address, label: Ask for delivery address, type: boolean, default: false}
+      - {name: custom_id, label: Your ID, description: Your reference for it.}
+      - {name: notification_url, label: Notification URL, description: The address of the Notification trigger.}
+    request:
+      method: POST
+      path: v1/charge/one-step/link
+      body:
+        items: [{name: "{{fields.item_name}}", value: "{{fields.item_value}}", amount: "{{fields.item_amount}}"}]
+        metadata: {_if: "{{fields.notification_url}}{{fields.custom_id}}", custom_id: "{{fields.custom_id}}", notification_url: "{{fields.notification_url}}"}
+        customer: {_if: "{{fields.customer_email}}", email: "{{fields.customer_email}}"}
+        settings: {payment_method: "{{fields.payment_method}}", expire_at: "{{fields.expire_at}}", message: "{{fields.message}}", request_delivery_address: "{{fields.delivery_address}}"}
+
+  - name: Get Charge
+    resource: Charge
+    description: Reads a charge, with its status, payment and history.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+    request:
+      method: GET
+      path: "v1/charge/{{fields.charge_id}}"
+
+  - name: Update Boleto Due Date
+    resource: Charge
+    description: Changes the due date of an unpaid boleto.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+    request:
+      method: PUT
+      path: "v1/charge/{{fields.charge_id}}/billet"
+      body: {expire_at: "{{fields.due_date}}"}
+
+  - name: Update Charge Metadata
+    resource: Charge
+    description: Sets your ID and the notification URL of a charge.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+      - {name: custom_id, label: Your ID, description: Your reference for it.}
+      - {name: notification_url, label: Notification URL, description: The address of the Notification trigger.}
+    request:
+      method: PUT
+      path: "v1/charge/{{fields.charge_id}}/metadata"
+      body: {custom_id: "{{fields.custom_id}}", notification_url: "{{fields.notification_url}}"}
+
+  - name: Cancel Charge
+    resource: Charge
+    description: Cancels an unpaid charge.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+    request:
+      method: PUT
+      path: "v1/charge/{{fields.charge_id}}/cancel"
+
+  - name: Settle Charge
+    resource: Charge
+    description: Marks a charge as paid outside Efí.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+    request:
+      method: PUT
+      path: "v1/charge/{{fields.charge_id}}/settle"
+
+  - name: Resend Boleto
+    resource: Charge
+    description: Emails the boleto to an address.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+      - {name: email, label: Email, required: true}
+    request:
+      method: POST
+      path: "v1/charge/{{fields.charge_id}}/billet/resend"
+      body: {email: "{{fields.email}}"}
+
+  - name: Add Charge Note
+    resource: Charge
+    description: Adds a line to the history of a charge.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+      - {name: description, label: Note, required: true}
+    request:
+      method: POST
+      path: "v1/charge/{{fields.charge_id}}/history"
+      body: {description: "{{fields.description}}"}
+
+  - name: Refund Card Charge
+    resource: Charge
+    description: Refunds all or part of a paid card charge.
+    fields:
+      - {name: charge_id, label: Charge ID, type: number, required: true}
+      - {name: amount, label: Amount, type: number, description: In cents. Empty for all of it.}
+    request:
+      method: POST
+      path: "v1/charge/card/{{fields.charge_id}}/refund"
+      body: {amount: "{{fields.amount}}"}
+
+  - name: List Charges
+    resource: Charge
+    description: Lists the charges created between two dates, by kind and status.
+    fields:
+      - {name: start, label: From, required: true, description: "YYYY-MM-DD"}
+      - {name: end, label: To, required: true, description: "YYYY-MM-DD"}
+      - {name: kind, label: Kind, type: select, required: true, default: billet, options: [{label: Boleto, value: billet}, {label: Card, value: card}, {label: Carnê, value: carnet}, {label: Subscription, value: subscription}, {label: Payment link, value: link}]}
+      - {name: status, label: Status, type: select, options: [{label: New, value: new}, {label: Waiting, value: waiting}, {label: Paid, value: paid}, {label: Unpaid, value: unpaid}, {label: Settled, value: settled}, {label: Canceled, value: canceled}, {label: Refunded, value: refunded}, {label: Contested, value: contested}, {label: Expired, value: expired}]}
+      - {name: customer_document, label: Customer CPF or CNPJ}
+      - {name: custom_id, label: Your ID}
+      - {name: limit, label: Limit, type: number, default: 100}
+      - {name: page, label: Page, type: number, default: 1}
+    request:
+      method: GET
+      path: v1/charges
+      query: {begin_date: "{{fields.start}}", end_date: "{{fields.end}}", charge_type: "{{fields.kind}}", status: "{{fields.status}}", customer_document: "{{fields.customer_document}}", custom_id: "{{fields.custom_id}}", limit: "{{fields.limit}}", page: "{{fields.page}}"}
+
+  - name: Get Installments
+    resource: Charge
+    description: Lists the installments a card brand allows for an amount, with their interest.
+    fields:
+      - {name: brand, label: Brand, type: select, required: true, default: visa, options: [{label: Visa, value: visa}, {label: Mastercard, value: mastercard}, {label: Amex, value: amex}, {label: Elo, value: elo}, {label: Hipercard, value: hipercard}]}
+      - {name: total, label: Amount, type: number, required: true, description: In cents.}
+    request:
+      method: GET
+      path: v1/installments
+      query: {brand: "{{fields.brand}}", total: "{{fields.total}}"}
+
+  # Carnês
+  - name: Create Carnê
+    resource: Carnê
+    description: Issues a booklet of monthly boletos, the first due on a date.
+    fields:
+      - {name: item_name, label: Item, required: true}
+      - {name: item_value, label: Price, type: number, required: true, description: In cents.}
+      - {name: item_amount, label: Quantity, type: number, default: 1}
+      - {name: repeats, label: Installments, type: number, required: true, description: 2 to 12.}
+      - {name: due_date, label: First due date, required: true, description: "YYYY-MM-DD"}
+      - {name: split_items, label: Split the price, type: boolean, default: false, description: Divide the price among the installments instead of charging it in each.}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_cpf, label: Customer CPF, description: Digits only. Or the company below.}
+      - {name: customer_email, label: Customer email}
+      - {name: customer_phone, label: Customer phone, description: "DDD and number, like 5144916523"}
+      - {name: company_name, label: Company name}
+      - {name: company_cnpj, label: Company CNPJ}
+      - {name: fine, label: Late fee, type: number, description: In hundredths of a percent; 200 is 2%.}
+      - {name: interest, label: Daily interest, type: number, description: In thousandths of a percent; 33 is 0.033% a day.}
+      - {name: message, label: Message, description: Up to 80 characters on the boleto.}
+      - {name: custom_id, label: Your ID, description: Your reference for it.}
+      - {name: notification_url, label: Notification URL, description: The address of the Notification trigger.}
+    request:
+      method: POST
+      path: v1/carnet
+      body:
+        items: [{name: "{{fields.item_name}}", value: "{{fields.item_value}}", amount: "{{fields.item_amount}}"}]
+        metadata: {_if: "{{fields.notification_url}}{{fields.custom_id}}", custom_id: "{{fields.custom_id}}", notification_url: "{{fields.notification_url}}"}
+        customer: {name: "{{fields.customer_name}}", cpf: "{{fields.customer_cpf}}", email: "{{fields.customer_email}}", phone_number: "{{fields.customer_phone}}", juridical_person: {_if: "{{fields.company_cnpj}}", corporate_name: "{{fields.company_name}}", cnpj: "{{fields.company_cnpj}}"}}
+        expire_at: "{{fields.due_date}}"
+        repeats: "{{fields.repeats}}"
+        split_items: "{{fields.split_items}}"
+        configurations: {_if: "{{fields.fine}}{{fields.interest}}", fine: "{{fields.fine}}", interest: "{{fields.interest}}"}
+        message: "{{fields.message}}"
+
+  - name: Get Carnê
+    resource: Carnê
+    description: Reads a carnê, with each installment and its status.
+    fields:
+      - {name: carnet_id, label: Carnê ID, type: number, required: true}
+    request:
+      method: GET
+      path: "v1/carnet/{{fields.carnet_id}}"
+
+  - name: Cancel Carnê
+    resource: Carnê
+    description: Cancels the open installments of a carnê.
+    fields:
+      - {name: carnet_id, label: Carnê ID, type: number, required: true}
+    request:
+      method: PUT
+      path: "v1/carnet/{{fields.carnet_id}}/cancel"
+
+  - name: Cancel Carnê Installment
+    resource: Carnê
+    description: Cancels one installment of a carnê.
+    fields:
+      - {name: carnet_id, label: Carnê ID, type: number, required: true}
+      - {name: parcel, label: Installment, type: number, required: true}
+    request:
+      method: PUT
+      path: "v1/carnet/{{fields.carnet_id}}/parcel/{{fields.parcel}}/cancel"
+
+  - name: Settle Carnê Installment
+    resource: Carnê
+    description: Marks an installment as paid outside Efí.
+    fields:
+      - {name: carnet_id, label: Carnê ID, type: number, required: true}
+      - {name: parcel, label: Installment, type: number, required: true}
+    request:
+      method: PUT
+      path: "v1/carnet/{{fields.carnet_id}}/parcel/{{fields.parcel}}/settle"
+
+  - name: Update Carnê Installment
+    resource: Carnê
+    description: Changes the due date of an installment.
+    fields:
+      - {name: carnet_id, label: Carnê ID, type: number, required: true}
+      - {name: parcel, label: Installment, type: number, required: true}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+    request:
+      method: PUT
+      path: "v1/carnet/{{fields.carnet_id}}/parcel/{{fields.parcel}}"
+      body: {expire_at: "{{fields.due_date}}"}
+
+  - name: Resend Carnê
+    resource: Carnê
+    description: Emails the carnê to an address.
+    fields:
+      - {name: carnet_id, label: Carnê ID, type: number, required: true}
+      - {name: email, label: Email, required: true}
+    request:
+      method: POST
+      path: "v1/carnet/{{fields.carnet_id}}/resend"
+      body: {email: "{{fields.email}}"}
+
+  # Subscriptions
+  - name: List Plans
+    resource: Subscription
+    description: Lists the subscription plans.
+    fields:
+      - {name: name, label: Name, description: Part of the name.}
+      - {name: limit, label: Limit, type: number, default: 100}
+    request:
+      method: GET
+      path: v1/plans
+      query: {name: "{{fields.name}}", limit: "{{fields.limit}}"}
+
+  - name: Create Plan
+    resource: Subscription
+    description: Creates a subscription plan, charged every few months.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: interval, label: Every how many months, type: number, required: true, default: 1}
+      - {name: repeats, label: Charges, type: number, description: Empty to charge until canceled.}
+    request:
+      method: POST
+      path: v1/plan
+      body: {name: "{{fields.name}}", interval: "{{fields.interval}}", repeats: "{{fields.repeats}}"}
+
+  - name: Delete Plan
+    resource: Subscription
+    description: Deletes a plan with no subscriptions.
+    fields:
+      - {name: plan_id, label: Plan ID, type: number, required: true}
+    request: {method: DELETE, path: "v1/plan/{{fields.plan_id}}"}
+
+  - name: Create Subscription
+    resource: Subscription
+    description: Subscribes a customer to a plan, charged by boleto.
+    fields:
+      - {name: plan_id, label: Plan ID, type: number, required: true}
+      - {name: item_name, label: Item, required: true}
+      - {name: item_value, label: Price, type: number, required: true, description: In cents.}
+      - {name: item_amount, label: Quantity, type: number, default: 1}
+      - {name: due_date, label: First due date, required: true, description: "YYYY-MM-DD"}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_cpf, label: Customer CPF, description: Digits only. Or the company below.}
+      - {name: customer_email, label: Customer email}
+      - {name: customer_phone, label: Customer phone, description: "DDD and number, like 5144916523"}
+      - {name: company_name, label: Company name}
+      - {name: company_cnpj, label: Company CNPJ}
+      - {name: fine, label: Late fee, type: number, description: In hundredths of a percent; 200 is 2%.}
+      - {name: interest, label: Daily interest, type: number, description: In thousandths of a percent; 33 is 0.033% a day.}
+      - {name: message, label: Message, description: Up to 80 characters on the boleto.}
+      - {name: custom_id, label: Your ID, description: Your reference for it.}
+      - {name: notification_url, label: Notification URL, description: The address of the Notification trigger.}
+    request:
+      method: POST
+      path: "v1/plan/{{fields.plan_id}}/subscription/one-step"
+      body:
+        items: [{name: "{{fields.item_name}}", value: "{{fields.item_value}}", amount: "{{fields.item_amount}}"}]
+        metadata: {_if: "{{fields.notification_url}}{{fields.custom_id}}", custom_id: "{{fields.custom_id}}", notification_url: "{{fields.notification_url}}"}
+        payment:
+          banking_billet:
+            expire_at: "{{fields.due_date}}"
+            customer: {name: "{{fields.customer_name}}", cpf: "{{fields.customer_cpf}}", email: "{{fields.customer_email}}", phone_number: "{{fields.customer_phone}}", juridical_person: {_if: "{{fields.company_cnpj}}", corporate_name: "{{fields.company_name}}", cnpj: "{{fields.company_cnpj}}"}}
+            configurations: {_if: "{{fields.fine}}{{fields.interest}}", fine: "{{fields.fine}}", interest: "{{fields.interest}}"}
+            message: "{{fields.message}}"
+
+  - name: Get Subscription
+    resource: Subscription
+    description: Reads a subscription, with its charges.
+    fields:
+      - {name: subscription_id, label: Subscription ID, type: number, required: true}
+    request:
+      method: GET
+      path: "v1/subscription/{{fields.subscription_id}}"
+
+  - name: Cancel Subscription
+    resource: Subscription
+    description: Cancels a subscription; no more charges are made.
+    fields:
+      - {name: subscription_id, label: Subscription ID, type: number, required: true}
+    request:
+      method: PUT
+      path: "v1/subscription/{{fields.subscription_id}}/cancel"
+
+  # Notifications
+  - name: Get Notification
+    resource: Notification
+    description: Reads what changed, from the token of a notification; each item has the charge and its new status.
+    fields:
+      - {name: token, label: Notification token, required: true, description: The notification field the trigger received.}
+    request: {method: GET, path: "v1/notification/{{fields.token}}"}
+
+i18n:
+  pt-BR:
+    description: "Emita boletos com Pix, cobranças no cartão, links de pagamento, carnês e assinaturas pela Efí, e acompanhe o status de cada um."
+    triggers:
+      Notification: {name: "Notificação", description: "Inicia o fluxo quando a Efí avisa uma mudança em cobrança, carnê ou assinatura. Use este endereço como URL de notificação da cobrança e depois Ler notificação com o token recebido."}
+    actions:
+      Create Boleto: {name: "Emitir boleto", description: "Emite um boleto que também pode ser pago por Pix (Bolix). A resposta traz código de barras, código Pix e link do PDF.", fields: {item_name: "Item", item_value: "Preço", item_amount: "Quantidade", due_date: "Primeiro vencimento", customer_name: "Nome do cliente", customer_cpf: "CPF do cliente", customer_email: "E-mail do cliente", customer_phone: "Telefone do cliente", company_name: "Razão social", company_cnpj: "CNPJ da empresa", street: "Rua", number: "Número", complement: "Complemento", district: "Bairro", zip_code: "CEP", city: "Cidade", state: "UF", fine: "Multa", interest: "Juros ao dia", message: "Mensagem", custom_id: "Seu ID", notification_url: "URL de notificação"}}
+      Create Card Charge: {name: "Cobrar no cartão", description: "Cobra um cartão de crédito pelo payment token, gerado no navegador pelo JavaScript da Efí.", fields: {item_name: "Item", item_value: "Preço", item_amount: "Quantidade", payment_token: "Payment token", installments: "Parcelas", customer_name: "Nome do cliente", customer_cpf: "CPF do cliente", customer_email: "E-mail do cliente", customer_phone: "Telefone do cliente", company_name: "Razão social", company_cnpj: "CNPJ da empresa", birth: "Nascimento do cliente", street: "Rua", number: "Número", complement: "Complemento", district: "Bairro", zip_code: "CEP", city: "Cidade", state: "UF", custom_id: "Seu ID", notification_url: "URL de notificação"}}
+      Create Payment Link: {name: "Criar link de pagamento", description: "Cria uma página onde o cliente paga por boleto, Pix ou cartão. A resposta traz payment_url.", fields: {item_name: "Item", item_value: "Preço", item_amount: "Quantidade", expire_at: "Expira em", payment_method: "Pagar por", message: "Mensagem", customer_email: "E-mail do cliente", delivery_address: "Pedir endereço de entrega", custom_id: "Seu ID", notification_url: "URL de notificação"}}
+      Get Charge: {name: "Ler cobrança", description: "Lê uma cobrança, com status, pagamento e histórico.", fields: {charge_id: "ID da cobrança"}}
+      Update Boleto Due Date: {name: "Alterar vencimento do boleto", description: "Muda o vencimento de um boleto não pago.", fields: {charge_id: "ID da cobrança", due_date: "Primeiro vencimento"}}
+      Update Charge Metadata: {name: "Alterar metadados da cobrança", description: "Define seu ID e a URL de notificação de uma cobrança.", fields: {charge_id: "ID da cobrança", custom_id: "Seu ID", notification_url: "URL de notificação"}}
+      Cancel Charge: {name: "Cancelar cobrança", description: "Cancela uma cobrança não paga.", fields: {charge_id: "ID da cobrança"}}
+      Settle Charge: {name: "Dar baixa na cobrança", description: "Marca uma cobrança como paga fora da Efí.", fields: {charge_id: "ID da cobrança"}}
+      Resend Boleto: {name: "Reenviar boleto", description: "Envia o boleto por e-mail para um endereço.", fields: {charge_id: "ID da cobrança", email: "E-mail"}}
+      Add Charge Note: {name: "Adicionar ao histórico", description: "Adiciona uma linha ao histórico de uma cobrança.", fields: {charge_id: "ID da cobrança", description: "Nota"}}
+      Refund Card Charge: {name: "Estornar cartão", description: "Estorna total ou parcialmente uma cobrança paga no cartão.", fields: {charge_id: "ID da cobrança", amount: "Valor"}}
+      List Charges: {name: "Listar cobranças", description: "Lista as cobranças criadas entre duas datas, por tipo e status.", fields: {start: "De", end: "Até", kind: "Tipo", status: "Status", customer_document: "CPF ou CNPJ do cliente", custom_id: "Seu ID", limit: "Limite", page: "Página"}}
+      Get Installments: {name: "Consultar parcelas", description: "Lista as parcelas que uma bandeira permite para um valor, com os juros.", fields: {brand: "Bandeira", total: "Valor"}}
+      Create Carnê: {name: "Emitir carnê", description: "Emite um carnê de boletos mensais, o primeiro vencendo numa data.", fields: {item_name: "Item", item_value: "Preço", item_amount: "Quantidade", repeats: "Cobranças", due_date: "Primeiro vencimento", split_items: "Dividir o preço", customer_name: "Nome do cliente", customer_cpf: "CPF do cliente", customer_email: "E-mail do cliente", customer_phone: "Telefone do cliente", company_name: "Razão social", company_cnpj: "CNPJ da empresa", fine: "Multa", interest: "Juros ao dia", message: "Mensagem", custom_id: "Seu ID", notification_url: "URL de notificação"}}
+      Get Carnê: {name: "Ler carnê", description: "Lê um carnê, com cada parcela e seu status.", fields: {carnet_id: "ID do carnê"}}
+      Cancel Carnê: {name: "Cancelar carnê", description: "Cancela as parcelas em aberto de um carnê.", fields: {carnet_id: "ID do carnê"}}
+      Cancel Carnê Installment: {name: "Cancelar parcela do carnê", description: "Cancela uma parcela de um carnê.", fields: {carnet_id: "ID do carnê", parcel: "Parcela"}}
+      Settle Carnê Installment: {name: "Dar baixa na parcela", description: "Marca uma parcela como paga fora da Efí.", fields: {carnet_id: "ID do carnê", parcel: "Parcela"}}
+      Update Carnê Installment: {name: "Alterar vencimento da parcela", description: "Muda o vencimento de uma parcela.", fields: {carnet_id: "ID do carnê", parcel: "Parcela", due_date: "Primeiro vencimento"}}
+      Resend Carnê: {name: "Reenviar carnê", description: "Envia o carnê por e-mail para um endereço.", fields: {carnet_id: "ID do carnê", email: "E-mail"}}
+      List Plans: {name: "Listar planos", description: "Lista os planos de assinatura.", fields: {name: "Nome", limit: "Limite"}}
+      Create Plan: {name: "Criar plano", description: "Cria um plano de assinatura, cobrado a cada tantos meses.", fields: {name: "Nome", interval: "A cada quantos meses", repeats: "Cobranças"}}
+      Delete Plan: {name: "Excluir plano", description: "Exclui um plano sem assinaturas.", fields: {plan_id: "ID do plano"}}
+      Create Subscription: {name: "Criar assinatura", description: "Assina um cliente num plano, cobrado por boleto.", fields: {plan_id: "ID do plano", item_name: "Item", item_value: "Preço", item_amount: "Quantidade", due_date: "Primeiro vencimento", customer_name: "Nome do cliente", customer_cpf: "CPF do cliente", customer_email: "E-mail do cliente", customer_phone: "Telefone do cliente", company_name: "Razão social", company_cnpj: "CNPJ da empresa", fine: "Multa", interest: "Juros ao dia", message: "Mensagem", custom_id: "Seu ID", notification_url: "URL de notificação"}}
+      Get Subscription: {name: "Ler assinatura", description: "Lê uma assinatura, com suas cobranças.", fields: {subscription_id: "ID da assinatura"}}
+      Cancel Subscription: {name: "Cancelar assinatura", description: "Cancela uma assinatura; nenhuma cobrança nova é feita.", fields: {subscription_id: "ID da assinatura"}}
+      Get Notification: {name: "Ler notificação", description: "Lê o que mudou a partir do token de uma notificação; cada item traz a cobrança e o novo status.", fields: {token: "Token da notificação"}}
