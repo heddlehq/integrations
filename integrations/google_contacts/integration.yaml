@@ -1,0 +1,237 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Contacts, through the People API v1. Connect with an OAuth client from Google
+# Cloud, with the People API turned on and the scope .../auth/contacts. A contact's ID
+# is the end of its resourceName: c123 in people/c123.
+id: google_contacts
+name: Google Contacts
+version: 1.0.0
+description: Contacts and contact groups in Google Contacts.
+icon: hero-user-circle
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><image width="96" height="96" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAEGklEQVR4Ae2bA5AcXRSF+7dt22bpN8JCPIht21yjsqXYmulCbBbCmY2dFGLbejfvpmaNmVeZzO3ZnK/qrLdf1Tndj7ctxwIAAAAAAAAANe2HLHfgL8sVHKq1TGuX1vmQdoV+NpT/5s7fRglQe82z2tQEbe4pLRWhTvH/3PnfuwC4Am0sd/BEjrHG4v/laxgCaq56Qhs3jU2MivhafE0QAQ02PK+7jwAbF1XxNfnaYcBA6wosNjLWQHxtDNClUSuYZW6qobiNYgDewK/aoFv3PABug9sqBHAHVrBBMRG3lQ/gXvcvGxNTcZshgCswPOYBcJtAQ/SAHhgPxzwAbpPbxlZD8Bs2RETcNvr/YGWxALht9P/BJmIBcNtY/QZ7iAXAbd/X4AnAGIAAMAvCOgBgJYy9IIDdUJwHAJyI4UwYoCoCdUEAlXGoDQVlujoaAAAAAAAAMGQavZPgo3qJfspKsmleoo/2dhxz5VjFwUfV5x32qLeab1fPNdgc8Qr4yTqb1YuNtqs3m+9R33U5qioPuapc6VSiaqXTflcardOfZ7pTqYsrlT6yyjrJNr2b7Kc+ST7aoY1XrCE+paqmnFCvNtka9Z3QZxtsVb90P6FqpSk2PbzSaJs7jRoPGEAPli3jffRdok22NvymlspRvayz0TM+TBC/9znLJpsEEf/lK9r0V5L8ND7H8Hx3vTbkQMxLUj5vf4CfBpMgUvlpiNc+3qXNPl3Y/P6Tb6pP2+1hQ0T0RrM9qnrKTZMQ5tYcQE9b8cKIEfRIgo+Gs9mFlaD1WXsJ8wuF0HwPD8IRh1ArjeZQPNQTpU2kp7TRi7RUMSqt2xHpjthck+7I+ebbtKYE83nALWSCvEwGZhYPzI7tdrT5C0synwfdV5tudVwAPDsyGJRZWx05KOf0+SWI5/lhzBATrxNMn4LGTpztqFJkcPeLPAVsrIm2Wk6h/0R6NWeqWZI6j7lqYIiMKiVcNQqhThJ9bDmBnEVWaao45KjjA+C9I5MAPJnUWb7fn0Lfa4NvhQvgiw57HR/AW833GgVQM4NmWNKE9nZUOPGuptMD4F1UwzXBOtmBdwq9l7OxFk7P1t/k+ACeqLPJdCA+KNv329SbzY1ED7qzHR/AA+5s0wBuSM/7t0cYgIERsjIMQImeZLGxCECI0DEiApCCz3AlA0AANi2QDQBPwB7JADAG+Om4YACYhmpTrwgGgIUYmyoQALYiBALAZpxkANiOlg8ABzLyAeBIUj4AHMrLB4CyFPkAUJglHwBKE+UDQHGu+VbEw96oHkmiPD3RpnU55gpUReAFjQSbupoEUGHwkWiaiFeU+I5ItGlZpAFwZfSHrXcZmoaX9MKH4KcuWkGtq5GEwK+fvqm7owc92TcNTIz711QBAAAAAAAAAABwGzu2xPmLj8HiAAAAAElFTkSuQmCC"/></svg>
+category: crm
+author: Heddle
+homepage: https://developers.google.com/people/api/rest
+base_url: https://people.googleapis.com/v1/
+
+credential:
+  label: Google Contacts
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/contacts]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Contact
+    description: Starts the flow for each new contact, checking every 5 minutes.
+    request:
+      method: GET
+      path: people/me/connections
+      query: {personFields: "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,memberships,metadata", sortOrder: LAST_MODIFIED_DESCENDING, pageSize: 100}
+    output:
+      path: connections
+    poll:
+      every: 5
+      id: resourceName
+
+  - name: Contact Changed
+    description: Starts the flow when a contact is created or changed, checking every 5 minutes.
+    request:
+      method: GET
+      path: people/me/connections
+      query: {personFields: "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,memberships,metadata", sortOrder: LAST_MODIFIED_DESCENDING, pageSize: 100}
+    output:
+      path: connections
+    poll:
+      every: 5
+      id: etag
+
+actions:
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a contact.
+    fields:
+      - {name: given_name, label: First name}
+      - {name: family_name, label: Last name}
+      - {name: emails, label: Emails, description: "One or more, with commas."}
+      - {name: email_type, label: Email type, type: select, default: home, options: [{label: Home, value: home}, {label: Work, value: work}, {label: Other, value: other}]}
+      - {name: phones, label: Phones, description: "One or more, with commas."}
+      - {name: phone_type, label: Phone type, type: select, default: mobile, options: [{label: Mobile, value: mobile}, {label: Home, value: home}, {label: Work, value: work}, {label: Main, value: main}, {label: Other, value: other}]}
+      - {name: company, label: Company}
+      - {name: title, label: Job title}
+      - {name: street, label: Street}
+      - {name: city, label: City}
+      - {name: region, label: State}
+      - {name: postal_code, label: Postal code}
+      - {name: country, label: Country}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: group, label: Group, type: select, options_from: {request: {method: GET, path: contactGroups, query: {pageSize: 200}}, path: contactGroups, label: formattedName, value: resourceName}}
+      - {name: extra, label: Other fields, type: json, description: "More of the People API's person, like {\"birthdays\": [{\"date\": {\"year\": 1990, \"month\": 5, \"day\": 1}}]}."}
+    request:
+      method: POST
+      path: "people:createContact"
+      query: {personFields: "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,memberships,metadata"}
+      body:
+        names: [{givenName: "{{fields.given_name}}", familyName: "{{fields.family_name}}"}]
+        emailAddresses: {_each: "{{fields.emails}}", value: "{{item}}", type: "{{fields.email_type}}"}
+        phoneNumbers: {_each: "{{fields.phones}}", value: "{{item}}", type: "{{fields.phone_type}}"}
+        organizations: [{name: "{{fields.company}}", title: "{{fields.title}}"}]
+        addresses: [{streetAddress: "{{fields.street}}", city: "{{fields.city}}", region: "{{fields.region}}", postalCode: "{{fields.postal_code}}", country: "{{fields.country}}"}]
+        biographies: [{value: "{{fields.notes}}", contentType: TEXT_PLAIN, _if: "{{fields.notes}}"}]
+        memberships: [{contactGroupMembership: {contactGroupResourceName: "{{fields.group}}"}}]
+        _merge: "{{fields.extra}}"
+
+  - name: Get Contact
+    resource: Contact
+    description: Gets a contact, with its etag for Update Contact.
+    fields:
+      - {name: contact, label: Contact ID, required: true, description: "Like c123, the end of people/c123."}
+    request:
+      method: GET
+      path: "people/{{fields.contact}}"
+      query: {personFields: "names,nicknames,emailAddresses,phoneNumbers,organizations,addresses,biographies,birthdays,events,relations,urls,userDefined,memberships,photos,metadata"}
+
+  - name: Get Contacts
+    resource: Contact
+    description: Lists all your contacts.
+    fields:
+      - {name: sort, label: Order, type: select, default: LAST_MODIFIED_DESCENDING, options: [{label: Last changed first, value: LAST_MODIFIED_DESCENDING}, {label: First changed first, value: LAST_MODIFIED_ASCENDING}, {label: First name, value: FIRST_NAME_ASCENDING}, {label: Last name, value: LAST_NAME_ASCENDING}]}
+    request:
+      method: GET
+      path: people/me/connections
+      query: {personFields: "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,memberships,metadata", sortOrder: "{{fields.sort}}"}
+    pagination: {type: cursor, items_path: connections, cursor_param: pageToken, next_path: nextPageToken, limit_param: pageSize, page_size: 1000}
+
+  - name: Search Contacts
+    resource: Contact
+    description: Finds contacts whose name, nickname, email, phone or company starts with a text, up to 30.
+    fields:
+      - {name: query, label: Search, required: true}
+    request:
+      method: GET
+      path: "people:searchContacts"
+      query: {query: "{{fields.query}}", readMask: "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,memberships,metadata", pageSize: 30}
+    output:
+      path: results
+
+  - name: Update Contact
+    resource: Contact
+    description: "Changes the chosen parts of a contact. A part chosen and left empty is cleared, and the etag comes from Get Contact."
+    fields:
+      - {name: contact, label: Contact ID, required: true, description: "Like c123, the end of people/c123."}
+      - {name: etag, label: Etag, required: true, description: "From Get Contact, so a change made in between isn't lost."}
+      - name: change
+        label: Parts to change
+        type: multiselect
+        required: true
+        options:
+          - {label: Name, value: names}
+          - {label: Emails, value: emailAddresses}
+          - {label: Phones, value: phoneNumbers}
+          - {label: Company and job title, value: organizations}
+          - {label: Address, value: addresses}
+          - {label: Notes, value: biographies}
+      - {name: given_name, label: First name}
+      - {name: family_name, label: Last name}
+      - {name: emails, label: Emails, description: "One or more, with commas."}
+      - {name: email_type, label: Email type, type: select, default: home, options: [{label: Home, value: home}, {label: Work, value: work}, {label: Other, value: other}]}
+      - {name: phones, label: Phones, description: "One or more, with commas."}
+      - {name: phone_type, label: Phone type, type: select, default: mobile, options: [{label: Mobile, value: mobile}, {label: Home, value: home}, {label: Work, value: work}, {label: Main, value: main}, {label: Other, value: other}]}
+      - {name: company, label: Company}
+      - {name: title, label: Job title}
+      - {name: street, label: Street}
+      - {name: city, label: City}
+      - {name: region, label: State}
+      - {name: postal_code, label: Postal code}
+      - {name: country, label: Country}
+      - {name: notes, label: Notes, type: textarea}
+    request:
+      method: PATCH
+      path: "people/{{fields.contact}}:updateContact"
+      query: {updatePersonFields: "{{fields.change}}", personFields: "names,emailAddresses,phoneNumbers,organizations,addresses,biographies,memberships,metadata"}
+      body:
+        etag: "{{fields.etag}}"
+        names: [{givenName: "{{fields.given_name}}", familyName: "{{fields.family_name}}"}]
+        emailAddresses: {_each: "{{fields.emails}}", value: "{{item}}", type: "{{fields.email_type}}"}
+        phoneNumbers: {_each: "{{fields.phones}}", value: "{{item}}", type: "{{fields.phone_type}}"}
+        organizations: [{name: "{{fields.company}}", title: "{{fields.title}}"}]
+        addresses: [{streetAddress: "{{fields.street}}", city: "{{fields.city}}", region: "{{fields.region}}", postalCode: "{{fields.postal_code}}", country: "{{fields.country}}"}]
+        biographies: [{value: "{{fields.notes}}", contentType: TEXT_PLAIN, _if: "{{fields.notes}}"}]
+
+  - name: Delete Contact
+    resource: Contact
+    description: Deletes a contact.
+    fields:
+      - {name: contact, label: Contact ID, required: true, description: "Like c123, the end of people/c123."}
+    request: {method: DELETE, path: "people/{{fields.contact}}:deleteContact"}
+    output:
+      value: {deleted: true}
+
+  # Groups
+  - name: Get Groups
+    resource: Group
+    description: Lists your contact groups, with how many contacts each has.
+    request: {method: GET, path: contactGroups, query: {groupFields: "name,groupType,memberCount,metadata"}}
+    pagination: {type: cursor, items_path: contactGroups, cursor_param: pageToken, next_path: nextPageToken, limit_param: pageSize, page_size: 1000}
+
+  - name: Create Group
+    resource: Group
+    description: Creates a contact group.
+    fields:
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: contactGroups
+      body: {contactGroup: {name: "{{fields.name}}"}}
+
+  - name: Add to Group
+    resource: Group
+    description: Puts contacts in a group, or takes them out of it.
+    fields:
+      - {name: group, label: Group, type: select, required: true, options_from: {request: {method: GET, path: contactGroups, query: {pageSize: 200}}, path: contactGroups, label: formattedName, value: resourceName}}
+      - {name: add, label: Contacts to add, description: "IDs like c123, with commas."}
+      - {name: remove, label: Contacts to take out, description: "IDs like c123, with commas."}
+    request:
+      method: POST
+      path: "{{fields.group | path}}/members:modify"
+      body:
+        resourceNamesToAdd: {_each: "{{fields.add}}", _value: "people/{{item}}"}
+        resourceNamesToRemove: {_each: "{{fields.remove}}", _value: "people/{{item}}"}
+
+  - name: Delete Group
+    resource: Group
+    description: Deletes a contact group, keeping or deleting its contacts.
+    fields:
+      - {name: group, label: Group, type: select, required: true, options_from: {request: {method: GET, path: contactGroups, query: {pageSize: 200}}, path: contactGroups, label: formattedName, value: resourceName}}
+      - {name: contacts, label: Delete its contacts too, type: boolean, default: false}
+    request:
+      method: DELETE
+      path: "{{fields.group | path}}"
+      query: {deleteContacts: "{{fields.contacts}}"}
+    output:
+      value: {deleted: true}
+
+i18n:
+  pt-BR:
+    description: Contatos e grupos de contatos no Google Contatos.
+    triggers:
+      New Contact: {name: Novo contato, description: "Inicia o fluxo para cada contato novo, olhando a cada 5 minutos."}
+      Contact Changed: {name: Contato mudou, description: "Inicia o fluxo quando um contato é criado ou muda, olhando a cada 5 minutos."}
+    actions:
+      Create Contact: {name: Criar contato, description: Cria um contato., fields: {given_name: Nome, family_name: Sobrenome, emails: E-mails, email_type: Tipo de e-mail, phones: Telefones, phone_type: Tipo de telefone, company: Empresa, title: Cargo, street: Rua, city: Cidade, region: Estado, postal_code: CEP, country: País, notes: Observações, group: Grupo, extra: Outros campos}}
+      Get Contact: {name: Ler contato, description: "Lê um contato, com o etag para Atualizar contato.", fields: {contact: ID do contato}}
+      Get Contacts: {name: Listar contatos, description: Lista todos os seus contatos., fields: {sort: Ordem}}
+      Search Contacts: {name: Buscar contatos, description: "Encontra contatos cujo nome, apelido, e-mail, telefone ou empresa começa com um texto, até 30.", fields: {query: Busca}}
+      Update Contact: {name: Atualizar contato, description: "Muda as partes escolhidas de um contato. Uma parte escolhida e deixada vazia é apagada, e o etag vem de Ler contato.", fields: {contact: ID do contato, etag: Etag, change: Partes a mudar, given_name: Nome, family_name: Sobrenome, emails: E-mails, email_type: Tipo de e-mail, phones: Telefones, phone_type: Tipo de telefone, company: Empresa, title: Cargo, street: Rua, city: Cidade, region: Estado, postal_code: CEP, country: País, notes: Observações}}
+      Delete Contact: {name: Excluir contato, description: Exclui um contato., fields: {contact: ID do contato}}
+      Get Groups: {name: Listar grupos, description: "Lista seus grupos de contatos, com quantos contatos cada um tem."}
+      Create Group: {name: Criar grupo, description: Cria um grupo de contatos., fields: {name: Nome}}
+      Add to Group: {name: Adicionar ao grupo, description: "Coloca contatos num grupo, ou tira deles.", fields: {group: Grupo, add: Contatos a adicionar, remove: Contatos a tirar}}
+      Delete Group: {name: Excluir grupo, description: "Exclui um grupo de contatos, mantendo ou excluindo os contatos dele.", fields: {group: Grupo, contacts: Excluir os contatos também}}

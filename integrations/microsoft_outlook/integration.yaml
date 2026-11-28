@@ -1,0 +1,604 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Outlook mail, calendar and contacts, through Microsoft Graph v1.0. Connect with an
+# app registered in Microsoft Entra ID (Azure), with the delegated permissions
+# Mail.ReadWrite, Mail.Send, Calendars.ReadWrite and Contacts.ReadWrite.
+id: microsoft_outlook
+name: Microsoft Outlook
+version: 1.0.0
+description: Email, drafts, folders, attachments, events, calendars and contacts in Outlook.
+icon: hero-envelope
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="a" x1="28.5" y1="25" x2="28.5" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35b8f1"/><stop offset="1" stop-color="#28a8ea"/></linearGradient><linearGradient id="b" x1="5.822" y1="11.568" x2="20.178" y2="36.432" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1784d9"/><stop offset=".5" stop-color="#107ad5"/><stop offset="1" stop-color="#0a63c9"/></linearGradient></defs><path d="M45 25a.96.96 0 0 0-.458-.825h-.005l-.018-.01-14.9-8.82a2.026 2.026 0 0 0-.2-.119 2 2 0 0 0-1.834 0 2.026 2.026 0 0 0-.2.119l-14.9 8.82-.018.01a.971.971 0 0 0 .023 1.663l14.9 8.82a2.241 2.241 0 0 0 .2.119 2 2 0 0 0 1.834 0 2.241 2.241 0 0 0 .2-.119l14.9-8.82A.959.959 0 0 0 45 25z" fill="#0a2767"/><path fill="#0364b8" d="M14.222 19.111H24v8.963h-9.778zM43 10V5.9A1.858 1.858 0 0 0 41.187 4H15.813A1.858 1.858 0 0 0 14 5.9V10l15 4z"/><path fill="#0078d4" d="M14 10h10v9H14z"/><path fill="#28a8ea" d="M34 10H24v9l10 9h9v-9l-9-9z"/><path fill="#0078d4" d="M24 19h10v9H24z"/><path fill="#0364b8" d="M24 28h10v9H24z"/><path fill="#14447d" d="M14.222 28.074H24v8.148h-9.778z"/><path fill="#0078d4" d="M34 28h9v9h-9z"/><path d="M44.542 25.783l-.019.01-14.9 8.38c-.065.04-.131.078-.2.112a2.077 2.077 0 0 1-.808.2l-.814-.476a2.033 2.033 0 0 1-.2-.115l-15.1-8.618h-.007L12 25v16.964A2.05 2.05 0 0 0 14.063 44h28.906c.017 0 .032-.008.05-.008a2.531 2.531 0 0 0 .7-.146A2.019 2.019 0 0 0 44 43.7c.067-.038.182-.121.182-.121A2.019 2.019 0 0 0 45 41.964V25a.9.9 0 0 1-.458.783z" fill="url(#a)"/><path d="M44.2 24.933v1.04L28.62 36.7 12.49 25.283a.01.01 0 0 0-.01-.01l-1.48-.89v-.75l.61-.01 1.29.74.03.01.11.07s15.16 8.65 15.2 8.67l.58.34c.05-.02.1-.04.16-.06.03-.02 15.05-8.47 15.05-8.47z" fill="#0a2767" opacity=".5"/><path fill="none" d="M0 0h48v48H0z"/><path d="M44.542 25.783l-.019.011-14.9 8.38c-.065.04-.131.078-.2.112a2.089 2.089 0 0 1-1.834 0 2.264 2.264 0 0 1-.2-.112l-14.9-8.38-.018-.011A.9.9 0 0 1 12 25v16.964A2.049 2.049 0 0 0 14.062 44h28.876A2.049 2.049 0 0 0 45 41.964V25a.9.9 0 0 1-.458.783z" fill="#1490df"/><path d="M29.84 34.05l-.223.125a2.183 2.183 0 0 1-.2.113 2.071 2.071 0 0 1-.786.208L34.3 41.2l9.889 2.383a2.038 2.038 0 0 0 .627-.783z" opacity=".1"/><path d="M30.85 33.482l-1.233.693a2.183 2.183 0 0 1-.2.113 2.071 2.071 0 0 1-.786.208l2.656 7.323 12.905 1.761A2.022 2.022 0 0 0 45 41.964v-.219z" opacity=".05"/><path d="M14.09 44h28.845a2.074 2.074 0 0 0 1.235-.4L27.8 34.011a2.033 2.033 0 0 1-.2-.115l-15.1-8.618h-.007L12 25v16.906A2.092 2.092 0 0 0 14.09 44z" fill="#28a8ea"/><path d="M26 13.833v21.33a1.838 1.838 0 0 1-1.15 1.7 1.723 1.723 0 0 1-.68.14H12V13h2v-1h10.17A1.837 1.837 0 0 1 26 13.833z" opacity=".1"/><path d="M25 14.833v21.33a1.629 1.629 0 0 1-.15.7A1.822 1.822 0 0 1 23.17 38H12V13h11.17a1.679 1.679 0 0 1 .83.21 1.818 1.818 0 0 1 1 1.623z" opacity=".2"/><path d="M25 14.833v19.33A1.846 1.846 0 0 1 23.17 36H12V13h11.17a1.679 1.679 0 0 1 .83.21 1.818 1.818 0 0 1 1 1.623z" opacity=".2"/><path d="M24 14.833v19.33A1.839 1.839 0 0 1 22.17 36H12V13h10.17A1.831 1.831 0 0 1 24 14.833z" opacity=".2"/><rect x="2" y="13" width="22" height="22" rx="1.833" fill="url(#b)"/><path d="M7.729 20.688a5.332 5.332 0 0 1 2.094-2.313 6.33 6.33 0 0 1 3.327-.834 5.892 5.892 0 0 1 3.079.791 5.284 5.284 0 0 1 2.037 2.21 7.133 7.133 0 0 1 .714 3.25 7.528 7.528 0 0 1-.735 3.4 5.41 5.41 0 0 1-2.1 2.287 6.126 6.126 0 0 1-3.194.812 6.02 6.02 0 0 1-3.147-.8 5.366 5.366 0 0 1-2.064-2.214 6.963 6.963 0 0 1-.722-3.211 7.733 7.733 0 0 1 .711-3.378zm2.232 5.43a3.461 3.461 0 0 0 1.178 1.522 3.077 3.077 0 0 0 1.84.554 3.223 3.223 0 0 0 1.964-.572 3.315 3.315 0 0 0 1.144-1.522 5.908 5.908 0 0 0 .365-2.123 6.463 6.463 0 0 0-.344-2.15A3.4 3.4 0 0 0 15 20.241a3.043 3.043 0 0 0-1.947-.6 3.175 3.175 0 0 0-1.883.559 3.49 3.49 0 0 0-1.2 1.535 6.1 6.1 0 0 0-.008 4.385z" fill="#fff"/><path fill="#50d9ff" d="M34 10h9v9h-9z"/></svg>
+category: email
+author: Heddle
+homepage: https://learn.microsoft.com/graph/api/resources/mail-api-overview
+base_url: https://graph.microsoft.com/v1.0/
+
+credential:
+  label: Microsoft Outlook
+  auth:
+    type: oauth2
+    authorize_url: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+    token_url: https://login.microsoftonline.com/common/oauth2/v2.0/token
+    token_auth: body
+    scopes: [offline_access, User.Read, Mail.ReadWrite, Mail.Send, Calendars.ReadWrite, Contacts.ReadWrite, MailboxSettings.Read]
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Message
+    description: Starts the flow for each new email in a folder, checking every 5 minutes.
+    fields:
+      - {name: folder, label: Folder, type: select, default: inbox, description: "The Inbox when empty.", options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+      - {name: filter, label: Filter, description: "An OData filter, like isRead eq false or from/emailAddress/address eq 'a@b.com'."}
+    request:
+      method: GET
+      path: "me/mailFolders/{{fields.folder}}/messages"
+      query: {$orderby: receivedDateTime desc, $top: 50, $filter: "{{fields.filter}}"}
+    output:
+      path: value
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Messages
+  - name: Send Message
+    resource: Message
+    description: Sends an email.
+    fields:
+      - {name: to, label: To, required: true, description: "Addresses, separated by commas."}
+      - {name: subject, label: Subject, required: true}
+      - {name: body, label: Body, type: textarea}
+      - {name: body_type, label: Body type, type: select, default: Text, options: [{label: Text, value: Text}, {label: HTML, value: HTML}]}
+      - {name: cc, label: CC}
+      - {name: bcc, label: BCC}
+      - {name: reply_to, label: Reply to}
+      - {name: importance, label: Importance, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}]}
+      - {name: attachment, label: Attachment, type: file, description: "A file from an earlier node, up to 3 MB."}
+      - {name: save, label: Save in Sent Items, type: boolean, default: true}
+    request:
+      method: POST
+      path: me/sendMail
+      body:
+        message:
+          subject: "{{fields.subject}}"
+          body: {contentType: "{{fields.body_type}}", content: "{{fields.body}}"}
+          toRecipients: {_each: "{{fields.to}}", emailAddress: {address: "{{item}}"}}
+          ccRecipients: {_each: "{{fields.cc}}", emailAddress: {address: "{{item}}"}}
+          bccRecipients: {_each: "{{fields.bcc}}", emailAddress: {address: "{{item}}"}}
+          replyTo: {_each: "{{fields.reply_to}}", emailAddress: {address: "{{item}}"}}
+          importance: "{{fields.importance}}"
+          attachments:
+            - {"@odata.type": "#microsoft.graph.fileAttachment", name: "{{fields.attachment | name}}", contentBytes: "{{fields.attachment | base64}}", _if: "{{fields.attachment}}"}
+        saveToSentItems: "{{fields.save}}"
+    output:
+      value: {sent: true}
+
+  - name: Get Message
+    resource: Message
+    description: Gets an email.
+    fields:
+      - {name: message, label: Message ID, required: true}
+    request: {method: GET, path: "me/messages/{{fields.message}}"}
+
+  - name: Get Messages
+    resource: Message
+    description: Lists emails of every folder, with a filter or a search if you want.
+    fields:
+      - {name: filter, label: Filter, description: "An OData filter, like isRead eq false."}
+      - {name: search, label: Search, description: "Words to look for, like from:ana invoice. Can't go with a filter."}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: me/messages
+      query: {$filter: "{{fields.filter}}", $search: "{{fields.search}}", $top: "{{fields.limit}}"}
+    output:
+      path: value
+
+  - name: Get Folder Messages
+    resource: Message
+    description: Lists the emails of one folder, with a filter or a search if you want.
+    fields:
+      - {name: folder, label: Folder, type: select, required: true, default: inbox, options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+      - {name: filter, label: Filter, description: "An OData filter, like isRead eq false."}
+      - {name: search, label: Search, description: "Words to look for, like from:ana invoice. Can't go with a filter."}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: "me/mailFolders/{{fields.folder}}/messages"
+      query: {$filter: "{{fields.filter}}", $search: "{{fields.search}}", $top: "{{fields.limit}}"}
+    output:
+      path: value
+
+  - name: Update Message
+    resource: Message
+    description: Marks an email read or unread, flags it, or changes its categories or importance.
+    fields:
+      - {name: message, label: Message ID, required: true}
+      - {name: is_read, label: Read, type: boolean}
+      - {name: flag, label: Flag, type: select, options: [{label: Not flagged, value: notFlagged}, {label: Flagged, value: flagged}, {label: Complete, value: complete}]}
+      - {name: importance, label: Importance, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}]}
+      - {name: categories, label: Categories, type: multiselect, options_from: {request: {method: GET, path: me/outlook/masterCategories}, path: value, label: displayName, value: displayName}}
+      - {name: subject, label: Subject}
+    request:
+      method: PATCH
+      path: "me/messages/{{fields.message}}"
+      body:
+        isRead: "{{fields.is_read}}"
+        flag: {flagStatus: "{{fields.flag}}", _if: "{{fields.flag}}"}
+        importance: "{{fields.importance}}"
+        categories: "{{fields.categories}}"
+        subject: "{{fields.subject}}"
+
+  - name: Move Message
+    resource: Message
+    description: Moves an email to another folder.
+    fields:
+      - {name: message, label: Message ID, required: true}
+      - {name: folder, label: Folder, type: select, required: true, options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+    request:
+      method: POST
+      path: "me/messages/{{fields.message}}/move"
+      body: {destinationId: "{{fields.folder}}"}
+
+  - name: Reply to Message
+    resource: Message
+    description: Replies to an email, to the sender or to everyone on it.
+    fields:
+      - {name: message, label: Message ID, required: true}
+      - {name: comment, label: Reply, type: textarea, required: true}
+      - {name: reply_all, label: Reply to all, type: select, default: reply, options: [{label: Sender only, value: reply}, {label: Everyone, value: replyAll}]}
+    request:
+      method: POST
+      path: "me/messages/{{fields.message}}/{{fields.reply_all}}"
+      body: {comment: "{{fields.comment}}"}
+    output:
+      value: {sent: true}
+
+  - name: Delete Message
+    resource: Message
+    description: Deletes an email.
+    fields:
+      - {name: message, label: Message ID, required: true}
+    request: {method: DELETE, path: "me/messages/{{fields.message}}"}
+    output:
+      value: {deleted: true}
+
+  # Drafts
+  - name: Create Draft
+    resource: Draft
+    description: Saves an email as a draft, to send later.
+    fields:
+      - {name: to, label: To, description: "Addresses, separated by commas."}
+      - {name: subject, label: Subject}
+      - {name: body, label: Body, type: textarea}
+      - {name: body_type, label: Body type, type: select, default: Text, options: [{label: Text, value: Text}, {label: HTML, value: HTML}]}
+      - {name: cc, label: CC}
+      - {name: bcc, label: BCC}
+      - {name: importance, label: Importance, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}]}
+    request:
+      method: POST
+      path: me/messages
+      body:
+        subject: "{{fields.subject}}"
+        body: {contentType: "{{fields.body_type}}", content: "{{fields.body}}", _if: "{{fields.body}}"}
+        toRecipients: {_each: "{{fields.to}}", emailAddress: {address: "{{item}}"}}
+        ccRecipients: {_each: "{{fields.cc}}", emailAddress: {address: "{{item}}"}}
+        bccRecipients: {_each: "{{fields.bcc}}", emailAddress: {address: "{{item}}"}}
+        importance: "{{fields.importance}}"
+
+  - name: Get Draft
+    resource: Draft
+    description: Gets a draft.
+    fields:
+      - {name: message, label: Draft ID, required: true}
+    request: {method: GET, path: "me/messages/{{fields.message}}"}
+
+  - name: Update Draft
+    resource: Draft
+    description: Changes a draft. Empty fields stay as they are.
+    fields:
+      - {name: message, label: Draft ID, required: true}
+      - {name: to, label: To, description: "Addresses, separated by commas."}
+      - {name: subject, label: Subject}
+      - {name: body, label: Body, type: textarea}
+      - {name: body_type, label: Body type, type: select, default: Text, options: [{label: Text, value: Text}, {label: HTML, value: HTML}]}
+      - {name: cc, label: CC}
+      - {name: bcc, label: BCC}
+    request:
+      method: PATCH
+      path: "me/messages/{{fields.message}}"
+      body:
+        subject: "{{fields.subject}}"
+        body: {contentType: "{{fields.body_type}}", content: "{{fields.body}}", _if: "{{fields.body}}"}
+        toRecipients: {_each: "{{fields.to}}", emailAddress: {address: "{{item}}"}}
+        ccRecipients: {_each: "{{fields.cc}}", emailAddress: {address: "{{item}}"}}
+        bccRecipients: {_each: "{{fields.bcc}}", emailAddress: {address: "{{item}}"}}
+
+  - name: Send Draft
+    resource: Draft
+    description: Sends a draft.
+    fields:
+      - {name: message, label: Draft ID, required: true}
+    request: {method: POST, path: "me/messages/{{fields.message}}/send"}
+    output:
+      value: {sent: true}
+
+  - name: Delete Draft
+    resource: Draft
+    description: Deletes a draft.
+    fields:
+      - {name: message, label: Draft ID, required: true}
+    request: {method: DELETE, path: "me/messages/{{fields.message}}"}
+    output:
+      value: {deleted: true}
+
+  # Attachments
+  - name: Add Attachment
+    resource: Attachment
+    description: Attaches a file, up to 3 MB, to a draft or an email.
+    fields:
+      - {name: message, label: Message ID, required: true}
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+    request:
+      method: POST
+      path: "me/messages/{{fields.message}}/attachments"
+      body: {"@odata.type": "#microsoft.graph.fileAttachment", name: "{{fields.file | name}}", contentBytes: "{{fields.file | base64}}"}
+
+  - name: Get Attachment
+    resource: Attachment
+    description: Gets an attachment's details.
+    fields:
+      - {name: message, label: Message ID, required: true}
+      - {name: attachment, label: Attachment ID, required: true}
+    request: {method: GET, path: "me/messages/{{fields.message}}/attachments/{{fields.attachment}}", query: {$select: "id,name,contentType,size,isInline,lastModifiedDateTime"}}
+
+  - name: Get Attachments
+    resource: Attachment
+    description: Lists the attachments of an email.
+    fields:
+      - {name: message, label: Message ID, required: true}
+    request: {method: GET, path: "me/messages/{{fields.message}}/attachments", query: {$select: "id,name,contentType,size,isInline,lastModifiedDateTime"}}
+    pagination: {type: link, items_path: value, next_path: "@odata.nextLink"}
+
+  - name: Download Attachment
+    resource: Attachment
+    description: Downloads an attachment as a file.
+    fields:
+      - {name: message, label: Message ID, required: true}
+      - {name: attachment, label: Attachment ID, required: true}
+      - {name: name, label: File name, description: The name of the file. The attachment's own when empty.}
+    request: {method: GET, path: "me/messages/{{fields.message}}/attachments/{{fields.attachment}}/$value"}
+    output:
+      file:
+        name: "{{fields.name}}"
+
+  # Folders
+  - name: Create Folder
+    resource: Folder
+    description: Creates a mail folder, at the top or inside another.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: parent, label: Parent folder, type: select, default: msgfolderroot, description: "At the top when left as is.", options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+    request:
+      method: POST
+      path: "me/mailFolders/{{fields.parent}}/childFolders"
+      body: {displayName: "{{fields.name}}"}
+
+  - name: Get Folder
+    resource: Folder
+    description: Gets a mail folder.
+    fields:
+      - {name: folder, label: Folder, type: select, required: true, options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+    request: {method: GET, path: "me/mailFolders/{{fields.folder}}"}
+
+  - name: Get Folders
+    resource: Folder
+    description: Lists the mail folders at the top, or inside a folder.
+    fields:
+      - {name: parent, label: Parent folder, type: select, default: msgfolderroot, description: "The top folders when left as is.", options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+    request: {method: GET, path: "me/mailFolders/{{fields.parent}}/childFolders", query: {$top: 100}}
+    pagination: {type: link, items_path: value, next_path: "@odata.nextLink"}
+
+  - name: Update Folder
+    resource: Folder
+    description: Renames a mail folder.
+    fields:
+      - {name: folder, label: Folder, type: select, required: true, options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+      - {name: name, label: Name, required: true}
+    request:
+      method: PATCH
+      path: "me/mailFolders/{{fields.folder}}"
+      body: {displayName: "{{fields.name}}"}
+
+  - name: Delete Folder
+    resource: Folder
+    description: Deletes a mail folder and its emails.
+    fields:
+      - {name: folder, label: Folder, type: select, required: true, options_from: {request: {method: GET, path: me/mailFolders, query: {$top: 100}}, path: value, label: displayName, value: id}}
+    request: {method: DELETE, path: "me/mailFolders/{{fields.folder}}"}
+    output:
+      value: {deleted: true}
+
+  # Events
+  - name: Create Event
+    resource: Event
+    description: Creates an event in a calendar.
+    fields:
+      - {name: calendar, label: Calendar, type: select, required: true, options_from: {request: {method: GET, path: me/calendars}, path: value, label: name, value: id}}
+      - {name: subject, label: Subject, required: true}
+      - {name: start, label: Start, type: datetime, required: true}
+      - {name: end, label: End, type: datetime, required: true}
+      - {name: time_zone, label: Time zone, default: UTC, description: "Like America/Sao_Paulo or E. South America Standard Time."}
+      - {name: body, label: Description, type: textarea}
+      - {name: body_type, label: Description type, type: select, default: Text, options: [{label: Text, value: Text}, {label: HTML, value: HTML}]}
+      - {name: location, label: Location}
+      - {name: attendees, label: Attendees, description: "Addresses, separated by commas."}
+      - {name: all_day, label: All day, type: boolean}
+      - {name: online, label: Online meeting, type: boolean, description: Adds a Teams meeting.}
+      - {name: show_as, label: Show as, type: select, options: [{label: Free, value: free}, {label: Tentative, value: tentative}, {label: Busy, value: busy}, {label: Out of office, value: oof}, {label: Working elsewhere, value: workingElsewhere}]}
+      - {name: importance, label: Importance, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}]}
+      - {name: sensitivity, label: Sensitivity, type: select, options: [{label: Normal, value: normal}, {label: Personal, value: personal}, {label: Private, value: private}, {label: Confidential, value: confidential}]}
+      - {name: categories, label: Categories, type: multiselect, options_from: {request: {method: GET, path: me/outlook/masterCategories}, path: value, label: displayName, value: displayName}}
+      - {name: extra, label: Other fields, type: json, description: "Other properties of the event, as JSON, like {\"recurrence\": {...}}."}
+    request:
+      method: POST
+      path: "me/calendars/{{fields.calendar}}/events"
+      body:
+        subject: "{{fields.subject}}"
+        start: {dateTime: "{{fields.start}}", timeZone: "{{fields.time_zone}}"}
+        end: {dateTime: "{{fields.end}}", timeZone: "{{fields.time_zone}}"}
+        body: {contentType: "{{fields.body_type}}", content: "{{fields.body}}", _if: "{{fields.body}}"}
+        location: {displayName: "{{fields.location}}"}
+        attendees: {_each: "{{fields.attendees}}", emailAddress: {address: "{{item}}"}, type: required}
+        isAllDay: "{{fields.all_day}}"
+        isOnlineMeeting: "{{fields.online}}"
+        showAs: "{{fields.show_as}}"
+        importance: "{{fields.importance}}"
+        sensitivity: "{{fields.sensitivity}}"
+        categories: "{{fields.categories}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Get Event
+    resource: Event
+    description: Gets an event.
+    fields:
+      - {name: event, label: Event ID, required: true}
+    request: {method: GET, path: "me/events/{{fields.event}}"}
+
+  - name: Get Events
+    resource: Event
+    description: Lists the events of a calendar, with a filter if you want one.
+    fields:
+      - {name: calendar, label: Calendar, type: select, required: true, options_from: {request: {method: GET, path: me/calendars}, path: value, label: name, value: id}}
+      - {name: filter, label: Filter, description: "An OData filter, like start/dateTime ge '2026-01-01T00:00:00'."}
+    request:
+      method: GET
+      path: "me/calendars/{{fields.calendar}}/events"
+      query: {$filter: "{{fields.filter}}", $orderby: start/dateTime}
+    pagination: {type: link, items_path: value, next_path: "@odata.nextLink"}
+
+  - name: Update Event
+    resource: Event
+    description: Changes an event. Empty fields stay as they are.
+    fields:
+      - {name: event, label: Event ID, required: true}
+      - {name: subject, label: Subject}
+      - {name: start, label: Start, type: datetime}
+      - {name: end, label: End, type: datetime}
+      - {name: time_zone, label: Time zone, default: UTC}
+      - {name: body, label: Description, type: textarea}
+      - {name: body_type, label: Description type, type: select, default: Text, options: [{label: Text, value: Text}, {label: HTML, value: HTML}]}
+      - {name: location, label: Location}
+      - {name: attendees, label: Attendees, description: "Addresses, separated by commas. They replace the current ones."}
+      - {name: show_as, label: Show as, type: select, options: [{label: Free, value: free}, {label: Tentative, value: tentative}, {label: Busy, value: busy}, {label: Out of office, value: oof}, {label: Working elsewhere, value: workingElsewhere}]}
+      - {name: importance, label: Importance, type: select, options: [{label: Low, value: low}, {label: Normal, value: normal}, {label: High, value: high}]}
+      - {name: categories, label: Categories, type: multiselect, options_from: {request: {method: GET, path: me/outlook/masterCategories}, path: value, label: displayName, value: displayName}}
+      - {name: extra, label: Other fields, type: json}
+    request:
+      method: PATCH
+      path: "me/events/{{fields.event}}"
+      body:
+        subject: "{{fields.subject}}"
+        start: {dateTime: "{{fields.start}}", timeZone: "{{fields.time_zone}}", _if: "{{fields.start}}"}
+        end: {dateTime: "{{fields.end}}", timeZone: "{{fields.time_zone}}", _if: "{{fields.end}}"}
+        body: {contentType: "{{fields.body_type}}", content: "{{fields.body}}", _if: "{{fields.body}}"}
+        location: {displayName: "{{fields.location}}"}
+        attendees: {_each: "{{fields.attendees}}", emailAddress: {address: "{{item}}"}, type: required}
+        showAs: "{{fields.show_as}}"
+        importance: "{{fields.importance}}"
+        categories: "{{fields.categories}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Delete Event
+    resource: Event
+    description: Deletes an event.
+    fields:
+      - {name: event, label: Event ID, required: true}
+    request: {method: DELETE, path: "me/events/{{fields.event}}"}
+    output:
+      value: {deleted: true}
+
+  # Calendars
+  - name: Create Calendar
+    resource: Calendar
+    description: Creates a calendar.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: color, label: Color, type: select, options: [{label: Auto, value: auto}, {label: Light blue, value: lightBlue}, {label: Light green, value: lightGreen}, {label: Light orange, value: lightOrange}, {label: Light gray, value: lightGray}, {label: Light yellow, value: lightYellow}, {label: Light teal, value: lightTeal}, {label: Light pink, value: lightPink}, {label: Light brown, value: lightBrown}, {label: Light red, value: lightRed}]}
+    request:
+      method: POST
+      path: me/calendars
+      body: {name: "{{fields.name}}", color: "{{fields.color}}"}
+
+  - name: Get Calendar
+    resource: Calendar
+    description: Gets a calendar.
+    fields:
+      - {name: calendar, label: Calendar, type: select, required: true, options_from: {request: {method: GET, path: me/calendars}, path: value, label: name, value: id}}
+    request: {method: GET, path: "me/calendars/{{fields.calendar}}"}
+
+  - name: Get Calendars
+    resource: Calendar
+    description: Lists the calendars.
+    request: {method: GET, path: me/calendars}
+    pagination: {type: link, items_path: value, next_path: "@odata.nextLink"}
+
+  - name: Update Calendar
+    resource: Calendar
+    description: Renames a calendar or changes its color.
+    fields:
+      - {name: calendar, label: Calendar, type: select, required: true, options_from: {request: {method: GET, path: me/calendars}, path: value, label: name, value: id}}
+      - {name: name, label: Name}
+      - {name: color, label: Color, type: select, options: [{label: Auto, value: auto}, {label: Light blue, value: lightBlue}, {label: Light green, value: lightGreen}, {label: Light orange, value: lightOrange}, {label: Light gray, value: lightGray}, {label: Light yellow, value: lightYellow}, {label: Light teal, value: lightTeal}, {label: Light pink, value: lightPink}, {label: Light brown, value: lightBrown}, {label: Light red, value: lightRed}]}
+    request:
+      method: PATCH
+      path: "me/calendars/{{fields.calendar}}"
+      body: {name: "{{fields.name}}", color: "{{fields.color}}"}
+
+  - name: Delete Calendar
+    resource: Calendar
+    description: Deletes a calendar and its events.
+    fields:
+      - {name: calendar, label: Calendar, type: select, required: true, options_from: {request: {method: GET, path: me/calendars}, path: value, label: name, value: id}}
+    request: {method: DELETE, path: "me/calendars/{{fields.calendar}}"}
+    output:
+      value: {deleted: true}
+
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a contact.
+    fields:
+      - {name: given_name, label: First name, required: true}
+      - {name: surname, label: Last name}
+      - {name: email, label: Email, description: "Addresses, separated by commas."}
+      - {name: mobile, label: Mobile phone}
+      - {name: business_phone, label: Business phones, description: "Separated by commas."}
+      - {name: company, label: Company}
+      - {name: job_title, label: Job title}
+      - {name: department, label: Department}
+      - {name: birthday, label: Birthday, type: datetime}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: categories, label: Categories, type: multiselect, options_from: {request: {method: GET, path: me/outlook/masterCategories}, path: value, label: displayName, value: displayName}}
+      - {name: extra, label: Other fields, type: json, description: "Other properties of the contact, as JSON, like {\"homeAddress\": {...}}."}
+    request:
+      method: POST
+      path: me/contacts
+      body:
+        givenName: "{{fields.given_name}}"
+        surname: "{{fields.surname}}"
+        emailAddresses: {_each: "{{fields.email}}", address: "{{item}}"}
+        mobilePhone: "{{fields.mobile}}"
+        businessPhones: {_each: "{{fields.business_phone}}", _value: "{{item}}"}
+        companyName: "{{fields.company}}"
+        jobTitle: "{{fields.job_title}}"
+        department: "{{fields.department}}"
+        birthday: "{{fields.birthday}}"
+        personalNotes: "{{fields.notes}}"
+        categories: "{{fields.categories}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Get Contact
+    resource: Contact
+    description: Gets a contact.
+    fields:
+      - {name: contact, label: Contact ID, required: true}
+    request: {method: GET, path: "me/contacts/{{fields.contact}}"}
+
+  - name: Get Contacts
+    resource: Contact
+    description: Lists the contacts, with a filter if you want one.
+    fields:
+      - {name: filter, label: Filter, description: "An OData filter, like startswith(givenName, 'Ana')."}
+    request:
+      method: GET
+      path: me/contacts
+      query: {$filter: "{{fields.filter}}"}
+    pagination: {type: link, items_path: value, next_path: "@odata.nextLink"}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: contact, label: Contact ID, required: true}
+      - {name: given_name, label: First name}
+      - {name: surname, label: Last name}
+      - {name: email, label: Email, description: "Addresses, separated by commas. They replace the current ones."}
+      - {name: mobile, label: Mobile phone}
+      - {name: company, label: Company}
+      - {name: job_title, label: Job title}
+      - {name: department, label: Department}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: categories, label: Categories, type: multiselect, options_from: {request: {method: GET, path: me/outlook/masterCategories}, path: value, label: displayName, value: displayName}}
+      - {name: extra, label: Other fields, type: json}
+    request:
+      method: PATCH
+      path: "me/contacts/{{fields.contact}}"
+      body:
+        givenName: "{{fields.given_name}}"
+        surname: "{{fields.surname}}"
+        emailAddresses: {_each: "{{fields.email}}", address: "{{item}}"}
+        mobilePhone: "{{fields.mobile}}"
+        companyName: "{{fields.company}}"
+        jobTitle: "{{fields.job_title}}"
+        department: "{{fields.department}}"
+        personalNotes: "{{fields.notes}}"
+        categories: "{{fields.categories}}"
+        _merge: "{{fields.extra}}"
+
+  - name: Delete Contact
+    resource: Contact
+    description: Deletes a contact.
+    fields:
+      - {name: contact, label: Contact ID, required: true}
+    request: {method: DELETE, path: "me/contacts/{{fields.contact}}"}
+    output:
+      value: {deleted: true}
+
+i18n:
+  pt-BR:
+    description: Emails, rascunhos, pastas, anexos, eventos, calendários e contatos no Outlook.
+    triggers:
+      New Message: {name: Novo email, description: "Inicia o fluxo para cada email novo numa pasta, olhando a cada 5 minutos.", fields: {folder: Pasta, filter: Filtro}}
+    actions:
+      Send Message: {name: Enviar email, description: Envia um email., fields: {to: Para, subject: Assunto, body: Corpo, body_type: Tipo do corpo, cc: CC, bcc: CCO, reply_to: Responder para, importance: Importância, attachment: Anexo, save: Salvar em Itens enviados}}
+      Get Message: {name: Ler email, description: Lê um email., fields: {message: ID do email}}
+      Get Messages: {name: Listar emails, description: "Lista emails de todas as pastas, com filtro ou busca se quiser.", fields: {filter: Filtro, search: Busca, limit: Limite}}
+      Get Folder Messages: {name: Listar emails da pasta, description: "Lista os emails de uma pasta, com filtro ou busca se quiser.", fields: {folder: Pasta, filter: Filtro, search: Busca, limit: Limite}}
+      Update Message: {name: Atualizar email, description: "Marca um email como lido ou não lido, sinaliza, ou muda as categorias ou a importância.", fields: {message: ID do email, is_read: Lido, flag: Sinalização, importance: Importância, categories: Categorias, subject: Assunto}}
+      Move Message: {name: Mover email, description: Move um email para outra pasta., fields: {message: ID do email, folder: Pasta}}
+      Reply to Message: {name: Responder email, description: "Responde um email, ao remetente ou a todos.", fields: {message: ID do email, comment: Resposta, reply_all: Responder a}}
+      Delete Message: {name: Excluir email, description: Exclui um email., fields: {message: ID do email}}
+      Create Draft: {name: Criar rascunho, description: "Salva um email como rascunho, para enviar depois.", fields: {to: Para, subject: Assunto, body: Corpo, body_type: Tipo do corpo, cc: CC, bcc: CCO, importance: Importância}}
+      Get Draft: {name: Ler rascunho, description: Lê um rascunho., fields: {message: ID do rascunho}}
+      Update Draft: {name: Atualizar rascunho, description: Muda um rascunho. Campos vazios ficam como estão., fields: {message: ID do rascunho, to: Para, subject: Assunto, body: Corpo, body_type: Tipo do corpo, cc: CC, bcc: CCO}}
+      Send Draft: {name: Enviar rascunho, description: Envia um rascunho., fields: {message: ID do rascunho}}
+      Delete Draft: {name: Excluir rascunho, description: Exclui um rascunho., fields: {message: ID do rascunho}}
+      Add Attachment: {name: Anexar arquivo, description: "Anexa um arquivo, de até 3 MB, a um rascunho ou email.", fields: {message: ID do email, file: Arquivo}}
+      Get Attachment: {name: Ler anexo, description: Lê os detalhes de um anexo., fields: {message: ID do email, attachment: ID do anexo}}
+      Get Attachments: {name: Listar anexos, description: Lista os anexos de um email., fields: {message: ID do email}}
+      Download Attachment: {name: Baixar anexo, description: Baixa um anexo como arquivo., fields: {message: ID do email, attachment: ID do anexo, name: Nome do arquivo}}
+      Create Folder: {name: Criar pasta, description: "Cria uma pasta de email, no topo ou dentro de outra.", fields: {name: Nome, parent: Pasta mãe}}
+      Get Folder: {name: Ler pasta, description: Lê uma pasta de email., fields: {folder: Pasta}}
+      Get Folders: {name: Listar pastas, description: "Lista as pastas de email do topo, ou de dentro de uma pasta.", fields: {parent: Pasta mãe}}
+      Update Folder: {name: Atualizar pasta, description: Renomeia uma pasta de email., fields: {folder: Pasta, name: Nome}}
+      Delete Folder: {name: Excluir pasta, description: Exclui uma pasta de email e os emails dela., fields: {folder: Pasta}}
+      Create Event: {name: Criar evento, description: Cria um evento num calendário., fields: {calendar: Calendário, subject: Assunto, start: Início, end: Fim, time_zone: Fuso horário, body: Descrição, body_type: Tipo da descrição, location: Local, attendees: Participantes, all_day: Dia inteiro, online: Reunião online, show_as: Mostrar como, importance: Importância, sensitivity: Sensibilidade, categories: Categorias, extra: Outros campos}}
+      Get Event: {name: Ler evento, description: Lê um evento., fields: {event: ID do evento}}
+      Get Events: {name: Listar eventos, description: "Lista os eventos de um calendário, com filtro se quiser.", fields: {calendar: Calendário, filter: Filtro}}
+      Update Event: {name: Atualizar evento, description: Muda um evento. Campos vazios ficam como estão., fields: {event: ID do evento, subject: Assunto, start: Início, end: Fim, time_zone: Fuso horário, body: Descrição, body_type: Tipo da descrição, location: Local, attendees: Participantes, show_as: Mostrar como, importance: Importância, categories: Categorias, extra: Outros campos}}
+      Delete Event: {name: Excluir evento, description: Exclui um evento., fields: {event: ID do evento}}
+      Create Calendar: {name: Criar calendário, description: Cria um calendário., fields: {name: Nome, color: Cor}}
+      Get Calendar: {name: Ler calendário, description: Lê um calendário., fields: {calendar: Calendário}}
+      Get Calendars: {name: Listar calendários, description: Lista os calendários.}
+      Update Calendar: {name: Atualizar calendário, description: Renomeia um calendário ou muda a cor dele., fields: {calendar: Calendário, name: Nome, color: Cor}}
+      Delete Calendar: {name: Excluir calendário, description: Exclui um calendário e os eventos dele., fields: {calendar: Calendário}}
+      Create Contact: {name: Criar contato, description: Cria um contato., fields: {given_name: Nome, surname: Sobrenome, email: Email, mobile: Celular, business_phone: Telefones comerciais, company: Empresa, job_title: Cargo, department: Departamento, birthday: Aniversário, notes: Anotações, categories: Categorias, extra: Outros campos}}
+      Get Contact: {name: Ler contato, description: Lê um contato., fields: {contact: ID do contato}}
+      Get Contacts: {name: Listar contatos, description: "Lista os contatos, com filtro se quiser.", fields: {filter: Filtro}}
+      Update Contact: {name: Atualizar contato, description: Muda um contato. Campos vazios ficam como estão., fields: {contact: ID do contato, given_name: Nome, surname: Sobrenome, email: Email, mobile: Celular, company: Empresa, job_title: Cargo, department: Departamento, notes: Anotações, categories: Categorias, extra: Outros campos}}
+      Delete Contact: {name: Excluir contato, description: Exclui um contato., fields: {contact: ID do contato}}

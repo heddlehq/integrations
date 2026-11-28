@@ -10,13 +10,13 @@ integrations:
   - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: draft}
   - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: draft}
   - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: draft}
-  - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: planned}
+  - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: draft}
   - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Calendly, kind: manifest, status: planned}
   - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: header, n8n: ClickUp, kind: manifest, status: draft}
   - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: draft}
   - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: Discord, kind: package, lib: {name: nostrum, version: 0.10.4, released: 2025-03-02}, status: planned}
-  - {id: dropbox, name: Dropbox, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Dropbox, kind: manifest, status: planned}
+  - {id: dropbox, name: Dropbox, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Dropbox, kind: manifest, status: draft}
   - {id: email, name: Email (IMAP/SMTP), category: email, phase: 1, origin: n8n, auth: basic, n8n: EmailReadImap, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: official}
   - {id: facebook_lead_ads, name: Facebook Lead Ads, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: FacebookLeadAds, kind: manifest, status: planned}
   - {id: facebook_pages, name: Facebook Pages, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Facebook, kind: manifest, status: planned}
@@ -28,9 +28,9 @@ integrations:
   - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: package, lib: {name: google_api_analytics_admin, version: 0.26.0, released: 2025-04-15}, status: planned}
   - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: package, lib: {name: google_api_big_query, version: 0.88.0, released: 2025-04-15}, status: planned}
   - {id: google_calendar, name: Google Calendar, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Calendar, kind: package, lib: {name: google_api_calendar, version: 0.26.0, released: 2025-04-15}, status: planned}
-  - {id: google_contacts, name: Google Contacts, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Contacts, kind: manifest, status: planned}
+  - {id: google_contacts, name: Google Contacts, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Contacts, kind: manifest, status: draft}
   - {id: google_docs, name: Google Docs, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Docs, kind: package, lib: {name: google_api_docs, version: 0.18.0, released: 2025-04-15}, status: planned}
-  - {id: google_drive, name: Google Drive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Drive, kind: manifest, status: planned}
+  - {id: google_drive, name: Google Drive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Drive, kind: manifest, status: draft}
   - {id: google_forms, name: Google Forms, category: forms, phase: 1, origin: extra, auth: oauth2, kind: package, lib: {name: google_api_forms, version: 0.5.0, released: 2025-04-15}, status: planned}
   - {id: google_sheets, name: Google Sheets, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Sheet, kind: package, lib: {name: google_api_sheets, version: 0.35.0, released: 2025-04-15}, status: official}
   - {id: google_slides, name: Google Slides, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Slides, kind: package, lib: {name: google_api_slides, version: 0.24.0, released: 2025-04-15}, status: planned}
@@ -43,12 +43,12 @@ integrations:
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
   - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: Mailchimp, kind: manifest, status: planned}
   - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
-  - {id: microsoft_excel, name: Microsoft Excel 365, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Excel, kind: manifest, status: planned}
-  - {id: microsoft_onedrive, name: Microsoft OneDrive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/OneDrive, kind: manifest, status: planned}
-  - {id: microsoft_outlook, name: Microsoft Outlook, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Outlook, kind: manifest, status: planned}
-  - {id: microsoft_sharepoint, name: Microsoft SharePoint, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/SharePoint, kind: manifest, status: planned}
-  - {id: microsoft_teams, name: Microsoft Teams, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Teams, kind: manifest, status: planned}
-  - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: planned}
+  - {id: microsoft_excel, name: Microsoft Excel 365, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Excel, kind: manifest, status: draft}
+  - {id: microsoft_onedrive, name: Microsoft OneDrive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/OneDrive, kind: manifest, status: draft}
+  - {id: microsoft_outlook, name: Microsoft Outlook, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Outlook, kind: manifest, status: draft}
+  - {id: microsoft_sharepoint, name: Microsoft SharePoint, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/SharePoint, kind: manifest, status: draft}
+  - {id: microsoft_teams, name: Microsoft Teams, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Teams, kind: manifest, status: draft}
+  - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: draft}
   - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: header, n8n: MondayCom, kind: manifest, status: draft}
   - {id: mongodb, name: MongoDB, category: database, phase: 1, origin: n8n, auth: basic, n8n: MongoDb, kind: package, lib: {name: mongodb_driver, version: 1.6.4, released: 2026-07-24}, status: official}
   - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: draft}

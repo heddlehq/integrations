@@ -1,0 +1,383 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Box, through the Content API 2.0. Connect with a Custom App (user authentication,
+# OAuth 2.0) from the Box Developer Console, with "Read and write all files and
+# folders" and "Manage webhooks". The top folder's ID is 0. For the trigger, copy the
+# primary key from the app's Webhooks tab into the credential.
+id: box
+name: Box
+version: 1.0.0
+description: Files, folders, sharing and events in Box.
+icon: hero-cloud
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0061D5" d="M.959 5.523c-.54 0-.959.42-.959.899v7.549a4.59 4.59 0 004.613 4.494 4.717 4.717 0 004.135-2.457c.779 1.438 2.337 2.457 4.074 2.457 2.577 0 4.674-2.037 4.674-4.613.06-2.457-2.037-4.495-4.613-4.495-1.738 0-3.295.959-4.074 2.397-.78-1.438-2.338-2.397-4.135-2.397-1.079 0-2.038.36-2.817.899V6.422a.92.92 0 00-.898-.899zM17.602 9.26a.95.95 0 00-.704.158c-.36.3-.479.899-.18 1.318l2.397 3.116-2.396 3.115c-.3.42-.24.96.18 1.26.419.3 1.016.298 1.316-.122l2.039-2.636 2.096 2.697c.3.36.899.419 1.318.12.36-.3.42-.84.121-1.259l-2.338-3.115 2.338-3.057c.3-.419.298-1.018-.121-1.318-.48-.3-1.019-.24-1.318.18l-2.096 2.576-2.04-2.695c-.149-.18-.373-.3-.612-.338zM4.613 11.154c1.558 0 2.817 1.26 2.817 2.758 0 1.558-1.259 2.756-2.817 2.756-1.558 0-2.816-1.198-2.816-2.756 0-1.498 1.258-2.758 2.816-2.758zm8.27 0c1.558 0 2.816 1.26 2.816 2.758-.06 1.558-1.318 2.756-2.816 2.756-1.558 0-2.817-1.198-2.817-2.756 0-1.498 1.259-2.758 2.817-2.758Z"/></svg>
+category: files
+author: Heddle
+homepage: https://developer.box.com/reference/
+base_url: https://api.box.com/2.0/
+
+credential:
+  label: Box
+  fields:
+    - {name: signature_key, label: Webhook primary key, secret: true, description: "From the app's Webhooks tab. Only the trigger needs it."}
+  auth:
+    type: oauth2
+    authorize_url: https://account.box.com/api/oauth2/authorize
+    token_url: https://api.box.com/oauth2/token
+    token_auth: body
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Box Event
+    description: Starts the flow when something happens to a file or folder, like an upload, a move or a comment.
+    fields:
+      - {name: type, label: Watch a, type: select, required: true, default: folder, options: [{label: Folder, value: folder}, {label: File, value: file}]}
+      - {name: id, label: Its ID, required: true, description: "0 is the top folder, which Box doesn't watch; pick another."}
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [FILE.UPLOADED]
+        options:
+          - {label: File uploaded, value: FILE.UPLOADED}
+          - {label: File previewed, value: FILE.PREVIEWED}
+          - {label: File downloaded, value: FILE.DOWNLOADED}
+          - {label: File copied, value: FILE.COPIED}
+          - {label: File moved, value: FILE.MOVED}
+          - {label: File renamed, value: FILE.RENAMED}
+          - {label: File locked, value: FILE.LOCKED}
+          - {label: File unlocked, value: FILE.UNLOCKED}
+          - {label: File trashed, value: FILE.TRASHED}
+          - {label: File restored, value: FILE.RESTORED}
+          - {label: File deleted, value: FILE.DELETED}
+          - {label: Folder created, value: FOLDER.CREATED}
+          - {label: Folder copied, value: FOLDER.COPIED}
+          - {label: Folder moved, value: FOLDER.MOVED}
+          - {label: Folder renamed, value: FOLDER.RENAMED}
+          - {label: Folder downloaded, value: FOLDER.DOWNLOADED}
+          - {label: Folder trashed, value: FOLDER.TRASHED}
+          - {label: Folder restored, value: FOLDER.RESTORED}
+          - {label: Folder deleted, value: FOLDER.DELETED}
+          - {label: Comment created, value: COMMENT.CREATED}
+          - {label: Comment updated, value: COMMENT.UPDATED}
+          - {label: Comment deleted, value: COMMENT.DELETED}
+          - {label: Shared link created, value: SHARED_LINK.CREATED}
+          - {label: Shared link updated, value: SHARED_LINK.UPDATED}
+          - {label: Shared link deleted, value: SHARED_LINK.DELETED}
+          - {label: Collaboration created, value: COLLABORATION.CREATED}
+          - {label: Collaboration accepted, value: COLLABORATION.ACCEPTED}
+          - {label: Collaboration rejected, value: COLLABORATION.REJECTED}
+          - {label: Collaboration updated, value: COLLABORATION.UPDATED}
+          - {label: Collaboration removed, value: COLLABORATION.REMOVED}
+          - {label: Task assignment created, value: TASK_ASSIGNMENT.CREATED}
+          - {label: Task assignment updated, value: TASK_ASSIGNMENT.UPDATED}
+          - {label: Metadata added, value: METADATA_INSTANCE.CREATED}
+          - {label: Metadata updated, value: METADATA_INSTANCE.UPDATED}
+          - {label: Metadata removed, value: METADATA_INSTANCE.DELETED}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body:
+            target: {id: "{{fields.id}}", type: "{{fields.type}}"}
+            address: "{{webhook.url}}"
+            triggers: "{{fields.events}}"
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+      signature:
+        header: Box-Signature-Primary
+        timestamp_header: Box-Delivery-Timestamp
+        encoding: base64
+        message: "{{request.body}}{{request.timestamp}}"
+        secret: "{{credential.signature_key}}"
+        tolerance: 600
+
+  - name: New Item
+    description: Starts the flow for each new file or folder in a folder, checking every 5 minutes.
+    fields:
+      - {name: folder, label: Folder ID, required: true, default: "0", description: "0 is the top folder."}
+    request:
+      method: GET
+      path: "folders/{{fields.folder}}/items"
+      query: {sort: date, direction: DESC, limit: 200, fields: "id,type,name,size,created_at,modified_at,parent,path_collection,shared_link"}
+    output:
+      path: entries
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Files
+  - name: Upload File
+    resource: File
+    description: Uploads a file, up to 50 MB, into a folder.
+    fields:
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: folder, label: Folder ID, required: true, default: "0", description: "0 is the top folder."}
+    request:
+      method: POST
+      base_url: https://upload.box.com/api/2.0/
+      path: files/content
+      body_type: multipart
+      body:
+        attributes: {name: "{{fields.file | name}}", parent: {id: "{{fields.folder}}"}}
+        file: "{{fields.file}}"
+    output:
+      path: entries
+
+  - name: Download File
+    resource: File
+    description: Downloads a file.
+    fields:
+      - {name: file, label: File ID, required: true}
+    request: {method: GET, path: "files/{{fields.file}}/content"}
+    output:
+      file: true
+
+  - name: Get File
+    resource: File
+    description: Gets a file's details.
+    fields:
+      - {name: file, label: File ID, required: true}
+    request: {method: GET, path: "files/{{fields.file}}"}
+
+  - name: Update File
+    resource: File
+    description: Renames a file, moves it, or changes its description or tags.
+    fields:
+      - {name: file, label: File ID, required: true}
+      - {name: name, label: New name}
+      - {name: folder, label: Move to folder ID}
+      - {name: description, label: Description}
+      - {name: tags, label: Tags, description: "With commas. Replaces the tags it has."}
+    request:
+      method: PUT
+      path: "files/{{fields.file}}"
+      body:
+        name: "{{fields.name}}"
+        parent: {id: "{{fields.folder}}"}
+        description: "{{fields.description}}"
+        tags: {_each: "{{fields.tags}}", _value: "{{item}}"}
+
+  - name: Copy File
+    resource: File
+    description: Copies a file into a folder.
+    fields:
+      - {name: file, label: File ID, required: true}
+      - {name: folder, label: Into folder ID, required: true, default: "0"}
+      - {name: name, label: New name, description: "The same name when empty."}
+      - {name: version, label: Version ID, description: "The current one when empty."}
+    request:
+      method: POST
+      path: "files/{{fields.file}}/copy"
+      body: {parent: {id: "{{fields.folder}}"}, name: "{{fields.name}}", version: "{{fields.version}}"}
+
+  - name: Delete File
+    resource: File
+    description: Moves a file to the trash.
+    fields:
+      - {name: file, label: File ID, required: true}
+    request: {method: DELETE, path: "files/{{fields.file}}"}
+    output:
+      value: {deleted: true}
+
+  - name: Search Files
+    resource: File
+    description: Finds files by name, description, tags or content.
+    fields:
+      - {name: query, label: Search, required: true}
+      - {name: folders, label: In folder IDs, description: "With commas. Everywhere when empty."}
+      - {name: extensions, label: Extensions, description: "Like pdf, docx."}
+      - {name: created, label: Created between, description: "Two dates with a comma, like 2026-01-01T00:00:00Z,2026-02-01T00:00:00Z. Either may be left out."}
+      - {name: owners, label: Owner user IDs, description: "With commas."}
+    request:
+      method: GET
+      path: search
+      query:
+        query: "{{fields.query}}"
+        type: file
+        ancestor_folder_ids: "{{fields.folders}}"
+        file_extensions: "{{fields.extensions}}"
+        created_at_range: "{{fields.created}}"
+        owner_user_ids: "{{fields.owners}}"
+    pagination: {type: offset, items_path: entries, offset_param: offset, limit_param: limit, page_size: 200}
+
+  - name: Share File
+    resource: File
+    description: Invites a person or a group to a file, with a role.
+    fields:
+      - {name: file, label: File ID, required: true}
+      - {name: who, label: Invite, type: select, required: true, default: user, options: [{label: A person, value: user}, {label: A group, value: group}]}
+      - {name: email, label: Email, description: For a person.}
+      - {name: id, label: User or group ID, description: "For a group, or a person without the email."}
+      - {name: role, label: Role, type: select, required: true, default: viewer, options: [{label: Editor, value: editor}, {label: Viewer, value: viewer}, {label: Previewer, value: previewer}, {label: Uploader, value: uploader}, {label: Previewer uploader, value: previewer uploader}, {label: Viewer uploader, value: viewer uploader}, {label: Co-owner, value: co-owner}]}
+      - {name: notify, label: Send an email, type: boolean, default: true}
+      - {name: expires, label: Expires, type: datetime}
+    request:
+      method: POST
+      path: collaborations
+      query: {notify: "{{fields.notify}}"}
+      body:
+        item: {type: file, id: "{{fields.file}}"}
+        accessible_by: {type: "{{fields.who}}", login: "{{fields.email}}", id: "{{fields.id}}"}
+        role: "{{fields.role}}"
+        expires_at: "{{fields.expires}}"
+
+  - name: Create File Link
+    resource: File
+    description: Makes a shared link to a file, for anyone, your company or those invited.
+    fields:
+      - {name: file, label: File ID, required: true}
+      - {name: access, label: Who can open it, type: select, required: true, default: open, options: [{label: Anyone with the link, value: open}, {label: Your company, value: company}, {label: Those invited, value: collaborators}]}
+      - {name: password, label: Password}
+      - {name: expires, label: Expires, type: datetime}
+      - {name: download, label: Allow downloads, type: boolean, default: true}
+    request:
+      method: PUT
+      path: "files/{{fields.file}}"
+      query: {fields: shared_link}
+      body:
+        shared_link: {access: "{{fields.access}}", password: "{{fields.password}}", unshared_at: "{{fields.expires}}", permissions: {can_download: "{{fields.download}}"}}
+
+  # Folders
+  - name: Create Folder
+    resource: Folder
+    description: Creates a folder.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: parent, label: Parent folder ID, required: true, default: "0", description: "0 is the top folder."}
+    request:
+      method: POST
+      path: folders
+      body: {name: "{{fields.name}}", parent: {id: "{{fields.parent}}"}}
+
+  - name: Get Folder
+    resource: Folder
+    description: Gets a folder's details.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+    request: {method: GET, path: "folders/{{fields.folder}}"}
+
+  - name: Get Folder Items
+    resource: Folder
+    description: Lists the files and folders inside a folder.
+    fields:
+      - {name: folder, label: Folder ID, required: true, default: "0", description: "0 is the top folder."}
+    request:
+      method: GET
+      path: "folders/{{fields.folder}}/items"
+      query: {fields: "id,type,name,size,created_at,modified_at,parent,shared_link"}
+    pagination: {type: offset, items_path: entries, offset_param: offset, limit_param: limit, page_size: 1000}
+
+  - name: Update Folder
+    resource: Folder
+    description: Renames a folder, moves it, or changes its description, tags or who can be invited.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+      - {name: name, label: New name}
+      - {name: parent, label: Move to folder ID}
+      - {name: description, label: Description}
+      - {name: tags, label: Tags, description: "With commas. Replaces the tags it has."}
+      - {name: invite, label: Editors can invite others, type: select, options: [{label: "Yes", value: true}, {label: "No", value: false}]}
+      - {name: sync, label: Sync to desktop, type: select, options: [{label: "Yes", value: synced}, {label: "No", value: not_synced}]}
+    request:
+      method: PUT
+      path: "folders/{{fields.folder}}"
+      body:
+        name: "{{fields.name}}"
+        parent: {id: "{{fields.parent}}"}
+        description: "{{fields.description}}"
+        tags: {_each: "{{fields.tags}}", _value: "{{item}}"}
+        sync_state: "{{fields.sync}}"
+        can_non_owners_invite: "{{fields.invite}}"
+
+  - name: Delete Folder
+    resource: Folder
+    description: Moves a folder to the trash.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+      - {name: recursive, label: Even when not empty, type: boolean, default: false}
+    request:
+      method: DELETE
+      path: "folders/{{fields.folder}}"
+      query: {recursive: "{{fields.recursive}}"}
+    output:
+      value: {deleted: true}
+
+  - name: Search Folders
+    resource: Folder
+    description: Finds folders by name, description or tags.
+    fields:
+      - {name: query, label: Search, required: true}
+      - {name: folders, label: In folder IDs, description: "With commas. Everywhere when empty."}
+    request:
+      method: GET
+      path: search
+      query: {query: "{{fields.query}}", type: folder, ancestor_folder_ids: "{{fields.folders}}"}
+    pagination: {type: offset, items_path: entries, offset_param: offset, limit_param: limit, page_size: 200}
+
+  - name: Share Folder
+    resource: Folder
+    description: Invites a person or a group to a folder, with a role.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+      - {name: who, label: Invite, type: select, required: true, default: user, options: [{label: A person, value: user}, {label: A group, value: group}]}
+      - {name: email, label: Email, description: For a person.}
+      - {name: id, label: User or group ID, description: "For a group, or a person without the email."}
+      - {name: role, label: Role, type: select, required: true, default: viewer, options: [{label: Editor, value: editor}, {label: Viewer, value: viewer}, {label: Previewer, value: previewer}, {label: Uploader, value: uploader}, {label: Previewer uploader, value: previewer uploader}, {label: Viewer uploader, value: viewer uploader}, {label: Co-owner, value: co-owner}]}
+      - {name: notify, label: Send an email, type: boolean, default: true}
+      - {name: expires, label: Expires, type: datetime}
+    request:
+      method: POST
+      path: collaborations
+      query: {notify: "{{fields.notify}}"}
+      body:
+        item: {type: folder, id: "{{fields.folder}}"}
+        accessible_by: {type: "{{fields.who}}", login: "{{fields.email}}", id: "{{fields.id}}"}
+        role: "{{fields.role}}"
+        expires_at: "{{fields.expires}}"
+
+  - name: Create Folder Link
+    resource: Folder
+    description: Makes a shared link to a folder, for anyone, your company or those invited.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+      - {name: access, label: Who can open it, type: select, required: true, default: open, options: [{label: Anyone with the link, value: open}, {label: Your company, value: company}, {label: Those invited, value: collaborators}]}
+      - {name: password, label: Password}
+      - {name: expires, label: Expires, type: datetime}
+      - {name: download, label: Allow downloads, type: boolean, default: true}
+    request:
+      method: PUT
+      path: "folders/{{fields.folder}}"
+      query: {fields: shared_link}
+      body:
+        shared_link: {access: "{{fields.access}}", password: "{{fields.password}}", unshared_at: "{{fields.expires}}", permissions: {can_download: "{{fields.download}}"}}
+
+i18n:
+  pt-BR:
+    description: Arquivos, pastas, compartilhamento e eventos no Box.
+    triggers:
+      Box Event: {name: Evento do Box, description: "Inicia o fluxo quando algo acontece com um arquivo ou pasta, como um envio, uma mudança de lugar ou um comentário.", fields: {type: Observar um(a), id: ID dele(a), events: Eventos}}
+      New Item: {name: Novo item, description: "Inicia o fluxo para cada arquivo ou pasta nova numa pasta, olhando a cada 5 minutos.", fields: {folder: ID da pasta}}
+    actions:
+      Upload File: {name: Enviar arquivo, description: "Envia um arquivo, de até 50 MB, para uma pasta.", fields: {file: Arquivo, folder: ID da pasta}}
+      Download File: {name: Baixar arquivo, description: Baixa um arquivo., fields: {file: ID do arquivo}}
+      Get File: {name: Ler arquivo, description: Lê os detalhes de um arquivo., fields: {file: ID do arquivo}}
+      Update File: {name: Atualizar arquivo, description: "Renomeia um arquivo, muda de pasta, ou muda a descrição ou as tags.", fields: {file: ID do arquivo, name: Novo nome, folder: Mover para a pasta (ID), description: Descrição, tags: Tags}}
+      Copy File: {name: Copiar arquivo, description: Copia um arquivo para uma pasta., fields: {file: ID do arquivo, folder: Para a pasta (ID), name: Novo nome, version: ID da versão}}
+      Delete File: {name: Excluir arquivo, description: Move um arquivo para a lixeira., fields: {file: ID do arquivo}}
+      Search Files: {name: Buscar arquivos, description: "Encontra arquivos pelo nome, descrição, tags ou conteúdo.", fields: {query: Busca, folders: Nas pastas (IDs), extensions: Extensões, created: Criado entre, owners: IDs dos donos}}
+      Share File: {name: Compartilhar arquivo, description: "Convida uma pessoa ou um grupo para um arquivo, com um papel.", fields: {file: ID do arquivo, who: Convidar, email: E-mail, id: ID do usuário ou grupo, role: Papel, notify: Enviar e-mail, expires: Expira em}}
+      Create File Link: {name: Criar link do arquivo, description: "Cria um link compartilhado para um arquivo, para qualquer um, sua empresa ou os convidados.", fields: {file: ID do arquivo, access: Quem pode abrir, password: Senha, expires: Expira em, download: Permitir download}}
+      Create Folder: {name: Criar pasta, description: Cria uma pasta., fields: {name: Nome, parent: ID da pasta mãe}}
+      Get Folder: {name: Ler pasta, description: Lê os detalhes de uma pasta., fields: {folder: ID da pasta}}
+      Get Folder Items: {name: Listar itens da pasta, description: Lista os arquivos e pastas dentro de uma pasta., fields: {folder: ID da pasta}}
+      Update Folder: {name: Atualizar pasta, description: "Renomeia uma pasta, muda de lugar, ou muda a descrição, as tags ou quem pode convidar.", fields: {folder: ID da pasta, name: Novo nome, parent: Mover para a pasta (ID), description: Descrição, tags: Tags, invite: Editores podem convidar, sync: Sincronizar no computador}}
+      Delete Folder: {name: Excluir pasta, description: Move uma pasta para a lixeira., fields: {folder: ID da pasta, recursive: Mesmo se não estiver vazia}}
+      Search Folders: {name: Buscar pastas, description: "Encontra pastas pelo nome, descrição ou tags.", fields: {query: Busca, folders: Nas pastas (IDs)}}
+      Share Folder: {name: Compartilhar pasta, description: "Convida uma pessoa ou um grupo para uma pasta, com um papel.", fields: {folder: ID da pasta, who: Convidar, email: E-mail, id: ID do usuário ou grupo, role: Papel, notify: Enviar e-mail, expires: Expira em}}
+      Create Folder Link: {name: Criar link da pasta, description: "Cria um link compartilhado para uma pasta, para qualquer um, sua empresa ou os convidados.", fields: {folder: ID da pasta, access: Quem pode abrir, password: Senha, expires: Expira em, download: Permitir download}}
