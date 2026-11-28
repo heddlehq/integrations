@@ -1,0 +1,651 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Stripe API with a secret or restricted key. Bodies go as Stripe's form, with
+# brackets for maps and lists (metadata[order]=42, line_items[0][price]=...). Amounts
+# are whole numbers in the currency's smallest unit, like 1050 for R$ 10,50.
+id: stripe
+name: Stripe
+version: 1.0.0
+homepage: https://docs.stripe.com/api
+description: Take Stripe payments with checkout, links and payment intents, manage customers, products, subscriptions and invoices, refund, and react to events.
+icon: hero-credit-card
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#635BFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#FFFFFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"/></svg></svg>
+category: payments
+base_url: https://api.stripe.com/v1/
+
+credential:
+  label: Stripe
+  fields:
+    - {name: key, label: Secret key, secret: true, required: true, description: "Developers > API keys: sk_live_... or sk_test_..., or a restricted key rk_..."}
+  auth:
+    type: bearer
+    token: "{{credential.key}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: Event
+    description: Starts the flow on Stripe events, like a paid checkout, a failed payment or a canceled subscription.
+    fields:
+      - {name: events, label: Events, default: "*", description: "Names separated by commas, like checkout.session.completed,invoice.payment_failed; * takes them all."}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhook_endpoints
+          body_type: form
+          body: {url: "{{webhook.url}}", "enabled_events[]": {_each: "{{fields.events}}", _value: "{{item}}"}, description: Heddle}
+        id_path: id
+        secret_path: secret
+      unregister:
+        request: {method: DELETE, path: "webhook_endpoints/{{webhook.id}}"}
+      signature:
+        header: Stripe-Signature
+        secret: "{{webhook.secret}}"
+        pattern: "t=(?<timestamp>\\d+),.*?v1=(?<signature>[0-9a-f]+)"
+        message: "{{request.timestamp}}.{{request.body}}"
+        tolerance: 300
+
+actions:
+  - name: Get Balance
+    resource: Balance
+    description: "Reads the available and pending balance of the account."
+    request:
+      method: GET
+      path: "balance"
+
+  - name: List Balance Transactions
+    resource: Balance
+    description: "Lists the movements of the balance, newest first."
+    fields:
+      - {"name": "type", "label": "Type", "description": "Like charge, refund or payout; empty lists all."}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "balance_transactions"
+      query: {"type": "{{fields.type}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Customer
+    resource: Customer
+    description: "Creates a customer."
+    fields:
+      - {"name": "email", "label": "Email"}
+      - {"name": "name", "label": "Name"}
+      - {"name": "phone", "label": "Phone"}
+      - {"name": "description", "label": "Description"}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "customers"
+      body_type: form_nested
+      body: {"email": "{{fields.email}}", "name": "{{fields.name}}", "phone": "{{fields.phone}}", "description": "{{fields.description}}", "metadata": "{{fields.metadata}}"}
+
+  - name: Get Customer
+    resource: Customer
+    description: "Reads a customer."
+    fields:
+      - {"name": "customer", "label": "Customer ID", "required": true, "description": "Starts with cus_."}
+    request:
+      method: GET
+      path: "customers/{{fields.customer}}"
+
+  - name: Update Customer
+    resource: Customer
+    description: "Changes the given details of a customer."
+    fields:
+      - {"name": "customer", "label": "Customer ID", "required": true, "description": "Starts with cus_."}
+      - {"name": "email", "label": "Email"}
+      - {"name": "name", "label": "Name"}
+      - {"name": "phone", "label": "Phone"}
+      - {"name": "description", "label": "Description"}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "customers/{{fields.customer}}"
+      body_type: form_nested
+      body: {"email": "{{fields.email}}", "name": "{{fields.name}}", "phone": "{{fields.phone}}", "description": "{{fields.description}}", "metadata": "{{fields.metadata}}"}
+
+  - name: Delete Customer
+    resource: Customer
+    description: "Deletes a customer and cancels their subscriptions."
+    fields:
+      - {"name": "customer", "label": "Customer ID", "required": true, "description": "Starts with cus_."}
+    request:
+      method: DELETE
+      path: "customers/{{fields.customer}}"
+
+  - name: List Customers
+    resource: Customer
+    description: "Lists the customers, newest first."
+    fields:
+      - {"name": "email", "label": "Email", "description": "Only customers with this email."}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "customers"
+      query: {"email": "{{fields.email}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Search Customers
+    resource: Customer
+    description: "Searches customers with Stripe's query language."
+    fields:
+      - {"name": "query", "label": "Query", "required": true, "description": "Like email:'ana@example.com' or metadata['order']:'42'."}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "customers/search"
+      query: {"query": "{{fields.query}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Payment Intent
+    resource: Payment
+    description: "Creates a payment to confirm on your site or app with its client_secret."
+    fields:
+      - {"name": "amount", "label": "Amount", "type": "number", "required": true, "description": "In cents, like 1050 for 10.50."}
+      - {"name": "currency", "label": "Currency", "required": true, "default": "brl", "description": "Three letters, lowercase, like brl or usd."}
+      - {"name": "customer", "label": "Customer ID"}
+      - {"name": "description", "label": "Description"}
+      - {"name": "receipt_email", "label": "Receipt email"}
+      - {"name": "capture_method", "label": "Capture", "type": "select", "default": "automatic", "options": [{"label": "Automatic", "value": "automatic"}, {"label": "Manual, capture later", "value": "manual"}]}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "payment_intents"
+      body_type: form_nested
+      body: {"amount": "{{fields.amount}}", "currency": "{{fields.currency}}", "customer": "{{fields.customer}}", "description": "{{fields.description}}", "receipt_email": "{{fields.receipt_email}}", "capture_method": "{{fields.capture_method}}", "automatic_payment_methods": {"enabled": true}, "metadata": "{{fields.metadata}}"}
+
+  - name: Get Payment Intent
+    resource: Payment
+    description: "Reads a payment and its status."
+    fields:
+      - {"name": "payment_intent", "label": "Payment intent ID", "required": true, "description": "Starts with pi_."}
+    request:
+      method: GET
+      path: "payment_intents/{{fields.payment_intent}}"
+
+  - name: Capture Payment Intent
+    resource: Payment
+    description: "Captures a payment made with manual capture, all of it or part."
+    fields:
+      - {"name": "payment_intent", "label": "Payment intent ID", "required": true, "description": "Starts with pi_."}
+      - {"name": "amount", "label": "Amount", "type": "number", "description": "In cents; empty captures it all."}
+    request:
+      method: POST
+      path: "payment_intents/{{fields.payment_intent}}/capture"
+      body_type: form_nested
+      body: {"amount_to_capture": "{{fields.amount}}"}
+
+  - name: Cancel Payment Intent
+    resource: Payment
+    description: "Cancels a payment not yet captured."
+    fields:
+      - {"name": "payment_intent", "label": "Payment intent ID", "required": true, "description": "Starts with pi_."}
+      - {"name": "reason", "label": "Reason", "type": "select", "options": [{"label": "Duplicate", "value": "duplicate"}, {"label": "Fraudulent", "value": "fraudulent"}, {"label": "Requested by customer", "value": "requested_by_customer"}, {"label": "Abandoned", "value": "abandoned"}]}
+    request:
+      method: POST
+      path: "payment_intents/{{fields.payment_intent}}/cancel"
+      body_type: form_nested
+      body: {"cancellation_reason": "{{fields.reason}}"}
+
+  - name: List Payment Intents
+    resource: Payment
+    description: "Lists the payments, newest first."
+    fields:
+      - {"name": "customer", "label": "Customer ID"}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "payment_intents"
+      query: {"customer": "{{fields.customer}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Checkout Session
+    resource: Checkout
+    description: "Creates a Stripe-hosted payment page; send the customer to its url."
+    fields:
+      - {"name": "mode", "label": "Mode", "type": "select", "required": true, "default": "payment", "options": [{"label": "One-time payment", "value": "payment"}, {"label": "Subscription", "value": "subscription"}, {"label": "Save a card", "value": "setup"}]}
+      - {"name": "price", "label": "Price ID", "required": true, "description": "Starts with price_."}
+      - {"name": "quantity", "label": "Quantity", "type": "number", "default": 1}
+      - {"name": "success_url", "label": "Success URL", "required": true}
+      - {"name": "cancel_url", "label": "Cancel URL"}
+      - {"name": "customer", "label": "Customer ID"}
+      - {"name": "customer_email", "label": "Customer email", "description": "When there is no customer ID."}
+      - {"name": "promotion_codes", "label": "Allow promotion codes", "type": "boolean", "default": false}
+      - {"name": "client_reference_id", "label": "Your reference"}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "checkout/sessions"
+      body_type: form_nested
+      body: {"mode": "{{fields.mode}}", "line_items": [{"price": "{{fields.price}}", "quantity": "{{fields.quantity}}"}], "success_url": "{{fields.success_url}}", "cancel_url": "{{fields.cancel_url}}", "customer": "{{fields.customer}}", "customer_email": "{{fields.customer_email}}", "allow_promotion_codes": "{{fields.promotion_codes}}", "client_reference_id": "{{fields.client_reference_id}}", "metadata": "{{fields.metadata}}"}
+
+  - name: Get Checkout Session
+    resource: Checkout
+    description: "Reads a checkout session and its payment status."
+    fields:
+      - {"name": "session_id", "label": "Session ID", "required": true, "description": "Starts with cs_."}
+    request:
+      method: GET
+      path: "checkout/sessions/{{fields.session_id}}"
+
+  - name: Expire Checkout Session
+    resource: Checkout
+    description: "Closes an open checkout session so it can no longer be paid."
+    fields:
+      - {"name": "session_id", "label": "Session ID", "required": true, "description": "Starts with cs_."}
+    request:
+      method: POST
+      path: "checkout/sessions/{{fields.session_id}}/expire"
+      body_type: form_nested
+
+  - name: List Checkout Line Items
+    resource: Checkout
+    description: "Lists what a checkout session sold."
+    fields:
+      - {"name": "session_id", "label": "Session ID", "required": true, "description": "Starts with cs_."}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "checkout/sessions/{{fields.session_id}}/line_items"
+      query: {"limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Payment Link
+    resource: Payment Link
+    description: "Creates a link anyone can pay, for a price."
+    fields:
+      - {"name": "price", "label": "Price ID", "required": true}
+      - {"name": "quantity", "label": "Quantity", "type": "number", "default": 1}
+      - {"name": "adjustable", "label": "Customer picks the quantity", "type": "boolean", "default": false}
+      - {"name": "redirect_url", "label": "After payment, go to"}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "payment_links"
+      body_type: form_nested
+      body: {"line_items": [{"price": "{{fields.price}}", "quantity": "{{fields.quantity}}", "adjustable_quantity": {"_if": "{{fields.adjustable}}", "enabled": true}}], "after_completion": {"_if": "{{fields.redirect_url}}", "type": "redirect", "redirect": {"url": "{{fields.redirect_url}}"}}, "metadata": "{{fields.metadata}}"}
+
+  - name: Deactivate Payment Link
+    resource: Payment Link
+    description: "Turns a payment link off."
+    fields:
+      - {"name": "link_id", "label": "Payment link ID", "required": true, "description": "Starts with plink_."}
+    request:
+      method: POST
+      path: "payment_links/{{fields.link_id}}"
+      body_type: form_nested
+      body: {"active": false}
+
+  - name: Create Product
+    resource: Product
+    description: "Creates a product, with a price if you give one."
+    fields:
+      - {"name": "name", "label": "Name", "required": true}
+      - {"name": "description", "label": "Description"}
+      - {"name": "unit_amount", "label": "Price", "type": "number", "description": "In cents; empty creates it without a price."}
+      - {"name": "currency", "label": "Currency", "default": "brl"}
+      - {"name": "interval", "label": "Charged every", "type": "select", "description": "Empty is a one-time price.", "options": [{"label": "Day", "value": "day"}, {"label": "Week", "value": "week"}, {"label": "Month", "value": "month"}, {"label": "Year", "value": "year"}]}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "products"
+      body_type: form_nested
+      body: {"name": "{{fields.name}}", "description": "{{fields.description}}", "default_price_data": {"_if": "{{fields.unit_amount}}", "unit_amount": "{{fields.unit_amount}}", "currency": "{{fields.currency}}", "recurring": {"_if": "{{fields.interval}}", "interval": "{{fields.interval}}"}}, "metadata": "{{fields.metadata}}"}
+
+  - name: Get Product
+    resource: Product
+    description: "Reads a product."
+    fields:
+      - {"name": "product", "label": "Product ID", "required": true, "description": "Starts with prod_."}
+    request:
+      method: GET
+      path: "products/{{fields.product}}"
+
+  - name: Update Product
+    resource: Product
+    description: "Changes the given details of a product, or archives it."
+    fields:
+      - {"name": "product", "label": "Product ID", "required": true, "description": "Starts with prod_."}
+      - {"name": "name", "label": "Name"}
+      - {"name": "description", "label": "Description"}
+      - {"name": "active", "label": "Active", "type": "select", "options": [{"label": "Yes", "value": true}, {"label": "No, archive it", "value": false}]}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "products/{{fields.product}}"
+      body_type: form_nested
+      body: {"name": "{{fields.name}}", "description": "{{fields.description}}", "active": "{{fields.active}}", "metadata": "{{fields.metadata}}"}
+
+  - name: List Products
+    resource: Product
+    description: "Lists the products, newest first."
+    fields:
+      - {"name": "active", "label": "Only active", "type": "boolean", "default": true}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "products"
+      query: {"active": "{{fields.active}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Price
+    resource: Price
+    description: "Creates a price for a product, one-time or recurring."
+    fields:
+      - {"name": "product", "label": "Product ID", "required": true, "description": "Starts with prod_."}
+      - {"name": "amount", "label": "Amount", "type": "number", "required": true, "description": "In cents, like 1050 for 10.50."}
+      - {"name": "currency", "label": "Currency", "required": true, "default": "brl", "description": "Three letters, lowercase, like brl or usd."}
+      - {"name": "interval", "label": "Charged every", "type": "select", "description": "Empty is a one-time price.", "options": [{"label": "Day", "value": "day"}, {"label": "Week", "value": "week"}, {"label": "Month", "value": "month"}, {"label": "Year", "value": "year"}]}
+      - {"name": "interval_count", "label": "Every how many", "type": "number", "default": 1}
+      - {"name": "nickname", "label": "Nickname"}
+    request:
+      method: POST
+      path: "prices"
+      body_type: form_nested
+      body: {"product": "{{fields.product}}", "unit_amount": "{{fields.amount}}", "currency": "{{fields.currency}}", "recurring": {"_if": "{{fields.interval}}", "interval": "{{fields.interval}}", "interval_count": "{{fields.interval_count}}"}, "nickname": "{{fields.nickname}}"}
+
+  - name: List Prices
+    resource: Price
+    description: "Lists the prices, of a product or all."
+    fields:
+      - {"name": "product", "label": "Product ID"}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "prices"
+      query: {"product": "{{fields.product}}", "active": true, "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Subscription
+    resource: Subscription
+    description: "Subscribes a customer to a price; the customer needs a default payment method, or use send invoice."
+    fields:
+      - {"name": "customer", "label": "Customer ID", "required": true, "description": "Starts with cus_."}
+      - {"name": "price", "label": "Price ID", "required": true}
+      - {"name": "quantity", "label": "Quantity", "type": "number", "default": 1}
+      - {"name": "trial_days", "label": "Trial days", "type": "number"}
+      - {"name": "collection", "label": "Charge by", "type": "select", "default": "charge_automatically", "options": [{"label": "Card on file", "value": "charge_automatically"}, {"label": "Sending an invoice", "value": "send_invoice"}]}
+      - {"name": "days_until_due", "label": "Days to pay the invoice", "type": "number", "description": "With send invoice."}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "subscriptions"
+      body_type: form_nested
+      body: {"customer": "{{fields.customer}}", "items": [{"price": "{{fields.price}}", "quantity": "{{fields.quantity}}"}], "trial_period_days": "{{fields.trial_days}}", "collection_method": "{{fields.collection}}", "days_until_due": "{{fields.days_until_due}}", "metadata": "{{fields.metadata}}"}
+
+  - name: Get Subscription
+    resource: Subscription
+    description: "Reads a subscription and its status."
+    fields:
+      - {"name": "subscription", "label": "Subscription ID", "required": true, "description": "Starts with sub_."}
+    request:
+      method: GET
+      path: "subscriptions/{{fields.subscription}}"
+
+  - name: Cancel at Period End
+    resource: Subscription
+    description: "Cancels a subscription when the paid period ends, or takes that back."
+    fields:
+      - {"name": "subscription", "label": "Subscription ID", "required": true, "description": "Starts with sub_."}
+      - {"name": "cancel", "label": "Cancel at period end", "type": "boolean", "default": true}
+    request:
+      method: POST
+      path: "subscriptions/{{fields.subscription}}"
+      body_type: form_nested
+      body: {"cancel_at_period_end": "{{fields.cancel}}"}
+
+  - name: Cancel Subscription
+    resource: Subscription
+    description: "Cancels a subscription now."
+    fields:
+      - {"name": "subscription", "label": "Subscription ID", "required": true, "description": "Starts with sub_."}
+      - {"name": "prorate", "label": "Credit the unused time", "type": "boolean", "default": false}
+      - {"name": "invoice_now", "label": "Invoice pending usage now", "type": "boolean", "default": false}
+    request:
+      method: DELETE
+      path: "subscriptions/{{fields.subscription}}"
+      query: {"prorate": "{{fields.prorate}}", "invoice_now": "{{fields.invoice_now}}"}
+
+  - name: List Subscriptions
+    resource: Subscription
+    description: "Lists the subscriptions, of a customer or all."
+    fields:
+      - {"name": "customer", "label": "Customer ID"}
+      - {"name": "status", "label": "Status", "type": "select", "default": "all", "options": [{"label": "All but canceled", "value": "all"}, {"label": "Active", "value": "active"}, {"label": "Trialing", "value": "trialing"}, {"label": "Past due", "value": "past_due"}, {"label": "Canceled", "value": "canceled"}]}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "subscriptions"
+      query: {"customer": "{{fields.customer}}", "status": "{{fields.status}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Invoice
+    resource: Invoice
+    description: "Creates a draft invoice; add items with Add Invoice Item, then finalize and send it."
+    fields:
+      - {"name": "customer", "label": "Customer ID", "required": true, "description": "Starts with cus_."}
+      - {"name": "collection", "label": "Charge by", "type": "select", "default": "send_invoice", "options": [{"label": "Sending the invoice", "value": "send_invoice"}, {"label": "Card on file", "value": "charge_automatically"}]}
+      - {"name": "days_until_due", "label": "Days to pay", "type": "number", "default": 7, "description": "With send invoice."}
+      - {"name": "description", "label": "Memo"}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "invoices"
+      body_type: form_nested
+      body: {"customer": "{{fields.customer}}", "collection_method": "{{fields.collection}}", "days_until_due": "{{fields.days_until_due}}", "description": "{{fields.description}}", "auto_advance": false, "metadata": "{{fields.metadata}}"}
+
+  - name: Add Invoice Item
+    resource: Invoice
+    description: "Adds a line to a draft invoice."
+    fields:
+      - {"name": "customer", "label": "Customer ID", "required": true, "description": "Starts with cus_."}
+      - {"name": "invoice", "label": "Invoice ID", "required": true, "description": "Starts with in_."}
+      - {"name": "amount", "label": "Amount", "type": "number", "description": "In cents; or fill Price ID."}
+      - {"name": "currency", "label": "Currency", "default": "brl"}
+      - {"name": "price", "label": "Price ID"}
+      - {"name": "quantity", "label": "Quantity", "type": "number", "default": 1}
+      - {"name": "description", "label": "Description"}
+    request:
+      method: POST
+      path: "invoiceitems"
+      body_type: form_nested
+      body: {"customer": "{{fields.customer}}", "invoice": "{{fields.invoice}}", "amount": "{{fields.amount}}", "currency": "{{fields.currency}}", "pricing": {"_if": "{{fields.price}}", "price": "{{fields.price}}"}, "quantity": "{{fields.quantity}}", "description": "{{fields.description}}"}
+
+  - name: Finalize Invoice
+    resource: Invoice
+    description: "Finalizes a draft invoice, giving it a number and a payment page."
+    fields:
+      - {"name": "invoice", "label": "Invoice ID", "required": true, "description": "Starts with in_."}
+    request:
+      method: POST
+      path: "invoices/{{fields.invoice}}/finalize"
+      body_type: form_nested
+
+  - name: Send Invoice
+    resource: Invoice
+    description: "Emails a finalized invoice to the customer."
+    fields:
+      - {"name": "invoice", "label": "Invoice ID", "required": true, "description": "Starts with in_."}
+    request:
+      method: POST
+      path: "invoices/{{fields.invoice}}/send"
+      body_type: form_nested
+
+  - name: Pay Invoice
+    resource: Invoice
+    description: "Charges an open invoice now, with the customer's payment method."
+    fields:
+      - {"name": "invoice", "label": "Invoice ID", "required": true, "description": "Starts with in_."}
+    request:
+      method: POST
+      path: "invoices/{{fields.invoice}}/pay"
+      body_type: form_nested
+
+  - name: Void Invoice
+    resource: Invoice
+    description: "Voids a finalized invoice that won't be paid."
+    fields:
+      - {"name": "invoice", "label": "Invoice ID", "required": true, "description": "Starts with in_."}
+    request:
+      method: POST
+      path: "invoices/{{fields.invoice}}/void"
+      body_type: form_nested
+
+  - name: Get Invoice
+    resource: Invoice
+    description: "Reads an invoice, with its lines and links."
+    fields:
+      - {"name": "invoice", "label": "Invoice ID", "required": true, "description": "Starts with in_."}
+    request:
+      method: GET
+      path: "invoices/{{fields.invoice}}"
+
+  - name: List Invoices
+    resource: Invoice
+    description: "Lists the invoices, of a customer or all."
+    fields:
+      - {"name": "customer", "label": "Customer ID"}
+      - {"name": "status", "label": "Status", "type": "select", "options": [{"label": "Draft", "value": "draft"}, {"label": "Open", "value": "open"}, {"label": "Paid", "value": "paid"}, {"label": "Uncollectible", "value": "uncollectible"}, {"label": "Void", "value": "void"}]}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "invoices"
+      query: {"customer": "{{fields.customer}}", "status": "{{fields.status}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Refund
+    resource: Refund
+    description: "Refunds a payment, all of it or part."
+    fields:
+      - {"name": "payment_intent", "label": "Payment intent ID", "required": true, "description": "Starts with pi_."}
+      - {"name": "amount", "label": "Amount", "type": "number", "description": "In cents; empty refunds it all."}
+      - {"name": "reason", "label": "Reason", "type": "select", "options": [{"label": "Duplicate", "value": "duplicate"}, {"label": "Fraudulent", "value": "fraudulent"}, {"label": "Requested by customer", "value": "requested_by_customer"}]}
+      - {"name": "metadata", "label": "Metadata", "type": "json", "description": "Your own keys and values, like {\"order\": \"42\"}."}
+    request:
+      method: POST
+      path: "refunds"
+      body_type: form_nested
+      body: {"payment_intent": "{{fields.payment_intent}}", "amount": "{{fields.amount}}", "reason": "{{fields.reason}}", "metadata": "{{fields.metadata}}"}
+
+  - name: Get Refund
+    resource: Refund
+    description: "Reads a refund."
+    fields:
+      - {"name": "refund", "label": "Refund ID", "required": true, "description": "Starts with re_."}
+    request:
+      method: GET
+      path: "refunds/{{fields.refund}}"
+
+  - name: List Charges
+    resource: Charge
+    description: "Lists the charges, of a customer or all."
+    fields:
+      - {"name": "customer", "label": "Customer ID"}
+      - {"name": "payment_intent", "label": "Payment intent ID"}
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "charges"
+      query: {"customer": "{{fields.customer}}", "payment_intent": "{{fields.payment_intent}}", "limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Get Charge
+    resource: Charge
+    description: "Reads a charge, with its receipt and card details."
+    fields:
+      - {"name": "charge", "label": "Charge ID", "required": true, "description": "Starts with ch_ or py_."}
+    request:
+      method: GET
+      path: "charges/{{fields.charge}}"
+
+  - name: Create Coupon
+    resource: Coupon
+    description: "Creates a discount, in percent or amount, for checkout and subscriptions."
+    fields:
+      - {"name": "name", "label": "Name"}
+      - {"name": "percent_off", "label": "Percent off", "type": "number"}
+      - {"name": "amount_off", "label": "Amount off", "type": "number", "description": "In cents; with Currency."}
+      - {"name": "currency", "label": "Currency", "description": "Only with Amount off, like brl."}
+      - {"name": "duration", "label": "Lasts", "type": "select", "default": "once", "options": [{"label": "Once", "value": "once"}, {"label": "Some months", "value": "repeating"}, {"label": "Forever", "value": "forever"}]}
+      - {"name": "months", "label": "Months", "type": "number", "description": "With some months."}
+    request:
+      method: POST
+      path: "coupons"
+      body_type: form_nested
+      body: {"name": "{{fields.name}}", "percent_off": "{{fields.percent_off}}", "amount_off": "{{fields.amount_off}}", "currency": "{{fields.currency}}", "duration": "{{fields.duration}}", "duration_in_months": "{{fields.months}}"}
+
+  - name: List Coupons
+    resource: Coupon
+    description: "Lists the coupons."
+    fields:
+      - {"name": "limit", "label": "Limit", "type": "number", "default": 25, "description": "Up to 100."}
+    request:
+      method: GET
+      path: "coupons"
+      query: {"limit": "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Get Event
+    resource: Event
+    description: "Reads an event, like the ones the trigger receives."
+    fields:
+      - {"name": "event", "label": "Event ID", "required": true, "description": "Starts with evt_."}
+    request:
+      method: GET
+      path: "events/{{fields.event}}"
+
+i18n:
+  pt-BR:
+    description: "Receba pagamentos no Stripe com checkout, links e payment intents, gerencie clientes, produtos, assinaturas e faturas, reembolse e reaja a eventos."
+    triggers:
+      Event: {name: "Evento", description: "Inicia o fluxo em eventos do Stripe, como checkout pago, pagamento recusado ou assinatura cancelada.", fields: {events: "Eventos"}}
+    actions:
+      Get Balance: {name: "Ler saldo", description: "Lê o saldo disponível e pendente da conta."}
+      List Balance Transactions: {name: "Listar movimentações", description: "Lista as movimentações do saldo, as mais novas primeiro.", fields: {type: "Tipo", limit: "Limite"}}
+      Create Customer: {name: "Criar cliente", description: "Cria um cliente.", fields: {email: "E-mail", name: "Nome", phone: "Telefone", description: "Descrição", metadata: "Metadados"}}
+      Get Customer: {name: "Ler cliente", description: "Lê um cliente.", fields: {customer: "ID do cliente"}}
+      Update Customer: {name: "Atualizar cliente", description: "Altera os dados informados de um cliente.", fields: {customer: "ID do cliente", email: "E-mail", name: "Nome", phone: "Telefone", description: "Descrição", metadata: "Metadados"}}
+      Delete Customer: {name: "Apagar cliente", description: "Apaga um cliente e cancela as assinaturas dele.", fields: {customer: "ID do cliente"}}
+      List Customers: {name: "Listar clientes", description: "Lista os clientes, os mais novos primeiro.", fields: {email: "E-mail", limit: "Limite"}}
+      Search Customers: {name: "Buscar clientes", description: "Busca clientes com a linguagem de consulta do Stripe.", fields: {query: "Consulta", limit: "Limite"}}
+      Create Payment Intent: {name: "Criar payment intent", description: "Cria um pagamento para confirmar no seu site ou app com o client_secret.", fields: {amount: "Valor", currency: "Moeda", customer: "ID do cliente", description: "Descrição", receipt_email: "E-mail do recibo", capture_method: "Captura", metadata: "Metadados"}}
+      Get Payment Intent: {name: "Ler payment intent", description: "Lê um pagamento e o status.", fields: {payment_intent: "ID do payment intent"}}
+      Capture Payment Intent: {name: "Capturar payment intent", description: "Captura um pagamento feito com captura manual, total ou parcial.", fields: {payment_intent: "ID do payment intent", amount: "Valor"}}
+      Cancel Payment Intent: {name: "Cancelar payment intent", description: "Cancela um pagamento ainda não capturado.", fields: {payment_intent: "ID do payment intent", reason: "Motivo"}}
+      List Payment Intents: {name: "Listar payment intents", description: "Lista os pagamentos, os mais novos primeiro.", fields: {customer: "ID do cliente", limit: "Limite"}}
+      Create Checkout Session: {name: "Criar sessão de checkout", description: "Cria uma página de pagamento hospedada pelo Stripe; mande o cliente para a url.", fields: {mode: "Modo", price: "ID do preço", quantity: "Quantidade", success_url: "URL de sucesso", cancel_url: "URL de cancelamento", customer: "ID do cliente", customer_email: "E-mail do cliente", promotion_codes: "Permitir códigos promocionais", client_reference_id: "Sua referência", metadata: "Metadados"}}
+      Get Checkout Session: {name: "Ler sessão de checkout", description: "Lê uma sessão de checkout e o status do pagamento.", fields: {session_id: "ID da sessão"}}
+      Expire Checkout Session: {name: "Expirar sessão de checkout", description: "Fecha uma sessão de checkout aberta para que não possa mais ser paga.", fields: {session_id: "ID da sessão"}}
+      List Checkout Line Items: {name: "Listar itens do checkout", description: "Lista o que uma sessão de checkout vendeu.", fields: {session_id: "ID da sessão", limit: "Limite"}}
+      Create Payment Link: {name: "Criar link de pagamento", description: "Cria um link que qualquer pessoa pode pagar, para um preço.", fields: {price: "ID do preço", quantity: "Quantidade", adjustable: "Cliente escolhe a quantidade", redirect_url: "Depois do pagamento, ir para", metadata: "Metadados"}}
+      Deactivate Payment Link: {name: "Desativar link de pagamento", description: "Desliga um link de pagamento.", fields: {link_id: "ID do link de pagamento"}}
+      Create Product: {name: "Criar produto", description: "Cria um produto, com preço se você informar um.", fields: {name: "Nome", description: "Descrição", unit_amount: "Preço", currency: "Moeda", interval: "Cobrado a cada", metadata: "Metadados"}}
+      Get Product: {name: "Ler produto", description: "Lê um produto.", fields: {product: "ID do produto"}}
+      Update Product: {name: "Atualizar produto", description: "Altera os dados informados de um produto, ou o arquiva.", fields: {product: "ID do produto", name: "Nome", description: "Descrição", active: "Ativo", metadata: "Metadados"}}
+      List Products: {name: "Listar produtos", description: "Lista os produtos, os mais novos primeiro.", fields: {active: "Só ativos", limit: "Limite"}}
+      Create Price: {name: "Criar preço", description: "Cria um preço para um produto, avulso ou recorrente.", fields: {product: "ID do produto", amount: "Valor", currency: "Moeda", interval: "Cobrado a cada", interval_count: "A cada quantos", nickname: "Apelido"}}
+      List Prices: {name: "Listar preços", description: "Lista os preços, de um produto ou todos.", fields: {product: "ID do produto", limit: "Limite"}}
+      Create Subscription: {name: "Criar assinatura", description: "Assina um cliente num preço; o cliente precisa de um meio de pagamento padrão, ou use enviar fatura.", fields: {customer: "ID do cliente", price: "ID do preço", quantity: "Quantidade", trial_days: "Dias de teste", collection: "Cobrar por", days_until_due: "Dias para pagar", metadata: "Metadados"}}
+      Get Subscription: {name: "Ler assinatura", description: "Lê uma assinatura e o status.", fields: {subscription: "ID da assinatura"}}
+      Cancel at Period End: {name: "Cancelar no fim do período", description: "Cancela uma assinatura quando o período pago acabar, ou desfaz isso.", fields: {subscription: "ID da assinatura", cancel: "Cancelar no fim do período"}}
+      Cancel Subscription: {name: "Cancelar assinatura", description: "Cancela uma assinatura agora.", fields: {subscription: "ID da assinatura", prorate: "Creditar o tempo não usado", invoice_now: "Faturar uso pendente agora"}}
+      List Subscriptions: {name: "Listar assinaturas", description: "Lista as assinaturas, de um cliente ou todas.", fields: {customer: "ID do cliente", status: "Status", limit: "Limite"}}
+      Create Invoice: {name: "Criar fatura", description: "Cria um rascunho de fatura; adicione itens com Adicionar item, depois finalize e envie.", fields: {customer: "ID do cliente", collection: "Cobrar por", days_until_due: "Dias para pagar", description: "Memorando", metadata: "Metadados"}}
+      Add Invoice Item: {name: "Adicionar item à fatura", description: "Adiciona uma linha a um rascunho de fatura.", fields: {customer: "ID do cliente", invoice: "ID da fatura", amount: "Valor", currency: "Moeda", price: "ID do preço", quantity: "Quantidade", description: "Descrição"}}
+      Finalize Invoice: {name: "Finalizar fatura", description: "Finaliza um rascunho de fatura, que ganha número e página de pagamento.", fields: {invoice: "ID da fatura"}}
+      Send Invoice: {name: "Enviar fatura", description: "Envia por e-mail uma fatura finalizada ao cliente.", fields: {invoice: "ID da fatura"}}
+      Pay Invoice: {name: "Cobrar fatura", description: "Cobra agora uma fatura aberta, com o meio de pagamento do cliente.", fields: {invoice: "ID da fatura"}}
+      Void Invoice: {name: "Anular fatura", description: "Anula uma fatura finalizada que não será paga.", fields: {invoice: "ID da fatura"}}
+      Get Invoice: {name: "Ler fatura", description: "Lê uma fatura, com linhas e links.", fields: {invoice: "ID da fatura"}}
+      List Invoices: {name: "Listar faturas", description: "Lista as faturas, de um cliente ou todas.", fields: {customer: "ID do cliente", status: "Status", limit: "Limite"}}
+      Create Refund: {name: "Criar reembolso", description: "Reembolsa um pagamento, total ou parcial.", fields: {payment_intent: "ID do payment intent", amount: "Valor", reason: "Motivo", metadata: "Metadados"}}
+      Get Refund: {name: "Ler reembolso", description: "Lê um reembolso.", fields: {refund: "ID do reembolso"}}
+      List Charges: {name: "Listar cobranças", description: "Lista as cobranças, de um cliente ou todas.", fields: {customer: "ID do cliente", payment_intent: "ID do payment intent", limit: "Limite"}}
+      Get Charge: {name: "Ler cobrança", description: "Lê uma cobrança, com recibo e dados do cartão.", fields: {charge: "ID da cobrança"}}
+      Create Coupon: {name: "Criar cupom", description: "Cria um desconto, em porcentagem ou valor, para checkout e assinaturas.", fields: {name: "Nome", percent_off: "Porcentagem de desconto", amount_off: "Valor de desconto", currency: "Moeda", duration: "Dura", months: "Meses"}}
+      List Coupons: {name: "Listar cupons", description: "Lista os cupons.", fields: {limit: "Limite"}}
+      Get Event: {name: "Ler evento", description: "Lê um evento, como os que o gatilho recebe.", fields: {event: "ID do evento"}}
