@@ -1,0 +1,421 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Cielo's API E-commerce 3.0: card, Pix and boleto sales, capture and cancellation,
+# saved cards, Zero Auth, BIN lookup and scheduled recurrences. Two hosts: one takes
+# the transactions, the other answers the queries, each with a sandbox twin. Amounts
+# are in cents. The Notification Post goes to an address you give Cielo Support.
+id: cielo
+name: Cielo
+version: 1.0.0
+homepage: https://docs.cielo.com.br/ecommerce-cielo/
+description: Take card, Pix and boleto payments with Cielo, capture and cancel them, save cards, validate them with Zero Auth and run scheduled recurrences.
+icon: hero-credit-card
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="9.01" width="18.00" height="5.97" viewBox="0 0 595.97479 197.74532"><defs > <style type="text/css" /> </defs> <g transform="translate(-52.012614,-433.48952)" > <g transform="matrix(3.543307,0,0,3.543307,-13.537534,48.099612)" style="fill-rule:evenodd"> <g > <metadata /> <path d="m 50.4046,151.628 c -10.2768,9.3582 -23.2325,0.2818 -22.6863,-10.0442 0.406,-7.6748 8.3058,-15.7753 18.3569,-11.7956 l 3.656,-8.4665 c -21.7932,-7.1005 -33.3768,11.5364 -30.9021,24.09 4.0009,20.2941 25.8808,24.111 37.9255,12.8548 l -6.35,-6.6385 z" style="fill:none" /> <path d="m 69.791,135.609 c 0.2903,-8.1607 -8.0979,-9.8609 -12.6036,-11.6414 l -3.656,8.3702 7.4083,3.2712 0.1924,28.0935 8.5627,0 0.0962,-28.0935 z" style="fill:none" /> <line y2="153.312" x2="90.861099" y1="161.008" x1="86.050499" class="fil0" style="fill:none" /> <path d="m 90.8611,153.312 c 6.2802,3.3093 11.7321,2.732 16.3558,-1.7318 l 6.6385,6.6385 c -9.8392,7.627 -16.9909,8.1721 -27.8049,2.79" style="fill:none" /> <path d="m 79.3159,154.274 c -8.2646,-12.9658 -1.8383,-27.7385 9.0989,-32.6133 11.6056,-5.1728 27.3001,-0.4022 31.598,15.2955 L 79.3159,154.274 z" style="fill:none" /> <path d="m 84.6554,143.642 c -0.155,-15.2776 15.9764,-19.2862 23.2829,-10.0058 L 84.6554,143.642 z" style="fill:none" /> <path d="m 132.905,152.927 -0.1925,-43.487 -8.4664,0 0.0962,43.9681 c -0.0261,8.1497 8.3965,9.2584 12.5073,11.1604 l 3.3674,-8.3703 -7.312,-3.2712 z" style="fill:none" /> <path d="m 173.217,151.964 c -8.4948,9.2692 -27.865,-1.2819 -20.8776,-15.4898 l -8.4664,-4.2333 c -9.4383,21.3695 14.666,43.0585 35.4053,26.4578 l -6.0613,-6.7347 z" style="fill:none" /> <path d="m 176.248,147.875 c 5.9826,-14.7474 -10.6939,-24.8174 -20.8777,-15.49 l -6.2536,-6.9271 c 16.7848,-14.9827 45.5517,1.0203 35.5016,26.3617 l -8.3703,-3.9446 z" style="fill:none" /> <ellipse cx="65.4133" cy="114.827" rx="6.1093502" ry="6.0611801" style="fill:none" /> <path d="m 50.4046,151.628 c -10.2768,9.3582 -23.2325,0.2818 -22.6863,-10.0442 0.406,-7.6748 8.3058,-15.7753 18.3569,-11.7956 l 3.656,-8.4665 c -21.7932,-7.1005 -33.3768,11.5364 -30.9021,24.09 4.0009,20.2941 25.8808,24.111 37.9255,12.8548 l -6.35,-6.6385 z" style="fill:#000000" /> <path d="m 60.9397,135.609 0.1924,28.0935 8.5627,0 0.0962,-28.0935 c 0.2903,-8.1607 -8.0979,-9.8609 -12.6036,-11.6414 l -3.656,8.3702 7.4083,3.2712 z" style="fill:#000000" /> <path d="m 88.4148,121.66 c -10.9372,4.8748 -17.3635,19.6475 -9.0989,32.6133 l 40.6969,-17.3178 C 115.7149,121.2578 100.0204,116.4872 88.4148,121.66 z m -3.7594,21.982 c -0.155,-15.2776 15.9764,-19.2862 23.2829,-10.0058 L 84.6554,143.642 z" style="fill:#000000" /> <path d="m 107.217,151.58 c -4.6237,4.4638 -10.0756,5.0411 -16.3558,1.7318 l -4.8106,7.6967 c 10.814,5.3821 17.9657,4.837 27.8049,-2.79 L 107.217,151.58 z" style="fill:#000000" /> <path d="m 124.246,109.44 0.0962,43.9681 c -0.0261,8.1497 8.3965,9.2584 12.5073,11.1604 l 3.3674,-8.3703 -7.312,-3.2712 -0.1925,-43.487 -8.4664,0 z" style="fill:#000000" /> <path d="m 143.873,132.241 c -9.4383,21.3695 14.666,43.0585 35.4053,26.4578 l -6.0613,-6.7347 c -8.4948,9.2692 -27.865,-1.2819 -20.8776,-15.4898 l -8.4664,-4.2333 z" style="fill:#000000" /> <path d="m 155.37,132.386 c 10.1838,-9.3274 26.8603,0.7426 20.8777,15.49 l 8.3703,3.9446 c 10.0501,-25.3414 -18.7168,-41.3444 -35.5016,-26.3617 l 6.2536,6.9271 z" style="fill:#01aef0" /> <path d="m 65.4134,120.888 c 3.374,0 6.1093,-2.7136 6.1093,-6.0612 0,-3.3476 -2.7353,-6.0612 -6.1093,-6.0612 -3.3741,0 -6.1094,2.7136 -6.1094,6.0612 0,3.3476 2.7353,6.0612 6.1094,6.0612 z" style="fill:#01aef0" /> </g> </g> </g></svg></svg>
+category: payments
+base_url: "https://{{credential.host}}/"
+headers:
+  MerchantId: "{{credential.merchant_id}}"
+
+credential:
+  label: Cielo
+  fields:
+    - {name: merchant_id, label: Merchant ID, required: true}
+    - {name: merchant_key, label: Merchant Key, secret: true, required: true}
+    - {name: host, label: Environment, type: select, required: true, default: api.cieloecommerce.cielo.com.br, options: [{label: Production, value: api.cieloecommerce.cielo.com.br}, {label: Sandbox, value: apisandbox.cieloecommerce.cielo.com.br}]}
+    - {name: query_host, label: Query environment, type: select, required: true, default: apiquery.cieloecommerce.cielo.com.br, description: The same as Environment., options: [{label: Production, value: apiquery.cieloecommerce.cielo.com.br}, {label: Sandbox, value: apiquerysandbox.cieloecommerce.cielo.com.br}]}
+  auth:
+    type: header
+    name: MerchantKey
+    value: "{{credential.merchant_key}}"
+
+errors:
+  message_path: 0.Message
+
+triggers:
+  - name: Notification
+    description: Starts the flow when Cielo notifies a payment or recurrence change. Give this address to Cielo Support as the Payment Status URL, with the header below.
+    fields:
+      - {name: secret, label: Header value, secret: true, required: true, description: "Ask Cielo Support to send it in the X-Heddle-Token header."}
+    webhook:
+      signature: {header: X-Heddle-Token, token: "{{fields.secret}}"}
+
+actions:
+  # Sales
+  - name: Create Card Sale
+    resource: Sale
+    description: Charges a credit card, captured now or later. The answer's Payment.Status 1 is authorized, 2 is captured.
+    fields:
+      - {name: order_id, label: Order ID, required: true, description: Your order number.}
+      - {name: amount, label: Amount, type: number, required: true, description: In cents.}
+      - {name: installments, label: Installments, type: number, default: 1}
+      - {name: capture, label: Capture now, type: boolean, default: true}
+      - {name: card_number, label: Card number, required: true}
+      - {name: holder, label: Name on card, required: true}
+      - {name: expiration, label: Expiration, required: true, description: "MM/YYYY, like 12/2030"}
+      - {name: security_code, label: Security code, required: true}
+      - {name: brand, label: Brand, type: select, required: true, default: Visa, options: [{label: Visa, value: Visa}, {label: Mastercard, value: Master}, {label: Elo, value: Elo}, {label: American Express, value: Amex}, {label: Hipercard, value: Hipercard}, {label: Hiper, value: Hiper}, {label: Diners, value: Diners}, {label: Discover, value: Discover}, {label: JCB, value: JCB}, {label: Aura, value: Aura}]}
+      - {name: save_card, label: Save card, type: boolean, default: false, description: Returns a CardToken for later sales.}
+      - {name: customer_name, label: Customer name}
+      - {name: customer_email, label: Customer email}
+      - {name: customer_identity, label: Customer CPF or CNPJ}
+      - {name: soft_descriptor, label: Statement name, description: Up to 13 characters on the card statement.}
+    request:
+      method: POST
+      path: 1/sales/
+      body:
+        MerchantOrderId: "{{fields.order_id}}"
+        Customer: {Name: "{{fields.customer_name}}", Email: "{{fields.customer_email}}", Identity: "{{fields.customer_identity}}"}
+        Payment:
+          Type: CreditCard
+          Amount: "{{fields.amount}}"
+          Installments: "{{fields.installments}}"
+          Capture: "{{fields.capture}}"
+          SoftDescriptor: "{{fields.soft_descriptor}}"
+          CreditCard: {CardNumber: "{{fields.card_number}}", Holder: "{{fields.holder}}", ExpirationDate: "{{fields.expiration}}", SecurityCode: "{{fields.security_code}}", Brand: "{{fields.brand}}", SaveCard: "{{fields.save_card}}"}
+
+  - name: Create Saved Card Sale
+    resource: Sale
+    description: Charges a card saved before, by its CardToken.
+    fields:
+      - {name: order_id, label: Order ID, required: true, description: Your order number.}
+      - {name: amount, label: Amount, type: number, required: true, description: In cents.}
+      - {name: installments, label: Installments, type: number, default: 1}
+      - {name: capture, label: Capture now, type: boolean, default: true}
+      - {name: card_token, label: Card token, required: true, description: From Save Card or a sale with Save card.}
+      - {name: security_code, label: Security code}
+      - {name: brand, label: Brand, type: select, required: true, default: Visa, options: [{label: Visa, value: Visa}, {label: Mastercard, value: Master}, {label: Elo, value: Elo}, {label: American Express, value: Amex}, {label: Hipercard, value: Hipercard}, {label: Hiper, value: Hiper}, {label: Diners, value: Diners}, {label: Discover, value: Discover}, {label: JCB, value: JCB}, {label: Aura, value: Aura}]}
+      - {name: customer_name, label: Customer name}
+      - {name: soft_descriptor, label: Statement name, description: Up to 13 characters on the card statement.}
+    request:
+      method: POST
+      path: 1/sales/
+      body:
+        MerchantOrderId: "{{fields.order_id}}"
+        Customer: {Name: "{{fields.customer_name}}"}
+        Payment:
+          Type: CreditCard
+          Amount: "{{fields.amount}}"
+          Installments: "{{fields.installments}}"
+          Capture: "{{fields.capture}}"
+          SoftDescriptor: "{{fields.soft_descriptor}}"
+          CreditCard: {CardToken: "{{fields.card_token}}", SecurityCode: "{{fields.security_code}}", Brand: "{{fields.brand}}"}
+
+  - name: Create Pix Sale
+    resource: Sale
+    description: Makes a Pix QR code, valid for two hours. The answer has Payment.QrCodeString and Payment.QrCodeBase64Image.
+    fields:
+      - {name: order_id, label: Order ID, required: true, description: Your order number.}
+      - {name: amount, label: Amount, type: number, required: true, description: In cents.}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_identity, label: Customer CPF or CNPJ, required: true}
+      - {name: identity_type, label: Document, type: select, required: true, default: CPF, options: [{label: CPF, value: CPF}, {label: CNPJ, value: CNPJ}]}
+    request:
+      method: POST
+      path: 1/sales/
+      body:
+        MerchantOrderId: "{{fields.order_id}}"
+        Customer: {Name: "{{fields.customer_name}}", Identity: "{{fields.customer_identity}}", IdentityType: "{{fields.identity_type}}"}
+        Payment: {Type: Pix, Amount: "{{fields.amount}}"}
+
+  - name: Create Boleto Sale
+    resource: Sale
+    description: Issues a boleto. The answer has Payment.Url, Payment.BarCodeNumber and Payment.DigitableLine.
+    fields:
+      - {name: order_id, label: Order ID, required: true, description: "Letters and digits only."}
+      - {name: amount, label: Amount, type: number, required: true, description: In cents.}
+      - {name: provider, label: Bank, type: select, required: true, default: Bradesco2, options: [{label: Bradesco, value: Bradesco2}, {label: Banco do Brasil, value: BancoDoBrasil2}]}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_identity, label: Customer CPF or CNPJ, required: true}
+      - {name: street, label: Street, required: true}
+      - {name: number, label: Number, required: true}
+      - {name: complement, label: Complement}
+      - {name: district, label: District, required: true}
+      - {name: zip_code, label: CEP, required: true}
+      - {name: city, label: City, required: true}
+      - {name: state, label: State, required: true, description: "Two letters, like SP"}
+      - {name: instructions, label: Instructions, type: textarea, description: Printed on the boleto for the bank.}
+      - {name: demonstrative, label: Note to the payer, type: textarea}
+    request:
+      method: POST
+      path: 1/sales/
+      body:
+        MerchantOrderId: "{{fields.order_id}}"
+        Customer:
+          Name: "{{fields.customer_name}}"
+          Identity: "{{fields.customer_identity}}"
+          Address: {Street: "{{fields.street}}", Number: "{{fields.number}}", Complement: "{{fields.complement}}", District: "{{fields.district}}", ZipCode: "{{fields.zip_code}}", City: "{{fields.city}}", State: "{{fields.state}}", Country: BRA}
+        Payment: {Type: Boleto, Amount: "{{fields.amount}}", Provider: "{{fields.provider}}", ExpirationDate: "{{fields.due_date}}", Instructions: "{{fields.instructions}}", Demonstrative: "{{fields.demonstrative}}"}
+
+  - name: Get Sale
+    resource: Sale
+    description: Reads a sale by its PaymentId, with its status.
+    fields:
+      - {name: payment_id, label: Payment ID, required: true}
+    request:
+      method: GET
+      base_url: "https://{{credential.query_host}}/"
+      path: "1/sales/{{fields.payment_id}}"
+
+  - name: Find Sales by Order ID
+    resource: Sale
+    description: Lists the PaymentIds of the sales with an order number.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request:
+      method: GET
+      base_url: "https://{{credential.query_host}}/"
+      path: 1/sales
+      query: {merchantOrderId: "{{fields.order_id}}"}
+
+  - name: Get Sale by TID
+    resource: Sale
+    description: Reads a sale by the acquirer's TID.
+    fields:
+      - {name: tid, label: TID, required: true}
+    request:
+      method: GET
+      base_url: "https://{{credential.query_host}}/"
+      path: "1/sales/acquirerTid/{{fields.tid}}"
+
+  - name: Capture Sale
+    resource: Sale
+    description: Captures an authorized card sale, all of it or part.
+    fields:
+      - {name: payment_id, label: Payment ID, required: true}
+      - {name: amount, label: Amount, type: number, description: In cents. Empty for the whole sale.}
+    request:
+      method: PUT
+      path: "1/sales/{{fields.payment_id}}/capture"
+      query: {amount: "{{fields.amount}}"}
+
+  - name: Cancel Sale
+    resource: Sale
+    description: Cancels or refunds a card or Pix sale, all of it or part. A Pix refund needs balance in the account.
+    fields:
+      - {name: payment_id, label: Payment ID, required: true}
+      - {name: amount, label: Amount, type: number, description: In cents. Empty for the whole sale.}
+    request:
+      method: PUT
+      path: "1/sales/{{fields.payment_id}}/void"
+      query: {amount: "{{fields.amount}}"}
+
+  - name: Cancel Sale by Order ID
+    resource: Sale
+    description: Cancels a card sale by its order number, all of it or part.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+      - {name: amount, label: Amount, type: number, description: In cents. Empty for the whole sale.}
+    request:
+      method: PUT
+      path: "1/sales/OrderId/{{fields.order_id}}/void"
+      query: {amount: "{{fields.amount}}"}
+
+  # Cards
+  - name: Save Card
+    resource: Card
+    description: Saves a card and returns its CardToken, to charge it later without its number.
+    fields:
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: card_number, label: Card number, required: true}
+      - {name: holder, label: Name on card, required: true}
+      - {name: expiration, label: Expiration, required: true, description: "MM/YYYY, like 12/2030"}
+      - {name: brand, label: Brand, type: select, required: true, default: Visa, options: [{label: Visa, value: Visa}, {label: Mastercard, value: Master}, {label: Elo, value: Elo}, {label: American Express, value: Amex}, {label: Hipercard, value: Hipercard}, {label: Hiper, value: Hiper}, {label: Diners, value: Diners}, {label: Discover, value: Discover}, {label: JCB, value: JCB}, {label: Aura, value: Aura}]}
+    request:
+      method: POST
+      path: 1/card/
+      body: {CustomerName: "{{fields.customer_name}}", CardNumber: "{{fields.card_number}}", Holder: "{{fields.holder}}", ExpirationDate: "{{fields.expiration}}", Brand: "{{fields.brand}}"}
+
+  - name: Get Saved Card
+    resource: Card
+    description: Reads a saved card by its CardToken, with the number masked.
+    fields:
+      - {name: card_token, label: Card token, required: true}
+    request:
+      method: GET
+      base_url: "https://{{credential.query_host}}/"
+      path: "1/card/{{fields.card_token}}"
+
+  - name: Validate Card
+    resource: Card
+    description: Checks with the issuer that a card is valid, without charging it (Zero Auth). The answer's Valid is true or false.
+    fields:
+      - {name: card_type, label: Card type, type: select, default: CreditCard, options: [{label: Credit, value: CreditCard}, {label: Debit, value: DebitCard}]}
+      - {name: card_number, label: Card number, required: true}
+      - {name: holder, label: Name on card, required: true}
+      - {name: expiration, label: Expiration, required: true, description: "MM/YYYY, like 12/2030"}
+      - {name: security_code, label: Security code, required: true}
+      - {name: brand, label: Brand, type: select, required: true, default: Visa, options: [{label: Visa, value: Visa}, {label: Mastercard, value: Master}, {label: Elo, value: Elo}, {label: American Express, value: Amex}, {label: Hipercard, value: Hipercard}, {label: Hiper, value: Hiper}, {label: Diners, value: Diners}, {label: Discover, value: Discover}, {label: JCB, value: JCB}, {label: Aura, value: Aura}]}
+    request:
+      method: POST
+      path: 1/zeroauth
+      body: {CardType: "{{fields.card_type}}", CardNumber: "{{fields.card_number}}", Holder: "{{fields.holder}}", ExpirationDate: "{{fields.expiration}}", SecurityCode: "{{fields.security_code}}", Brand: "{{fields.brand}}"}
+
+  - name: Look Up BIN
+    resource: Card
+    description: Reads the brand, type, issuer and country of a card from its first digits.
+    fields:
+      - {name: bin, label: BIN, required: true, description: The first 6 or 9 digits of the card.}
+    request:
+      method: GET
+      base_url: "https://{{credential.query_host}}/"
+      path: "1/cardBin/{{fields.bin}}"
+
+  # Recurrences
+  - name: Create Recurring Sale
+    resource: Recurrence
+    description: Charges a card now and schedules Cielo to charge it again at each interval. The answer has Payment.RecurrentPayment.RecurrentPaymentId.
+    fields:
+      - {name: order_id, label: Order ID, required: true, description: Your order number.}
+      - {name: amount, label: Amount, type: number, required: true, description: In cents.}
+      - {name: interval, label: Interval, type: select, required: true, default: Monthly, options: [{label: Monthly, value: Monthly}, {label: Every 2 months, value: Bimonthly}, {label: Every 3 months, value: Quarterly}, {label: Every 6 months, value: SemiAnnual}, {label: Yearly, value: Annual}]}
+      - {name: end_date, label: End date, description: "YYYY-MM-DD. Empty for no end."}
+      - {name: card_number, label: Card number, required: true}
+      - {name: holder, label: Name on card, required: true}
+      - {name: expiration, label: Expiration, required: true, description: "MM/YYYY, like 12/2030"}
+      - {name: security_code, label: Security code, required: true}
+      - {name: brand, label: Brand, type: select, required: true, default: Visa, options: [{label: Visa, value: Visa}, {label: Mastercard, value: Master}, {label: Elo, value: Elo}, {label: American Express, value: Amex}, {label: Hipercard, value: Hipercard}, {label: Hiper, value: Hiper}, {label: Diners, value: Diners}, {label: Discover, value: Discover}, {label: JCB, value: JCB}, {label: Aura, value: Aura}]}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: soft_descriptor, label: Statement name, description: Up to 13 characters on the card statement.}
+    request:
+      method: POST
+      path: 1/sales/
+      body:
+        MerchantOrderId: "{{fields.order_id}}"
+        Customer: {Name: "{{fields.customer_name}}"}
+        Payment:
+          Type: CreditCard
+          Amount: "{{fields.amount}}"
+          Installments: 1
+          SoftDescriptor: "{{fields.soft_descriptor}}"
+          RecurrentPayment: {AuthorizeNow: true, Interval: "{{fields.interval}}", EndDate: "{{fields.end_date}}"}
+          CreditCard: {CardNumber: "{{fields.card_number}}", Holder: "{{fields.holder}}", ExpirationDate: "{{fields.expiration}}", SecurityCode: "{{fields.security_code}}", Brand: "{{fields.brand}}"}
+
+  - name: Get Recurrence
+    resource: Recurrence
+    description: Reads a recurrence, with its next charge date, its status and the sales it made.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+    request:
+      method: GET
+      base_url: "https://{{credential.query_host}}/"
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}"
+    output: {path: RecurrentPayment}
+
+  - name: Change Recurrence Amount
+    resource: Recurrence
+    description: Changes the amount of the next charges.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+      - {name: value, label: Amount, type: number, required: true, description: In cents.}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/Amount"
+      body: "{{fields.value}}"
+
+  - name: Change Recurrence Day
+    resource: Recurrence
+    description: Changes the day of the month the recurrence charges.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+      - {name: value, label: Day, type: number, required: true, description: 1 to 31.}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/RecurrencyDay"
+      body: "{{fields.value}}"
+
+  - name: Change Next Charge Date
+    resource: Recurrence
+    description: Changes the date of the next charge only.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+      - {name: value, label: Date, required: true, description: "YYYY-MM-DD"}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/NextPaymentDate"
+      body: "{{fields.value}}"
+
+  - name: Change Recurrence End Date
+    resource: Recurrence
+    description: Changes the date the recurrence ends.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+      - {name: value, label: End date, required: true, description: "YYYY-MM-DD"}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/EndDate"
+      body: "{{fields.value}}"
+
+  - name: Change Recurrence Interval
+    resource: Recurrence
+    description: Changes how often the recurrence charges.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+      - {name: value, label: Interval, type: select, required: true, options: [{label: Monthly, value: 1}, {label: Every 2 months, value: 2}, {label: Every 3 months, value: 3}, {label: Every 6 months, value: 6}, {label: Yearly, value: 12}]}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/Interval"
+      body: "{{fields.value}}"
+
+  - name: Deactivate Recurrence
+    resource: Recurrence
+    description: Stops a recurrence from charging, until it is reactivated.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/Deactivate"
+
+  - name: Reactivate Recurrence
+    resource: Recurrence
+    description: Turns a deactivated recurrence back on.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/Reactivate"
+
+  - name: Change Recurrence Customer
+    resource: Recurrence
+    description: Changes the customer of a recurrence.
+    fields:
+      - {name: recurrence_id, label: Recurrence ID, required: true}
+      - {name: customer_name, label: Customer name, required: true}
+      - {name: customer_email, label: Customer email}
+      - {name: customer_identity, label: Customer CPF or CNPJ}
+    request:
+      method: PUT
+      path: "1/RecurrentPayment/{{fields.recurrence_id}}/Customer"
+      body: {Name: "{{fields.customer_name}}", Email: "{{fields.customer_email}}", Identity: "{{fields.customer_identity}}"}
+
+i18n:
+  pt-BR:
+    description: "Receba por cartão, Pix e boleto com a Cielo, capture e cancele vendas, salve cartões, valide-os com Zero Auth e rode recorrências programadas."
+    triggers:
+      Notification: {name: "Notificação", description: "Inicia o fluxo quando a Cielo avisa uma mudança de pagamento ou recorrência. Passe este endereço ao Suporte Cielo como URL de Status de Pagamento, com o header abaixo.", fields: {secret: "Valor do header"}}
+    actions:
+      Create Card Sale: {name: "Criar venda no cartão", description: "Cobra um cartão de crédito, com captura agora ou depois. No retorno, Payment.Status 1 é autorizada e 2 é capturada.", fields: {order_id: "Número do pedido", amount: "Valor", installments: "Parcelas", capture: "Capturar agora", card_number: "Número do cartão", holder: "Nome no cartão", expiration: "Validade", security_code: "Código de segurança", brand: "Bandeira", save_card: "Salvar cartão", customer_name: "Nome do cliente", customer_email: "E-mail do cliente", customer_identity: "CPF ou CNPJ do cliente", soft_descriptor: "Nome na fatura"}}
+      Create Saved Card Sale: {name: "Criar venda com cartão salvo", description: "Cobra um cartão salvo antes, pelo CardToken.", fields: {order_id: "Número do pedido", amount: "Valor", installments: "Parcelas", capture: "Capturar agora", card_token: "Token do cartão", security_code: "Código de segurança", brand: "Bandeira", customer_name: "Nome do cliente", soft_descriptor: "Nome na fatura"}}
+      Create Pix Sale: {name: "Criar venda Pix", description: "Gera um QR code Pix válido por duas horas. O retorno traz Payment.QrCodeString e Payment.QrCodeBase64Image.", fields: {order_id: "Número do pedido", amount: "Valor", customer_name: "Nome do cliente", customer_identity: "CPF ou CNPJ do cliente", identity_type: "Documento"}}
+      Create Boleto Sale: {name: "Criar venda no boleto", description: "Emite um boleto. O retorno traz Payment.Url, Payment.BarCodeNumber e Payment.DigitableLine.", fields: {order_id: "Número do pedido", amount: "Valor", provider: "Banco", due_date: "Vencimento", customer_name: "Nome do cliente", customer_identity: "CPF ou CNPJ do cliente", street: "Rua", number: "Número", complement: "Complemento", district: "Bairro", zip_code: "CEP", city: "Cidade", state: "UF", instructions: "Instruções", demonstrative: "Recado ao pagador"}}
+      Get Sale: {name: "Consultar venda", description: "Lê uma venda pelo PaymentId, com o status.", fields: {payment_id: "Payment ID"}}
+      Find Sales by Order ID: {name: "Buscar vendas pelo pedido", description: "Lista os PaymentIds das vendas de um número de pedido.", fields: {order_id: "Número do pedido"}}
+      Get Sale by TID: {name: "Consultar venda pelo TID", description: "Lê uma venda pelo TID da adquirente.", fields: {tid: "TID"}}
+      Capture Sale: {name: "Capturar venda", description: "Captura uma venda autorizada no cartão, total ou parcial.", fields: {payment_id: "Payment ID", amount: "Valor"}}
+      Cancel Sale: {name: "Cancelar venda", description: "Cancela ou estorna uma venda no cartão ou Pix, total ou parcial. O estorno de Pix exige saldo na conta.", fields: {payment_id: "Payment ID", amount: "Valor"}}
+      Cancel Sale by Order ID: {name: "Cancelar venda pelo pedido", description: "Cancela uma venda no cartão pelo número do pedido, total ou parcial.", fields: {order_id: "Número do pedido", amount: "Valor"}}
+      Save Card: {name: "Salvar cartão", description: "Salva um cartão e devolve o CardToken, para cobrar depois sem o número.", fields: {customer_name: "Nome do cliente", card_number: "Número do cartão", holder: "Nome no cartão", expiration: "Validade", brand: "Bandeira"}}
+      Get Saved Card: {name: "Consultar cartão salvo", description: "Lê um cartão salvo pelo CardToken, com o número mascarado.", fields: {card_token: "Token do cartão"}}
+      Validate Card: {name: "Validar cartão", description: "Confirma com o emissor que um cartão é válido, sem cobrar (Zero Auth). No retorno, Valid é true ou false.", fields: {card_type: "Tipo de cartão", card_number: "Número do cartão", holder: "Nome no cartão", expiration: "Validade", security_code: "Código de segurança", brand: "Bandeira"}}
+      Look Up BIN: {name: "Consultar BIN", description: "Lê a bandeira, o tipo, o emissor e o país de um cartão pelos primeiros dígitos.", fields: {bin: "BIN"}}
+      Create Recurring Sale: {name: "Criar venda recorrente", description: "Cobra o cartão agora e agenda a Cielo para cobrar de novo a cada intervalo. O retorno traz Payment.RecurrentPayment.RecurrentPaymentId.", fields: {order_id: "Número do pedido", amount: "Valor", interval: "Intervalo", end_date: "Data de fim", card_number: "Número do cartão", holder: "Nome no cartão", expiration: "Validade", security_code: "Código de segurança", brand: "Bandeira", customer_name: "Nome do cliente", soft_descriptor: "Nome na fatura"}}
+      Get Recurrence: {name: "Consultar recorrência", description: "Lê uma recorrência, com a data da próxima cobrança, o status e as vendas feitas.", fields: {recurrence_id: "ID da recorrência"}}
+      Change Recurrence Amount: {name: "Alterar valor da recorrência", description: "Altera o valor das próximas cobranças.", fields: {recurrence_id: "ID da recorrência", value: "Valor"}}
+      Change Recurrence Day: {name: "Alterar dia da recorrência", description: "Altera o dia do mês em que a recorrência cobra.", fields: {recurrence_id: "ID da recorrência", value: "Dia"}}
+      Change Next Charge Date: {name: "Alterar data da próxima cobrança", description: "Altera só a data da próxima cobrança.", fields: {recurrence_id: "ID da recorrência", value: "Data"}}
+      Change Recurrence End Date: {name: "Alterar fim da recorrência", description: "Altera a data em que a recorrência termina.", fields: {recurrence_id: "ID da recorrência", value: "Data de fim"}}
+      Change Recurrence Interval: {name: "Alterar intervalo da recorrência", description: "Altera a frequência das cobranças.", fields: {recurrence_id: "ID da recorrência", value: "Intervalo"}}
+      Deactivate Recurrence: {name: "Desativar recorrência", description: "Para as cobranças de uma recorrência até ela ser reativada.", fields: {recurrence_id: "ID da recorrência"}}
+      Reactivate Recurrence: {name: "Reativar recorrência", description: "Liga de novo uma recorrência desativada.", fields: {recurrence_id: "ID da recorrência"}}
+      Change Recurrence Customer: {name: "Alterar cliente da recorrência", description: "Altera o cliente de uma recorrência.", fields: {recurrence_id: "ID da recorrência", customer_name: "Nome do cliente", customer_email: "E-mail do cliente", customer_identity: "CPF ou CNPJ do cliente"}}

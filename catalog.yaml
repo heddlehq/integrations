@@ -98,7 +98,7 @@ integrations:
   - {id: braip, name: Braip, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: brasil_api, name: "BrasilAPI (CEP, CNPJ, bancos, feriados)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
   - {id: btg_empresas, name: BTG Pactual Empresas, category: banking, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
-  - {id: cielo, name: Cielo, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: cielo, name: Cielo, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: clicksign, name: Clicksign, category: esign, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: cnpja, name: CNPJá, category: data, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: conta_azul, name: Conta Azul, category: accounting, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
