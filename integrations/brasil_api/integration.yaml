@@ -1,0 +1,205 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# BrasilAPI, the free public API for Brazilian data: CEP, CNPJ, banks, holidays, area
+# codes, FIPE, IBGE, ISBN, NCM, Pix participants, .br domains, rates, exchange and
+# weather. No key; it answers JSON and 404 when nothing is found.
+id: brasil_api
+name: BrasilAPI
+version: 1.0.0
+homepage: https://brasilapi.com.br/docs
+description: Look up CEPs, CNPJs, banks, holidays, area codes, FIPE prices, IBGE states and cities, ISBNs, NCMs, Pix participants, .br domains, interest rates, exchange rates and the weather, with BrasilAPI.
+icon: hero-magnifying-glass
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="9.93" width="18.00" height="4.15" viewBox="158 155 764 176"><defs> <clipPath id="bapi-clip-0"> <path clip-rule="nonzero" d="M 982 23 L 1001 23 L 1001 42 L 982 42 Z M 982 23 "/> </clipPath> <clipPath id="bapi-clip-1"> <path clip-rule="nonzero" d="M 982.23 32.62 C 982.23 37.70 986.35 41.82 991.43 41.82 C 996.51 41.82 1000.63 37.70 1000.63 32.62 C 1000.63 27.54 996.51 23.42 991.43 23.42 C 986.35 23.42 982.23 27.54 982.23 32.62 "/> </clipPath> <linearGradient id="bapi-linear-pattern-0" gradientUnits="userSpaceOnUse" x1="-0.13" y1="0" x2="1.16" y2="0" gradientTransform="matrix(-14.12, 14.12, -14.12, -14.12, 998.66, 25.39)"><stop offset="0" stop-color="rgb(100%, 79.21%, 9.01%)" stop-opacity="1"/><stop offset="0.68" stop-color="rgb(100%, 73.33%, 4.31%)" stop-opacity="1"/><stop offset="1" stop-color="rgb(100%, 67.84%, 0%)" stop-opacity="1"/></linearGradient> <clipPath id="bapi-clip-2"> <path clip-rule="nonzero" d="M 1013 23 L 1033 23 L 1033 42 L 1013 42 Z M 1013 23 "/> </clipPath> <clipPath id="bapi-clip-3"> <path clip-rule="nonzero" d="M 1013.76 32.62 C 1013.76 37.70 1017.88 41.82 1022.96 41.82 C 1028.04 41.82 1032.16 37.70 1032.16 32.62 C 1032.16 27.54 1028.04 23.42 1022.96 23.42 C 1017.88 23.42 1013.76 27.54 1013.76 32.62 "/> </clipPath> <linearGradient id="bapi-linear-pattern-1" gradientUnits="userSpaceOnUse" x1="-0.19" y1="0" x2="1.20" y2="0" gradientTransform="matrix(-13.19, 13.19, -13.19, -13.19, 1029.63, 25.96)"><stop offset="0" stop-color="rgb(10.98%, 46.66%, 90.19%)" stop-opacity="1"/><stop offset="0.59" stop-color="rgb(14.11%, 37.64%, 87.05%)" stop-opacity="1"/><stop offset="1" stop-color="rgb(18.03%, 27.45%, 83.52%)" stop-opacity="1"/></linearGradient> <clipPath id="bapi-clip-4"> <path clip-rule="nonzero" d="M 1043 23 L 1063 23 L 1063 42 L 1043 42 Z M 1043 23 "/> </clipPath> <clipPath id="bapi-clip-5"> <path clip-rule="nonzero" d="M 1043.82 32.62 C 1043.82 37.70 1047.94 41.82 1053.02 41.82 C 1058.10 41.82 1062.22 37.70 1062.22 32.62 C 1062.22 27.54 1058.10 23.42 1053.02 23.42 C 1047.94 23.42 1043.82 27.54 1043.82 32.62 "/> </clipPath> <linearGradient id="bapi-linear-pattern-2" gradientUnits="userSpaceOnUse" x1="-0.21" y1="0" x2="1.11" y2="0" gradientTransform="matrix(-13.84, 13.84, -13.84, -13.84, 1059.30, 26.34)"><stop offset="0" stop-color="rgb(14.11%, 74.11%, 9.80%)" stop-opacity="1"/><stop offset="0.53" stop-color="rgb(9.41%, 65.49%, 5.09%)" stop-opacity="1"/><stop offset="1" stop-color="rgb(4.31%, 56.07%, 0%)" stop-opacity="1"/></linearGradient> <clipPath id="bapi-clip-6"> <path clip-rule="nonzero" d="M 165 162 L 258 162 L 258 324 L 165 324 Z M 165 162 "/> </clipPath> <clipPath id="bapi-clip-7"> <path clip-rule="nonzero" d="M 180.25 162.09 C 171.91 162.09 165.14 168.85 165.14 177.20 L 165.14 308.42 C 165.14 316.76 171.91 323.53 180.25 323.53 L 257.62 323.53 L 257.62 162.09 Z M 180.25 162.09 "/> </clipPath> <linearGradient id="bapi-linear-pattern-3" gradientUnits="userSpaceOnUse" x1="-0.00" y1="0" x2="1.00" y2="0" gradientTransform="matrix(92.47, 0, 0, 92.47, 165.14, 242.81)"><stop offset="0" stop-color="rgb(13.33%, 72.94%, 9.01%)" stop-opacity="1"/><stop offset="0.62" stop-color="rgb(9.01%, 65.09%, 4.70%)" stop-opacity="1"/><stop offset="1" stop-color="rgb(4.31%, 56.07%, 0%)" stop-opacity="1"/></linearGradient> <clipPath id="bapi-clip-8"> <path clip-rule="nonzero" d="M 272 162 L 327 162 L 327 255 L 272 255 Z M 272 162 "/> </clipPath> <clipPath id="bapi-clip-9"> <path clip-rule="nonzero" d="M 272.15 162.09 L 272.15 254.64 L 326.55 254.64 L 326.55 177.20 C 326.55 168.85 319.78 162.09 311.44 162.09 Z M 272.15 162.09 "/> </clipPath> <linearGradient id="bapi-linear-pattern-4" gradientUnits="userSpaceOnUse" x1="0.00" y1="0" x2="0.99" y2="0" gradientTransform="matrix(54.40, 0, 0, 54.40, 272.15, 208.36)"><stop offset="0" stop-color="rgb(100%, 79.21%, 9.01%)" stop-opacity="1"/><stop offset="0.72" stop-color="rgb(100%, 70.19%, 3.92%)" stop-opacity="1"/><stop offset="1" stop-color="rgb(100%, 62.35%, 0%)" stop-opacity="1"/></linearGradient> <clipPath id="bapi-clip-10"> <path clip-rule="nonzero" d="M 272 269 L 327 269 L 327 324 L 272 324 Z M 272 269 "/> </clipPath> <clipPath id="bapi-clip-11"> <path clip-rule="nonzero" d="M 272.15 269.17 L 272.15 323.53 L 311.44 323.53 C 319.78 323.53 326.55 316.76 326.55 308.42 L 326.55 269.17 Z M 272.15 269.17 "/> </clipPath> <linearGradient id="bapi-linear-pattern-5" gradientUnits="userSpaceOnUse" x1="0.00" y1="0" x2="0.99" y2="0" gradientTransform="matrix(54.40, 0, 0, 54.40, 272.15, 296.35)"><stop offset="0" stop-color="rgb(10.98%, 46.66%, 90.19%)" stop-opacity="1"/><stop offset="0.71" stop-color="rgb(14.90%, 35.68%, 86.27%)" stop-opacity="1"/><stop offset="1" stop-color="rgb(18.03%, 27.45%, 83.52%)" stop-opacity="1"/></linearGradient> </defs> <g clip-path="url(#bapi-clip-0)"> <g clip-path="url(#bapi-clip-1)"> <path fill-rule="nonzero" fill="url(#bapi-linear-pattern-0)" d="M 1009.83 32.62 L 991.43 14.23 L 973.03 32.62 L 991.43 51.02 Z M 1009.83 32.62 "/> </g> </g> <g clip-path="url(#bapi-clip-2)"> <g clip-path="url(#bapi-clip-3)"> <path fill-rule="nonzero" fill="url(#bapi-linear-pattern-1)" d="M 1041.36 32.62 L 1022.96 14.22 L 1004.57 32.62 L 1022.96 51.02 Z M 1041.36 32.62 "/> </g> </g> <g clip-path="url(#bapi-clip-4)"> <g clip-path="url(#bapi-clip-5)"> <path fill-rule="nonzero" fill="url(#bapi-linear-pattern-2)" d="M 1071.42 32.62 L 1053.02 14.23 L 1034.62 32.62 L 1053.02 51.02 Z M 1071.42 32.62 "/> </g> </g> <g clip-path="url(#bapi-clip-6)"> <g clip-path="url(#bapi-clip-7)"> <path fill-rule="nonzero" fill="url(#bapi-linear-pattern-3)" d="M 165.14 162.09 L 165.14 323.53 L 257.62 323.53 L 257.62 162.09 Z M 165.14 162.09 "/> </g> </g> <g clip-path="url(#bapi-clip-8)"> <g clip-path="url(#bapi-clip-9)"> <path fill-rule="nonzero" fill="url(#bapi-linear-pattern-4)" d="M 272.15 162.09 L 272.15 254.64 L 326.55 254.64 L 326.55 162.09 Z M 272.15 162.09 "/> </g> </g> <g clip-path="url(#bapi-clip-10)"> <g clip-path="url(#bapi-clip-11)"> <path fill-rule="nonzero" fill="url(#bapi-linear-pattern-5)" d="M 272.15 269.17 L 272.15 323.53 L 326.55 323.53 L 326.55 269.17 Z M 272.15 269.17 "/> </g> </g> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 397.37 294.74 C 404.69 294.74 410.33 293.37 414.29 290.62 C 418.26 287.87 420.24 283.66 420.24 277.96 C 420.24 272.78 418.31 268.94 414.44 266.45 C 410.58 263.96 404.89 262.71 397.37 262.71 L 382.42 262.71 L 382.42 294.74 Z M 395.08 250.06 C 402.09 250.06 407.15 248.79 410.25 246.25 C 413.35 243.71 414.90 240.10 414.90 235.42 C 414.90 230.85 413.28 227.55 410.02 225.51 C 406.77 223.48 401.89 222.46 395.39 222.46 L 382.42 222.46 L 382.42 250.06 Z M 364.74 208.74 L 396.60 208.74 C 401.79 208.74 406.54 209.17 410.86 210.03 C 415.18 210.90 418.94 212.27 422.14 214.15 C 425.35 216.03 427.83 218.55 429.62 221.70 C 431.39 224.85 432.28 228.71 432.28 233.28 C 432.28 238.07 430.89 242.49 428.09 246.55 C 425.30 250.62 421.00 253.41 415.21 254.94 L 415.21 255.55 C 422.42 256.77 427.94 259.34 431.75 263.25 C 435.56 267.16 437.47 272.48 437.47 279.18 C 437.47 284.17 436.50 288.48 434.57 292.14 C 432.64 295.80 429.97 298.85 426.57 301.29 C 423.16 303.73 419.12 305.54 414.44 306.71 C 409.77 307.88 404.69 308.46 399.20 308.46 L 364.74 308.46 Z M 364.74 208.74 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 449.67 233.59 L 464.15 233.59 L 465.37 246.86 L 465.98 246.86 C 468.62 241.98 471.82 238.24 475.59 235.65 C 479.35 233.06 483.21 231.76 487.17 231.76 C 490.73 231.76 493.58 232.27 495.71 233.28 L 492.67 248.53 C 491.34 248.13 490.12 247.82 489.01 247.62 C 487.89 247.42 486.51 247.32 484.89 247.32 C 481.94 247.32 478.84 248.46 475.59 250.75 C 472.33 253.03 469.54 257.02 467.20 262.71 L 467.20 308.46 L 449.67 308.46 Z M 449.67 233.59 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 511.73 286.96 C 511.73 290.32 512.72 292.75 514.70 294.28 C 516.68 295.80 519.25 296.57 522.40 296.57 C 525.45 296.57 528.25 295.86 530.79 294.43 C 533.33 293.01 535.97 290.98 538.71 288.33 L 538.71 271.56 C 533.63 272.17 529.36 272.98 525.91 274.00 C 522.45 275.01 519.68 276.16 517.60 277.43 C 515.51 278.70 514.01 280.15 513.10 281.78 C 512.18 283.40 511.73 285.13 511.73 286.96 M 494.65 288.33 C 494.65 280.30 498.16 274.10 505.17 269.73 C 512.18 265.36 523.37 262.31 538.71 260.58 C 538.71 258.65 538.46 256.80 537.95 255.01 C 537.44 253.24 536.66 251.66 535.59 250.29 C 534.52 248.92 533.15 247.85 531.47 247.08 C 529.80 246.32 527.68 245.94 525.14 245.94 C 521.38 245.94 517.75 246.66 514.24 248.08 C 510.73 249.50 507.35 251.23 504.10 253.26 L 497.69 241.52 C 501.87 238.88 506.51 236.59 511.65 234.66 C 516.78 232.73 522.35 231.76 528.35 231.76 C 537.80 231.76 544.82 234.53 549.39 240.07 C 553.96 245.62 556.25 253.62 556.25 264.09 L 556.25 308.46 L 541.92 308.46 L 540.55 300.23 L 540.09 300.23 C 536.73 303.07 533.15 305.46 529.34 307.39 C 525.53 309.32 521.38 310.29 516.91 310.29 C 510.30 310.29 504.94 308.28 500.82 304.27 C 496.71 300.25 494.65 294.94 494.65 288.33 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 573.78 288.64 C 577.14 291.28 580.47 293.34 583.77 294.81 C 587.08 296.29 590.66 297.02 594.52 297.02 C 598.58 297.02 601.59 296.19 603.52 294.51 C 605.45 292.83 606.42 290.67 606.42 288.03 C 606.42 286.50 605.96 285.16 605.04 283.99 C 604.13 282.82 602.91 281.78 601.39 280.86 C 599.86 279.95 598.13 279.11 596.20 278.35 C 594.26 277.58 592.33 276.80 590.41 275.98 C 587.97 275.07 585.47 274.00 582.93 272.78 C 580.39 271.56 578.13 270.08 576.15 268.36 C 574.17 266.63 572.54 264.62 571.27 262.33 C 570 260.05 569.36 257.33 569.36 254.17 C 569.36 247.57 571.80 242.18 576.68 238.01 C 581.56 233.85 588.22 231.76 596.66 231.76 C 601.84 231.76 606.51 232.68 610.69 234.51 C 614.85 236.33 618.46 238.42 621.51 240.76 L 613.43 251.43 C 610.78 249.50 608.12 247.95 605.42 246.78 C 602.73 245.61 599.91 245.03 596.96 245.03 C 593.20 245.03 590.43 245.82 588.65 247.39 C 586.87 248.97 585.98 250.92 585.98 253.26 C 585.98 254.79 586.41 256.08 587.28 257.15 C 588.14 258.22 589.28 259.16 590.71 259.97 C 592.13 260.78 593.78 261.55 595.67 262.26 C 597.55 262.97 599.50 263.68 601.53 264.39 C 604.08 265.31 606.62 266.35 609.16 267.52 C 611.70 268.69 614.01 270.14 616.10 271.86 C 618.18 273.59 619.86 275.70 621.13 278.19 C 622.40 280.68 623.03 283.66 623.03 287.11 C 623.03 290.37 622.40 293.39 621.13 296.19 C 619.86 298.98 618.00 301.42 615.57 303.50 C 613.12 305.59 610.08 307.24 606.42 308.46 C 602.76 309.68 598.58 310.29 593.91 310.29 C 588.73 310.29 583.62 309.30 578.58 307.32 C 573.55 305.33 569.21 302.87 565.55 299.92 Z M 573.78 288.64 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 634.17 233.59 L 651.70 233.59 L 651.70 308.46 L 634.17 308.46 Z M 643.01 220.48 C 639.86 220.48 637.27 219.57 635.23 217.73 C 633.20 215.91 632.19 213.51 632.19 210.57 C 632.19 207.62 633.20 205.21 635.23 203.32 C 637.27 201.44 639.86 200.50 643.01 200.50 C 646.16 200.50 648.75 201.44 650.79 203.32 C 652.82 205.21 653.84 207.62 653.84 210.57 C 653.84 213.51 652.82 215.91 650.79 217.73 C 648.75 219.57 646.16 220.48 643.01 220.48 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 669.54 200.81 L 687.08 200.81 L 687.08 290.16 C 687.08 292.30 687.48 293.80 688.30 294.66 C 689.11 295.53 689.98 295.96 690.89 295.96 L 692.03 295.96 C 692.39 295.96 692.92 295.86 693.64 295.65 L 695.92 308.76 C 693.58 309.78 690.48 310.29 686.62 310.29 C 680.32 310.29 675.89 308.41 673.35 304.65 C 670.81 300.89 669.54 295.75 669.54 289.25 Z M 669.54 200.81 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 780.67 268.05 L 779.14 250.98 C 778.64 245.69 778.15 240.37 777.69 235.04 C 777.24 229.70 776.80 224.14 776.40 218.34 L 775.79 218.34 C 773.14 224.14 770.53 229.65 767.94 234.89 C 765.34 240.12 762.62 245.49 759.78 250.98 L 750.93 268.05 Z M 781.58 277.20 L 746.21 277.20 L 730.20 308.46 L 717.08 308.46 L 771.37 208.43 L 785.09 208.43 L 796.68 308.46 L 784.33 308.46 Z M 781.58 277.20 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 839.98 258.60 C 850.35 258.60 858.21 256.57 863.54 252.50 C 868.88 248.44 871.55 242.39 871.55 234.35 C 871.55 228.56 869.62 224.37 865.75 221.78 C 861.89 219.18 856.30 217.89 848.98 217.89 L 833.58 217.89 L 825.50 258.60 Z M 823.67 208.43 L 851.88 208.43 C 856.55 208.43 860.82 208.89 864.69 209.80 C 868.55 210.72 871.85 212.17 874.60 214.15 C 877.34 216.13 879.48 218.65 881.00 221.70 C 882.53 224.75 883.29 228.46 883.29 232.83 C 883.29 238.93 882.19 244.21 880.01 248.69 C 877.82 253.16 874.80 256.85 870.94 259.74 C 867.07 262.64 862.48 264.77 857.14 266.15 C 851.80 267.52 845.93 268.21 839.53 268.21 L 823.51 268.21 L 815.59 308.46 L 803.69 308.46 Z M 823.67 208.43 "/> <path fill-rule="nonzero" fill="rgb(19.99%, 19.99%, 19.99%)" fill-opacity="1" d="M 902.96 208.43 L 914.85 208.43 L 894.87 308.46 L 882.98 308.46 Z M 902.96 208.43 "/></svg></svg>
+category: data
+base_url: https://brasilapi.com.br/api/
+headers:
+  User-Agent: Heddle/1.0
+
+credential:
+  label: BrasilAPI
+  fields: []
+  auth: {type: none}
+
+errors:
+  message_path: message
+
+actions:
+  # Companies and addresses
+  - name: Look Up CEP
+    resource: Address
+    description: Finds the address of a CEP, with its coordinates when known.
+    fields:
+      - {name: cep, label: CEP, required: true, description: "8 digits, like 01001000"}
+    request: {method: GET, path: "cep/v2/{{fields.cep}}"}
+
+  - name: Look Up CNPJ
+    resource: Company
+    description: Reads a company's public registry by its CNPJ.
+    fields:
+      - {name: cnpj, label: CNPJ, required: true, description: 14 digits.}
+    request: {method: GET, path: "cnpj/v1/{{fields.cnpj}}"}
+
+  - name: Look Up Area Code
+    resource: Address
+    description: Lists the state and cities of a DDD.
+    fields:
+      - {name: ddd, label: DDD, required: true, description: "Like 11"}
+    request: {method: GET, path: "ddd/v1/{{fields.ddd}}"}
+
+  - name: Look Up Domain
+    resource: Company
+    description: Reads the status of a .br domain at Registro.br.
+    fields:
+      - {name: domain, label: Domain, required: true, description: "Like example.com.br"}
+    request: {method: GET, path: "registrobr/v1/{{fields.domain}}"}
+
+  # Banks and money
+  - name: List Banks
+    resource: Finance
+    description: Lists the Brazilian banks with their codes and ISPB.
+    request: {method: GET, path: banks/v1}
+
+  - name: Get Bank
+    resource: Finance
+    description: Reads a bank by its code.
+    fields:
+      - {name: code, label: Bank code, required: true, description: "Like 341"}
+    request: {method: GET, path: "banks/v1/{{fields.code}}"}
+
+  - name: List Pix Participants
+    resource: Finance
+    description: Lists the institutions that take part in Pix.
+    request: {method: GET, path: pix/v1/participants}
+
+  - name: List Rates
+    resource: Finance
+    description: Lists the official rates, like Selic, CDI and IPCA.
+    request: {method: GET, path: taxas/v1}
+
+  - name: Get Rate
+    resource: Finance
+    description: Reads one official rate.
+    fields:
+      - {name: sigla, label: Rate, type: select, required: true, options: [{label: Selic, value: SELIC}, {label: CDI, value: CDI}, {label: IPCA, value: IPCA}]}
+    request: {method: GET, path: "taxas/v1/{{fields.sigla}}"}
+
+  - name: List Currencies
+    resource: Finance
+    description: Lists the currencies with exchange rates.
+    request: {method: GET, path: cambio/v1/moedas}
+
+  - name: Get Exchange Rate
+    resource: Finance
+    description: Reads a currency's exchange rates against the real on a day.
+    fields:
+      - {name: moeda, label: Currency, required: true, description: "Like USD"}
+      - {name: data, label: Date, required: true, description: "Like 2026-01-30"}
+    request: {method: GET, path: "cambio/v1/cotacao/{{fields.moeda}}/{{fields.data}}"}
+
+  - name: List Brokers
+    resource: Finance
+    description: Lists the brokers registered with CVM.
+    request: {method: GET, path: cvm/corretoras/v1}
+
+  # Calendar
+  - name: List Holidays
+    resource: Calendar
+    description: Lists the national holidays of a year.
+    fields:
+      - {name: ano, label: Year, type: number, required: true}
+    request: {method: GET, path: "feriados/v1/{{fields.ano}}"}
+
+  # Vehicles
+  - name: List FIPE Brands
+    resource: Vehicle
+    description: Lists the vehicle brands in the FIPE table.
+    fields:
+      - {name: tipo, label: Vehicle, type: select, required: true, default: carros, options: [{label: Cars, value: carros}, {label: Motorcycles, value: motos}, {label: Trucks, value: caminhoes}]}
+    request: {method: GET, path: "fipe/marcas/v1/{{fields.tipo}}"}
+
+  - name: Get FIPE Price
+    resource: Vehicle
+    description: Reads the FIPE prices of a vehicle code.
+    fields:
+      - {name: codigo, label: FIPE code, required: true, description: "Like 001004-9"}
+    request: {method: GET, path: "fipe/preco/v1/{{fields.codigo}}"}
+
+  # IBGE
+  - name: List States
+    resource: IBGE
+    description: Lists the Brazilian states.
+    request: {method: GET, path: ibge/uf/v1}
+
+  - name: List Cities
+    resource: IBGE
+    description: Lists the cities of a state, with their IBGE codes.
+    fields:
+      - {name: uf, label: State, required: true, description: "Like SP"}
+    request: {method: GET, path: "ibge/municipios/v1/{{fields.uf}}"}
+
+  # Products
+  - name: Look Up ISBN
+    resource: Product
+    description: Reads a book by its ISBN.
+    fields:
+      - {name: isbn, label: ISBN, required: true}
+    request: {method: GET, path: "isbn/v1/{{fields.isbn}}"}
+
+  - name: Search NCM
+    resource: Product
+    description: Searches NCM codes by code or description.
+    fields:
+      - {name: search, label: Search, required: true}
+    request: {method: GET, path: ncm/v1, query: {search: "{{fields.search}}"}}
+
+  - name: Get NCM
+    resource: Product
+    description: Reads an NCM code.
+    fields:
+      - {name: code, label: NCM, required: true}
+    request: {method: GET, path: "ncm/v1/{{fields.code}}"}
+
+  # Weather
+  - name: Find Weather City
+    resource: Weather
+    description: Finds the CPTEC code of a city, to ask for its forecast.
+    fields:
+      - {name: nome, label: City, required: true}
+    request: {method: GET, path: "cptec/v1/cidade/{{fields.nome}}"}
+
+  - name: Get Weather Forecast
+    resource: Weather
+    description: Reads a city's weather forecast for up to 6 days.
+    fields:
+      - {name: codigo, label: CPTEC city code, required: true, description: From Find Weather City.}
+      - {name: dias, label: Days, type: number, default: 3}
+    request: {method: GET, path: "cptec/v1/clima/previsao/{{fields.codigo}}/{{fields.dias}}"}
+
+
+i18n:
+  pt-BR:
+    description: "Consulte CEPs, CNPJs, bancos, feriados, DDDs, preços FIPE, estados e municípios do IBGE, ISBNs, NCMs, participantes do Pix, domínios .br, taxas de juros, câmbio e previsão do tempo, com a BrasilAPI."
+    actions:
+      Look Up CEP: {name: "Consultar CEP", description: "Encontra o endereço de um CEP, com as coordenadas quando houver.", fields: {cep: "CEP"}}
+      Look Up CNPJ: {name: "Consultar CNPJ", description: "Lê o cadastro público de uma empresa pelo CNPJ.", fields: {cnpj: "CNPJ"}}
+      Look Up Area Code: {name: "Consultar DDD", description: "Lista o estado e as cidades de um DDD.", fields: {ddd: "DDD"}}
+      Look Up Domain: {name: "Consultar domínio", description: "Lê a situação de um domínio .br no Registro.br.", fields: {domain: "Domínio"}}
+      List Banks: {name: "Listar bancos", description: "Lista os bancos brasileiros com códigos e ISPB."}
+      Get Bank: {name: "Buscar banco", description: "Lê um banco pelo código.", fields: {code: "Código do banco"}}
+      List Pix Participants: {name: "Listar participantes do Pix", description: "Lista as instituições que participam do Pix."}
+      List Rates: {name: "Listar taxas", description: "Lista as taxas oficiais, como Selic, CDI e IPCA."}
+      Get Rate: {name: "Buscar taxa", description: "Lê uma taxa oficial.", fields: {sigla: "Taxa"}}
+      List Currencies: {name: "Listar moedas", description: "Lista as moedas com cotação."}
+      Get Exchange Rate: {name: "Buscar cotação", description: "Lê as cotações de uma moeda frente ao real num dia.", fields: {moeda: "Moeda", data: "Data"}}
+      List Brokers: {name: "Listar corretoras", description: "Lista as corretoras registradas na CVM."}
+      List Holidays: {name: "Listar feriados", description: "Lista os feriados nacionais de um ano.", fields: {ano: "Ano"}}
+      List FIPE Brands: {name: "Listar marcas FIPE", description: "Lista as marcas de veículo da tabela FIPE.", fields: {tipo: "Veículo"}}
+      Get FIPE Price: {name: "Buscar preço FIPE", description: "Lê os preços FIPE de um código de veículo.", fields: {codigo: "Código FIPE"}}
+      List States: {name: "Listar estados", description: "Lista os estados brasileiros."}
+      List Cities: {name: "Listar municípios", description: "Lista os municípios de um estado, com os códigos do IBGE.", fields: {uf: "UF"}}
+      Look Up ISBN: {name: "Consultar ISBN", description: "Lê um livro pelo ISBN.", fields: {isbn: "ISBN"}}
+      Search NCM: {name: "Pesquisar NCM", description: "Pesquisa códigos NCM por código ou descrição.", fields: {search: "Pesquisa"}}
+      Get NCM: {name: "Buscar NCM", description: "Lê um código NCM.", fields: {code: "NCM"}}
+      Find Weather City: {name: "Encontrar cidade do clima", description: "Encontra o código CPTEC de uma cidade, para pedir a previsão.", fields: {nome: "Cidade"}}
+      Get Weather Forecast: {name: "Buscar previsão do tempo", description: "Lê a previsão do tempo de uma cidade para até 6 dias.", fields: {codigo: "Código CPTEC da cidade", dias: "Dias"}}
