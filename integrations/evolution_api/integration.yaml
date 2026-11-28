@@ -1,0 +1,357 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Evolution API v2, the open-source WhatsApp API you run on your own server. Connect
+# with the server's address and its global API key (AUTHENTICATION_API_KEY), or an
+# instance's own key. Each WhatsApp number is an instance; connect it by reading the
+# QR code from Connect Instance.
+id: evolution_api
+name: Evolution API
+version: 1.0.0
+description: WhatsApp messages, media, groups and instances through an Evolution API server.
+icon: hero-chat-bubble-left-right
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="10.04" width="18.00" height="3.91" viewBox="0 0 382 83"><path d="M128.181 5.44927C130.22 0.836188 135.628 -1.26501 140.245 0.787363C144.878 2.82571 146.994 8.24092 144.94 12.8681C143.098 17.0461 138.49 19.1545 134.203 17.9914L128.017 30.266C134.464 34.4034 138.736 41.6356 138.736 49.8655C138.736 54.9544 137.102 59.6614 134.331 63.4915L142.837 68.3993C145.051 66.5485 148.214 65.9861 151.047 67.2293C155.026 68.9852 156.821 73.6153 155.077 77.5906C153.334 81.5364 148.709 83.3483 144.729 81.5924L144.717 81.547C140.825 79.8247 139.025 75.3131 140.618 71.3899L131.886 66.3536C127.678 70.5449 121.875 73.1361 115.466 73.1361C102.614 73.1361 92.1953 62.7175 92.1953 49.8655C92.1953 37.0135 102.614 26.5949 115.466 26.5949C118.754 26.5949 121.882 27.2769 124.718 28.5069L130.873 16.2959C127.697 13.778 126.47 9.3374 128.181 5.44927ZM115.466 38.1194C108.979 38.1194 103.72 43.3783 103.72 49.8655C103.72 56.3527 108.979 61.6116 115.466 61.6116C121.953 61.6116 127.212 56.3527 127.212 49.8655C127.212 43.3783 121.953 38.1194 115.466 38.1194Z" fill="#00CC88"/> <path d="M92.1 28.9902L74.4586 70.8011H61.9465L44.3828 28.9902H56.895L68.4746 57.4341L80.4427 28.9902H92.1Z" fill="#0F172A"/> <path d="M24.1695 61.7071C26.3455 61.7071 28.2625 61.3962 29.9204 60.7745C31.6302 60.101 33.2104 59.0648 34.6611 57.6659L41.1115 64.6603C37.1739 69.1678 31.4229 71.4215 23.8586 71.4215C19.1439 71.4215 14.9732 70.5148 11.3464 68.7015C7.71973 66.8363 4.92198 64.2717 2.95319 61.0077C0.984395 57.7436 0 54.0392 0 49.8944C0 45.8013 0.95849 42.1228 2.87547 38.8588C4.84426 35.5429 7.51249 32.9783 10.8802 31.1649C14.2996 29.2998 18.1336 28.3672 22.382 28.3672C26.3714 28.3672 29.9981 29.2221 33.2622 30.9318C36.5262 32.5897 39.1167 35.0248 41.0337 38.237C43.0025 41.3975 43.9869 45.1537 43.9869 49.5058L13.0562 55.4899C13.937 57.5623 15.3099 59.1166 17.1751 60.1528C19.0921 61.189 21.4235 61.7071 24.1695 61.7071ZM22.382 37.5376C19.3252 37.5376 16.8383 38.522 14.9214 40.4908C13.0044 42.4596 11.9941 45.1796 11.8905 48.6509L32.2519 44.6874C31.682 42.5114 30.5162 40.7757 28.7547 39.4805C26.9931 38.1852 24.8689 37.5376 22.382 37.5376Z" fill="#0F172A"/> <path d="M364.033 28.0371C369.214 28.0371 373.385 29.5914 376.545 32.7C379.758 35.8086 381.364 40.4198 381.364 46.5334V70.4697H369.24V48.3985C369.24 45.0827 368.515 42.6217 367.064 41.0156C365.614 39.3577 363.515 38.5287 360.769 38.5287C357.712 38.5287 355.277 39.4872 353.464 41.4042C351.651 43.2693 350.744 46.0671 350.744 49.7974V70.4697H338.62V28.6588H350.2V33.5549C351.806 31.7934 353.801 30.4463 356.184 29.5137C358.567 28.5293 361.184 28.0371 364.033 28.0371Z" fill="#0F172A"/> <path d="M265.875 28.6597H277.998V70.4706H265.875V28.6597ZM271.936 22.8311C269.709 22.8311 267.895 22.1834 266.496 20.8882C265.097 19.5929 264.398 17.9868 264.398 16.0698C264.398 14.1529 265.097 12.5467 266.496 11.2515C267.895 9.95622 269.709 9.30859 271.936 9.30859C274.164 9.30859 275.978 9.93032 277.376 11.1738C278.775 12.4172 279.475 13.9715 279.475 15.8367C279.475 17.8573 278.775 19.5411 277.376 20.8882C275.978 22.1834 274.164 22.8311 271.936 22.8311Z" fill="#0F172A"/> <path d="M259.804 68.4505C258.613 69.3313 257.136 70.0048 255.374 70.4711C253.665 70.8856 251.877 71.0928 250.012 71.0928C244.986 71.0928 241.127 69.8235 238.433 67.2848C235.738 64.7461 234.391 61.0158 234.391 56.0938V19.4121H246.515V29.5928H256.851V38.9187H246.515V55.9383C246.515 57.6999 246.955 59.0729 247.836 60.0573C248.717 60.9898 249.986 61.4561 251.644 61.4561C253.509 61.4561 255.167 60.938 256.618 59.9018L259.804 68.4505Z" fill="#0F172A"/> <path d="M224.17 28.6602V70.471H212.668V65.4973C211.062 67.3106 209.145 68.7095 206.917 69.6939C204.689 70.6265 202.28 71.0928 199.69 71.0928C194.198 71.0928 189.846 69.5126 186.633 66.3521C183.421 63.1917 181.815 58.5029 181.815 52.2856V28.6602H193.939V50.4982C193.939 57.2335 196.762 60.6012 202.41 60.6012C205.311 60.6012 207.642 59.6686 209.404 57.8034C211.166 55.8865 212.046 53.0628 212.046 49.3325V28.6602H224.17Z" fill="#0F172A"/> <path d="M170.578 71.0912C165.864 71.0912 162.185 69.8478 159.543 67.3609C156.901 64.8222 155.579 61.2473 155.579 56.6362V12.8047H167.703V55.9367C167.703 57.6983 168.143 59.0713 169.024 60.0557C169.957 60.9882 171.252 61.4545 172.91 61.4545C173.532 61.4545 174.153 61.3768 174.775 61.2214C175.449 61.066 175.967 60.8846 176.329 60.6774L176.873 70.0809C174.853 70.7545 172.754 71.0912 170.578 71.0912Z" fill="#0F172A"/> <path d="M308.722 26.5957C321.574 26.5957 331.993 37.0143 331.993 49.8662C331.993 62.7182 321.574 73.1367 308.722 73.1367C295.87 73.1367 285.452 62.7182 285.452 49.8662C285.452 37.0143 295.87 26.5957 308.722 26.5957ZM308.722 38.1201C302.235 38.1201 296.976 43.3792 296.976 49.8662C296.976 56.3534 302.235 61.6123 308.722 61.6123C315.21 61.6123 320.468 56.3534 320.468 49.8662C320.468 43.3791 315.209 38.1201 308.722 38.1201Z" fill="#0F172A"/></svg></svg>
+category: messaging
+author: Heddle
+homepage: https://doc.evolution-api.com/v2/api-reference
+base_url: "{{credential.url}}/"
+
+credential:
+  label: Evolution API
+  fields:
+    - {name: url, label: Server URL, required: true, description: "Like https://evolution.acme.com"}
+    - {name: api_key, label: API key, secret: true, required: true}
+  auth:
+    type: header
+    name: apikey
+    value: "{{credential.api_key}}"
+
+errors:
+  message_path: response.message.0
+
+triggers:
+  - name: WhatsApp Event
+    description: Starts the flow when a message arrives or something changes on an instance.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [MESSAGES_UPSERT]
+        options:
+          - {label: Message received or sent, value: MESSAGES_UPSERT}
+          - {label: Message status changed, value: MESSAGES_UPDATE}
+          - {label: Message deleted, value: MESSAGES_DELETE}
+          - {label: Connection changed, value: CONNECTION_UPDATE}
+          - {label: QR code updated, value: QRCODE_UPDATED}
+          - {label: Contact created, value: CONTACTS_UPSERT}
+          - {label: Group created, value: GROUPS_UPSERT}
+          - {label: Group participants changed, value: GROUP_PARTICIPANTS_UPDATE}
+          - {label: Call, value: CALL}
+      - {name: base64, label: Media in base64, type: boolean, default: false, description: "Puts received media in the event."}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "webhook/set/{{fields.instance}}"
+          body: {webhook: {enabled: true, url: "{{webhook.url}}", headers: {x-heddle-token: "{{webhook.secret}}"}, byEvents: false, base64: "{{fields.base64}}", events: "{{fields.events}}"}}
+      unregister:
+        request:
+          method: POST
+          path: "webhook/set/{{fields.instance}}"
+          body: {webhook: {enabled: false, url: "{{webhook.url}}", events: "{{fields.events}}"}}
+      signature: {header: x-heddle-token, token: "{{webhook.secret}}"}
+
+actions:
+  # Messages
+  - name: Send Text
+    resource: Message
+    description: Sends a text message.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: link_preview, label: Show link previews, type: boolean, default: true}
+      - {name: quoted, label: Reply to message ID}
+      - {name: delay, label: Typing for (ms), type: number, description: "Shows typing before sending."}
+    request:
+      method: POST
+      path: "message/sendText/{{fields.instance}}"
+      body: {number: "{{fields.number}}", text: "{{fields.text}}", linkPreview: "{{fields.link_preview}}", quoted: {key: {id: "{{fields.quoted}}"}}, delay: "{{fields.delay}}"}
+
+  - name: Send Media
+    resource: Message
+    description: Sends an image, video or document from a URL.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: mediatype, label: Kind, type: select, required: true, default: image, options: [{label: Image, value: image}, {label: Video, value: video}, {label: Document, value: document}]}
+      - {name: url, label: URL, required: true}
+      - {name: mimetype, label: Type, description: "Like application/pdf"}
+      - {name: file_name, label: File name}
+      - {name: caption, label: Caption, type: textarea}
+      - {name: delay, label: Typing for (ms), type: number, description: "Shows typing before sending."}
+    request:
+      method: POST
+      path: "message/sendMedia/{{fields.instance}}"
+      body: {number: "{{fields.number}}", mediatype: "{{fields.mediatype}}", media: "{{fields.url}}", mimetype: "{{fields.mimetype}}", fileName: "{{fields.file_name}}", caption: "{{fields.caption}}", delay: "{{fields.delay}}"}
+
+  - name: Send Media File
+    resource: Message
+    description: Sends an image, video or document from a file of the flow.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: mediatype, label: Kind, type: select, required: true, default: document, options: [{label: Image, value: image}, {label: Video, value: video}, {label: Document, value: document}]}
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: caption, label: Caption, type: textarea}
+    request:
+      method: POST
+      path: "message/sendMedia/{{fields.instance}}"
+      body: {number: "{{fields.number}}", mediatype: "{{fields.mediatype}}", media: "{{fields.file | base64}}", fileName: "{{fields.file | name}}", caption: "{{fields.caption}}"}
+
+  - name: Send Audio
+    resource: Message
+    description: Sends a voice message from an audio URL.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: audio, label: Audio URL, required: true}
+      - {name: delay, label: Typing for (ms), type: number, description: "Shows typing before sending."}
+    request:
+      method: POST
+      path: "message/sendWhatsAppAudio/{{fields.instance}}"
+      body: {number: "{{fields.number}}", audio: "{{fields.audio}}", delay: "{{fields.delay}}"}
+
+  - name: Send Location
+    resource: Message
+    description: Sends a pin on the map.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: latitude, label: Latitude, type: number, required: true}
+      - {name: longitude, label: Longitude, type: number, required: true}
+      - {name: name, label: Name}
+      - {name: address, label: Address}
+    request:
+      method: POST
+      path: "message/sendLocation/{{fields.instance}}"
+      body: {number: "{{fields.number}}", latitude: "{{fields.latitude}}", longitude: "{{fields.longitude}}", name: "{{fields.name}}", address: "{{fields.address}}"}
+
+  - name: Send Contact
+    resource: Message
+    description: Sends a contact card.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: full_name, label: Name, required: true}
+      - {name: phone, label: Phone, required: true, description: "Like 5511999990000"}
+      - {name: email, label: Email}
+      - {name: organization, label: Company}
+    request:
+      method: POST
+      path: "message/sendContact/{{fields.instance}}"
+      body: {number: "{{fields.number}}", contact: [{fullName: "{{fields.full_name}}", wuid: "{{fields.phone}}", phoneNumber: "{{fields.phone}}", email: "{{fields.email}}", organization: "{{fields.organization}}"}]}
+
+  - name: Send Poll
+    resource: Message
+    description: Sends a poll.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+      - {name: question, label: Question, required: true}
+      - {name: options, label: Options, required: true, description: "Like Yes, No, Maybe"}
+      - {name: selectable, label: Answers each person may pick, type: number, default: 1}
+    request:
+      method: POST
+      path: "message/sendPoll/{{fields.instance}}"
+      body: {number: "{{fields.number}}", name: "{{fields.question}}", selectableCount: "{{fields.selectable}}", values: {_each: "{{fields.options}}", _value: "{{item}}"}}
+
+  - name: React to Message
+    resource: Message
+    description: Reacts to a message with an emoji; empty takes the reaction back.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: remote_jid, label: Chat, required: true, description: "Like 5511999990000@s.whatsapp.net"}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: from_me, label: The message is mine, type: boolean, default: false}
+      - {name: reaction, label: Emoji, description: "Like 👍"}
+    request:
+      method: POST
+      path: "message/sendReaction/{{fields.instance}}"
+      body: {key: {remoteJid: "{{fields.remote_jid}}", fromMe: "{{fields.from_me}}", id: "{{fields.message_id}}"}, reaction: "{{fields.reaction | keep}}"}
+
+  # Chats
+  - name: Check Numbers
+    resource: Chat
+    description: Reads which numbers have WhatsApp.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: numbers, label: Numbers, required: true, description: "Like 5511999990000, 5521988880000"}
+    request:
+      method: POST
+      path: "chat/whatsappNumbers/{{fields.instance}}"
+      body: {numbers: {_each: "{{fields.numbers}}", _value: "{{item}}"}}
+
+  - name: Mark as Read
+    resource: Chat
+    description: Marks messages as read.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: remote_jid, label: Chat, required: true}
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: "chat/markMessageAsRead/{{fields.instance}}"
+      body: {readMessages: [{remoteJid: "{{fields.remote_jid}}", fromMe: false, id: "{{fields.message_id}}"}]}
+
+  - name: Find Messages
+    resource: Chat
+    description: Lists the stored messages of a chat.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: remote_jid, label: Chat, required: true}
+    request:
+      method: POST
+      path: "chat/findMessages/{{fields.instance}}"
+      body: {where: {key: {remoteJid: "{{fields.remote_jid}}"}}}
+
+  - name: Find Contacts
+    resource: Chat
+    description: Lists the instance's contacts.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+    request: {method: POST, path: "chat/findContacts/{{fields.instance}}", body: {}}
+
+  - name: Get Profile Picture
+    resource: Chat
+    description: Reads the profile picture URL of a number.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: number, label: To, required: true, description: "Number with country code, like 5511999990000, or a group ID ending in @g.us."}
+    request:
+      method: POST
+      path: "chat/fetchProfilePictureUrl/{{fields.instance}}"
+      body: {number: "{{fields.number}}"}
+
+  # Groups
+  - name: Create Group
+    resource: Group
+    description: Creates a group with some participants.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: subject, label: Name, required: true}
+      - {name: description, label: Description}
+      - {name: participants, label: Participants, required: true, description: "Like 5511999990000, 5521988880000"}
+    request:
+      method: POST
+      path: "group/create/{{fields.instance}}"
+      body: {subject: "{{fields.subject}}", description: "{{fields.description}}", participants: {_each: "{{fields.participants}}", _value: "{{item}}"}}
+
+  - name: List Groups
+    resource: Group
+    description: Lists the groups of the instance.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: participants, label: With participants, type: boolean, default: false}
+    request: {method: GET, path: "group/fetchAllGroups/{{fields.instance}}", query: {getParticipants: "{{fields.participants}}"}}
+
+  - name: Update Participants
+    resource: Group
+    description: Adds, removes, promotes or demotes participants of a group.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: group, label: Group ID, required: true, description: "Ends in @g.us."}
+      - {name: action, label: Do, type: select, required: true, default: add, options: [{label: Add, value: add}, {label: Remove, value: remove}, {label: Make admin, value: promote}, {label: Remove admin, value: demote}]}
+      - {name: participants, label: Participants, required: true}
+    request:
+      method: POST
+      path: "group/updateParticipant/{{fields.instance}}"
+      query: {groupJid: "{{fields.group}}"}
+      body: {action: "{{fields.action}}", participants: {_each: "{{fields.participants}}", _value: "{{item}}"}}
+
+  - name: Get Invite Link
+    resource: Group
+    description: Reads a group's invite link.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+      - {name: group, label: Group ID, required: true}
+    request: {method: GET, path: "group/inviteCode/{{fields.instance}}", query: {groupJid: "{{fields.group}}"}}
+
+  # Instances
+  - name: Create Instance
+    resource: Instance
+    description: Creates an instance for a WhatsApp number; returns its QR code.
+    fields:
+      - {name: instance, label: Name, required: true}
+      - {name: number, label: Number, description: "Like 5511999990000, for a pairing code."}
+      - {name: integration, label: Kind, type: select, default: WHATSAPP-BAILEYS, options: [{label: WhatsApp Web (Baileys), value: WHATSAPP-BAILEYS}, {label: WhatsApp Cloud API, value: WHATSAPP-BUSINESS}]}
+      - {name: extra, label: More settings, type: json, description: 'Like {"rejectCall": true, "groupsIgnore": true}'}
+    request:
+      method: POST
+      path: instance/create
+      body: {instanceName: "{{fields.instance}}", number: "{{fields.number}}", qrcode: true, integration: "{{fields.integration}}", _merge: "{{fields.extra}}"}
+
+  - name: Connect Instance
+    resource: Instance
+    description: Returns the QR code, or pairing code, that connects an instance.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+    request: {method: GET, path: "instance/connect/{{fields.instance}}"}
+
+  - name: Get Connection State
+    resource: Instance
+    description: Reads whether an instance is connected.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+    request: {method: GET, path: "instance/connectionState/{{fields.instance}}"}
+
+  - name: List Instances
+    resource: Instance
+    description: Lists the instances on the server.
+    request: {method: GET, path: instance/fetchInstances}
+
+  - name: Logout Instance
+    resource: Instance
+    description: Disconnects the WhatsApp number of an instance.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+    request: {method: DELETE, path: "instance/logout/{{fields.instance}}"}
+
+  - name: Delete Instance
+    resource: Instance
+    description: Deletes an instance.
+    fields:
+      - {name: instance, label: Instance, required: true, description: "The instance's name."}
+    request: {method: DELETE, path: "instance/delete/{{fields.instance}}"}
+
+i18n:
+  pt-BR:
+    description: "Mensagens, mídias, grupos e instâncias do WhatsApp por um servidor Evolution API."
+    triggers:
+      WhatsApp Event: {name: "Evento do WhatsApp", description: "Inicia o fluxo quando chega uma mensagem ou algo muda numa instância.", fields: {instance: "Instância", events: "Eventos", base64: "Mídia em base64"}}
+    actions:
+      Send Text: {name: "Enviar texto", description: "Envia uma mensagem de texto.", fields: {instance: "Instância", number: "Para", text: "Texto", link_preview: "Mostrar prévia de links", quoted: "Responder à mensagem", delay: "Digitando por (ms)"}}
+      Send Media: {name: "Enviar mídia", description: "Envia uma imagem, vídeo ou documento, de uma URL.", fields: {instance: "Instância", number: "Para", mediatype: "Tipo", url: "URL", mimetype: "Tipo do arquivo", file_name: "Nome do arquivo", caption: "Legenda", delay: "Digitando por (ms)"}}
+      Send Media File: {name: "Enviar arquivo", description: "Envia uma imagem, vídeo ou documento de um arquivo do fluxo.", fields: {instance: "Instância", number: "Para", mediatype: "Tipo", file: "Arquivo", caption: "Legenda"}}
+      Send Audio: {name: "Enviar áudio", description: "Envia uma mensagem de voz de uma URL de áudio.", fields: {instance: "Instância", number: "Para", audio: "URL do áudio", delay: "Digitando por (ms)"}}
+      Send Location: {name: "Enviar localização", description: "Envia um ponto no mapa.", fields: {instance: "Instância", number: "Para", latitude: "Latitude", longitude: "Longitude", name: "Nome", address: "Endereço"}}
+      Send Contact: {name: "Enviar contato", description: "Envia um cartão de contato.", fields: {instance: "Instância", number: "Para", full_name: "Nome", phone: "Telefone", email: "E-mail", organization: "Empresa"}}
+      Send Poll: {name: "Enviar enquete", description: "Envia uma enquete.", fields: {instance: "Instância", number: "Para", question: "Pergunta", options: "Opções", selectable: "Respostas por pessoa"}}
+      React to Message: {name: "Reagir à mensagem", description: "Reage a uma mensagem com um emoji; vazio tira a reação.", fields: {instance: "Instância", remote_jid: "Conversa", message_id: "ID da mensagem", from_me: "A mensagem é minha", reaction: "Emoji"}}
+      Check Numbers: {name: "Conferir números", description: "Lê quais números têm WhatsApp.", fields: {instance: "Instância", numbers: "Números"}}
+      Mark as Read: {name: "Marcar como lida", description: "Marca mensagens como lidas.", fields: {instance: "Instância", remote_jid: "Conversa", message_id: "ID da mensagem"}}
+      Find Messages: {name: "Buscar mensagens", description: "Lista as mensagens guardadas de uma conversa.", fields: {instance: "Instância", remote_jid: "Conversa"}}
+      Find Contacts: {name: "Buscar contatos", description: "Lista os contatos da instância.", fields: {instance: "Instância"}}
+      Get Profile Picture: {name: "Ler foto de perfil", description: "Lê a URL da foto de perfil de um número.", fields: {instance: "Instância", number: "Número"}}
+      Create Group: {name: "Criar grupo", description: "Cria um grupo com alguns participantes.", fields: {instance: "Instância", subject: "Nome", description: "Descrição", participants: "Participantes"}}
+      List Groups: {name: "Listar grupos", description: "Lista os grupos da instância.", fields: {instance: "Instância", participants: "Com participantes"}}
+      Update Participants: {name: "Alterar participantes", description: "Adiciona, remove, promove ou rebaixa participantes de um grupo.", fields: {instance: "Instância", group: "ID do grupo", action: "Fazer", participants: "Participantes"}}
+      Get Invite Link: {name: "Ler link de convite", description: "Lê o link de convite de um grupo.", fields: {instance: "Instância", group: "ID do grupo"}}
+      Create Instance: {name: "Criar instância", description: "Cria uma instância para um número de WhatsApp; devolve o QR Code.", fields: {instance: "Nome", number: "Número", integration: "Tipo", extra: "Mais ajustes"}}
+      Connect Instance: {name: "Conectar instância", description: "Devolve o QR Code, ou código de pareamento, que conecta uma instância.", fields: {instance: "Instância"}}
+      Get Connection State: {name: "Ler conexão", description: "Lê se uma instância está conectada.", fields: {instance: "Instância"}}
+      List Instances: {name: "Listar instâncias", description: "Lista as instâncias do servidor."}
+      Logout Instance: {name: "Desconectar instância", description: "Desconecta o número de WhatsApp de uma instância.", fields: {instance: "Instância"}}
+      Delete Instance: {name: "Excluir instância", description: "Exclui uma instância.", fields: {instance: "Instância"}}
