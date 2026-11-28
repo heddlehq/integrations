@@ -1,0 +1,392 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Omie, through its API. Connect with the app key and app secret from Omie's
+# Configurações › Integrações › API (Developer). Every call is a POST naming a method,
+# with the key and secret in the body. Dates go like 10/02/2026. Lists come a page at
+# a time: raise Page to read the next.
+id: omie
+name: Omie
+version: 1.0.0
+description: Customers, products, stock, sales orders, invoices and bills in Omie ERP.
+icon: hero-building-office
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.56" width="18.00" height="16.88" viewBox="0 0 16 15"><path d="M7.9778 14.9968C5.67868 14.9968 3.65344 14.2807 2.03769 12.6395C0.935496 11.5122 0.243125 10.0601 0.067804 8.50802C-0.2725 5.94452 0.690316 3.8476 2.45824 2.03823C3.02826 1.44568 3.66926 0.922853 4.36727 0.48114C4.44197 0.435024 4.51665 0.383483 4.59689 0.342792C4.73799 0.272262 4.87357 0.18003 5.04234 0.293964C5.21111 0.407897 5.15577 0.578797 5.10597 0.725283C4.867 1.41267 4.72005 2.12756 4.66883 2.85204C4.63286 3.33761 4.58583 3.8259 4.58306 4.31419C4.58306 6.55759 4.58306 8.80099 4.58306 11.0444C4.57747 11.1613 4.58303 11.2785 4.59966 11.3943C4.60457 11.4588 4.62618 11.521 4.66244 11.5749C4.6987 11.6289 4.74842 11.6729 4.80687 11.7028C4.86533 11.7327 4.93058 11.7474 4.99648 11.7457C5.06237 11.7439 5.12674 11.7257 5.18344 11.6927C5.56525 11.5218 5.94151 11.3428 6.31778 11.1502L12.767 8.05772L12.9551 7.96548C13.3314 7.75932 13.3563 7.44464 12.9911 7.21407C12.2358 6.73663 11.4694 6.27276 10.7085 5.80617C9.31412 4.93992 7.91049 4.07728 6.49763 3.21826C6.02175 2.92528 5.94429 2.61332 6.23756 2.09248C6.69103 1.25126 7.44052 0.600017 8.34679 0.259752C9.25306 -0.0805139 10.2545 -0.0866716 11.165 0.242423C13.8045 1.25155 15.3483 3.17757 15.8408 5.89841C16.1983 7.62331 15.9497 9.4161 15.1353 10.9847C14.0286 13.0898 12.2136 14.2996 9.87853 14.8123C9.25561 14.9533 8.61682 15.0153 7.9778 14.9968Z" fill="#00ECFF"/></svg></svg>
+category: erp
+author: Heddle
+homepage: https://developer.omie.com.br/service-list/
+base_url: https://app.omie.com.br/api/v1/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Omie
+  fields:
+    - {name: app_key, label: App key, required: true}
+    - {name: app_secret, label: App secret, secret: true, required: true}
+  auth:
+    type: none
+
+errors:
+  message_path: faultstring
+
+actions:
+  - name: Create Customer
+    resource: Customer
+    description: Creates a customer or supplier.
+    fields:
+      - {name: razao_social, label: Legal name, required: true}
+      - {name: nome_fantasia, label: Trade name}
+      - {name: cnpj_cpf, label: CPF or CNPJ}
+      - {name: email, label: Email}
+      - {name: telefone1_ddd, label: Area code}
+      - {name: telefone1_numero, label: Phone}
+      - {name: codigo_cliente_integracao, label: Your ID, required: true, description: Must be unique.}
+      - {name: extra, label: More fields, type: json, description: 'Like {"endereco": "Rua A", "cidade": "São Paulo", "estado": "SP", "cep": "01000000"}'}
+    request:
+      method: POST
+      path: "geral/clientes/"
+      body: {call: "IncluirCliente", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{razao_social: "{{fields.razao_social}}", nome_fantasia: "{{fields.nome_fantasia}}", cnpj_cpf: "{{fields.cnpj_cpf}}", email: "{{fields.email}}", telefone1_ddd: "{{fields.telefone1_ddd}}", telefone1_numero: "{{fields.telefone1_numero}}", codigo_cliente_integracao: "{{fields.codigo_cliente_integracao}}", _merge: "{{fields.extra}}"}]}
+
+  - name: Upsert Customer
+    resource: Customer
+    description: "Creates a customer, or changes the one with the same ID of yours."
+    fields:
+      - {name: codigo_cliente_integracao, label: Your ID, required: true}
+      - {name: razao_social, label: Legal name, required: true}
+      - {name: nome_fantasia, label: Trade name}
+      - {name: cnpj_cpf, label: CPF or CNPJ}
+      - {name: email, label: Email}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "geral/clientes/"
+      body: {call: "UpsertCliente", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_cliente_integracao: "{{fields.codigo_cliente_integracao}}", razao_social: "{{fields.razao_social}}", nome_fantasia: "{{fields.nome_fantasia}}", cnpj_cpf: "{{fields.cnpj_cpf}}", email: "{{fields.email}}", _merge: "{{fields.extra}}"}]}
+
+  - name: Get Customer
+    resource: Customer
+    description: "Reads a customer, by Omie code or your ID."
+    fields:
+      - {name: codigo_cliente_omie, label: Omie code}
+      - {name: codigo_cliente_integracao, label: Your ID}
+    request:
+      method: POST
+      path: "geral/clientes/"
+      body: {call: "ConsultarCliente", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_cliente_omie: "{{fields.codigo_cliente_omie}}", codigo_cliente_integracao: "{{fields.codigo_cliente_integracao}}"}]}
+
+  - name: List Customers
+    resource: Customer
+    description: "Lists customers, by CPF/CNPJ, email or name."
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+      - {name: cnpj_cpf, label: CPF or CNPJ}
+      - {name: email, label: Email}
+      - {name: razao_social, label: Legal name}
+    request:
+      method: POST
+      path: "geral/clientes/"
+      body: {call: "ListarClientes", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", apenas_importado_api: N, clientesFiltro: {cnpj_cpf: "{{fields.cnpj_cpf}}", email: "{{fields.email}}", razao_social: "{{fields.razao_social}}"}}]}
+    output: {path: clientes_cadastro}
+
+  - name: Update Customer
+    resource: Customer
+    description: Changes a customer. Empty fields stay as they are.
+    fields:
+      - {name: codigo_cliente_omie, label: Omie code, required: true}
+      - {name: razao_social, label: Legal name}
+      - {name: nome_fantasia, label: Trade name}
+      - {name: email, label: Email}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "geral/clientes/"
+      body: {call: "AlterarCliente", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_cliente_omie: "{{fields.codigo_cliente_omie}}", razao_social: "{{fields.razao_social}}", nome_fantasia: "{{fields.nome_fantasia}}", email: "{{fields.email}}", _merge: "{{fields.extra}}"}]}
+
+  - name: Delete Customer
+    resource: Customer
+    description: Deletes a customer.
+    fields:
+      - {name: codigo_cliente_omie, label: Omie code, required: true}
+    request:
+      method: POST
+      path: "geral/clientes/"
+      body: {call: "ExcluirCliente", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_cliente_omie: "{{fields.codigo_cliente_omie}}"}]}
+
+  - name: Create Product
+    resource: Product
+    description: Creates a product.
+    fields:
+      - {name: codigo_produto_integracao, label: Your ID, required: true}
+      - {name: codigo, label: SKU, required: true}
+      - {name: descricao, label: Description, required: true}
+      - {name: unidade, label: Unit, required: true, default: UN}
+      - {name: ncm, label: NCM, required: true, description: "Like 6109.10.00"}
+      - {name: valor_unitario, label: Price, type: number}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "geral/produtos/"
+      body: {call: "IncluirProduto", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_produto_integracao: "{{fields.codigo_produto_integracao}}", codigo: "{{fields.codigo}}", descricao: "{{fields.descricao}}", unidade: "{{fields.unidade}}", ncm: "{{fields.ncm}}", valor_unitario: "{{fields.valor_unitario}}", _merge: "{{fields.extra}}"}]}
+
+  - name: Get Product
+    resource: Product
+    description: "Reads a product, by Omie code, your ID or SKU."
+    fields:
+      - {name: codigo_produto, label: Omie code}
+      - {name: codigo_produto_integracao, label: Your ID}
+      - {name: codigo, label: SKU}
+    request:
+      method: POST
+      path: "geral/produtos/"
+      body: {call: "ConsultarProduto", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_produto: "{{fields.codigo_produto}}", codigo_produto_integracao: "{{fields.codigo_produto_integracao}}", codigo: "{{fields.codigo}}"}]}
+
+  - name: List Products
+    resource: Product
+    description: Lists products.
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+    request:
+      method: POST
+      path: "geral/produtos/"
+      body: {call: "ListarProdutos", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", apenas_importado_api: N, filtrar_apenas_omiepdv: N}]}
+    output: {path: produto_servico_cadastro}
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. Empty fields stay as they are.
+    fields:
+      - {name: codigo_produto, label: Omie code, required: true}
+      - {name: descricao, label: Description}
+      - {name: valor_unitario, label: Price, type: number}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "geral/produtos/"
+      body: {call: "AlterarProduto", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_produto: "{{fields.codigo_produto}}", descricao: "{{fields.descricao}}", valor_unitario: "{{fields.valor_unitario}}", _merge: "{{fields.extra}}"}]}
+
+  - name: Get Stock
+    resource: Product
+    description: Lists the stock position of the products on a date.
+    fields:
+      - {name: nPagina, label: Page, type: number, default: 1}
+      - {name: nRegPorPagina, label: Per page, type: number, default: 50}
+      - {name: dDataPosicao, label: On, required: true, description: "Like 10/02/2026"}
+    request:
+      method: POST
+      path: "estoque/consulta/"
+      body: {call: "ListarPosEstoque", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{nPagina: "{{fields.nPagina}}", nRegPorPagina: "{{fields.nRegPorPagina}}", dDataPosicao: "{{fields.dDataPosicao}}", cExibeTodos: N}]}
+    output: {path: produtos}
+
+  - name: Create Sales Order
+    resource: Sales Order
+    description: Creates a sales order.
+    fields:
+      - {name: codigo_cliente, label: Customer Omie code, required: true}
+      - {name: codigo_pedido_integracao, label: Your ID, required: true}
+      - {name: data_previsao, label: Expected on, required: true, description: "Like 10/02/2026"}
+      - {name: itens, label: Items, type: json, required: true, description: 'Like [{"ide": {"codigo_item_integracao": "1"}, "produto": {"codigo_produto": 123, "quantidade": 2, "valor_unitario": 49.9}}]'}
+      - {name: etapa, label: Stage, default: "10"}
+      - {name: codigo_parcela, label: Payment terms code, default: "000", description: "000 is cash"}
+      - {name: codigo_categoria, label: Category, description: "Like 1.01.01"}
+      - {name: codigo_conta_corrente, label: Bank account code, type: number}
+      - {name: extra, label: More header fields, type: json}
+    request:
+      method: POST
+      path: "produtos/pedido/"
+      body: {call: "IncluirPedido", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{cabecalho: {codigo_cliente: "{{fields.codigo_cliente}}", codigo_pedido_integracao: "{{fields.codigo_pedido_integracao}}", data_previsao: "{{fields.data_previsao}}", etapa: "{{fields.etapa}}", codigo_parcela: "{{fields.codigo_parcela}}", _merge: "{{fields.extra}}"}, det: "{{fields.itens}}", informacoes_adicionais: {codigo_categoria: "{{fields.codigo_categoria}}", codigo_conta_corrente: "{{fields.codigo_conta_corrente}}", consumidor_final: S}}]}
+
+  - name: Get Sales Order
+    resource: Sales Order
+    description: Reads a sales order.
+    fields:
+      - {name: codigo_pedido, label: Omie code}
+      - {name: codigo_pedido_integracao, label: Your ID}
+    request:
+      method: POST
+      path: "produtos/pedido/"
+      body: {call: "ConsultarPedido", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_pedido: "{{fields.codigo_pedido}}", codigo_pedido_integracao: "{{fields.codigo_pedido_integracao}}"}]}
+    output: {path: pedido_venda_produto}
+
+  - name: List Sales Orders
+    resource: Sales Order
+    description: "Lists sales orders, by stage or dates."
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+      - {name: etapa, label: Stage, description: "Like 10, 20, 50, 60 or 70"}
+      - {name: filtrar_por_data_de, label: From, description: "Like 01/02/2026"}
+      - {name: filtrar_por_data_ate, label: To}
+    request:
+      method: POST
+      path: "produtos/pedido/"
+      body: {call: "ListarPedidos", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", apenas_importado_api: N, etapa: "{{fields.etapa}}", filtrar_por_data_de: "{{fields.filtrar_por_data_de}}", filtrar_por_data_ate: "{{fields.filtrar_por_data_ate}}"}]}
+    output: {path: pedido_venda_produto}
+
+  - name: Change Order Stage
+    resource: Sales Order
+    description: Moves a sales order to another stage.
+    fields:
+      - {name: codigo_pedido, label: Omie code, required: true}
+      - {name: etapa, label: Stage, required: true, description: "Like 20 or 50"}
+    request:
+      method: POST
+      path: "produtos/pedido/"
+      body: {call: "TrocarEtapaPedido", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_pedido: "{{fields.codigo_pedido}}", etapa: "{{fields.etapa}}"}]}
+
+  - name: List Invoices
+    resource: Sales Order
+    description: Lists the NF-e issued.
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+      - {name: dEmiInicial, label: Issued from, description: "Like 01/02/2026"}
+      - {name: dEmiFinal, label: Issued to}
+    request:
+      method: POST
+      path: "produtos/nfconsultar/"
+      body: {call: "ListarNF", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", dEmiInicial: "{{fields.dEmiInicial}}", dEmiFinal: "{{fields.dEmiFinal}}"}]}
+    output: {path: nfCadastro}
+
+  - name: Create Receivable
+    resource: Finance
+    description: Creates a bill to receive.
+    fields:
+      - {name: codigo_lancamento_integracao, label: Your ID, required: true}
+      - {name: codigo_cliente_fornecedor, label: Customer Omie code, required: true}
+      - {name: data_vencimento, label: Due date, required: true, description: "Like 10/02/2026"}
+      - {name: valor_documento, label: Amount, type: number, required: true}
+      - {name: codigo_categoria, label: Category, required: true, description: "Like 1.01.02"}
+      - {name: id_conta_corrente, label: Bank account code, type: number}
+      - {name: observacao, label: Notes}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "financas/contareceber/"
+      body: {call: "IncluirContaReceber", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_lancamento_integracao: "{{fields.codigo_lancamento_integracao}}", codigo_cliente_fornecedor: "{{fields.codigo_cliente_fornecedor}}", data_vencimento: "{{fields.data_vencimento}}", data_previsao: "{{fields.data_vencimento}}", valor_documento: "{{fields.valor_documento}}", codigo_categoria: "{{fields.codigo_categoria}}", id_conta_corrente: "{{fields.id_conta_corrente}}", observacao: "{{fields.observacao}}", _merge: "{{fields.extra}}"}]}
+
+  - name: List Receivables
+    resource: Finance
+    description: Lists bills to receive.
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+      - {name: filtrar_por_data_de, label: Due from}
+      - {name: filtrar_por_data_ate, label: Due to}
+      - {name: filtrar_por_status, label: Status, type: select, options: [{label: Open, value: ABERTO}, {label: Received, value: RECEBIDO}, {label: Overdue, value: ATRASADO}, {label: Canceled, value: CANCELADO}]}
+    request:
+      method: POST
+      path: "financas/contareceber/"
+      body: {call: "ListarContasReceber", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", apenas_importado_api: N, filtrar_por_data_de: "{{fields.filtrar_por_data_de}}", filtrar_por_data_ate: "{{fields.filtrar_por_data_ate}}", filtrar_por_status: "{{fields.filtrar_por_status}}"}]}
+    output: {path: conta_receber_cadastro}
+
+  - name: Record Receipt
+    resource: Finance
+    description: Marks a bill to receive as paid.
+    fields:
+      - {name: codigo_lancamento, label: Bill Omie code, required: true}
+      - {name: codigo_conta_corrente, label: Bank account code, type: number, required: true}
+      - {name: valor, label: Amount, type: number, required: true}
+      - {name: data, label: On, required: true, description: "Like 10/02/2026"}
+      - {name: observacao, label: Notes}
+    request:
+      method: POST
+      path: "financas/contareceber/"
+      body: {call: "LancarRecebimento", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_lancamento: "{{fields.codigo_lancamento}}", codigo_baixa: 0, codigo_conta_corrente: "{{fields.codigo_conta_corrente}}", valor: "{{fields.valor}}", data: "{{fields.data}}", observacao: "{{fields.observacao}}"}]}
+
+  - name: Create Payable
+    resource: Finance
+    description: Creates a bill to pay.
+    fields:
+      - {name: codigo_lancamento_integracao, label: Your ID, required: true}
+      - {name: codigo_cliente_fornecedor, label: Supplier Omie code, required: true}
+      - {name: data_vencimento, label: Due date, required: true}
+      - {name: valor_documento, label: Amount, type: number, required: true}
+      - {name: codigo_categoria, label: Category, required: true, description: "Like 2.01.01"}
+      - {name: id_conta_corrente, label: Bank account code, type: number}
+      - {name: observacao, label: Notes}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: "financas/contapagar/"
+      body: {call: "IncluirContaPagar", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{codigo_lancamento_integracao: "{{fields.codigo_lancamento_integracao}}", codigo_cliente_fornecedor: "{{fields.codigo_cliente_fornecedor}}", data_vencimento: "{{fields.data_vencimento}}", data_previsao: "{{fields.data_vencimento}}", valor_documento: "{{fields.valor_documento}}", codigo_categoria: "{{fields.codigo_categoria}}", id_conta_corrente: "{{fields.id_conta_corrente}}", observacao: "{{fields.observacao}}", _merge: "{{fields.extra}}"}]}
+
+  - name: List Payables
+    resource: Finance
+    description: Lists bills to pay.
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+      - {name: filtrar_por_data_de, label: Due from}
+      - {name: filtrar_por_data_ate, label: Due to}
+      - {name: filtrar_por_status, label: Status, type: select, options: [{label: Open, value: ABERTO}, {label: Paid, value: PAGO}, {label: Overdue, value: ATRASADO}, {label: Canceled, value: CANCELADO}]}
+    request:
+      method: POST
+      path: "financas/contapagar/"
+      body: {call: "ListarContasPagar", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", apenas_importado_api: N, filtrar_por_data_de: "{{fields.filtrar_por_data_de}}", filtrar_por_data_ate: "{{fields.filtrar_por_data_ate}}", filtrar_por_status: "{{fields.filtrar_por_status}}"}]}
+    output: {path: conta_pagar_cadastro}
+
+  - name: List Categories
+    resource: Finance
+    description: "Lists the categories, for their codes."
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+    request:
+      method: POST
+      path: "geral/categorias/"
+      body: {call: "ListarCategorias", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}"}]}
+    output: {path: categoria_cadastro}
+
+  - name: List Bank Accounts
+    resource: Finance
+    description: "Lists the bank accounts, for their codes."
+    fields:
+      - {name: pagina, label: Page, type: number, default: 1}
+      - {name: registros_por_pagina, label: Per page, type: number, default: 50, description: "Up to 500"}
+    request:
+      method: POST
+      path: "geral/contacorrente/"
+      body: {call: "ListarContasCorrentes", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{pagina: "{{fields.pagina}}", registros_por_pagina: "{{fields.registros_por_pagina}}", apenas_importado_api: N}]}
+    output: {path: ListarContasCorrentes}
+
+  - name: Call Method
+    resource: Other
+    description: "Calls any Omie method, with its parameters."
+    fields:
+      - {name: path, label: Endpoint, required: true, description: "Like geral/clientes/"}
+      - {name: call, label: Method, required: true, description: "Like ListarClientes"}
+      - {name: param, label: Parameters, type: json, required: true, description: 'Like {"pagina": 1, "registros_por_pagina": 50}'}
+    request:
+      method: POST
+      path: "{{fields.path | path}}"
+      body: {call: "{{fields.call}}", app_key: "{{credential.app_key}}", app_secret: "{{credential.app_secret}}", param: [{_merge: "{{fields.param}}"}]}
+
+i18n:
+  pt-BR:
+    description: "Clientes, produtos, estoque, pedidos de venda, notas fiscais e contas no Omie ERP."
+    actions:
+      Create Customer: {name: "Criar cliente", description: "Cria um cliente ou fornecedor.", fields: {razao_social: "Razão social", nome_fantasia: "Nome fantasia", cnpj_cpf: "CPF ou CNPJ", email: "E-mail", telefone1_ddd: "DDD", telefone1_numero: "Telefone", codigo_cliente_integracao: "Seu ID", extra: "Mais campos"}}
+      Upsert Customer: {name: "Criar ou atualizar cliente", description: "Cria um cliente, ou altera o que tem o mesmo ID seu.", fields: {codigo_cliente_integracao: "Seu ID", razao_social: "Razão social", nome_fantasia: "Nome fantasia", cnpj_cpf: "CPF ou CNPJ", email: "E-mail", extra: "Mais campos"}}
+      Get Customer: {name: "Ler cliente", description: "Lê um cliente, pelo código Omie ou pelo seu ID.", fields: {codigo_cliente_omie: "Código Omie", codigo_cliente_integracao: "Seu ID"}}
+      List Customers: {name: "Listar clientes", description: "Lista clientes, por CPF/CNPJ, e-mail ou nome.", fields: {pagina: "Página", registros_por_pagina: "Por página", cnpj_cpf: "CPF ou CNPJ", email: "E-mail", razao_social: "Razão social"}}
+      Update Customer: {name: "Atualizar cliente", description: "Altera um cliente. Campos vazios ficam como estão.", fields: {codigo_cliente_omie: "Código Omie", razao_social: "Razão social", nome_fantasia: "Nome fantasia", email: "E-mail", extra: "Mais campos"}}
+      Delete Customer: {name: "Excluir cliente", description: "Exclui um cliente.", fields: {codigo_cliente_omie: "Código Omie"}}
+      Create Product: {name: "Criar produto", description: "Cria um produto.", fields: {codigo_produto_integracao: "Seu ID", codigo: "SKU", descricao: "Descrição", unidade: "Unidade", ncm: "NCM", valor_unitario: "Preço", extra: "Mais campos"}}
+      Get Product: {name: "Ler produto", description: "Lê um produto, pelo código Omie, pelo seu ID ou pelo SKU.", fields: {codigo_produto: "Código Omie", codigo_produto_integracao: "Seu ID", codigo: "SKU"}}
+      List Products: {name: "Listar produtos", description: "Lista produtos.", fields: {pagina: "Página", registros_por_pagina: "Por página"}}
+      Update Product: {name: "Atualizar produto", description: "Altera um produto. Campos vazios ficam como estão.", fields: {codigo_produto: "Código Omie", descricao: "Descrição", valor_unitario: "Preço", extra: "Mais campos"}}
+      Get Stock: {name: "Posição de estoque", description: "Lista a posição de estoque dos produtos numa data.", fields: {nPagina: "Página", nRegPorPagina: "Por página", dDataPosicao: "Em"}}
+      Create Sales Order: {name: "Criar pedido de venda", description: "Cria um pedido de venda.", fields: {codigo_cliente: "Código Omie do cliente", codigo_pedido_integracao: "Seu ID", data_previsao: "Previsto para", itens: "Itens", etapa: "Etapa", codigo_parcela: "Código da condição de pagamento", codigo_categoria: "Categoria", codigo_conta_corrente: "Código da conta corrente", extra: "Mais campos do cabeçalho"}}
+      Get Sales Order: {name: "Ler pedido de venda", description: "Lê um pedido de venda.", fields: {codigo_pedido: "Código Omie", codigo_pedido_integracao: "Seu ID"}}
+      List Sales Orders: {name: "Listar pedidos de venda", description: "Lista pedidos de venda, por etapa ou datas.", fields: {pagina: "Página", registros_por_pagina: "Por página", etapa: "Etapa", filtrar_por_data_de: "De", filtrar_por_data_ate: "Até"}}
+      Change Order Stage: {name: "Mudar etapa do pedido", description: "Muda a etapa de um pedido de venda.", fields: {codigo_pedido: "Código Omie", etapa: "Etapa"}}
+      List Invoices: {name: "Listar NF-e", description: "Lista as NF-e emitidas.", fields: {pagina: "Página", registros_por_pagina: "Por página", dEmiInicial: "Emitida a partir de", dEmiFinal: "Emitida até"}}
+      Create Receivable: {name: "Criar conta a receber", description: "Cria uma conta a receber.", fields: {codigo_lancamento_integracao: "Seu ID", codigo_cliente_fornecedor: "Código Omie do cliente", data_vencimento: "Vencimento", valor_documento: "Valor", codigo_categoria: "Categoria", id_conta_corrente: "Código da conta corrente", observacao: "Observação", extra: "Mais campos"}}
+      List Receivables: {name: "Listar contas a receber", description: "Lista as contas a receber.", fields: {pagina: "Página", registros_por_pagina: "Por página", filtrar_por_data_de: "Vence a partir de", filtrar_por_data_ate: "Vence até", filtrar_por_status: "Status"}}
+      Record Receipt: {name: "Lançar recebimento", description: "Baixa uma conta a receber como paga.", fields: {codigo_lancamento: "Código Omie da conta", codigo_conta_corrente: "Código da conta corrente", valor: "Valor", data: "Em", observacao: "Observação"}}
+      Create Payable: {name: "Criar conta a pagar", description: "Cria uma conta a pagar.", fields: {codigo_lancamento_integracao: "Seu ID", codigo_cliente_fornecedor: "Código Omie do fornecedor", data_vencimento: "Vencimento", valor_documento: "Valor", codigo_categoria: "Categoria", id_conta_corrente: "Código da conta corrente", observacao: "Observação", extra: "Mais campos"}}
+      List Payables: {name: "Listar contas a pagar", description: "Lista as contas a pagar.", fields: {pagina: "Página", registros_por_pagina: "Por página", filtrar_por_data_de: "Vence a partir de", filtrar_por_data_ate: "Vence até", filtrar_por_status: "Status"}}
+      List Categories: {name: "Listar categorias", description: "Lista as categorias, para pegar os códigos.", fields: {pagina: "Página", registros_por_pagina: "Por página"}}
+      List Bank Accounts: {name: "Listar contas correntes", description: "Lista as contas correntes, para pegar os códigos.", fields: {pagina: "Página", registros_por_pagina: "Por página"}}
+      Call Method: {name: "Chamar método", description: "Chama qualquer método da Omie, com os parâmetros.", fields: {path: "Endpoint", call: "Método", param: "Parâmetros"}}
