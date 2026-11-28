@@ -1,0 +1,420 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Banco Inter Empresas: charges (boleto with Pix), Pix charges and received Pix, the
+# account's balance and statement, and payments by Pix and boleto. Every call takes the
+# client certificate of the integration (mTLS), and the token comes by client
+# credentials with the scopes the integration was given. Values in reais.
+id: banco_inter
+name: Banco Inter
+version: 1.0.0
+homepage: https://developers.inter.co
+description: Issue boletos with Pix and Pix charges, read received Pix, the balance and the statement, and pay by Pix and boleto, with Banco Inter Empresas.
+icon: hero-building-library
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="9.71" width="18.00" height="4.57" viewBox="0 0 500 127"><path d="m0 120.83h53.298l0.2835-1.4758-52.56-10.898 1.0214-5.846 52.56 11.352 0.4541-2.0436-49.665-21.569 2.1568-5.9597 49.779 20.944 1.0215-1.4755-44.102-32.751 4.5406-7.1517 43.819 32.75 1.3053-1.7594-34.51-43.819 8.4574-6.8681 34.226 41.776 1.4759-1.3054-19.923-50.687 12.09-5.1084 18.788 49.665 1.4758-0.45402v-55.057h19.298v101.94h-105.29zm306.73-18.05h20.831v22.421h-17.312c-18.22 0-29.402-6.3004-29.402-29.402v-50.063h-12.374c-2.1571 0-3.2923-2.6111-1.8165-4.2004l35.816-40.64c1.5325-1.646 4.3138-0.56759 4.3138 1.7028v20.717h20.66v22.42h-20.66v57.044zm-74.242-81.11c-12.431 0-21.739 7.1518-26.28 18.39h-0.8517v-16.801h-24.691v101.94h25.94v-79.01h17.312c7.549 0 10.33 1.5893 10.33 9.649v69.361h25.94v-74.413c-0.055-20.49-9.8766-29.118-27.699-29.118zm-96.663 103.53h25.939v-101.94h-25.939zm339.37-83.892h-1.0754v-18.05h-25.772v101.94h27.473v-77.591h24.181v-25.939h-3.3507c-12.715 0-18.334 5.6192-21.456 19.639zm-38.878 30.31v7.7191h-77.762c1.4177 15.155 10.896 25.202 25.54 25.202 13.112 0 22.591-6.9816 24.52-15.609h27.643c-5.7885 21.512-25.54 37.973-52.56 37.973-31.502 0-52.899-22.42-52.899-51.822 0-29.402 20.661-53.411 53.581-53.411 31.104 0 51.938 21.399 51.938 49.949zm-76.97-11.068h50.178c-3.9179-10.217-12.203-17.539-25.032-17.539-11.238 0.0567-21.114 5.9597-25.146 17.539z" fill="#ea7100" stroke-width="3.4579"/></svg></svg>
+category: banking
+base_url: "https://{{credential.host}}/"
+headers:
+  x-conta-corrente: "{{credential.account}}"
+
+credential:
+  label: Banco Inter
+  fields:
+    - {name: client_id, label: Client ID, required: true}
+    - {name: client_secret, label: Client Secret, secret: true, required: true}
+    - {name: cert, label: Certificate, type: textarea, required: true, description: "The .crt of the integration, in PEM."}
+    - {name: key, label: Private key, type: textarea, secret: true, required: true, description: "The .key of the integration, in PEM."}
+    - {name: account, label: Account number, description: Only when the integration reaches more than one account.}
+    - {name: scopes, label: Scopes, required: true, default: "boleto-cobranca.read boleto-cobranca.write cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.read webhook.write extrato.read pagamento-pix.read pagamento-pix.write pagamento-boleto.read pagamento-boleto.write", description: "The ones checked on the integration, with a space between them."}
+    - {name: host, label: Environment, type: select, required: true, default: cdpj.partners.bancointer.com.br, options: [{label: Production, value: cdpj.partners.bancointer.com.br}, {label: Sandbox, value: cdpj-sandbox.partners.uatinter.co}]}
+  tls:
+    cert: "{{credential.cert}}"
+    key: "{{credential.key}}"
+  auth:
+    type: client_credentials
+    token_url: "https://{{credential.host}}/oauth/v2/token"
+    client_id: "{{credential.client_id}}"
+    client_secret: "{{credential.client_secret}}"
+    token_auth: body
+    scopes: ["{{credential.scopes}}"]
+
+errors:
+  message_path: detail
+
+triggers:
+  - name: Charge Updated
+    description: Starts the flow when a charge is paid, canceled or expires. Takes the account's one charge webhook.
+    fields: []
+    webhook:
+      register:
+        request:
+          method: PUT
+          path: cobranca/v3/cobrancas/webhook
+          body: {webhookUrl: "{{webhook.url}}"}
+      unregister:
+        request: {method: DELETE, path: cobranca/v3/cobrancas/webhook}
+
+  - name: Pix Received
+    description: Starts the flow when a Pix arrives at one of your keys. Takes that key's one webhook.
+    fields:
+      - {name: key, label: Pix key, required: true}
+    webhook:
+      register:
+        request:
+          method: PUT
+          path: "pix/v2/webhook/{{fields.key}}"
+          body: {webhookUrl: "{{webhook.url}}"}
+      unregister:
+        request: {method: DELETE, path: "pix/v2/webhook/{{fields.key}}"}
+      output: {path: pix}
+
+actions:
+  # Charges (boleto with Pix)
+  - name: Create Charge
+    resource: Charge
+    description: Issues a charge the payer can pay by boleto or Pix. The answer has codigoSolicitacao; the boleto and the Pix code come in Get Charge a few seconds later.
+    fields:
+      - {name: your_number, label: Your number, required: true, description: "Your reference for the charge, up to 15 characters."}
+      - {name: amount, label: Amount, type: number, required: true, description: "In reais, like 150.50"}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+      - {name: days_after_due, label: Days to pay after due, type: number, default: 0, description: 0 to 60.}
+      - {name: payer_document, label: Payer CPF or CNPJ, required: true, description: Digits only.}
+      - {name: payer_type, label: Payer type, type: select, required: true, default: FISICA, options: [{label: Person, value: FISICA}, {label: Company, value: JURIDICA}]}
+      - {name: payer_name, label: Payer name, required: true}
+      - {name: payer_email, label: Payer email}
+      - {name: street, label: Street, required: true}
+      - {name: number, label: Number}
+      - {name: complement, label: Complement}
+      - {name: district, label: District}
+      - {name: city, label: City, required: true}
+      - {name: state, label: State, required: true, description: "Two letters, like SP"}
+      - {name: zip_code, label: CEP, required: true, description: 8 digits.}
+      - {name: fine, label: Late fee (%), type: number}
+      - {name: interest, label: Interest per month (%), type: number}
+      - {name: message, label: Message, description: "Printed on the boleto, up to 78 characters."}
+    request:
+      method: POST
+      path: cobranca/v3/cobrancas
+      body:
+        seuNumero: "{{fields.your_number}}"
+        valorNominal: "{{fields.amount}}"
+        dataVencimento: "{{fields.due_date}}"
+        numDiasAgenda: "{{fields.days_after_due}}"
+        pagador: {cpfCnpj: "{{fields.payer_document}}", tipoPessoa: "{{fields.payer_type}}", nome: "{{fields.payer_name}}", email: "{{fields.payer_email}}", endereco: "{{fields.street}}", numero: "{{fields.number}}", complemento: "{{fields.complement}}", bairro: "{{fields.district}}", cidade: "{{fields.city}}", uf: "{{fields.state}}", cep: "{{fields.zip_code}}"}
+        multa: {_if: "{{fields.fine}}", codigo: PERCENTUAL, taxa: "{{fields.fine}}"}
+        mora: {_if: "{{fields.interest}}", codigo: TAXAMENSAL, taxa: "{{fields.interest}}"}
+        mensagem: {_if: "{{fields.message}}", linha1: "{{fields.message}}"}
+
+  - name: Get Charge
+    resource: Charge
+    description: Reads a charge, with its status, its boleto line and its Pix code.
+    fields:
+      - {name: charge_id, label: Charge ID, required: true, description: codigoSolicitacao.}
+    request: {method: GET, path: "cobranca/v3/cobrancas/{{fields.charge_id}}"}
+
+  - name: List Charges
+    resource: Charge
+    description: Lists the charges due between two dates.
+    fields:
+      - {name: start, label: From, required: true, description: "YYYY-MM-DD"}
+      - {name: end, label: To, required: true, description: "YYYY-MM-DD"}
+      - {name: status, label: Status, type: select, options: [{label: Open, value: A_RECEBER}, {label: Overdue, value: ATRASADO}, {label: Paid, value: RECEBIDO}, {label: Marked as paid, value: MARCADO_RECEBIDO}, {label: Canceled, value: CANCELADO}, {label: Expired, value: EXPIRADO}]}
+      - {name: page, label: Page, type: number, default: 0}
+      - {name: per_page, label: Per page, type: number, default: 100, description: Up to 1000.}
+    request:
+      method: GET
+      path: cobranca/v3/cobrancas
+      query: {dataInicial: "{{fields.start}}", dataFinal: "{{fields.end}}", situacao: "{{fields.status}}", paginaAtual: "{{fields.page}}", itensPorPagina: "{{fields.per_page}}"}
+
+  - name: Get Charge PDF
+    resource: Charge
+    description: Reads the PDF of a charge's boleto, in base64 at pdf.
+    fields:
+      - {name: charge_id, label: Charge ID, required: true}
+    request: {method: GET, path: "cobranca/v3/cobrancas/{{fields.charge_id}}/pdf"}
+
+  - name: Update Charge
+    resource: Charge
+    description: Changes the amount or the due date of an open charge.
+    fields:
+      - {name: charge_id, label: Charge ID, required: true}
+      - {name: amount, label: Amount, type: number, description: In reais.}
+      - {name: due_date, label: Due date, description: "YYYY-MM-DD"}
+    request:
+      method: PATCH
+      path: "cobranca/v3/cobrancas/{{fields.charge_id}}"
+      body: {valorNominal: "{{fields.amount}}", dataVencimento: "{{fields.due_date}}"}
+
+  - name: Cancel Charge
+    resource: Charge
+    description: Cancels an open charge.
+    fields:
+      - {name: charge_id, label: Charge ID, required: true}
+      - {name: reason, label: Reason, required: true, default: ACERTOS}
+    request:
+      method: POST
+      path: "cobranca/v3/cobrancas/{{fields.charge_id}}/cancelar"
+      body: {motivoCancelamento: "{{fields.reason}}"}
+
+  - name: Get Charges Summary
+    resource: Charge
+    description: Counts and sums the charges due between two dates, by status.
+    fields:
+      - {name: start, label: From, required: true, description: "YYYY-MM-DD"}
+      - {name: end, label: To, required: true, description: "YYYY-MM-DD"}
+    request:
+      method: GET
+      path: cobranca/v3/cobrancas/sumario
+      query: {dataInicial: "{{fields.start}}", dataFinal: "{{fields.end}}"}
+
+  # Pix charges
+  - name: Create Pix Charge
+    resource: Pix
+    description: Makes an immediate Pix charge, with a QR code and a copy-and-paste code (pixCopiaECola).
+    fields:
+      - {name: key, label: Pix key, required: true, description: One of your keys.}
+      - {name: amount, label: Amount, required: true, description: "In reais, with two decimals, like 37.00"}
+      - {name: expiration, label: Expires in, type: number, default: 3600, description: Seconds.}
+      - {name: debtor_cpf, label: Debtor CPF}
+      - {name: debtor_cnpj, label: Debtor CNPJ}
+      - {name: debtor_name, label: Debtor name, description: Needed with a CPF or CNPJ.}
+      - {name: message, label: Message to the payer}
+    request:
+      method: POST
+      path: pix/v2/cob
+      body:
+        calendario: {expiracao: "{{fields.expiration}}"}
+        devedor: {_if: "{{fields.debtor_name}}", cpf: "{{fields.debtor_cpf}}", cnpj: "{{fields.debtor_cnpj}}", nome: "{{fields.debtor_name}}"}
+        valor: {original: "{{fields.amount}}"}
+        chave: "{{fields.key}}"
+        solicitacaoPagador: "{{fields.message}}"
+
+  - name: Get Pix Charge
+    resource: Pix
+    description: Reads an immediate Pix charge, with its status and the Pix that paid it.
+    fields:
+      - {name: txid, label: TXID, required: true}
+    request: {method: GET, path: "pix/v2/cob/{{fields.txid}}"}
+
+  - name: List Pix Charges
+    resource: Pix
+    description: Lists the immediate Pix charges made between two moments.
+    fields:
+      - {name: start, label: From, type: datetime, required: true}
+      - {name: end, label: To, type: datetime, required: true}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: ATIVA}, {label: Paid, value: CONCLUIDA}, {label: Removed by you, value: REMOVIDA_PELO_USUARIO_RECEBEDOR}, {label: Removed by the PSP, value: REMOVIDA_PELO_PSP}]}
+      - {name: page, label: Page, type: number, default: 0}
+    request:
+      method: GET
+      path: pix/v2/cob
+      query: {inicio: "{{fields.start}}", fim: "{{fields.end}}", status: "{{fields.status}}", "paginacao.paginaAtual": "{{fields.page}}"}
+    output: {path: cobs}
+
+  - name: Update Pix Charge
+    resource: Pix
+    description: Changes the amount or the message of an active Pix charge, or removes it.
+    fields:
+      - {name: txid, label: TXID, required: true}
+      - {name: amount, label: Amount, description: "In reais, like 37.00"}
+      - {name: message, label: Message to the payer}
+      - {name: status, label: Status, type: select, description: Empty to keep it active., options: [{label: Remove, value: REMOVIDA_PELO_USUARIO_RECEBEDOR}]}
+    request:
+      method: PATCH
+      path: "pix/v2/cob/{{fields.txid}}"
+      body:
+        valor: {_if: "{{fields.amount}}", original: "{{fields.amount}}"}
+        solicitacaoPagador: "{{fields.message}}"
+        status: "{{fields.status}}"
+
+  - name: Create Due Pix Charge
+    resource: Pix
+    description: Makes a Pix charge with a due date, fine and interest, under a TXID you choose.
+    fields:
+      - {name: txid, label: TXID, required: true, description: 26 to 35 letters and digits.}
+      - {name: key, label: Pix key, required: true}
+      - {name: amount, label: Amount, required: true, description: "In reais, like 123.45"}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+      - {name: days_after_due, label: Days to pay after due, type: number, default: 30}
+      - {name: debtor_cpf, label: Debtor CPF}
+      - {name: debtor_cnpj, label: Debtor CNPJ}
+      - {name: debtor_name, label: Debtor name, required: true}
+      - {name: message, label: Message to the payer}
+    request:
+      method: PUT
+      path: "pix/v2/cobv/{{fields.txid}}"
+      body:
+        calendario: {dataDeVencimento: "{{fields.due_date}}", validadeAposVencimento: "{{fields.days_after_due}}"}
+        devedor: {cpf: "{{fields.debtor_cpf}}", cnpj: "{{fields.debtor_cnpj}}", nome: "{{fields.debtor_name}}"}
+        valor: {original: "{{fields.amount}}"}
+        chave: "{{fields.key}}"
+        solicitacaoPagador: "{{fields.message}}"
+
+  - name: Get Due Pix Charge
+    resource: Pix
+    description: Reads a Pix charge with a due date.
+    fields:
+      - {name: txid, label: TXID, required: true}
+    request: {method: GET, path: "pix/v2/cobv/{{fields.txid}}"}
+
+  - name: List Received Pix
+    resource: Pix
+    description: Lists the Pix received between two moments.
+    fields:
+      - {name: start, label: From, type: datetime, required: true}
+      - {name: end, label: To, type: datetime, required: true}
+      - {name: txid, label: TXID}
+      - {name: page, label: Page, type: number, default: 0}
+    request:
+      method: GET
+      path: pix/v2/pix
+      query: {inicio: "{{fields.start}}", fim: "{{fields.end}}", txid: "{{fields.txid}}", "paginacao.paginaAtual": "{{fields.page}}"}
+    output: {path: pix}
+
+  - name: Get Received Pix
+    resource: Pix
+    description: Reads a received Pix by its end-to-end ID.
+    fields:
+      - {name: e2e_id, label: End-to-end ID, required: true}
+    request: {method: GET, path: "pix/v2/pix/{{fields.e2e_id}}"}
+
+  - name: Refund Pix
+    resource: Pix
+    description: Returns all or part of a received Pix.
+    fields:
+      - {name: e2e_id, label: End-to-end ID, required: true}
+      - {name: refund_id, label: Refund ID, required: true, description: "Your ID for this refund, letters and digits."}
+      - {name: amount, label: Amount, required: true, description: "In reais, like 7.89"}
+    request:
+      method: PUT
+      path: "pix/v2/pix/{{fields.e2e_id}}/devolucao/{{fields.refund_id}}"
+      body: {valor: "{{fields.amount}}"}
+
+  # Account
+  - name: Get Balance
+    resource: Account
+    description: Reads the account's available and blocked balance, today or on a past date.
+    fields:
+      - {name: date, label: Date, description: "YYYY-MM-DD. Empty for now."}
+    request:
+      method: GET
+      path: banking/v2/saldo
+      query: {dataSaldo: "{{fields.date}}"}
+
+  - name: Get Statement
+    resource: Account
+    description: Lists the account's entries between two dates, up to 90 days.
+    fields:
+      - {name: start, label: From, required: true, description: "YYYY-MM-DD"}
+      - {name: end, label: To, required: true, description: "YYYY-MM-DD"}
+    request:
+      method: GET
+      path: banking/v2/extrato
+      query: {dataInicio: "{{fields.start}}", dataFim: "{{fields.end}}"}
+
+  - name: Get Detailed Statement
+    resource: Account
+    description: Lists the account's entries between two dates with their details, a page at a time.
+    fields:
+      - {name: start, label: From, required: true, description: "YYYY-MM-DD"}
+      - {name: end, label: To, required: true, description: "YYYY-MM-DD"}
+      - {name: page, label: Page, type: number, default: 0}
+      - {name: per_page, label: Per page, type: number, default: 50, description: Up to 10000.}
+    request:
+      method: GET
+      path: banking/v2/extrato/completo
+      query: {dataInicio: "{{fields.start}}", dataFim: "{{fields.end}}", pagina: "{{fields.page}}", tamanhoPagina: "{{fields.per_page}}"}
+
+  # Payments
+  - name: Send Pix
+    resource: Payment
+    description: Sends a Pix to a key or pays a copy-and-paste code, now or on a date.
+    fields:
+      - {name: kind, label: Pay to, type: select, required: true, default: CHAVE, options: [{label: Pix key, value: CHAVE}, {label: Copy-and-paste code, value: PIX_COPIA_E_COLA}]}
+      - {name: key, label: Pix key, description: With Pix key.}
+      - {name: code, label: Copy-and-paste code, type: textarea, description: With Copy-and-paste code.}
+      - {name: amount, label: Amount, required: true, description: "In reais, like 100.00"}
+      - {name: description, label: Description}
+      - {name: date, label: Payment date, description: "YYYY-MM-DD. Empty for now."}
+      - {name: idempotency_key, label: Idempotency key, description: The same key never pays twice.}
+    request:
+      method: POST
+      path: banking/v2/pix
+      headers: {x-id-idempotente: "{{fields.idempotency_key}}"}
+      body:
+        valor: "{{fields.amount}}"
+        descricao: "{{fields.description}}"
+        dataPagamento: "{{fields.date}}"
+        destinatario: {tipo: "{{fields.kind}}", chave: "{{fields.key}}", pixCopiaECola: "{{fields.code}}"}
+
+  - name: Get Pix Payment
+    resource: Payment
+    description: Reads a Pix you sent, with its status.
+    fields:
+      - {name: request_id, label: Request ID, required: true, description: "codigoSolicitacao, from Send Pix."}
+    request: {method: GET, path: "banking/v2/pix/{{fields.request_id}}"}
+
+  - name: Pay Boleto
+    resource: Payment
+    description: Pays a boleto or a utility bill by its barcode or digitable line, now or on a date.
+    fields:
+      - {name: barcode, label: Barcode or line, required: true}
+      - {name: amount, label: Amount, type: number, required: true, description: In reais.}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+      - {name: date, label: Payment date, description: "YYYY-MM-DD. Empty for today."}
+      - {name: beneficiary_document, label: Beneficiary CPF or CNPJ, description: Of who receives the payment.}
+    request:
+      method: POST
+      path: banking/v2/pagamento
+      body: {codBarraLinhaDigitavel: "{{fields.barcode}}", valorPagar: "{{fields.amount}}", dataVencimento: "{{fields.due_date}}", dataPagamento: "{{fields.date}}", cpfCnpjBeneficiario: "{{fields.beneficiary_document}}"}
+
+  - name: List Boleto Payments
+    resource: Payment
+    description: Lists the boletos paid or scheduled between two dates.
+    fields:
+      - {name: start, label: From, required: true, description: "YYYY-MM-DD"}
+      - {name: end, label: To, required: true, description: "YYYY-MM-DD"}
+      - {name: filter_by, label: Dates are, type: select, default: INCLUSAO, options: [{label: Created, value: INCLUSAO}, {label: Due, value: VENCIMENTO}]}
+      - {name: barcode, label: Barcode}
+    request:
+      method: GET
+      path: banking/v2/pagamento
+      query: {dataInicio: "{{fields.start}}", dataFim: "{{fields.end}}", filtrarDataPor: "{{fields.filter_by}}", codBarraLinhaDigitavel: "{{fields.barcode}}"}
+
+  - name: Cancel Scheduled Payment
+    resource: Payment
+    description: Cancels a boleto payment scheduled for a later date.
+    fields:
+      - {name: transaction_id, label: Transaction code, required: true, description: "codigoTransacao, from Pay Boleto."}
+    request: {method: DELETE, path: "banking/v2/pagamento/{{fields.transaction_id}}"}
+
+i18n:
+  pt-BR:
+    description: "Emita boletos com Pix e cobranças Pix, consulte Pix recebidos, saldo e extrato, e pague por Pix e boleto, com o Banco Inter Empresas."
+    triggers:
+      Charge Updated: {name: "Cobrança atualizada", description: "Inicia o fluxo quando uma cobrança é paga, cancelada ou expira. Usa o único webhook de cobranças da conta."}
+      Pix Received: {name: "Pix recebido", description: "Inicia o fluxo quando chega um Pix em uma das suas chaves. Usa o único webhook dessa chave.", fields: {key: "Chave Pix"}}
+    actions:
+      Create Charge: {name: "Emitir cobrança", description: "Emite uma cobrança que o pagador paga por boleto ou Pix. O retorno traz codigoSolicitacao; o boleto e o código Pix saem em Consultar cobrança alguns segundos depois.", fields: {your_number: "Seu número", amount: "Valor", due_date: "Vencimento", days_after_due: "Dias para pagar após o vencimento", payer_document: "CPF ou CNPJ do pagador", payer_type: "Tipo de pagador", payer_name: "Nome do pagador", payer_email: "E-mail do pagador", street: "Endereço", number: "Número", complement: "Complemento", district: "Bairro", city: "Cidade", state: "UF", zip_code: "CEP", fine: "Multa (%)", interest: "Juros ao mês (%)", message: "Mensagem"}}
+      Get Charge: {name: "Consultar cobrança", description: "Lê uma cobrança, com a situação, a linha digitável e o código Pix.", fields: {charge_id: "ID da cobrança"}}
+      List Charges: {name: "Listar cobranças", description: "Lista as cobranças com vencimento entre duas datas.", fields: {start: "De", end: "Até", status: "Situação", page: "Página", per_page: "Por página"}}
+      Get Charge PDF: {name: "Baixar PDF da cobrança", description: "Lê o PDF do boleto de uma cobrança, em base64 no campo pdf.", fields: {charge_id: "ID da cobrança"}}
+      Update Charge: {name: "Editar cobrança", description: "Altera o valor ou o vencimento de uma cobrança em aberto.", fields: {charge_id: "ID da cobrança", amount: "Valor", due_date: "Vencimento"}}
+      Cancel Charge: {name: "Cancelar cobrança", description: "Cancela uma cobrança em aberto.", fields: {charge_id: "ID da cobrança", reason: "Motivo"}}
+      Get Charges Summary: {name: "Resumo das cobranças", description: "Conta e soma as cobranças com vencimento entre duas datas, por situação.", fields: {start: "De", end: "Até"}}
+      Create Pix Charge: {name: "Criar cobrança Pix", description: "Cria uma cobrança Pix imediata, com QR code e Pix copia e cola (pixCopiaECola).", fields: {key: "Chave Pix", amount: "Valor", expiration: "Expira em", debtor_cpf: "CPF do devedor", debtor_cnpj: "CNPJ do devedor", debtor_name: "Nome do devedor", message: "Mensagem"}}
+      Get Pix Charge: {name: "Consultar cobrança Pix", description: "Lê uma cobrança Pix imediata, com o status e o Pix que a pagou.", fields: {txid: "TXID"}}
+      List Pix Charges: {name: "Listar cobranças Pix", description: "Lista as cobranças Pix imediatas criadas entre dois momentos.", fields: {start: "De", end: "Até", status: "Situação", page: "Página"}}
+      Update Pix Charge: {name: "Revisar cobrança Pix", description: "Altera o valor ou a mensagem de uma cobrança Pix ativa, ou a remove.", fields: {txid: "TXID", amount: "Valor", message: "Mensagem", status: "Situação"}}
+      Create Due Pix Charge: {name: "Criar cobrança Pix com vencimento", description: "Cria uma cobrança Pix com vencimento, multa e juros, com um TXID escolhido por você.", fields: {txid: "TXID", key: "Chave Pix", amount: "Valor", due_date: "Vencimento", days_after_due: "Dias para pagar após o vencimento", debtor_cpf: "CPF do devedor", debtor_cnpj: "CNPJ do devedor", debtor_name: "Nome do devedor", message: "Mensagem"}}
+      Get Due Pix Charge: {name: "Consultar cobrança Pix com vencimento", description: "Lê uma cobrança Pix com vencimento.", fields: {txid: "TXID"}}
+      List Received Pix: {name: "Listar Pix recebidos", description: "Lista os Pix recebidos entre dois momentos.", fields: {start: "De", end: "Até", txid: "TXID", page: "Página"}}
+      Get Received Pix: {name: "Consultar Pix recebido", description: "Lê um Pix recebido pelo end-to-end ID.", fields: {e2e_id: "End-to-end ID"}}
+      Refund Pix: {name: "Devolver Pix", description: "Devolve todo ou parte de um Pix recebido.", fields: {e2e_id: "End-to-end ID", refund_id: "ID da devolução", amount: "Valor"}}
+      Get Balance: {name: "Consultar saldo", description: "Lê o saldo disponível e bloqueado da conta, agora ou em uma data passada.", fields: {date: "Data"}}
+      Get Statement: {name: "Consultar extrato", description: "Lista os lançamentos da conta entre duas datas, até 90 dias.", fields: {start: "De", end: "Até"}}
+      Get Detailed Statement: {name: "Consultar extrato completo", description: "Lista os lançamentos da conta entre duas datas com detalhes, uma página por vez.", fields: {start: "De", end: "Até", page: "Página", per_page: "Por página"}}
+      Send Pix: {name: "Enviar Pix", description: "Envia um Pix para uma chave ou paga um Pix copia e cola, agora ou em uma data.", fields: {kind: "Pagar para", key: "Chave Pix", code: "Pix copia e cola", amount: "Valor", description: "Descrição", date: "Data", idempotency_key: "Chave de idempotência"}}
+      Get Pix Payment: {name: "Consultar Pix enviado", description: "Lê um Pix enviado, com o status.", fields: {request_id: "Código da solicitação"}}
+      Pay Boleto: {name: "Pagar boleto", description: "Paga um boleto ou conta de consumo pelo código de barras ou linha digitável, agora ou em uma data.", fields: {barcode: "Código de barras ou linha", amount: "Valor", due_date: "Vencimento", date: "Data", beneficiary_document: "CPF ou CNPJ do beneficiário"}}
+      List Boleto Payments: {name: "Listar pagamentos de boleto", description: "Lista os boletos pagos ou agendados entre duas datas.", fields: {start: "De", end: "Até", filter_by: "Datas são de", barcode: "Código de barras ou linha"}}
+      Cancel Scheduled Payment: {name: "Cancelar pagamento agendado", description: "Cancela um pagamento de boleto agendado para depois.", fields: {transaction_id: "Código da transação"}}
