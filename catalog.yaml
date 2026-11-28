@@ -91,7 +91,7 @@ integrations:
   - {id: asaas, name: Asaas, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: banco_do_brasil, name: Banco do Brasil, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: banco_inter, name: Banco Inter, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: inter, version: 0.7.0, released: 2026-09-25}, status: planned}
-  - {id: bcb, name: "Banco Central (SGS, PTAX)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
+  - {id: bcb, name: "Banco Central (SGS, PTAX)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
   - {id: bling, name: Bling, category: erp, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: blip, name: Blip, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: bradesco, name: Bradesco, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
