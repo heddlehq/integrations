@@ -120,7 +120,7 @@ integrations:
   - {id: ifood, name: iFood Merchant, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: intelipost, name: Intelipost, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: itau, name: Itaú, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
-  - {id: iugu, name: Iugu, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: iugu, name: Iugu, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
   - {id: jadlog, name: Jadlog, category: logistics, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: kangu, name: Kangu, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: kiwify, name: Kiwify, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
@@ -168,8 +168,8 @@ integrations:
   - {id: woovi, name: Woovi (OpenPix), category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: yampi, name: Yampi, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: z_api, name: Z-API, category: messaging, phase: 2, origin: br, auth: path, kind: manifest, status: planned}
-  - {id: zapsign, name: ZapSign, category: esign, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
-  - {id: zenvia, name: Zenvia, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: zapsign, name: ZapSign, category: esign, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
+  - {id: zenvia, name: Zenvia, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
 
   # Phase 3: the rest, by category
   - {id: freshbooks, name: FreshBooks, category: accounting, phase: 3, origin: extra, auth: oauth2, kind: manifest, status: planned}
