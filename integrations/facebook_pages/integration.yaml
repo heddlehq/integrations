@@ -1,0 +1,237 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Facebook Pages, through the Graph API v23.0. Connect with a page access token that
+# doesn't expire: in the Graph API Explorer, pick your app and the page, ask for
+# pages_manage_posts, pages_read_engagement, pages_manage_engagement and
+# read_insights, then trade it for a long-lived one in the Access Token Debugger.
+# Meta's webhooks are set in the app's dashboard, so the triggers check for news
+# every 5 minutes.
+id: facebook_pages
+name: Facebook Pages
+version: 1.0.0
+description: Posts, photos, comments and insights of a Facebook Page.
+icon: hero-flag
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0866FF" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978c.401 0 .955.042 1.468.103a9 9 0 0 1 1.141.195v3.325a9 9 0 0 0-.653-.036a27 27 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.7 1.7 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103l-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647"/></svg>
+category: social
+author: Heddle
+homepage: https://developers.facebook.com/docs/pages-api
+base_url: https://graph.facebook.com/v23.0/
+
+credential:
+  label: Facebook Page
+  fields:
+    - {name: token, label: Page access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Post
+    description: Starts the flow for each new post on the page, checking every 5 minutes.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+    request:
+      method: GET
+      path: "{{fields.page}}/feed"
+      query: {fields: "id,message,created_time,permalink_url,from", limit: 50}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+  - name: New Comment
+    description: Starts the flow for each new comment on a post, checking every 5 minutes.
+    fields:
+      - {name: post, label: Post ID, required: true}
+    request:
+      method: GET
+      path: "{{fields.post}}/comments"
+      query: {fields: "id,message,created_time,from", order: reverse_chronological, limit: 100}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+actions:
+  - name: Get Page
+    resource: Page
+    description: Reads the page, with its name, followers and link.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+    request: {method: GET, path: "{{fields.page}}", query: {fields: "id,name,about,category,fan_count,followers_count,link,website,phone,emails"}}
+
+  # Posts
+  - name: Create Post
+    resource: Post
+    description: Publishes a post with text and, optionally, a link.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+      - {name: message, label: Text, type: textarea, required: true}
+      - {name: link, label: Link}
+    request:
+      method: POST
+      path: "{{fields.page}}/feed"
+      body: {message: "{{fields.message}}", link: "{{fields.link}}"}
+
+  - name: Schedule Post
+    resource: Post
+    description: Schedules a post, between 10 minutes and 30 days from now.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+      - {name: message, label: Text, type: textarea, required: true}
+      - {name: link, label: Link}
+      - {name: at, label: Publish at, type: datetime, format: unix, required: true}
+    request:
+      method: POST
+      path: "{{fields.page}}/feed"
+      body: {message: "{{fields.message}}", link: "{{fields.link}}", published: false, scheduled_publish_time: "{{fields.at}}"}
+
+  - name: Create Photo Post
+    resource: Post
+    description: Publishes a photo, from a file or a public URL, with a caption.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+      - {name: file, label: Photo, type: file, description: "Give a file or a URL."}
+      - {name: url, label: Photo URL}
+      - {name: caption, label: Caption, type: textarea}
+    request:
+      method: POST
+      path: "{{fields.page}}/photos"
+      body_type: multipart
+      body: {source: "{{fields.file}}", url: "{{fields.url}}", message: "{{fields.caption}}"}
+
+  - name: Create Video Post
+    resource: Post
+    description: Publishes a video from a public URL.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+      - {name: url, label: Video URL, required: true}
+      - {name: title, label: Title}
+      - {name: description_text, label: Description, type: textarea}
+    request:
+      method: POST
+      path: "{{fields.page}}/videos"
+      body: {file_url: "{{fields.url}}", title: "{{fields.title}}", description: "{{fields.description_text}}"}
+
+  - name: List Posts
+    resource: Post
+    description: Lists the posts on the page, newest first.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+      - {name: since, label: Since, type: datetime, format: unix}
+    request:
+      method: GET
+      path: "{{fields.page}}/posts"
+      query: {since: "{{fields.since}}", fields: "id,message,created_time,permalink_url,shares,status_type,full_picture"}
+    pagination: {type: link, items_path: data, next_path: paging.next, limit_param: limit, page_size: 100}
+
+  - name: Get Post
+    resource: Post
+    description: Reads a post, with its reaction and comment counts.
+    fields:
+      - {name: post, label: Post ID, required: true}
+    request: {method: GET, path: "{{fields.post}}", query: {fields: "id,message,created_time,permalink_url,shares,reactions.summary(true),comments.summary(true)"}}
+
+  - name: Update Post
+    resource: Post
+    description: Changes a post's text.
+    fields:
+      - {name: post, label: Post ID, required: true}
+      - {name: message, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: "{{fields.post}}"
+      body: {message: "{{fields.message}}"}
+
+  - name: Delete Post
+    resource: Post
+    description: Deletes a post.
+    fields:
+      - {name: post, label: Post ID, required: true}
+    request: {method: DELETE, path: "{{fields.post}}"}
+
+  # Comments
+  - name: List Comments
+    resource: Comment
+    description: Lists the comments on a post or a comment.
+    fields:
+      - {name: object, label: Post or comment ID, required: true}
+    request: {method: GET, path: "{{fields.object}}/comments", query: {fields: "id,message,created_time,from,like_count,comment_count", order: reverse_chronological}}
+    pagination: {type: link, items_path: data, next_path: paging.next, limit_param: limit, page_size: 100}
+
+  - name: Reply to Comment
+    resource: Comment
+    description: Comments on a post, or replies to a comment, as the page.
+    fields:
+      - {name: object, label: Post or comment ID, required: true}
+      - {name: message, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: "{{fields.object}}/comments"
+      body: {message: "{{fields.message}}"}
+
+  - name: Hide Comment
+    resource: Comment
+    description: Hides or shows a comment. A hidden one is seen only by who wrote it and their friends.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+      - {name: hidden, label: Hidden, type: boolean, default: true}
+    request:
+      method: POST
+      path: "{{fields.comment}}"
+      body: {is_hidden: "{{fields.hidden}}"}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+    request: {method: DELETE, path: "{{fields.comment}}"}
+
+  # Insights
+  - name: Get Page Insights
+    resource: Insights
+    description: Reads the page's metrics, like views and engagement, by day, week or month.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me, description: "me is the page of the token."}
+      - {name: metrics, label: Metrics, required: true, default: "page_impressions_unique,page_post_engagements,page_follows", description: "Like page_impressions_unique, page_views_total"}
+      - {name: period, label: Period, type: select, default: day, options: [{label: Day, value: day}, {label: Week, value: week}, {label: 28 days, value: days_28}]}
+      - {name: since, label: Since, type: datetime, format: unix}
+      - {name: until, label: Until, type: datetime, format: unix}
+    request:
+      method: GET
+      path: "{{fields.page}}/insights"
+      query: {metric: "{{fields.metrics}}", period: "{{fields.period}}", since: "{{fields.since}}", until: "{{fields.until}}"}
+    output: {path: data}
+
+  - name: Get Post Insights
+    resource: Insights
+    description: Reads a post's metrics, like reach and clicks.
+    fields:
+      - {name: post, label: Post ID, required: true}
+      - {name: metrics, label: Metrics, required: true, default: "post_impressions_unique,post_clicks,post_reactions_by_type_total"}
+    request: {method: GET, path: "{{fields.post}}/insights", query: {metric: "{{fields.metrics}}"}}
+    output: {path: data}
+
+i18n:
+  pt-BR:
+    description: "Posts, fotos, comentários e métricas de uma Página do Facebook."
+    triggers:
+      New Post: {name: "Novo post", description: "Inicia o fluxo para cada post novo na página, olhando a cada 5 minutos.", fields: {page: "ID da página"}}
+      New Comment: {name: "Novo comentário", description: "Inicia o fluxo para cada comentário novo num post, olhando a cada 5 minutos.", fields: {post: "ID do post"}}
+    actions:
+      Get Page: {name: "Ler página", description: "Lê a página, com nome, seguidores e link.", fields: {page: "ID da página"}}
+      Create Post: {name: "Criar post", description: "Publica um post com texto e, se quiser, um link.", fields: {page: "ID da página", message: "Texto", link: "Link"}}
+      Schedule Post: {name: "Agendar post", description: "Agenda um post, entre 10 minutos e 30 dias a partir de agora.", fields: {page: "ID da página", message: "Texto", link: "Link", at: "Publicar em"}}
+      Create Photo Post: {name: "Publicar foto", description: "Publica uma foto, de um arquivo ou URL pública, com legenda.", fields: {page: "ID da página", file: "Foto", url: "URL", caption: "Legenda"}}
+      Create Video Post: {name: "Publicar vídeo", description: "Publica um vídeo de uma URL pública.", fields: {page: "ID da página", url: "URL", title: "Título", description_text: "Descrição"}}
+      List Posts: {name: "Listar posts", description: "Lista os posts da página, dos mais novos.", fields: {page: "ID da página", since: "Desde"}}
+      Get Post: {name: "Ler post", description: "Lê um post, com o número de reações e comentários.", fields: {post: "ID do post"}}
+      Update Post: {name: "Atualizar post", description: "Altera o texto de um post.", fields: {post: "ID do post", message: "Texto"}}
+      Delete Post: {name: "Excluir post", description: "Exclui um post.", fields: {post: "ID do post"}}
+      List Comments: {name: "Listar comentários", description: "Lista os comentários de um post ou comentário.", fields: {object: "ID do post ou comentário"}}
+      Reply to Comment: {name: "Responder comentário", description: "Comenta num post, ou responde a um comentário, como a página.", fields: {object: "ID do post ou comentário", message: "Texto"}}
+      Hide Comment: {name: "Ocultar comentário", description: "Oculta ou mostra um comentário. Oculto, só quem escreveu e os amigos veem.", fields: {comment: "ID do comentário", hidden: "Oculto"}}
+      Delete Comment: {name: "Excluir comentário", description: "Exclui um comentário.", fields: {comment: "ID do comentário"}}
+      Get Page Insights: {name: "Ler métricas da página", description: "Lê as métricas da página, como visualizações e engajamento, por dia, semana ou mês.", fields: {page: "ID da página", metrics: "Métricas", period: "Período", since: "Desde", until: "Até"}}
+      Get Post Insights: {name: "Ler métricas do post", description: "Lê as métricas de um post, como alcance e cliques.", fields: {post: "ID do post", metrics: "Métricas"}}
