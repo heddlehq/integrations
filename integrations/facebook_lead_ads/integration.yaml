@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Facebook Lead Ads, through the Graph API v23.0. Connect with a long-lived page
+# access token with leads_retrieval, pages_manage_ads, pages_show_list and
+# pages_read_engagement. Meta's leadgen webhook is set in the app's dashboard, so the
+# trigger checks the form for new leads every 5 minutes.
+id: facebook_lead_ads
+name: Facebook Lead Ads
+version: 1.0.0
+description: Lead forms of a Facebook Page and the leads they collect.
+icon: hero-user-plus
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0866FF" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978c.401 0 .955.042 1.468.103a9 9 0 0 1 1.141.195v3.325a9 9 0 0 0-.653-.036a27 27 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.7 1.7 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103l-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647"/></svg>
+category: marketing
+author: Heddle
+homepage: https://developers.facebook.com/docs/marketing-api/guides/lead-ads
+base_url: https://graph.facebook.com/v23.0/
+
+credential:
+  label: Facebook Lead Ads
+  fields:
+    - {name: token, label: Page access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Lead
+    description: Starts the flow for each new lead of a form, checking every 5 minutes.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me}
+      - {name: form, label: Form, type: select, required: true, options_from: {request: {method: GET, path: "{{fields.page}}/leadgen_forms", query: {limit: 200}}, path: data, label: name, value: id}}
+    request:
+      method: GET
+      path: "{{fields.form}}/leads"
+      query: {fields: "id,created_time,field_data,ad_id,ad_name,campaign_id,campaign_name,form_id,platform,is_organic", limit: 100}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+actions:
+  - name: List Forms
+    resource: Form
+    description: Lists the lead forms of a page.
+    fields:
+      - {name: page, label: Page ID, required: true, default: me}
+    request: {method: GET, path: "{{fields.page}}/leadgen_forms", query: {fields: "id,name,status,leads_count,created_time,questions"}}
+    pagination: {type: link, items_path: data, next_path: paging.next, limit_param: limit, page_size: 100}
+
+  - name: Get Form
+    resource: Form
+    description: Reads a form, with its questions.
+    fields:
+      - {name: form, label: Form ID, required: true}
+    request: {method: GET, path: "{{fields.form}}", query: {fields: "id,name,status,leads_count,questions,privacy_policy_url,locale"}}
+
+  - name: List Leads
+    resource: Lead
+    description: Lists the leads of a form, optionally since a date.
+    fields:
+      - {name: form, label: Form ID, required: true}
+      - {name: since, label: Since, type: datetime, format: unix}
+    request:
+      method: GET
+      path: "{{fields.form}}/leads"
+      query:
+        fields: "id,created_time,field_data,ad_id,ad_name,campaign_id,campaign_name,platform,is_organic"
+        filtering: [{field: time_created, operator: GREATER_THAN, value: "{{fields.since}}", _if: "{{fields.since}}"}]
+    pagination: {type: link, items_path: data, next_path: paging.next, limit_param: limit, page_size: 100}
+
+  - name: Get Lead
+    resource: Lead
+    description: Reads a lead, with the answers in field_data.
+    fields:
+      - {name: lead, label: Lead ID, required: true}
+    request: {method: GET, path: "{{fields.lead}}", query: {fields: "id,created_time,field_data,ad_id,ad_name,adset_id,campaign_id,campaign_name,form_id,platform,is_organic,custom_disclaimer_responses"}}
+
+i18n:
+  pt-BR:
+    description: Formulários de cadastro de uma Página do Facebook e os leads que eles coletam.
+    triggers:
+      New Lead: {name: Novo lead, description: "Inicia o fluxo para cada lead novo de um formulário, olhando a cada 5 minutos.", fields: {page: ID da página, form: Formulário}}
+    actions:
+      List Forms: {name: Listar formulários, description: Lista os formulários de cadastro de uma página., fields: {page: ID da página}}
+      Get Form: {name: Ler formulário, description: "Lê um formulário, com as perguntas.", fields: {form: ID do formulário}}
+      List Leads: {name: Listar leads, description: "Lista os leads de um formulário, desde uma data se quiser.", fields: {form: ID do formulário, since: Desde}}
+      Get Lead: {name: Ler lead, description: "Lê um lead, com as respostas em field_data.", fields: {lead: ID do lead}}
