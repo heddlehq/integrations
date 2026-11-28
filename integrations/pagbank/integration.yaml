@@ -1,0 +1,200 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# PagBank (PagSeguro), through the Orders and Checkout APIs. Connect with the token
+# from the PagBank account's Venda online › Integrações. Use
+# https://sandbox.api.pagseguro.com for the sandbox. Amounts go in cents, like 4990
+# for R$ 49,90. PagBank signs notifications with a hash Bobbin can't check yet, so
+# give a notification URL of your own when you need one.
+id: pagbank
+name: PagBank (PagSeguro)
+version: 1.0.0
+description: Pix, boleto and card orders, charges and checkout links in PagBank.
+icon: hero-credit-card
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FFC801" d="M17.482 9.712c1.64 0 3.108.69 4.1 1.813c.044-.388.087-.777.087-1.208C21.67 5.007 17.353.69 12 .69s-9.67 4.316-9.67 9.626c0 .345 0 .69.044 1.036a8.69 8.69 0 0 1 7.943-5.137c2.848 0 5.352 1.381 6.95 3.496h.215zm-7.122-2.72c-4.36 0-7.9 3.54-7.9 7.9a7.904 7.904 0 0 0 13.425 5.655a5.53 5.53 0 0 1-3.928-5.31c0-2.676 1.9-4.92 4.446-5.438c-1.468-1.684-3.626-2.806-6.043-2.806zM4.79 21.583A11.96 11.96 0 0 1 0 12C0 5.353 5.396 0 12 0s12 5.396 12 12s-5.396 12-12 12c-1.554 0-3.022-.302-4.36-.82c-1.079-.389-2.028-.907-2.849-1.597zm12.777-1.51a4.827 4.827 0 0 0 4.835-4.835a4.827 4.827 0 0 0-4.835-4.834a4.827 4.827 0 0 0-4.834 4.834a4.827 4.827 0 0 0 4.834 4.835"/></svg>
+category: payments
+author: Heddle
+homepage: https://developer.pagbank.com.br/reference
+base_url: "{{credential.url}}/"
+
+credential:
+  label: PagBank
+  fields:
+    - {name: token, label: Token, secret: true, required: true}
+    - {name: url, label: Address, default: "https://api.pagseguro.com", description: "https://sandbox.api.pagseguro.com for the sandbox."}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error_messages.0.description
+
+actions:
+  # Orders
+  - name: Create Pix Order
+    resource: Order
+    description: Creates an order paid by Pix; returns the QR code and the copy-and-paste code.
+    fields:
+      - {name: name, label: Customer name, required: true}
+      - {name: email, label: Customer email, required: true}
+      - {name: tax_id, label: Customer CPF or CNPJ, required: true}
+      - {name: amount, label: Amount (cents), type: number, required: true}
+      - {name: description, label: Item, required: true}
+      - {name: expires, label: Expires at, type: datetime}
+      - {name: reference, label: Your ID}
+      - {name: notification_url, label: Notification URL}
+    request:
+      method: POST
+      path: orders
+      body:
+        reference_id: "{{fields.reference}}"
+        customer: {name: "{{fields.name}}", email: "{{fields.email}}", tax_id: "{{fields.tax_id}}"}
+        items: [{name: "{{fields.description}}", quantity: 1, unit_amount: "{{fields.amount}}"}]
+        qr_codes: [{amount: {value: "{{fields.amount}}"}, expiration_date: "{{fields.expires}}"}]
+        notification_urls: ["{{fields.notification_url}}"]
+
+  - name: Create Boleto Order
+    resource: Order
+    description: Creates an order paid by boleto; returns its links and barcode.
+    fields:
+      - {name: name, label: Customer name, required: true}
+      - {name: email, label: Customer email, required: true}
+      - {name: tax_id, label: Customer CPF or CNPJ, required: true}
+      - {name: amount, label: Amount (cents), type: number, required: true}
+      - {name: description, label: Item, required: true}
+      - {name: due_date, label: Due date, required: true, description: "Like 2026-02-10"}
+      - {name: address, label: Holder address, type: json, required: true, description: '{"street": "Rua A", "number": "1", "locality": "Centro", "city": "São Paulo", "region_code": "SP", "country": "BRA", "postal_code": "01000000"}'}
+      - {name: instructions, label: Instructions}
+      - {name: reference, label: Your ID}
+      - {name: notification_url, label: Notification URL}
+    request:
+      method: POST
+      path: orders
+      body:
+        reference_id: "{{fields.reference}}"
+        customer: {name: "{{fields.name}}", email: "{{fields.email}}", tax_id: "{{fields.tax_id}}"}
+        items: [{name: "{{fields.description}}", quantity: 1, unit_amount: "{{fields.amount}}"}]
+        charges:
+          - reference_id: "{{fields.reference}}"
+            description: "{{fields.description}}"
+            amount: {value: "{{fields.amount}}", currency: BRL}
+            payment_method:
+              type: BOLETO
+              boleto: {due_date: "{{fields.due_date}}", instruction_lines: {line_1: "{{fields.instructions}}"}, holder: {name: "{{fields.name}}", tax_id: "{{fields.tax_id}}", email: "{{fields.email}}", address: "{{fields.address}}"}}
+        notification_urls: ["{{fields.notification_url}}"]
+
+  - name: Create Card Order
+    resource: Order
+    description: Creates an order paid with a card encrypted by PagBank's script on your site.
+    fields:
+      - {name: name, label: Customer name, required: true}
+      - {name: email, label: Customer email, required: true}
+      - {name: tax_id, label: Customer CPF or CNPJ, required: true}
+      - {name: amount, label: Amount (cents), type: number, required: true}
+      - {name: description, label: Item, required: true}
+      - {name: encrypted, label: Encrypted card, required: true}
+      - {name: installments, label: Installments, type: number, default: 1}
+      - {name: capture, label: Capture now, type: boolean, default: true}
+      - {name: reference, label: Your ID}
+    request:
+      method: POST
+      path: orders
+      body:
+        reference_id: "{{fields.reference}}"
+        customer: {name: "{{fields.name}}", email: "{{fields.email}}", tax_id: "{{fields.tax_id}}"}
+        items: [{name: "{{fields.description}}", quantity: 1, unit_amount: "{{fields.amount}}"}]
+        charges:
+          - reference_id: "{{fields.reference}}"
+            description: "{{fields.description}}"
+            amount: {value: "{{fields.amount}}", currency: BRL}
+            payment_method: {type: CREDIT_CARD, installments: "{{fields.installments}}", capture: "{{fields.capture}}", card: {encrypted: "{{fields.encrypted}}"}}
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order, with its charges and their status.
+    fields:
+      - {name: order, label: Order ID, required: true, description: "Like ORDE_…"}
+    request: {method: GET, path: "orders/{{fields.order}}"}
+
+  # Charges
+  - name: Get Charge
+    resource: Charge
+    description: Reads a charge.
+    fields:
+      - {name: charge, label: Charge ID, required: true, description: "Like CHAR_…"}
+    request: {method: GET, path: "charges/{{fields.charge}}"}
+
+  - name: Capture Charge
+    resource: Charge
+    description: Captures a card charge that was only authorized.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+      - {name: amount, label: Amount (cents), type: number, required: true}
+    request:
+      method: POST
+      path: "charges/{{fields.charge}}/capture"
+      body: {amount: {value: "{{fields.amount}}"}}
+
+  - name: Cancel Charge
+    resource: Charge
+    description: Cancels or refunds a charge, in full or in part.
+    fields:
+      - {name: charge, label: Charge ID, required: true}
+      - {name: amount, label: Amount (cents), type: number, required: true}
+    request:
+      method: POST
+      path: "charges/{{fields.charge}}/cancel"
+      body: {amount: {value: "{{fields.amount}}"}}
+
+  # Checkout
+  - name: Create Checkout Link
+    resource: Checkout
+    description: Makes a PagBank checkout page where the buyer pays by Pix, boleto or card.
+    fields:
+      - {name: items, label: Items, type: json, required: true, description: '[{"reference_id": "1", "name": "Curso", "quantity": 1, "unit_amount": 19700}]'}
+      - {name: methods, label: Methods, type: multiselect, default: [PIX, CREDIT_CARD, BOLETO], options: [{label: Pix, value: PIX}, {label: Credit card, value: CREDIT_CARD}, {label: Debit card, value: DEBIT_CARD}, {label: Boleto, value: BOLETO}]}
+      - {name: expires, label: Expires at, type: datetime}
+      - {name: redirect_url, label: After paying, go to}
+      - {name: reference, label: Your ID}
+      - {name: notification_url, label: Notification URL}
+      - {name: extra, label: More fields, type: json, description: 'Like {"customer": {...}, "shipping": {...}}'}
+    request:
+      method: POST
+      path: checkouts
+      body:
+        reference_id: "{{fields.reference}}"
+        items: "{{fields.items}}"
+        payment_methods: {_each: "{{fields.methods}}", type: "{{item}}"}
+        expiration_date: "{{fields.expires}}"
+        redirect_url: "{{fields.redirect_url}}"
+        payment_notification_urls: ["{{fields.notification_url}}"]
+        _merge: "{{fields.extra}}"
+
+  - name: Get Checkout
+    resource: Checkout
+    description: Reads a checkout, with its link and the orders it made.
+    fields:
+      - {name: checkout, label: Checkout ID, required: true, description: "Like CHEC_…"}
+    request: {method: GET, path: "checkouts/{{fields.checkout}}"}
+
+  - name: Deactivate Checkout
+    resource: Checkout
+    description: Turns a checkout link off.
+    fields:
+      - {name: checkout, label: Checkout ID, required: true}
+    request: {method: POST, path: "checkouts/{{fields.checkout}}/inactivate"}
+
+i18n:
+  pt-BR:
+    description: "Pedidos por Pix, boleto e cartão, cobranças e links de checkout no PagBank."
+    actions:
+      Create Pix Order: {name: "Criar pedido Pix", description: "Cria um pedido pago por Pix; devolve o QR Code e o copia-e-cola.", fields: {name: "Nome do cliente", email: "E-mail do cliente", tax_id: "CPF ou CNPJ do cliente", amount: "Valor (centavos)", description: "Item", expires: "Expira em", reference: "Seu ID", notification_url: "URL de notificação"}}
+      Create Boleto Order: {name: "Criar pedido boleto", description: "Cria um pedido pago por boleto; devolve os links e o código de barras.", fields: {name: "Nome do cliente", email: "E-mail do cliente", tax_id: "CPF ou CNPJ do cliente", amount: "Valor (centavos)", description: "Item", due_date: "Vencimento", address: "Endereço do titular", instructions: "Instruções", reference: "Seu ID", notification_url: "URL de notificação"}}
+      Create Card Order: {name: "Criar pedido no cartão", description: "Cria um pedido pago com um cartão criptografado pelo script do PagBank no seu site.", fields: {name: "Nome do cliente", email: "E-mail do cliente", tax_id: "CPF ou CNPJ do cliente", amount: "Valor (centavos)", description: "Item", encrypted: "Cartão criptografado", installments: "Parcelas", capture: "Capturar agora", reference: "Seu ID"}}
+      Get Order: {name: "Ler pedido", description: "Lê um pedido, com as cobranças e o status.", fields: {order: "ID do pedido"}}
+      Get Charge: {name: "Ler cobrança", description: "Lê uma cobrança.", fields: {charge: "ID da cobrança"}}
+      Capture Charge: {name: "Capturar cobrança", description: "Captura uma cobrança no cartão que só foi autorizada.", fields: {charge: "ID da cobrança", amount: "Valor (centavos)"}}
+      Cancel Charge: {name: "Cancelar cobrança", description: "Cancela ou estorna uma cobrança, inteira ou em parte.", fields: {charge: "ID da cobrança", amount: "Valor (centavos)"}}
+      Create Checkout Link: {name: "Criar link de checkout", description: "Cria uma página de checkout do PagBank em que o comprador paga por Pix, boleto ou cartão.", fields: {items: "Itens", methods: "Formas", expires: "Expira em", redirect_url: "Depois de pagar, ir para", reference: "Seu ID", notification_url: "URL de notificação", extra: "Mais campos"}}
+      Get Checkout: {name: "Ler checkout", description: "Lê um checkout, com o link e os pedidos que ele gerou.", fields: {checkout: "ID do checkout"}}
+      Deactivate Checkout: {name: "Desativar checkout", description: "Desliga um link de checkout.", fields: {checkout: "ID do checkout"}}
