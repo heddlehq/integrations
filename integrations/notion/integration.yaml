@@ -2,14 +2,22 @@
 #
 # Notion's API, through a public integration: a system admin creates it at
 # https://www.notion.so/profile/integrations and gives Heddle its client ID and secret.
+# Pages and databases must be shared with the integration. Properties go in Notion's
+# own format, like {"Status": {"select": {"name": "Done"}}}.
 id: notion
 name: Notion
-version: 1.0.0
-description: Search, create and read pages and databases in Notion.
+version: 2.0.0
+description: Pages, databases, blocks, comments and users in Notion.
 icon: hero-document-text
 logo: |
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#fff"/><path fill="#000000" transform="translate(3.6 3.6) scale(0.7)" d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>
+category: productivity
+author: Heddle
+homepage: https://developers.notion.com/reference
 base_url: https://api.notion.com/v1/
+headers:
+  Notion-Version: "2022-06-28"
+  User-Agent: Heddle
 
 credential:
   label: Notion
@@ -26,117 +34,275 @@ errors:
   message_path: message
 
 triggers:
-  - name: New Database Row
-    description: Starts the flow for each new row of a database, checking every 5 minutes.
+  - name: New Database Page
+    description: Starts the flow for each new page in a database, checking every 5 minutes.
     fields:
-      - {name: database_id, label: Database ID}
+      - {name: database_id, label: Database ID, required: true}
     request:
       method: POST
       path: "databases/{{fields.database_id}}/query"
-      headers:
-        Notion-Version: "2022-06-28"
-      body:
-        sorts:
-          - timestamp: created_time
-            direction: descending
-        page_size: 50
-    output:
-      path: results
-      pick: [id, url, created_time, properties]
-    poll:
-      every: 5
-      id: id
+      body: {sorts: [{timestamp: created_time, direction: descending}], page_size: 50}
+    output: {path: results}
+    poll: {every: 5, id: id}
 
 actions:
-  - name: Search
-    description: Finds the pages and databases shared with the integration, by title.
+  # Databases
+  - name: Get Database
+    resource: Database
+    description: Reads a database, with its properties and their options.
+    fields:
+      - {name: database_id, label: Database ID, required: true}
+    request: {method: GET, path: "databases/{{fields.database_id}}"}
+
+  - name: Search Databases
+    resource: Database
+    description: Finds the databases shared with Heddle, by title.
     fields:
       - {name: query, label: Text in the title}
-      - name: object
-        label: Find
-        type: select
-        default: page
-        options:
-          - {label: Pages, value: page}
-          - {label: Databases, value: database}
     request:
       method: POST
       path: search
-      headers:
-        Notion-Version: "2022-06-28"
-      body:
-        query: "{{fields.query}}"
-        filter:
-          property: object
-          value: "{{fields.object}}"
-        page_size: 100
-    output:
-      path: results
-      pick: [id, object, url, properties, title]
+      body: {query: "{{fields.query}}", filter: {property: object, value: database}}
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: start_cursor, next_path: next_cursor, has_more_path: has_more, limit_param: page_size, page_size: 100}
 
-  - name: Query Database
-    description: Returns the rows of a database.
+  - name: Create Database
+    resource: Database
+    description: Creates a database inside a page.
     fields:
-      - {name: database_id, label: Database ID}
+      - {name: parent_id, label: Parent page ID, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: properties, label: Properties, type: json, required: true, description: 'Like {"Name": {"title": {}}, "Status": {"select": {"options": [{"name": "Open"}]}}}'}
     request:
       method: POST
-      path: "databases/{{fields.database_id}}/query"
-      headers:
-        Notion-Version: "2022-06-28"
-      body:
-        page_size: 100
-    output:
-      path: results
-      pick: [id, url, properties]
+      path: databases
+      body: {parent: {type: page_id, page_id: "{{fields.parent_id}}"}, title: [{type: text, text: {content: "{{fields.title}}"}}], properties: "{{fields.properties}}"}
 
-  - name: Create Page
-    description: Creates a page inside another page, with a title and a first paragraph.
+  # Database pages
+  - name: Create Database Page
+    resource: Database Page
+    description: Adds a page, a row, to a database.
     fields:
-      - {name: parent_id, label: Parent page ID}
+      - {name: database_id, label: Database ID, required: true}
       - {name: title, label: Title}
-      - {name: text, label: Text, type: textarea}
+      - {name: properties, label: Other properties, type: json, description: 'In Notion''s format, like {"Status": {"select": {"name": "Open"}}, "Due": {"date": {"start": "2026-02-10"}}}'}
+      - {name: text, label: Page text, type: textarea}
+      - {name: icon, label: Emoji icon}
     request:
       method: POST
       path: pages
-      headers:
-        Notion-Version: "2022-06-28"
       body:
-        parent:
-          page_id: "{{fields.parent_id}}"
+        parent: {database_id: "{{fields.database_id}}"}
+        icon: {_if: "{{fields.icon}}", type: emoji, emoji: "{{fields.icon}}"}
         properties:
-          title:
-            - text:
-                content: "{{fields.title}}"
-        children:
-          - object: block
-            type: paragraph
-            paragraph:
-              rich_text:
-                - type: text
-                  text:
-                    content: "{{fields.text}}"
-    output:
-      pick: [id, url]
+          _merge: "{{fields.properties}}"
+          title: {_if: "{{fields.title}}", title: [{text: {content: "{{fields.title}}"}}]}
+        children: [{_if: "{{fields.text}}", object: block, type: paragraph, paragraph: {rich_text: [{type: text, text: {content: "{{fields.text}}"}}]}}]
 
+  - name: Query Database
+    resource: Database Page
+    description: Lists the pages of a database, with a filter and order if you like.
+    fields:
+      - {name: database_id, label: Database ID, required: true}
+      - {name: filter, label: Filter, type: json, description: 'In Notion''s format, like {"property": "Status", "select": {"equals": "Open"}}'}
+      - {name: sorts, label: Order, type: json, description: 'Like [{"property": "Due", "direction": "ascending"}]'}
+    request:
+      method: POST
+      path: "databases/{{fields.database_id}}/query"
+      body: {filter: "{{fields.filter}}", sorts: "{{fields.sorts}}"}
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: start_cursor, next_path: next_cursor, has_more_path: has_more, limit_param: page_size, page_size: 100}
+
+  - name: Update Database Page
+    resource: Database Page
+    description: Changes properties of a database page. Properties left out stay as they are.
+    fields:
+      - {name: page_id, label: Page ID, required: true, default: "{{result.id}}"}
+      - {name: properties, label: Properties, type: json, required: true, description: 'Like {"Status": {"select": {"name": "Done"}}}'}
+      - {name: icon, label: Emoji icon}
+    request:
+      method: PATCH
+      path: "pages/{{fields.page_id}}"
+      body: {properties: "{{fields.properties}}", icon: {_if: "{{fields.icon}}", type: emoji, emoji: "{{fields.icon}}"}}
+
+  # Pages
+  - name: Create Page
+    resource: Page
+    description: Creates a page inside another page, with a title and text.
+    fields:
+      - {name: parent_id, label: Parent page ID, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: text, label: Text, type: textarea}
+      - {name: icon, label: Emoji icon}
+    request:
+      method: POST
+      path: pages
+      body:
+        parent: {page_id: "{{fields.parent_id}}"}
+        icon: {_if: "{{fields.icon}}", type: emoji, emoji: "{{fields.icon}}"}
+        properties: {title: [{text: {content: "{{fields.title}}"}}]}
+        children: [{_if: "{{fields.text}}", object: block, type: paragraph, paragraph: {rich_text: [{type: text, text: {content: "{{fields.text}}"}}]}}]
+
+  - name: Get Page
+    resource: Page
+    description: Reads a page or database page, with its properties.
+    fields:
+      - {name: page_id, label: Page ID, required: true}
+    request: {method: GET, path: "pages/{{fields.page_id}}"}
+
+  - name: Search Pages
+    resource: Page
+    description: Finds the pages shared with Heddle, by title.
+    fields:
+      - {name: query, label: Text in the title}
+      - {name: direction, label: Order, type: select, default: descending, options: [{label: Last edited first, value: descending}, {label: Last edited last, value: ascending}]}
+    request:
+      method: POST
+      path: search
+      body: {query: "{{fields.query}}", filter: {property: object, value: page}, sort: {timestamp: last_edited_time, direction: "{{fields.direction}}"}}
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: start_cursor, next_path: next_cursor, has_more_path: has_more, limit_param: page_size, page_size: 100}
+
+  - name: Archive Page
+    resource: Page
+    description: Moves a page to the trash.
+    fields:
+      - {name: page_id, label: Page ID, required: true}
+    request:
+      method: PATCH
+      path: "pages/{{fields.page_id}}"
+      body: {archived: true}
+
+  - name: Restore Page
+    resource: Page
+    description: Takes a page out of the trash.
+    fields:
+      - {name: page_id, label: Page ID, required: true}
+    request:
+      method: PATCH
+      path: "pages/{{fields.page_id}}"
+      body: {archived: false}
+
+  # Blocks
   - name: Append Text
+    resource: Block
     description: Adds a paragraph to the end of a page.
     fields:
-      - {name: page_id, label: Page ID, default: "{{result.id}}"}
-      - {name: text, label: Text, type: textarea}
+      - {name: page_id, label: Page or block ID, required: true, default: "{{result.id}}"}
+      - {name: text, label: Text, type: textarea, required: true}
     request:
       method: PATCH
       path: "blocks/{{fields.page_id}}/children"
-      headers:
-        Notion-Version: "2022-06-28"
-      body:
-        children:
-          - object: block
-            type: paragraph
-            paragraph:
-              rich_text:
-                - type: text
-                  text:
-                    content: "{{fields.text}}"
-    output:
-      value:
-        page_id: "{{fields.page_id}}"
+      body: {children: [{object: block, type: paragraph, paragraph: {rich_text: [{type: text, text: {content: "{{fields.text}}"}}]}}]}
+
+  - name: Append To-do
+    resource: Block
+    description: Adds a to-do to the end of a page.
+    fields:
+      - {name: page_id, label: Page or block ID, required: true, default: "{{result.id}}"}
+      - {name: text, label: Text, required: true}
+      - {name: checked, label: Done, type: boolean, default: false}
+    request:
+      method: PATCH
+      path: "blocks/{{fields.page_id}}/children"
+      body: {children: [{object: block, type: to_do, to_do: {checked: "{{fields.checked}}", rich_text: [{type: text, text: {content: "{{fields.text}}"}}]}}]}
+
+  - name: Append Blocks
+    resource: Block
+    description: "Adds blocks in Notion's format, like headings, lists or code, to a page."
+    fields:
+      - {name: page_id, label: Page or block ID, required: true, default: "{{result.id}}"}
+      - {name: children, label: Blocks, type: json, required: true, description: 'Like [{"type": "divider", "divider": {}}]'}
+      - {name: after, label: After block ID, description: Empty adds them at the end.}
+    request:
+      method: PATCH
+      path: "blocks/{{fields.page_id}}/children"
+      body: {children: "{{fields.children}}", after: "{{fields.after}}"}
+
+  - name: Get Block Children
+    resource: Block
+    description: Lists the blocks inside a page or block, the page's content.
+    fields:
+      - {name: block_id, label: Page or block ID, required: true}
+    request: {method: GET, path: "blocks/{{fields.block_id}}/children"}
+    pagination: {type: cursor, items_path: results, cursor_param: start_cursor, next_path: next_cursor, has_more_path: has_more, limit_param: page_size, page_size: 100}
+
+  - name: Update Block
+    resource: Block
+    description: Changes a block, in Notion's format.
+    fields:
+      - {name: block_id, label: Block ID, required: true}
+      - {name: block, label: Block, type: json, required: true, description: 'Like {"to_do": {"checked": true}}'}
+    request:
+      method: PATCH
+      path: "blocks/{{fields.block_id}}"
+      body: {_merge: "{{fields.block}}"}
+
+  - name: Delete Block
+    resource: Block
+    description: Moves a block to the trash.
+    fields:
+      - {name: block_id, label: Block ID, required: true}
+    request: {method: DELETE, path: "blocks/{{fields.block_id}}"}
+
+  # Comments
+  - name: Add Comment
+    resource: Comment
+    description: Comments on a page.
+    fields:
+      - {name: page_id, label: Page ID, required: true}
+      - {name: text, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: comments
+      body: {parent: {page_id: "{{fields.page_id}}"}, rich_text: [{text: {content: "{{fields.text}}"}}]}
+
+  - name: List Comments
+    resource: Comment
+    description: Lists the open comments on a page or block.
+    fields:
+      - {name: block_id, label: Page or block ID, required: true}
+    request:
+      method: GET
+      path: comments
+      query: {block_id: "{{fields.block_id}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: start_cursor, next_path: next_cursor, has_more_path: has_more, limit_param: page_size, page_size: 100}
+
+  # Users
+  - name: Get User
+    resource: User
+    description: Reads a user of the workspace.
+    fields:
+      - {name: user_id, label: User ID, required: true}
+    request: {method: GET, path: "users/{{fields.user_id}}"}
+
+  - name: List Users
+    resource: User
+    description: Lists the people and bots of the workspace.
+    request: {method: GET, path: users}
+    pagination: {type: cursor, items_path: results, cursor_param: start_cursor, next_path: next_cursor, has_more_path: has_more, limit_param: page_size, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: "Páginas, databases, blocos, comentários e usuários no Notion."
+    triggers:
+      New Database Page: {name: "Nova página na database", description: "Inicia o fluxo para cada página nova de uma database, olhando a cada 5 minutos.", fields: {database_id: "ID da database"}}
+    actions:
+      Get Database: {name: "Ler database", description: "Lê uma database, com as propriedades e opções.", fields: {database_id: "ID da database"}}
+      Search Databases: {name: "Buscar databases", description: "Busca as databases compartilhadas com o Heddle, pelo título.", fields: {query: "Texto no título"}}
+      Create Database: {name: "Criar database", description: "Cria uma database dentro de uma página.", fields: {parent_id: "ID da página mãe", title: "Título", properties: "Propriedades"}}
+      Create Database Page: {name: "Criar página na database", description: "Adiciona uma página, uma linha, a uma database.", fields: {database_id: "ID da database", title: "Título", properties: "Outras propriedades", text: "Texto da página", icon: "Ícone (emoji)"}}
+      Query Database: {name: "Consultar database", description: "Lista as páginas de uma database, com filtro e ordem se quiser.", fields: {database_id: "ID da database", filter: "Filtro", sorts: "Ordem"}}
+      Update Database Page: {name: "Atualizar página da database", description: "Altera propriedades de uma página da database. As que ficam de fora não mudam.", fields: {page_id: "ID da página", properties: "Propriedades", icon: "Ícone (emoji)"}}
+      Create Page: {name: "Criar página", description: "Cria uma página dentro de outra, com título e texto.", fields: {parent_id: "ID da página mãe", title: "Título", text: "Texto", icon: "Ícone (emoji)"}}
+      Get Page: {name: "Ler página", description: "Lê uma página ou página de database, com as propriedades.", fields: {page_id: "ID da página"}}
+      Search Pages: {name: "Buscar páginas", description: "Busca as páginas compartilhadas com o Heddle, pelo título.", fields: {query: "Texto no título", direction: "Ordem"}}
+      Archive Page: {name: "Arquivar página", description: "Manda uma página para a lixeira.", fields: {page_id: "ID da página"}}
+      Restore Page: {name: "Restaurar página", description: "Tira uma página da lixeira.", fields: {page_id: "ID da página"}}
+      Append Text: {name: "Adicionar texto", description: "Adiciona um parágrafo ao fim de uma página.", fields: {page_id: "ID da página ou bloco", text: "Texto"}}
+      Append To-do: {name: "Adicionar tarefa", description: "Adiciona um to-do ao fim de uma página.", fields: {page_id: "ID da página ou bloco", text: "Texto", checked: "Feito"}}
+      Append Blocks: {name: "Adicionar blocos", description: "Adiciona blocos no formato do Notion, como títulos, listas ou código, a uma página.", fields: {page_id: "ID da página ou bloco", children: "Blocos", after: "Depois do bloco"}}
+      Get Block Children: {name: "Ler conteúdo", description: "Lista os blocos dentro de uma página ou bloco, o conteúdo da página.", fields: {block_id: "ID da página ou bloco"}}
+      Update Block: {name: "Atualizar bloco", description: "Altera um bloco, no formato do Notion.", fields: {block_id: "ID do bloco", block: "Bloco"}}
+      Delete Block: {name: "Excluir bloco", description: "Manda um bloco para a lixeira.", fields: {block_id: "ID do bloco"}}
+      Add Comment: {name: "Comentar", description: "Comenta numa página.", fields: {page_id: "ID da página", text: "Texto"}}
+      List Comments: {name: "Listar comentários", description: "Lista os comentários abertos de uma página ou bloco.", fields: {block_id: "ID da página ou bloco"}}
+      Get User: {name: "Ler usuário", description: "Lê um usuário do workspace.", fields: {user_id: "ID do usuário"}}
+      List Users: {name: "Listar usuários", description: "Lista as pessoas e bots do workspace."}

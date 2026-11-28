@@ -1,22 +1,25 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Resend, through its API. Connect with an API key from Resend's API Keys. Email goes
+# from a domain verified in Resend's Domains.
 id: resend
 name: Resend
-version: 1.0.0
-description: Send email through Resend's API.
+version: 2.0.0
+description: Send email, and manage domains, audiences, contacts and broadcasts in Resend.
 icon: hero-paper-airplane
 logo: |
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#fff"/><path fill="#000000" transform="translate(3.6 3.6) scale(0.7)" d="M2.023 0v24h5.553v-8.434h2.998L15.326 24h6.65l-5.372-9.258a7.652 7.652 0 0 0 3.316-3.016c.709-1.21 1.062-2.57 1.062-4.08 0-1.462-.353-2.767-1.062-3.91-.709-1.165-1.692-2.079-2.95-2.742C15.737.331 14.355 0 12.823 0Zm5.553 4.87h4.219c.731 0 1.349.125 1.851.376.526.252.925.618 1.2 1.098.274.457.412.994.412 1.611S15.132 9.12 14.88 9.6c-.229.48-.572.856-1.03 1.13-.434.252-.948.38-1.542.38H7.576Z"/></svg>
-author: heddlehq
+category: email
+author: Heddle
 homepage: https://resend.com/docs/api-reference
 base_url: https://api.resend.com/
+headers:
+  User-Agent: Heddle
 
 credential:
   label: Resend
   fields:
-    - name: api_key
-      label: API key
-      secret: true
-      required: true
+    - {name: api_key, label: API key, secret: true, required: true}
   auth:
     type: bearer
     token: "{{credential.api_key}}"
@@ -25,30 +28,282 @@ errors:
   message_path: message
 
 actions:
+  # Emails
   - name: Send Email
-    description: Sends an email from a domain verified in Resend.
+    resource: Email
+    description: Sends an email from a domain verified in Resend, now or at a set time.
     fields:
-      - {name: from, label: "From, like Ana <ana@example.com>"}
-      - {name: to, label: To}
-      - {name: subject, label: Subject}
+      - {name: from, label: From, required: true, description: "Like Ana <ana@example.com>"}
+      - {name: to, label: To, required: true, description: "An address, or a list like [\"a@x.com\", \"b@x.com\"]"}
+      - {name: subject, label: Subject, required: true}
       - {name: html, label: Body (HTML), type: textarea}
+      - {name: text, label: Body (plain text), type: textarea}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: reply_to, label: Reply to}
+      - {name: scheduled_at, label: Send at, description: "Like 2026-02-10T09:00:00-03:00, or in 1 hour"}
+      - {name: tags, label: Tags, type: json, description: 'Like [{"name": "campaign", "value": "welcome"}]'}
+      - {name: headers, label: Headers, type: json}
+      - {name: idempotency_key, label: Idempotency key, description: "Sending again with the same key doesn't send twice."}
     request:
       method: POST
       path: emails
-      body:
-        from: "{{fields.from}}"
-        to: "{{fields.to}}"
-        subject: "{{fields.subject}}"
-        html: "{{fields.html}}"
-    output:
-      pick: [id]
+      headers: {Idempotency-Key: "{{fields.idempotency_key}}"}
+      body: {from: "{{fields.from}}", to: "{{fields.to}}", subject: "{{fields.subject}}", html: "{{fields.html}}", text: "{{fields.text}}", cc: "{{fields.cc}}", bcc: "{{fields.bcc}}", reply_to: "{{fields.reply_to}}", scheduled_at: "{{fields.scheduled_at}}", tags: "{{fields.tags}}", headers: "{{fields.headers}}"}
+
+  - name: Send Email With Attachment
+    resource: Email
+    description: Sends an email with a file from an earlier node attached.
+    fields:
+      - {name: from, label: From, required: true}
+      - {name: to, label: To, required: true}
+      - {name: subject, label: Subject, required: true}
+      - {name: html, label: Body (HTML), type: textarea}
+      - {name: file, label: Attachment, type: file, required: true, default: "{{result}}"}
+      - {name: filename, label: Attachment name, required: true, description: "Like invoice.pdf"}
+    request:
+      method: POST
+      path: emails
+      body: {from: "{{fields.from}}", to: "{{fields.to}}", subject: "{{fields.subject}}", html: "{{fields.html}}", attachments: [{filename: "{{fields.filename}}", content: "{{fields.file | base64}}"}]}
+
+  - name: Send Batch
+    resource: Email
+    description: Sends up to 100 emails in one call.
+    fields:
+      - {name: emails, label: Emails, type: json, required: true, description: 'Like [{"from": "...", "to": "...", "subject": "...", "html": "..."}]'}
+    request:
+      method: POST
+      path: emails/batch
+      body: "{{fields.emails}}"
 
   - name: Get Email
-    description: Returns an email that was sent, with its status.
+    resource: Email
+    description: Reads an email that was sent, with its last event.
     fields:
-      - {name: id, label: Email ID, default: "{{result.id}}"}
+      - {name: id, label: Email ID, required: true, default: "{{result.id}}"}
+    request: {method: GET, path: "emails/{{fields.id}}"}
+
+  - name: List Emails
+    resource: Email
+    description: Lists the emails sent, newest first.
+    request: {method: GET, path: emails}
+    pagination: {type: cursor, items_path: data, cursor_param: after, next_path: "data.-1.id", has_more_path: has_more, limit_param: limit, page_size: 100}
+
+  - name: Reschedule Email
+    resource: Email
+    description: Changes when a scheduled email goes.
+    fields:
+      - {name: id, label: Email ID, required: true}
+      - {name: scheduled_at, label: Send at, required: true}
     request:
-      method: GET
+      method: PATCH
       path: "emails/{{fields.id}}"
-    output:
-      pick: [id, to, subject, last_event, created_at]
+      body: {scheduled_at: "{{fields.scheduled_at}}"}
+
+  - name: Cancel Email
+    resource: Email
+    description: Cancels a scheduled email.
+    fields:
+      - {name: id, label: Email ID, required: true}
+    request: {method: POST, path: "emails/{{fields.id}}/cancel"}
+
+  # Domains
+  - name: Create Domain
+    resource: Domain
+    description: Adds a domain to send from. It returns the DNS records to set.
+    fields:
+      - {name: name, label: Domain, required: true, description: "Like mail.example.com"}
+      - {name: region, label: Region, type: select, default: us-east-1, options: [{label: US East, value: us-east-1}, {label: EU West, value: eu-west-1}, {label: South America, value: sa-east-1}, {label: Asia Pacific, value: ap-northeast-1}]}
+    request:
+      method: POST
+      path: domains
+      body: {name: "{{fields.name}}", region: "{{fields.region}}"}
+
+  - name: Get Domain
+    resource: Domain
+    description: Reads a domain, with its status and DNS records.
+    fields:
+      - {name: id, label: Domain ID, required: true}
+    request: {method: GET, path: "domains/{{fields.id}}"}
+
+  - name: List Domains
+    resource: Domain
+    description: Lists the domains.
+    request: {method: GET, path: domains}
+    output: {path: data}
+
+  - name: Verify Domain
+    resource: Domain
+    description: Asks Resend to check a domain's DNS records again.
+    fields:
+      - {name: id, label: Domain ID, required: true}
+    request: {method: POST, path: "domains/{{fields.id}}/verify"}
+
+  - name: Delete Domain
+    resource: Domain
+    description: Removes a domain.
+    fields:
+      - {name: id, label: Domain ID, required: true}
+    request: {method: DELETE, path: "domains/{{fields.id}}"}
+
+  # Audiences
+  - name: Create Audience
+    resource: Audience
+    description: Creates an audience, a list of contacts.
+    fields:
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: audiences
+      body: {name: "{{fields.name}}"}
+
+  - name: Get Audience
+    resource: Audience
+    description: Reads an audience.
+    fields:
+      - {name: id, label: Audience ID, required: true}
+    request: {method: GET, path: "audiences/{{fields.id}}"}
+
+  - name: List Audiences
+    resource: Audience
+    description: Lists the audiences.
+    request: {method: GET, path: audiences}
+    output: {path: data}
+
+  - name: Delete Audience
+    resource: Audience
+    description: Deletes an audience and its contacts.
+    fields:
+      - {name: id, label: Audience ID, required: true}
+    request: {method: DELETE, path: "audiences/{{fields.id}}"}
+
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Adds a contact to an audience.
+    fields:
+      - {name: audience, label: Audience ID, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: unsubscribed, label: Unsubscribed, type: boolean, default: false}
+    request:
+      method: POST
+      path: "audiences/{{fields.audience}}/contacts"
+      body: {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", unsubscribed: "{{fields.unsubscribed}}"}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact, by ID or email.
+    fields:
+      - {name: audience, label: Audience ID, required: true}
+      - {name: contact, label: Contact ID or email, required: true}
+    request: {method: GET, path: "audiences/{{fields.audience}}/contacts/{{fields.contact}}"}
+
+  - name: List Contacts
+    resource: Contact
+    description: Lists an audience's contacts.
+    fields:
+      - {name: audience, label: Audience ID, required: true}
+    request: {method: GET, path: "audiences/{{fields.audience}}/contacts"}
+    output: {path: data}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact, by ID or email, like unsubscribing them.
+    fields:
+      - {name: audience, label: Audience ID, required: true}
+      - {name: contact, label: Contact ID or email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: unsubscribed, label: Unsubscribed, type: select, options: [{label: "Yes", value: "true"}, {label: "No", value: "false"}]}
+    request:
+      method: PATCH
+      path: "audiences/{{fields.audience}}/contacts/{{fields.contact}}"
+      body: {first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", unsubscribed: "{{fields.unsubscribed}}"}
+
+  - name: Delete Contact
+    resource: Contact
+    description: Removes a contact, by ID or email.
+    fields:
+      - {name: audience, label: Audience ID, required: true}
+      - {name: contact, label: Contact ID or email, required: true}
+    request: {method: DELETE, path: "audiences/{{fields.audience}}/contacts/{{fields.contact}}"}
+
+  # Broadcasts
+  - name: Create Broadcast
+    resource: Broadcast
+    description: Writes a broadcast, an email to a whole audience, as a draft.
+    fields:
+      - {name: audience, label: Audience ID, required: true}
+      - {name: from, label: From, required: true}
+      - {name: subject, label: Subject, required: true}
+      - {name: html, label: Body (HTML), type: textarea, required: true, description: "Resend adds the unsubscribe link."}
+      - {name: name, label: Name, description: Only you see it.}
+      - {name: reply_to, label: Reply to}
+    request:
+      method: POST
+      path: broadcasts
+      body: {audience_id: "{{fields.audience}}", from: "{{fields.from}}", subject: "{{fields.subject}}", html: "{{fields.html}}", name: "{{fields.name}}", reply_to: "{{fields.reply_to}}"}
+
+  - name: Send Broadcast
+    resource: Broadcast
+    description: Sends a broadcast now or at a set time.
+    fields:
+      - {name: id, label: Broadcast ID, required: true, default: "{{result.id}}"}
+      - {name: scheduled_at, label: Send at, description: "Empty sends now. Like 2026-02-10T09:00:00-03:00, or tomorrow at 9am"}
+    request:
+      method: POST
+      path: "broadcasts/{{fields.id}}/send"
+      body: {scheduled_at: "{{fields.scheduled_at}}"}
+
+  - name: Get Broadcast
+    resource: Broadcast
+    description: Reads a broadcast and its status.
+    fields:
+      - {name: id, label: Broadcast ID, required: true}
+    request: {method: GET, path: "broadcasts/{{fields.id}}"}
+
+  - name: List Broadcasts
+    resource: Broadcast
+    description: Lists the broadcasts.
+    request: {method: GET, path: broadcasts}
+    output: {path: data}
+
+  - name: Delete Broadcast
+    resource: Broadcast
+    description: Deletes a broadcast that's a draft or scheduled.
+    fields:
+      - {name: id, label: Broadcast ID, required: true}
+    request: {method: DELETE, path: "broadcasts/{{fields.id}}"}
+
+i18n:
+  pt-BR:
+    description: "Envie e-mails e gerencie domínios, audiências, contatos e broadcasts no Resend."
+    actions:
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail de um domínio verificado no Resend, agora ou numa hora marcada.", fields: {from: "De", to: "Para", subject: "Assunto", html: "Corpo (HTML)", text: "Corpo (texto)", cc: "Cc", bcc: "Cco", reply_to: "Responder para", scheduled_at: "Enviar em", tags: "Tags", headers: "Cabeçalhos", idempotency_key: "Chave de idempotência"}}
+      Send Email With Attachment: {name: "Enviar e-mail com anexo", description: "Envia um e-mail com um arquivo de um nó anterior anexado.", fields: {from: "De", to: "Para", subject: "Assunto", html: "Corpo (HTML)", file: "Anexo", filename: "Nome do anexo"}}
+      Send Batch: {name: "Enviar em lote", description: "Envia até 100 e-mails numa chamada.", fields: {emails: "E-mails"}}
+      Get Email: {name: "Ler e-mail", description: "Lê um e-mail enviado, com o último evento.", fields: {id: "ID do e-mail"}}
+      List Emails: {name: "Listar e-mails", description: "Lista os e-mails enviados, os mais novos primeiro."}
+      Reschedule Email: {name: "Reagendar e-mail", description: "Muda quando um e-mail agendado sai.", fields: {id: "ID do e-mail", scheduled_at: "Enviar em"}}
+      Cancel Email: {name: "Cancelar e-mail", description: "Cancela um e-mail agendado.", fields: {id: "ID do e-mail"}}
+      Create Domain: {name: "Criar domínio", description: "Adiciona um domínio de envio. Devolve os registros DNS a configurar.", fields: {name: "Domínio", region: "Região"}}
+      Get Domain: {name: "Ler domínio", description: "Lê um domínio, com status e registros DNS.", fields: {id: "ID do domínio"}}
+      List Domains: {name: "Listar domínios", description: "Lista os domínios."}
+      Verify Domain: {name: "Verificar domínio", description: "Pede ao Resend que confira de novo os registros DNS de um domínio.", fields: {id: "ID do domínio"}}
+      Delete Domain: {name: "Excluir domínio", description: "Remove um domínio.", fields: {id: "ID do domínio"}}
+      Create Audience: {name: "Criar audiência", description: "Cria uma audiência, uma lista de contatos.", fields: {name: "Nome"}}
+      Get Audience: {name: "Ler audiência", description: "Lê uma audiência.", fields: {id: "ID da audiência"}}
+      List Audiences: {name: "Listar audiências", description: "Lista as audiências."}
+      Delete Audience: {name: "Excluir audiência", description: "Exclui uma audiência e seus contatos.", fields: {id: "ID da audiência"}}
+      Create Contact: {name: "Criar contato", description: "Adiciona um contato a uma audiência.", fields: {audience: "ID da audiência", email: "E-mail", first_name: "Nome", last_name: "Sobrenome", unsubscribed: "Descadastrado"}}
+      Get Contact: {name: "Ler contato", description: "Lê um contato, pelo ID ou e-mail.", fields: {audience: "ID da audiência", contact: "ID ou e-mail do contato"}}
+      List Contacts: {name: "Listar contatos", description: "Lista os contatos de uma audiência.", fields: {audience: "ID da audiência"}}
+      Update Contact: {name: "Atualizar contato", description: "Altera um contato, pelo ID ou e-mail, como descadastrar.", fields: {audience: "ID da audiência", contact: "ID ou e-mail do contato", first_name: "Nome", last_name: "Sobrenome", unsubscribed: "Descadastrado"}}
+      Delete Contact: {name: "Excluir contato", description: "Remove um contato, pelo ID ou e-mail.", fields: {audience: "ID da audiência", contact: "ID ou e-mail do contato"}}
+      Create Broadcast: {name: "Criar broadcast", description: "Escreve um broadcast, um e-mail para uma audiência inteira, como rascunho.", fields: {audience: "ID da audiência", from: "De", subject: "Assunto", html: "Corpo (HTML)", name: "Nome", reply_to: "Responder para"}}
+      Send Broadcast: {name: "Enviar broadcast", description: "Envia um broadcast agora ou numa hora marcada.", fields: {id: "ID do broadcast", scheduled_at: "Enviar em"}}
+      Get Broadcast: {name: "Ler broadcast", description: "Lê um broadcast e o status.", fields: {id: "ID do broadcast"}}
+      List Broadcasts: {name: "Listar broadcasts", description: "Lista os broadcasts."}
+      Delete Broadcast: {name: "Excluir broadcast", description: "Exclui um broadcast em rascunho ou agendado.", fields: {id: "ID do broadcast"}}
