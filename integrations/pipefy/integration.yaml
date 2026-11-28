@@ -1,0 +1,300 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Pipefy, through the GraphQL API. Connect with a personal access token or a service
+# account token from Pipefy's Configurações da conta › Tokens de acesso. Field
+# values go by the field's ID, like nome_do_cliente.
+id: pipefy
+name: Pipefy
+version: 1.0.0
+description: Create, move and update cards in pipes and records in database tables in Pipefy.
+icon: hero-view-columns
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="8.85" width="18.00" height="6.31" viewBox="0 0 97 34"><path d="m90.521 20.885-6.814-11.77a.314.314 0 0 0 -.272-.157h-4.463c-.044 0-.08.017-.118.033-.013-.002-.025-.01-.039-.01l-2.46-.001c.001-.023.002-.64.004-.663.177-3.148 2.939-3.946 3.88-4.114a.31.31 0 0 0 .256-.308l-.005-3.28a.312.312 0 0 0 -.332-.312c-1.788.115-7.98 1.507-8.305 8.014l-.004.663h-1.893a.273.273 0 0 0 -.273.273v3.18c0 .151.122.274.273.274h1.597c.15 0 .273.122.273.272v13.824c0 .17.137.307.306.307h3.887a.303.303 0 0 0 .228-.106.305.305 0 0 0 .11-.232v-13.782c0-.083.034-.158.088-.213a.3.3 0 0 1 .187-.07l3.752-.05a.314.314 0 0 1 .276.157l4.673 8.071a.315.315 0 0 1 .004.308l-6.197 11.497a.314.314 0 0 0 .276.464h4.471a.314.314 0 0 0 .276-.165l6.362-11.796a.315.315 0 0 0 -.004-.308m6.429-11.493-4.881 9.057a.314.314 0 0 1 -.547.01l-2.34-3.988a.313.313 0 0 1 -.005-.308l2.735-5.051a.31.31 0 0 1 .271-.165c.72-.007 3.373-.03 4.497-.018a.313.313 0 0 1 .27.463m-32.85 6.673h-8.716a.305.305 0 0 1 -.275-.443c.461-.908 1.794-2.888 4.637-2.888 2.793 0 4.15 1.977 4.627 2.885a.306.306 0 0 1 -.273.446m-4.336-7.8c-5.275 0-9.551 4.287-9.551 9.576s4.276 9.576 9.551 9.576c2.848 0 6.528-1.399 8.561-5.356a.308.308 0 0 0 -.276-.445h-4.675c-.078 0-.15.03-.207.084-.324.31-.717.593-1.182.82h.001c-.61.294-1.347.485-2.24.485-2.811 0-4.168-1.84-4.55-2.817a.304.304 0 0 1 .289-.41l13.355.002c.15 0 .284-.122.304-.27.047-.373.11-.75.13-1.135.307-5.829-4.328-10.11-9.51-10.11m-19.709 14.736a5.261 5.261 0 0 1 -6.313-6.313 5.14 5.14 0 0 1 3.914-3.913 5.26 5.26 0 0 1 6.313 6.312 5.141 5.141 0 0 1 -3.914 3.914m2.932-13.838c-4.283-1.867-7.907-.012-9.06.731-.604.39-.578-.885-1.155-.885h-3.393a.306.306 0 0 0 -.306.306v23.585c0 .168.137.306.306.306h3.852a.306.306 0 0 0 .306-.306v-6.72c0-.237.257-.386.46-.264.85.513 2.803 1.502 5.203 1.502 5.579 0 10.054-4.82 9.48-10.514-.343-3.4-2.562-6.375-5.693-7.741m-32.005 13.838a5.261 5.261 0 0 1 -6.313-6.313 5.14 5.14 0 0 1 3.914-3.913 5.26 5.26 0 0 1 6.313 6.312 5.14 5.14 0 0 1 -3.914 3.914m2.932-13.838c-4.282-1.867-7.906-.012-9.06.731-.604.39-.578-.885-1.155-.885h-3.393a.306.306 0 0 0 -.306.306v23.585c0 .168.137.306.306.306h3.852a.306.306 0 0 0 .306-.306v-6.72c0-.237.256-.386.46-.264.85.513 2.803 1.502 5.203 1.502 5.58 0 10.054-4.82 9.48-10.514-.343-3.4-2.561-6.375-5.693-7.741m12.08-.153h-3.86a.305.305 0 0 0 -.306.304v17.584c0 .169.138.306.307.306h3.86a.307.307 0 0 0 .306-.306v-17.582a.307.307 0 0 0 -.307-.307" fill-rule="evenodd"></path></svg></svg>
+category: project
+author: Heddle
+homepage: https://developers.pipefy.com
+base_url: https://api.pipefy.com/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Pipefy
+  fields:
+    - {name: token, label: Access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: errors.0.message
+
+triggers:
+  - name: Card Event
+    description: Starts the flow when a card is created, moved, done, late or changed in a pipe.
+    fields:
+      - {name: pipe, label: Pipe, type: select, required: true, options_from: {request: {method: POST, path: graphql, body: {query: "{ organizations { pipes { id name } } }"}}, path: data.organizations.0.pipes}}
+      - name: actions
+        label: Events
+        type: multiselect
+        required: true
+        default: [card.create]
+        options:
+          - {label: Card created, value: card.create}
+          - {label: Card moved, value: card.move}
+          - {label: Card done, value: card.done}
+          - {label: Card late, value: card.late}
+          - {label: Card overdue, value: card.overdue}
+          - {label: Card expired, value: card.expired}
+          - {label: Field changed, value: card.field_update}
+          - {label: Card deleted, value: card.delete}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: graphql
+          body:
+            query: "mutation($pipe: ID!, $url: String!, $actions: [String]!, $headers: Json) { createWebhook(input: {pipe_id: $pipe, name: \"Heddle\", url: $url, actions: $actions, headers: $headers}) { webhook { id } } }"
+            variables: {pipe: "{{fields.pipe}}", url: "{{webhook.url}}", actions: "{{fields.actions}}", headers: {X-Heddle-Token: "{{webhook.secret}}"}}
+        id_path: data.createWebhook.webhook.id
+      unregister:
+        request:
+          method: POST
+          path: graphql
+          body:
+            query: "mutation($id: ID!) { deleteWebhook(input: {id: $id}) { success } }"
+            variables: {id: "{{webhook.id}}"}
+      signature: {header: X-Heddle-Token, token: "{{webhook.secret}}"}
+
+actions:
+  - name: List Pipes
+    resource: Pipe
+    description: Lists the pipes in your organizations.
+    request:
+      method: POST
+      path: graphql
+      body: {query: "{ organizations { id name pipes { id name cards_count phases { id name } } } }"}
+    output: {path: data.organizations}
+
+  - name: Get Pipe
+    resource: Pipe
+    description: Reads a pipe, with its phases, fields and labels.
+    fields:
+      - {name: pipe, label: Pipe ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($id: ID!) { pipe(id: $id) { id name cards_count start_form_fields { id label type required } phases { id name done cards_count fields { id label type } } labels { id name color } members { user { id name email } role_name } } }"
+        variables: {id: "{{fields.pipe}}"}
+    output: {path: data.pipe}
+
+  - name: Create Card
+    resource: Card
+    description: Creates a card in a pipe.
+    fields:
+      - {name: pipe, label: Pipe ID, required: true}
+      - {name: title, label: Title}
+      - {name: fields, label: Fields, type: json, description: 'Like [{"field_id": "nome", "field_value": "Ana"}]'}
+      - {name: phase, label: Phase ID, description: Empty starts it in the first phase.}
+      - {name: due_date, label: Due date, description: "Like 2026-02-10T18:00:00-03:00"}
+      - {name: assignees, label: Assignee IDs, type: json, description: 'Like ["301"]'}
+      - {name: labels, label: Label IDs, type: json, description: 'Like ["302"]'}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($pipe: ID!, $title: String, $fields: [FieldValueInput], $phase: ID, $due: DateTime, $assignees: [ID], $labels: [ID]) { createCard(input: {pipe_id: $pipe, title: $title, fields_attributes: $fields, phase_id: $phase, due_date: $due, assignee_ids: $assignees, label_ids: $labels}) { card { id title url current_phase { id name } } } }"
+        variables: {pipe: "{{fields.pipe}}", title: "{{fields.title}}", fields: "{{fields.fields}}", phase: "{{fields.phase}}", due: "{{fields.due_date}}", assignees: "{{fields.assignees}}", labels: "{{fields.labels}}"}
+    output: {path: data.createCard.card}
+
+  - name: Get Card
+    resource: Card
+    description: Reads a card, with its fields, phase and comments.
+    fields:
+      - {name: card, label: Card ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($id: ID!) { card(id: $id) { id title url done due_date created_at updated_at current_phase { id name } fields { field { id label } name value } assignees { id name email } labels { id name } comments { id text created_at author { name } } } }"
+        variables: {id: "{{fields.card}}"}
+    output: {path: data.card}
+
+  - name: List Cards
+    resource: Card
+    description: Lists the cards in a pipe, the newest first.
+    fields:
+      - {name: pipe, label: Pipe ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($pipe: ID!, $first: Int, $after: String) { allCards(pipeId: $pipe, first: $first, after: $after) { pageInfo { hasNextPage endCursor } edges { node { id title url done due_date created_at updated_at current_phase { id name } fields { field { id } name value } } } } }"
+        variables: {pipe: "{{fields.pipe}}"}
+    pagination: {type: cursor, in: body, items_path: data.allCards.edges, limit_param: variables.first, cursor_param: variables.after, next_path: data.allCards.pageInfo.endCursor, has_more_path: data.allCards.pageInfo.hasNextPage, page_size: 50}
+
+  - name: Find Cards
+    resource: Card
+    description: Finds the cards in a pipe whose field has a value.
+    fields:
+      - {name: pipe, label: Pipe ID, required: true}
+      - {name: field, label: Field ID, required: true}
+      - {name: value, label: Value, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($pipe: ID!, $field: String!, $value: String!) { findCards(pipeId: $pipe, search: {fieldId: $field, fieldValue: $value}) { edges { node { id title url done current_phase { id name } fields { field { id } name value } } } } }"
+        variables: {pipe: "{{fields.pipe}}", field: "{{fields.field}}", value: "{{fields.value}}"}
+    output: {path: data.findCards.edges}
+
+  - name: Update Card
+    resource: Card
+    description: Changes a card's title, due date, assignees or labels. Empty fields stay as they are.
+    fields:
+      - {name: card, label: Card ID, required: true}
+      - {name: title, label: Title}
+      - {name: due_date, label: Due date}
+      - {name: assignees, label: Assignee IDs, type: json}
+      - {name: labels, label: Label IDs, type: json}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: ID!, $title: String, $due: DateTime, $assignees: [ID], $labels: [ID]) { updateCard(input: {id: $id, title: $title, due_date: $due, assignee_ids: $assignees, label_ids: $labels}) { card { id title url } } }"
+        variables: {id: "{{fields.card}}", title: "{{fields.title}}", due: "{{fields.due_date}}", assignees: "{{fields.assignees}}", labels: "{{fields.labels}}"}
+    output: {path: data.updateCard.card}
+
+  - name: Update Card Field
+    resource: Card
+    description: Sets one field of a card.
+    fields:
+      - {name: card, label: Card ID, required: true}
+      - {name: field, label: Field ID, required: true}
+      - {name: value, label: Value, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($card: ID!, $field: ID!, $value: [UndefinedInput]) { updateCardField(input: {card_id: $card, field_id: $field, new_value: $value}) { success card { id title } } }"
+        variables: {card: "{{fields.card}}", field: "{{fields.field}}", value: "{{fields.value}}"}
+    output: {path: data.updateCardField}
+
+  - name: Move Card
+    resource: Card
+    description: Moves a card to another phase.
+    fields:
+      - {name: card, label: Card ID, required: true}
+      - {name: phase, label: Phase ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($card: ID!, $phase: ID!) { moveCardToPhase(input: {card_id: $card, destination_phase_id: $phase}) { card { id current_phase { id name } } } }"
+        variables: {card: "{{fields.card}}", phase: "{{fields.phase}}"}
+    output: {path: data.moveCardToPhase.card}
+
+  - name: Delete Card
+    resource: Card
+    description: Deletes a card.
+    fields:
+      - {name: card, label: Card ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: ID!) { deleteCard(input: {id: $id}) { success } }"
+        variables: {id: "{{fields.card}}"}
+    output: {path: data.deleteCard}
+
+  - name: Add Comment
+    resource: Card
+    description: Comments on a card.
+    fields:
+      - {name: card, label: Card ID, required: true}
+      - {name: text, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($card: ID!, $text: String!) { createComment(input: {card_id: $card, text: $text}) { comment { id text created_at } } }"
+        variables: {card: "{{fields.card}}", text: "{{fields.text}}"}
+    output: {path: data.createComment.comment}
+
+  - name: Create Record
+    resource: Table Record
+    description: Creates a record in a database table.
+    fields:
+      - {name: table, label: Table ID, required: true}
+      - {name: title, label: Title}
+      - {name: fields, label: Fields, type: json, description: 'Like [{"field_id": "cnpj", "field_value": "00.000.000/0001-00"}]'}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($table: ID!, $title: String, $fields: [FieldValueInput]) { createTableRecord(input: {table_id: $table, title: $title, fields_attributes: $fields}) { table_record { id title url } } }"
+        variables: {table: "{{fields.table}}", title: "{{fields.title}}", fields: "{{fields.fields}}"}
+    output: {path: data.createTableRecord.table_record}
+
+  - name: List Records
+    resource: Table Record
+    description: Lists the records in a database table.
+    fields:
+      - {name: table, label: Table ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "query($table: ID!, $first: Int, $after: String) { table_records(table_id: $table, first: $first, after: $after) { pageInfo { hasNextPage endCursor } edges { node { id title url created_at record_fields { field { id } name value } } } } }"
+        variables: {table: "{{fields.table}}"}
+    pagination: {type: cursor, in: body, items_path: data.table_records.edges, limit_param: variables.first, cursor_param: variables.after, next_path: data.table_records.pageInfo.endCursor, has_more_path: data.table_records.pageInfo.hasNextPage, page_size: 50}
+
+  - name: Update Record Field
+    resource: Table Record
+    description: Sets one field of a record.
+    fields:
+      - {name: record, label: Record ID, required: true}
+      - {name: field, label: Field ID, required: true}
+      - {name: value, label: Value, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($record: ID!, $field: ID!, $value: [UndefinedInput]) { setTableRecordFieldValue(input: {table_record_id: $record, field_id: $field, value: $value}) { table_record { id title } } }"
+        variables: {record: "{{fields.record}}", field: "{{fields.field}}", value: "{{fields.value}}"}
+    output: {path: data.setTableRecordFieldValue.table_record}
+
+  - name: Delete Record
+    resource: Table Record
+    description: Deletes a record.
+    fields:
+      - {name: record, label: Record ID, required: true}
+    request:
+      method: POST
+      path: graphql
+      body:
+        query: "mutation($id: ID!) { deleteTableRecord(input: {id: $id}) { success } }"
+        variables: {id: "{{fields.record}}"}
+    output: {path: data.deleteTableRecord}
+
+i18n:
+  pt-BR:
+    description: "Crie, mova e atualize cards em pipes e registros em databases no Pipefy."
+    triggers:
+      Card Event: {name: "Evento de card", description: "Inicia o fluxo quando um card é criado, movido, concluído, atrasado ou alterado num pipe.", fields: {pipe: "Pipe", actions: "Eventos"}}
+    actions:
+      List Pipes: {name: "Listar pipes", description: "Lista os pipes das suas organizações."}
+      Get Pipe: {name: "Ler pipe", description: "Lê um pipe, com fases, campos e etiquetas.", fields: {pipe: "ID do pipe"}}
+      Create Card: {name: "Criar card", description: "Cria um card num pipe.", fields: {pipe: "ID do pipe", title: "Título", fields: "Campos", phase: "ID da fase", due_date: "Vencimento", assignees: "IDs dos responsáveis", labels: "IDs das etiquetas"}}
+      Get Card: {name: "Ler card", description: "Lê um card, com campos, fase e comentários.", fields: {card: "ID do card"}}
+      List Cards: {name: "Listar cards", description: "Lista os cards de um pipe, os mais novos primeiro.", fields: {pipe: "ID do pipe"}}
+      Find Cards: {name: "Buscar cards", description: "Busca os cards de um pipe cujo campo tem um valor.", fields: {pipe: "ID do pipe", field: "ID do campo", value: "Valor"}}
+      Update Card: {name: "Atualizar card", description: "Altera título, vencimento, responsáveis ou etiquetas de um card. Campos vazios ficam como estão.", fields: {card: "ID do card", title: "Título", due_date: "Vencimento", assignees: "IDs dos responsáveis", labels: "IDs das etiquetas"}}
+      Update Card Field: {name: "Atualizar campo do card", description: "Define um campo de um card.", fields: {card: "ID do card", field: "ID do campo", value: "Valor"}}
+      Move Card: {name: "Mover card", description: "Move um card para outra fase.", fields: {card: "ID do card", phase: "ID da fase"}}
+      Delete Card: {name: "Excluir card", description: "Exclui um card.", fields: {card: "ID do card"}}
+      Add Comment: {name: "Comentar", description: "Comenta num card.", fields: {card: "ID do card", text: "Texto"}}
+      Create Record: {name: "Criar registro", description: "Cria um registro numa database.", fields: {table: "ID da database", title: "Título", fields: "Campos"}}
+      List Records: {name: "Listar registros", description: "Lista os registros de uma database.", fields: {table: "ID da database"}}
+      Update Record Field: {name: "Atualizar campo do registro", description: "Define um campo de um registro.", fields: {record: "ID do registro", field: "ID do campo", value: "Valor"}}
+      Delete Record: {name: "Excluir registro", description: "Exclui um registro.", fields: {record: "ID do registro"}}

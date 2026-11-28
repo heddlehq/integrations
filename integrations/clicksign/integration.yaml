@@ -1,0 +1,233 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Clicksign, through the API v3 (envelopes). Connect with an access token from
+# Clicksign's Configurações › API. Use https://sandbox.clicksign.com for a sandbox
+# account. A signing goes: create an envelope, add documents and signers, add the
+# requirements tying each signer to a document, then activate the envelope.
+# Clicksign's webhooks are set in its panel, so there's no trigger here.
+id: clicksign
+name: Clicksign
+version: 1.0.0
+description: Send documents for electronic signature in envelopes, from a file or a template, in Clicksign.
+icon: hero-pencil-square
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="9.85" width="18.00" height="4.30" viewBox="0 0 138 33"><path d="M27.8 0H23.7056V24.3629H27.8V0Z" fill="#F25924"/> <path d="M46.8365 10.0555C48.7407 10.0555 49.9971 10.3734 51.7919 11.0812L53.7326 7.92932C52.0443 6.97272 49.7111 6.15991 46.8365 6.15991C40.8379 6.15991 37.0659 9.77068 37.0659 15.5075C37.0659 21.2444 40.8379 24.8551 46.8365 24.8551C49.7111 24.8551 52.0443 24.0395 53.7326 23.0857L51.7919 19.9339C49.9971 20.6417 48.7379 20.9624 46.8365 20.9624C43.46 20.9624 41.3399 18.9082 41.3399 15.5103C41.3399 12.1124 43.46 10.0582 46.8365 10.0582V10.0555Z" fill="#F25924"/> <path d="M59.6584 0H55.564V24.3629H59.6584V0Z" fill="#F25924"/> <path d="M12.8947 4.49545C15.6234 4.49545 17.3482 5.02628 19.8637 6.01882L21.9109 2.65415C19.6842 1.34367 16.6302 0.281982 12.8583 0.281982C4.95541 0.281982 0 5.02626 0 12.5685C0 20.1107 4.95541 24.855 12.8583 24.855C16.6302 24.855 19.6814 23.7934 21.9109 22.4829L19.8637 19.1181C17.3482 20.1079 15.6262 20.6415 12.8947 20.6415C7.65046 20.6415 4.45342 17.5948 4.45342 12.5685C4.45342 7.54218 7.65046 4.49545 12.8947 4.49545Z" fill="#F25924"/> <path d="M34.7326 6.65747H30.6382V24.3629H34.7326V6.65747Z" fill="#F25924"/> <path d="M34.7326 0H30.6382V3.89555H34.7326V0Z" fill="#F25924"/> <path d="M64.2579 9.73736C62.1742 11.2607 60.8813 12.8173 60.8813 15.5102C60.8813 18.203 62.1742 19.7236 64.2214 21.247C65.5143 22.2036 67.1296 23.1243 68.8908 24.3629H72.2673V21.7778L63.5035 16.041C63.324 15.9 63.2174 15.7231 63.2174 15.5102C63.2174 15.2973 63.324 15.0844 63.5035 14.9793L72.2673 9.20656V6.65747H68.8908C67.1296 7.86013 65.5507 8.78076 64.2579 9.73736Z" fill="#F25924"/> <path d="M113.647 6.65481V7.69989C112.264 6.79029 110.5 6.15991 108.439 6.15991C102.978 6.15991 99.2065 9.77068 99.2065 15.5075C99.2065 21.2444 102.978 24.8578 108.439 24.8578C110.5 24.8578 112.264 24.1639 113.647 23.2128V23.5474C113.647 26.9452 111.526 29.1045 108.332 29.1045C106.535 29.1045 105.026 29.1404 101.363 27.23V31.2306C103.051 32.5051 105.564 33.0001 108.332 33.0001C113.969 33.0001 117.741 29.2814 117.741 23.5474V6.65481H113.647ZM113.647 19.439C112.101 20.5366 110.629 21.0674 108.977 21.0674C105.601 21.0674 103.483 18.9082 103.483 15.5075C103.483 12.1069 105.601 9.9476 108.977 9.9476C110.629 9.9476 112.101 10.4812 113.647 11.5788V19.439Z" fill="#F25924"/> <path d="M130.024 6.15991C127.845 6.15991 126.065 6.77367 124.674 7.66668V6.65481H120.579V24.3602H124.674V11.529C126.224 10.4646 127.649 9.9476 129.559 9.9476C132.829 9.9476 133.906 11.576 133.906 15.6844V24.4653H138V15.6844C138 8.67305 135.664 6.15991 130.027 6.15991H130.024Z" fill="#F25924"/> <path d="M96.8703 0H92.7759V3.89555H96.8703V0Z" fill="#F25924"/> <path d="M85.0554 14.0919L79.4521 12.9584C78.5183 12.7456 78.0163 12.2506 78.0163 11.612C78.0163 10.5863 79.2727 9.84257 82.0378 9.84257C84.2645 9.84257 86.2388 10.3015 88.359 11.3659L89.9407 8.07309C88.2524 6.97549 85.4143 6.15991 82.0378 6.15991C77.8003 6.15991 73.776 8.0012 73.776 12.0018C73.776 13.915 74.9623 15.8255 78.7679 16.6051L83.7597 17.5976C85.6275 17.9874 86.0594 18.5183 86.0594 19.2261C86.0594 20.8186 84.1916 21.1725 81.749 21.1725C79.3063 21.1725 77.0796 20.3928 75.3549 19.2261L73.4507 22.6959C75.0324 23.9345 77.9406 24.8551 81.676 24.8551C86.5613 24.8551 90.2968 23.0857 90.2968 19.0132C90.2968 16.1462 88.4291 14.7997 85.0526 14.0919H85.0554Z" fill="#F25924"/> <path d="M96.8703 6.65747H92.7759V24.3629H96.8703V6.65747Z" fill="#F25924"/></svg></svg>
+category: esign
+author: Heddle
+homepage: https://developers.clicksign.com
+base_url: "{{credential.url}}/api/v3/"
+headers:
+  User-Agent: Heddle
+  Accept: application/vnd.api+json
+  Content-Type: application/vnd.api+json
+
+credential:
+  label: Clicksign
+  fields:
+    - {name: token, label: Access token, secret: true, required: true}
+    - {name: url, label: Address, default: "https://app.clicksign.com", description: "https://sandbox.clicksign.com for the sandbox."}
+  auth:
+    type: header
+    name: Authorization
+    value: "{{credential.token}}"
+
+errors:
+  message_path: errors.0.detail
+
+actions:
+  - name: Create Envelope
+    resource: Envelope
+    description: Creates an envelope, still a draft, to hold documents and signers.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: deadline_at, label: Sign by, description: "Like 2026-02-10T18:00:00-03:00"}
+      - {name: auto_close, label: Close when everyone signs, type: boolean, default: true}
+      - {name: remind_interval, label: Remind every (days), type: select, options: [{label: "1", value: "1"}, {label: "2", value: "2"}, {label: "3", value: "3"}, {label: "7", value: "7"}, {label: "14", value: "14"}]}
+      - {name: locale, label: Language, type: select, default: pt-BR, options: [{label: Portuguese, value: pt-BR}, {label: English, value: en-US}]}
+    request:
+      method: POST
+      path: envelopes
+      body: {data: {type: envelopes, attributes: {name: "{{fields.name}}", deadline_at: "{{fields.deadline_at}}", auto_close: "{{fields.auto_close}}", remind_interval: "{{fields.remind_interval}}", locale: "{{fields.locale}}"}}}
+    output: {path: data}
+
+  - name: Add Document
+    resource: Document
+    description: Adds a PDF to an envelope.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+      - {name: filename, label: File name, required: true, description: "Like contrato.pdf"}
+      - {name: content_base64, label: File in base64, type: textarea, required: true, description: "Like data:application/pdf;base64,JVBERi0..."}
+    request:
+      method: POST
+      path: "envelopes/{{fields.envelope}}/documents"
+      body: {data: {type: documents, attributes: {filename: "{{fields.filename}}", content_base64: "{{fields.content_base64}}"}}}
+    output: {path: data}
+
+  - name: Add Document From Template
+    resource: Document
+    description: Fills a Clicksign template and adds it to an envelope.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+      - {name: filename, label: File name, required: true}
+      - {name: template, label: Template key, required: true}
+      - {name: data, label: Template fields, type: json, required: true, description: 'Like {"nome": "Ana", "valor": "R$ 100,00"}'}
+    request:
+      method: POST
+      path: "envelopes/{{fields.envelope}}/documents"
+      body: {data: {type: documents, attributes: {filename: "{{fields.filename}}", template: {key: "{{fields.template}}", data: "{{fields.data}}"}}}}
+    output: {path: data}
+
+  - name: Add Signer
+    resource: Signer
+    description: Adds a signer to an envelope.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email}
+      - {name: phone_number, label: Phone, description: "Like 11999990000"}
+      - {name: documentation, label: CPF}
+      - {name: birthday, label: Birthday, description: "Like 1990-05-20"}
+      - {name: notify_by, label: Notify by, type: select, default: email, options: [{label: Email, value: email}, {label: WhatsApp, value: whatsapp}, {label: SMS, value: sms}, {label: "Don't notify", value: none}]}
+    request:
+      method: POST
+      path: "envelopes/{{fields.envelope}}/signers"
+      body: {data: {type: signers, attributes: {name: "{{fields.name}}", email: "{{fields.email}}", phone_number: "{{fields.phone_number}}", documentation: "{{fields.documentation}}", birthday: "{{fields.birthday}}", has_documentation: true, communicate_events: {signature_request: "{{fields.notify_by}}", signature_reminder: "{{fields.notify_by}}", document_signed: email}}}}
+    output: {path: data}
+
+  - name: Add Signature Requirement
+    resource: Requirement
+    description: Asks a signer to sign a document, in a role.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+      - {name: document, label: Document ID, required: true}
+      - {name: signer, label: Signer ID, required: true}
+      - name: role
+        label: Signs as
+        type: select
+        required: true
+        default: sign
+        options:
+          - {label: Signer, value: sign}
+          - {label: Party, value: party}
+          - {label: Witness, value: witness}
+          - {label: Contractor, value: contractor}
+          - {label: Contractee, value: contractee}
+          - {label: Approver, value: approve}
+          - {label: Guarantor, value: guarantor}
+    request:
+      method: POST
+      path: "envelopes/{{fields.envelope}}/requirements"
+      body: {data: {type: requirements, attributes: {action: agree, role: "{{fields.role}}"}, relationships: {document: {data: {type: documents, id: "{{fields.document}}"}}, signer: {data: {type: signers, id: "{{fields.signer}}"}}}}}
+    output: {path: data}
+
+  - name: Add Authentication Requirement
+    resource: Requirement
+    description: Sets how a signer proves who they are on a document.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+      - {name: document, label: Document ID, required: true}
+      - {name: signer, label: Signer ID, required: true}
+      - name: auth
+        label: Proves with
+        type: select
+        required: true
+        default: email
+        options:
+          - {label: Token by email, value: email}
+          - {label: Token by SMS, value: sms}
+          - {label: Token by WhatsApp, value: whatsapp}
+          - {label: Selfie, value: selfie}
+          - {label: Photo of ID, value: official_document}
+          - {label: Pix, value: pix}
+          - {label: Handwritten signature, value: handwritten}
+    request:
+      method: POST
+      path: "envelopes/{{fields.envelope}}/requirements"
+      body: {data: {type: requirements, attributes: {action: provide_evidence, auth: "{{fields.auth}}"}, relationships: {document: {data: {type: documents, id: "{{fields.document}}"}}, signer: {data: {type: signers, id: "{{fields.signer}}"}}}}}
+    output: {path: data}
+
+  - name: Activate Envelope
+    resource: Envelope
+    description: Starts the signing, which notifies the signers.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+    request:
+      method: PATCH
+      path: "envelopes/{{fields.envelope}}"
+      body: {data: {id: "{{fields.envelope}}", type: envelopes, attributes: {status: running}}}
+    output: {path: data}
+
+  - name: Cancel Envelope
+    resource: Envelope
+    description: Cancels an envelope that's being signed.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+    request:
+      method: PATCH
+      path: "envelopes/{{fields.envelope}}"
+      body: {data: {id: "{{fields.envelope}}", type: envelopes, attributes: {status: canceled}}}
+    output: {path: data}
+
+  - name: Get Envelope
+    resource: Envelope
+    description: Reads an envelope and its status.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+    request: {method: GET, path: "envelopes/{{fields.envelope}}"}
+    output: {path: data}
+
+  - name: List Envelopes
+    resource: Envelope
+    description: Lists the envelopes, by status if you like.
+    fields:
+      - {name: status, label: Status, type: select, options: [{label: Draft, value: draft}, {label: Running, value: running}, {label: Closed, value: closed}, {label: Canceled, value: canceled}]}
+    request:
+      method: GET
+      path: envelopes
+      query: {"filter[status]": "{{fields.status}}"}
+    pagination: {type: page, items_path: data, page_param: "page[number]", limit_param: "page[size]", page_size: 20}
+
+  - name: List Documents
+    resource: Document
+    description: Lists an envelope's documents, with links to the signed files.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+    request: {method: GET, path: "envelopes/{{fields.envelope}}/documents"}
+    output: {path: data}
+
+  - name: List Signers
+    resource: Signer
+    description: Lists an envelope's signers.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+    request: {method: GET, path: "envelopes/{{fields.envelope}}/signers"}
+    output: {path: data}
+
+  - name: Notify Signers
+    resource: Envelope
+    description: Reminds the signers who haven't signed yet.
+    fields:
+      - {name: envelope, label: Envelope ID, required: true}
+      - {name: message, label: Message, type: textarea}
+    request:
+      method: POST
+      path: "envelopes/{{fields.envelope}}/notifications"
+      body: {data: {type: notifications, attributes: {message: "{{fields.message}}"}}}
+
+i18n:
+  pt-BR:
+    description: "Envie documentos para assinatura eletrônica em envelopes, de um arquivo ou modelo, na Clicksign."
+    actions:
+      Create Envelope: {name: "Criar envelope", description: "Cria um envelope, ainda em rascunho, para documentos e signatários.", fields: {name: "Nome", deadline_at: "Assinar até", auto_close: "Fechar quando todos assinarem", remind_interval: "Lembrar a cada (dias)", locale: "Idioma"}}
+      Add Document: {name: "Adicionar documento", description: "Adiciona um PDF a um envelope.", fields: {envelope: "ID do envelope", filename: "Nome do arquivo", content_base64: "Arquivo em base64"}}
+      Add Document From Template: {name: "Adicionar documento de modelo", description: "Preenche um modelo da Clicksign e adiciona a um envelope.", fields: {envelope: "ID do envelope", filename: "Nome do arquivo", template: "Chave do modelo", data: "Campos do modelo"}}
+      Add Signer: {name: "Adicionar signatário", description: "Adiciona um signatário a um envelope.", fields: {envelope: "ID do envelope", name: "Nome", email: "E-mail", phone_number: "Celular", documentation: "CPF", birthday: "Nascimento", notify_by: "Avisar por"}}
+      Add Signature Requirement: {name: "Pedir assinatura", description: "Pede que um signatário assine um documento, num papel.", fields: {envelope: "ID do envelope", document: "ID do documento", signer: "ID do signatário", role: "Assina como"}}
+      Add Authentication Requirement: {name: "Pedir autenticação", description: "Define como um signatário prova quem é num documento.", fields: {envelope: "ID do envelope", document: "ID do documento", signer: "ID do signatário", auth: "Prova com"}}
+      Activate Envelope: {name: "Ativar envelope", description: "Inicia a assinatura e avisa os signatários.", fields: {envelope: "ID do envelope"}}
+      Cancel Envelope: {name: "Cancelar envelope", description: "Cancela um envelope em assinatura.", fields: {envelope: "ID do envelope"}}
+      Get Envelope: {name: "Ler envelope", description: "Lê um envelope e o status.", fields: {envelope: "ID do envelope"}}
+      List Envelopes: {name: "Listar envelopes", description: "Lista os envelopes, por status se quiser.", fields: {status: "Status"}}
+      List Documents: {name: "Listar documentos", description: "Lista os documentos de um envelope, com links dos arquivos assinados.", fields: {envelope: "ID do envelope"}}
+      List Signers: {name: "Listar signatários", description: "Lista os signatários de um envelope.", fields: {envelope: "ID do envelope"}}
+      Notify Signers: {name: "Lembrar signatários", description: "Lembra quem ainda não assinou.", fields: {envelope: "ID do envelope", message: "Mensagem"}}
