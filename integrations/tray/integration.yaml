@@ -1,0 +1,376 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Tray, the e-commerce platform. It takes a Tray app's consumer key and consumer
+# secret, plus the code and the api_address Tray hands the app when a store installs it.
+# POST /auth trades them for an access token, which goes in the access_token query
+# parameter. Bodies wrap the record ({"Product": {...}}); lists answer
+# {"paging", "Products": [{"Product": {...}}]}, take page and limit (up to 50) and sort
+# like id_desc.
+id: tray
+name: Tray
+version: 1.0.0
+homepage: https://developers.tray.com.br/
+description: Manage products, variants and stock, orders and their status, customers, categories, brands and coupons, and start flows on new orders and customers, in a Tray store.
+icon: hero-shopping-cart
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="7.35" width="18.00" height="9.29" viewBox="0 0 62 32"><mask id="mask0_96_603" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="62" height="32"> <path d="M62 3.8147e-06H0V31.4311H62V3.8147e-06Z" fill="white"/> </mask> <g mask="url(#mask0_96_603)"> <path d="M41.4183 5.87585C41.4183 11.7792 44.7399 17.4357 46.0848 19.3773C46.2389 19.6041 46.4433 19.7909 46.6818 19.9225C46.9204 20.0541 47.1862 20.1269 47.4577 20.1348H55.9606C56.2333 20.1325 56.5009 20.0621 56.7405 19.93C56.9801 19.7979 57.1838 19.6081 57.3335 19.3773C58.6788 17.3964 62.0001 11.7399 62.0001 5.87585H41.4183Z" fill="#43A0D6"/> <path d="M39.9566 25.2811C40.4606 24.4392 40.9143 23.5973 41.3353 22.7498C40.9254 23.6205 40.4653 24.4657 39.9566 25.2811Z" fill="#252D69"/> <path d="M42.3317 20.724C42.0825 21.2292 41.8335 21.7792 41.5842 22.2844C41.8335 21.7792 42.0717 21.2741 42.3317 20.724Z" fill="#252D69"/> <path d="M49.683 5.91508H46.7106C46.6053 6.84659 46.4393 7.83984 46.2342 8.878C46.1013 9.53453 45.8635 10.7915 45.2489 12.952C44.9389 14.035 43.7377 17.4861 43.483 18.0024C43.4388 17.9575 42.9848 17.2055 42.7801 16.8352C42.294 15.9681 41.8598 15.0724 41.4793 14.1529C41.4294 14.0294 41.0971 13.1372 41.0418 12.9801C40.8978 12.576 40.6654 11.8577 40.5601 11.5547C39.9847 9.72068 39.6007 7.83043 39.4142 5.91508H34.7477V8.27754H36.7518C37.0291 9.81476 37.4328 11.3258 37.9583 12.7949C38.819 15.3009 40.0432 17.663 41.59 19.8037C41.6672 19.9159 42.0106 20.3648 42.1435 20.4827L42.3429 20.724C42.0936 21.229 41.8447 21.779 41.5954 22.284C41.5124 22.4524 41.4294 22.5814 41.3464 22.7498C40.887 23.5971 40.4272 24.4782 39.9678 25.2806H42.6806C43.2341 24.3547 43.843 23.4232 44.3412 22.4748C45.8283 19.5317 47.0956 16.4799 48.133 13.3448C48.8622 10.9187 49.3809 8.43269 49.683 5.91508Z" fill="#252D69"/> <path d="M42.127 28.4904C42.127 28.8501 42.0218 29.2016 41.8246 29.5005C41.6277 29.7996 41.3476 30.0326 41.0196 30.1702C40.692 30.3078 40.3313 30.3438 39.9836 30.2736C39.6356 30.2035 39.3159 30.0303 39.0651 29.7761C38.8144 29.5218 38.6434 29.1978 38.5741 28.8452C38.5051 28.4925 38.5407 28.1269 38.6765 27.7947C38.8122 27.4625 39.0421 27.1785 39.337 26.9787C39.632 26.7789 39.9786 26.6723 40.3335 26.6723C40.808 26.6752 41.2628 26.8677 41.5983 27.2081C41.9342 27.5484 42.1242 28.0092 42.127 28.4904Z" fill="#252D69"/> <path d="M58.3354 28.4904C58.3354 28.85 58.2302 29.2015 58.033 29.5005C57.8361 29.7995 57.5559 30.0326 57.2283 30.1702C56.9004 30.3078 56.5397 30.3438 56.192 30.2736C55.8439 30.2035 55.5246 30.0303 55.2735 29.776C55.0228 29.5218 54.8518 29.1978 54.7828 28.8451C54.7135 28.4924 54.749 28.1269 54.8848 27.7946C55.0206 27.4624 55.2505 27.1785 55.5454 26.9787C55.8403 26.7789 56.187 26.6723 56.5419 26.6723C56.7779 26.67 57.0121 26.7155 57.2308 26.8061C57.4496 26.8967 57.6479 27.0305 57.8149 27.1998C57.9819 27.3691 58.1141 27.5704 58.2032 27.792C58.2927 28.0136 58.3376 28.2511 58.3354 28.4904Z" fill="#252D69"/> <path d="M6.8754 21.1449C3.87505 21.1449 2.12575 19.5849 2.12575 15.9149V8.23829H4.57764e-05V5.83092H2.12575V2.41348L5.08182 2.24512V5.83092H8.752V8.23829H5.08182V15.8756C5.08182 17.8565 5.91774 18.6141 7.37363 18.6141C7.95002 18.6162 8.52454 18.5464 9.08416 18.4064L9.25022 20.8082C8.4795 21.0393 7.6791 21.1528 6.8754 21.1449Z" fill="#252D69"/> <path d="M18.4173 5.44936C19.1168 5.44099 19.815 5.51254 20.4987 5.66259L20.0835 8.19341C19.613 8.04244 19.121 7.97228 18.6277 7.98579C17.4446 7.96453 16.2731 8.22395 15.2066 8.74333V20.8082H12.2505V6.88592C14.1698 5.93286 16.2801 5.44128 18.4173 5.44936Z" fill="#252D69"/> <path d="M27.5015 21.1449C23.6265 21.1449 21.7111 19.2482 21.7111 16.6557C21.7111 13.5805 24.1689 12.0598 27.5015 12.0598C28.5509 12.0618 29.5972 12.1747 30.6236 12.3965V11.19C30.6236 9.12493 29.5165 7.98579 27.1693 7.98579C25.8119 7.97243 24.4651 8.22984 23.2058 8.74334L22.6245 6.33597C24.1729 5.76511 25.8096 5.48004 27.4572 5.49426C31.4982 5.49426 33.5023 7.6042 33.5023 11.3583V19.8374C31.6379 20.7652 29.5772 21.2142 27.5015 21.1449ZM30.5848 18.2774V14.3942C29.6791 14.1685 28.7496 14.0555 27.817 14.0575C25.9847 14.0575 24.6506 14.6916 24.6506 16.5491C24.6506 18.109 25.7577 18.9115 27.7339 18.9115C28.7229 18.96 29.7068 18.7412 30.5848 18.2774Z" fill="#252D69"/> </g></svg></svg>
+category: ecommerce
+base_url: "{{credential.url}}/"
+headers:
+  User-Agent: Heddle/1.0
+
+credential:
+  label: Tray
+  fields:
+    - {name: url, label: API address, required: true, description: "The api_address Tray gave the app, like https://minhaloja.commercesuite.com.br/web_api"}
+    - {name: consumer_key, label: Consumer key, required: true}
+    - {name: consumer_secret, label: Consumer secret, secret: true, required: true}
+    - {name: code, label: Authorization code, secret: true, required: true, description: The code Tray sent when the store installed the app.}
+  auth:
+    type: login
+    request:
+      method: POST
+      path: auth
+      body_type: form
+      body: {consumer_key: "{{credential.consumer_key}}", consumer_secret: "{{credential.consumer_secret}}", code: "{{credential.code}}"}
+    token_path: access_token
+    expires_in: 3000
+    apply: {type: query, name: access_token, value: "{{auth.token}}"}
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Order
+    description: Starts the flow for each new order, checking every 5 minutes.
+    request:
+      method: GET
+      path: orders
+      query: {sort: id_desc, limit: 50}
+    output: {path: Orders}
+    poll: {every: 5, id: Order.id}
+
+  - name: New Customer
+    description: Starts the flow for each new customer, checking every 5 minutes.
+    request:
+      method: GET
+      path: customers
+      query: {sort: id_desc, limit: 50}
+    output: {path: Customers}
+    poll: {every: 5, id: Customer.id}
+
+actions:
+  # Products
+  - name: List Products
+    resource: Product
+    description: Lists products by name, reference, category or brand, or changed since a date.
+    fields:
+      - {name: name, label: Name}
+      - {name: reference, label: Reference}
+      - {name: category_id, label: Category ID}
+      - {name: brand, label: Brand}
+      - {name: available, label: Available, type: select, options: [{label: "Yes", value: "1"}, {label: "No", value: "0"}]}
+      - {name: modified, label: Changed since, description: "Like 2026-01-31"}
+      - {name: sort, label: Order, default: id_desc, description: "A field and asc or desc, like name_asc"}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: products
+      query: {name: "{{fields.name}}", reference: "{{fields.reference}}", category_id: "{{fields.category_id}}", brand: "{{fields.brand}}", available: "{{fields.available}}", modified: "{{fields.modified}}", sort: "{{fields.sort}}", page: "{{fields.page}}", limit: "{{fields.limit}}"}
+    output: {path: Products}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: "products/{{fields.id}}"}
+    output: {path: Product}
+
+  - name: Create Product
+    resource: Product
+    description: Creates a product.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: price, label: Price, type: number, required: true}
+      - {name: stock, label: Stock, type: number}
+      - {name: category_id, label: Category ID, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: reference, label: Reference}
+      - {name: ean, label: EAN}
+      - {name: ncm, label: NCM}
+      - {name: brand, label: Brand}
+      - {name: cost_price, label: Cost, type: number}
+      - {name: weight, label: Weight (g), type: number}
+      - {name: length, label: Length (cm), type: number}
+      - {name: width, label: Width (cm), type: number}
+      - {name: height, label: Height (cm), type: number}
+      - {name: available, label: Available, type: boolean, default: true}
+      - {name: extra, label: More attributes, type: json, description: "Other product attributes, like {\"promotional_price\": 9.9}"}
+    request:
+      method: POST
+      path: products
+      body:
+        Product:
+          name: "{{fields.name}}"
+          price: "{{fields.price}}"
+          stock: "{{fields.stock}}"
+          category_id: "{{fields.category_id}}"
+          description: "{{fields.description}}"
+          reference: "{{fields.reference}}"
+          ean: "{{fields.ean}}"
+          ncm: "{{fields.ncm}}"
+          brand: "{{fields.brand}}"
+          cost_price: "{{fields.cost_price}}"
+          weight: "{{fields.weight}}"
+          length: "{{fields.length}}"
+          width: "{{fields.width}}"
+          height: "{{fields.height}}"
+          available: "{{fields.available}}"
+          _merge: "{{fields.extra}}"
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. Send the attributes to change.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: product, label: Attributes, type: json, required: true, description: "Like {\"price\": 49.9, \"stock\": 10}"}
+    request: {method: PUT, path: "products/{{fields.id}}", body: {Product: "{{fields.product}}"}}
+
+  - name: Update Stock
+    resource: Product
+    description: Sets a product's stock.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: stock, label: Stock, type: number, required: true}
+    request: {method: PUT, path: "products/{{fields.id}}", body: {Product: {stock: "{{fields.stock}}"}}}
+
+  - name: Delete Product
+    resource: Product
+    description: Deletes a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: DELETE, path: "products/{{fields.id}}"}
+
+  - name: List Variants
+    resource: Product
+    description: Lists the variants of a product.
+    fields:
+      - {name: product_id, label: Product ID, required: true}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: products/variants, query: {product_id: "{{fields.product_id}}", page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+    output: {path: Variants}
+
+  - name: Update Variant
+    resource: Product
+    description: Changes a variant, like its price or stock. Send the attributes to change.
+    fields:
+      - {name: id, label: Variant ID, required: true}
+      - {name: variant, label: Attributes, type: json, required: true, description: "Like {\"price\": 49.9, \"stock\": 10}"}
+    request: {method: PUT, path: "products/variants/{{fields.id}}", body: {Variant: "{{fields.variant}}"}}
+
+  # Orders
+  - name: List Orders
+    resource: Order
+    description: Lists orders by status, or changed in a period.
+    fields:
+      - {name: status, label: Status, description: "The status name, like A ENVIAR"}
+      - {name: modified, label: Changed in, description: "A day, or a start and an end like 2026-01-01,2026-01-31"}
+      - {name: sort, label: Order, default: id_desc}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: orders
+      query: {status: "{{fields.status}}", modified: "{{fields.modified}}", sort: "{{fields.sort}}", page: "{{fields.page}}", limit: "{{fields.limit}}"}
+    output: {path: Orders}
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order with its customer, products, payment and shipping.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: GET, path: "orders/{{fields.id}}/complete"}
+    output: {path: Order}
+
+  - name: Update Order Status
+    resource: Order
+    description: Moves an order to another status, with the tracking code if you like.
+    fields:
+      - {name: id, label: Order ID, required: true}
+      - {name: status_id, label: Status ID, required: true, description: From List Order Statuses.}
+      - {name: sending_code, label: Tracking code}
+      - {name: sending_date, label: Shipped on, description: "Like 2026-01-31"}
+      - {name: tracking_url, label: Tracking address}
+    request:
+      method: PUT
+      path: "orders/{{fields.id}}"
+      body: {Order: {status_id: "{{fields.status_id}}", sending_code: "{{fields.sending_code}}", sending_date: "{{fields.sending_date}}", tracking_url: "{{fields.tracking_url}}"}}
+
+  - name: Update Order
+    resource: Order
+    description: Changes an order, like its shipping or notes. Send the attributes to change.
+    fields:
+      - {name: id, label: Order ID, required: true}
+      - {name: order, label: Attributes, type: json, required: true, description: "Like {\"store_note\": \"Paid by Pix\"}"}
+    request: {method: PUT, path: "orders/{{fields.id}}", body: {Order: "{{fields.order}}"}}
+
+  - name: Cancel Order
+    resource: Order
+    description: Cancels an order.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: PUT, path: "orders/cancel/{{fields.id}}"}
+
+  - name: List Order Statuses
+    resource: Order
+    description: Lists the order statuses of the store.
+    request: {method: GET, path: orders/statuses, query: {limit: 50}}
+    output: {path: OrderStatuses}
+
+  - name: List Order Invoices
+    resource: Order
+    description: Lists the invoices of an order.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: GET, path: "orders/{{fields.id}}/invoices"}
+
+  # Customers
+  - name: List Customers
+    resource: Customer
+    description: Lists customers by name, email or CPF, or changed since a date.
+    fields:
+      - {name: name, label: Name}
+      - {name: email, label: Email}
+      - {name: cpf, label: CPF}
+      - {name: cnpj, label: CNPJ}
+      - {name: modified, label: Changed since, description: "Like 2026-01-31"}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request:
+      method: GET
+      path: customers
+      query: {name: "{{fields.name}}", email: "{{fields.email}}", cpf: "{{fields.cpf}}", cnpj: "{{fields.cnpj}}", modified: "{{fields.modified}}", sort: id_desc, page: "{{fields.page}}", limit: "{{fields.limit}}"}
+    output: {path: Customers}
+
+  - name: Get Customer
+    resource: Customer
+    description: Reads a customer.
+    fields:
+      - {name: id, label: Customer ID, required: true}
+    request: {method: GET, path: "customers/{{fields.id}}"}
+    output: {path: Customer}
+
+  - name: Create Customer
+    resource: Customer
+    description: Creates a customer.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: email, label: Email, required: true}
+      - {name: cpf, label: CPF}
+      - {name: cnpj, label: CNPJ}
+      - {name: company_name, label: Company name}
+      - {name: phone, label: Phone}
+      - {name: cellphone, label: Mobile}
+      - {name: birth_date, label: Birth date, description: "Like 1990-01-31"}
+      - {name: extra, label: More attributes, type: json, description: "Other customer attributes, like {\"newsletter\": 1}"}
+    request:
+      method: POST
+      path: customers
+      body:
+        Customer:
+          name: "{{fields.name}}"
+          email: "{{fields.email}}"
+          cpf: "{{fields.cpf}}"
+          cnpj: "{{fields.cnpj}}"
+          company_name: "{{fields.company_name}}"
+          phone: "{{fields.phone}}"
+          cellphone: "{{fields.cellphone}}"
+          birth_date: "{{fields.birth_date}}"
+          _merge: "{{fields.extra}}"
+
+  - name: Update Customer
+    resource: Customer
+    description: Changes a customer. Send the attributes to change.
+    fields:
+      - {name: id, label: Customer ID, required: true}
+      - {name: customer, label: Attributes, type: json, required: true, description: "Like {\"cellphone\": \"11999999999\"}"}
+    request: {method: PUT, path: "customers/{{fields.id}}", body: {Customer: "{{fields.customer}}"}}
+
+  # Catalog
+  - name: List Categories
+    resource: Catalog
+    description: Lists the product categories.
+    fields:
+      - {name: name, label: Name}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: categories, query: {name: "{{fields.name}}", page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+    output: {path: Categories}
+
+  - name: Create Category
+    resource: Catalog
+    description: Creates a product category.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: parent_id, label: Parent category ID}
+      - {name: description, label: Description, type: textarea}
+    request: {method: POST, path: categories, body: {Category: {name: "{{fields.name}}", parent_id: "{{fields.parent_id}}", description: "{{fields.description}}"}}}
+
+  - name: List Brands
+    resource: Catalog
+    description: Lists the product brands.
+    fields:
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: products/brands, query: {page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+    output: {path: Brands}
+
+  - name: List Coupons
+    resource: Catalog
+    description: Lists the discount coupons.
+    fields:
+      - {name: code, label: Code}
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: limit, label: Limit, type: number, default: 50}
+    request: {method: GET, path: discount_coupons, query: {code: "{{fields.code}}", page: "{{fields.page}}", limit: "{{fields.limit}}"}}
+    output: {path: DiscountCoupons}
+
+  - name: Get Store Info
+    resource: Catalog
+    description: Reads the store's details.
+    request: {method: GET, path: info}
+
+i18n:
+  pt-BR:
+    description: "Gerencie produtos, variações e estoque, pedidos e seus status, clientes, categorias, marcas e cupons, e inicie fluxos com novos pedidos e clientes, numa loja Tray."
+    triggers:
+      New Order: {name: "Novo pedido", description: "Inicia o fluxo a cada novo pedido, verificando a cada 5 minutos."}
+      New Customer: {name: "Novo cliente", description: "Inicia o fluxo a cada novo cliente, verificando a cada 5 minutos."}
+    actions:
+      List Products: {name: "Listar produtos", description: "Lista produtos por nome, referência, categoria ou marca, ou alterados desde uma data.", fields: {name: "Nome", reference: "Referência", category_id: "ID da categoria", brand: "Marca", available: "Disponível", modified: "Alterados desde", sort: "Ordem", page: "Página", limit: "Limite"}}
+      Get Product: {name: "Buscar produto", description: "Lê um produto.", fields: {id: "ID do produto"}}
+      Create Product: {name: "Criar produto", description: "Cria um produto.", fields: {name: "Nome", price: "Preço", stock: "Estoque", category_id: "ID da categoria", description: "Descrição", reference: "Referência", ean: "EAN", ncm: "NCM", brand: "Marca", cost_price: "Custo", weight: "Peso (g)", length: "Comprimento (cm)", width: "Largura (cm)", height: "Altura (cm)", available: "Disponível", extra: "Mais atributos"}}
+      Update Product: {name: "Atualizar produto", description: "Altera um produto. Envie os atributos a alterar.", fields: {id: "ID do produto", product: "Atributos"}}
+      Update Stock: {name: "Atualizar estoque", description: "Define o estoque de um produto.", fields: {id: "ID do produto", stock: "Estoque"}}
+      Delete Product: {name: "Excluir produto", description: "Exclui um produto.", fields: {id: "ID do produto"}}
+      List Variants: {name: "Listar variações", description: "Lista as variações de um produto.", fields: {product_id: "ID do produto", page: "Página", limit: "Limite"}}
+      Update Variant: {name: "Atualizar variação", description: "Altera uma variação, como preço ou estoque. Envie os atributos a alterar.", fields: {id: "ID da variação", variant: "Atributos"}}
+      List Orders: {name: "Listar pedidos", description: "Lista pedidos por status, ou alterados num período.", fields: {status: "Status", modified: "Alterados em", sort: "Ordem", page: "Página", limit: "Limite"}}
+      Get Order: {name: "Buscar pedido", description: "Lê um pedido com cliente, produtos, pagamento e entrega.", fields: {id: "ID do pedido"}}
+      Update Order Status: {name: "Atualizar status do pedido", description: "Move um pedido para outro status, com o código de rastreio se quiser.", fields: {id: "ID do pedido", status_id: "ID do status", sending_code: "Código de rastreio", sending_date: "Enviado em", tracking_url: "Endereço de rastreio"}}
+      Update Order: {name: "Atualizar pedido", description: "Altera um pedido, como frete ou observações. Envie os atributos a alterar.", fields: {id: "ID do pedido", order: "Atributos"}}
+      Cancel Order: {name: "Cancelar pedido", description: "Cancela um pedido.", fields: {id: "ID do pedido"}}
+      List Order Statuses: {name: "Listar status de pedido", description: "Lista os status de pedido da loja."}
+      List Order Invoices: {name: "Listar notas do pedido", description: "Lista as notas fiscais de um pedido.", fields: {id: "ID do pedido"}}
+      List Customers: {name: "Listar clientes", description: "Lista clientes por nome, e-mail ou CPF, ou alterados desde uma data.", fields: {name: "Nome", email: "E-mail", cpf: "CPF", cnpj: "CNPJ", modified: "Alterados desde", page: "Página", limit: "Limite"}}
+      Get Customer: {name: "Buscar cliente", description: "Lê um cliente.", fields: {id: "ID do cliente"}}
+      Create Customer: {name: "Criar cliente", description: "Cria um cliente.", fields: {name: "Nome", email: "E-mail", cpf: "CPF", cnpj: "CNPJ", company_name: "Razão social", phone: "Telefone", cellphone: "Celular", birth_date: "Data de nascimento", extra: "Mais atributos"}}
+      Update Customer: {name: "Atualizar cliente", description: "Altera um cliente. Envie os atributos a alterar.", fields: {id: "ID do cliente", customer: "Atributos"}}
+      List Categories: {name: "Listar categorias", description: "Lista as categorias de produto.", fields: {name: "Nome", page: "Página", limit: "Limite"}}
+      Create Category: {name: "Criar categoria", description: "Cria uma categoria de produto.", fields: {name: "Nome", parent_id: "ID da categoria pai", description: "Descrição"}}
+      List Brands: {name: "Listar marcas", description: "Lista as marcas de produto.", fields: {page: "Página", limit: "Limite"}}
+      List Coupons: {name: "Listar cupons", description: "Lista os cupons de desconto.", fields: {code: "Código", page: "Página", limit: "Limite"}}
+      Get Store Info: {name: "Buscar dados da loja", description: "Lê os dados da loja."}
