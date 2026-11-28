@@ -1,0 +1,313 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Mercado Pago, through its API. Connect with the access token of an application, from
+# Suas integrações › Credenciais de produção (or de teste). Amounts are in the
+# account's currency, like 49.90. Mercado Pago's webhooks are set in the application
+# and signed with a message Bobbin can't build yet, so the triggers check for news
+# every 5 minutes.
+id: mercado_pago
+name: Mercado Pago
+version: 1.0.0
+description: Pix and card payments, checkout links, customers, refunds and subscriptions in Mercado Pago.
+icon: hero-credit-card
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#00B1EA" d="M11.115 16.479a.93.927 0 0 1-.939-.886c-.002-.042-.006-.155-.103-.155c-.04 0-.074.023-.113.059c-.112.103-.254.206-.46.206a.816.814 0 0 1-.305-.066c-.535-.214-.542-.578-.521-.725c.006-.038.007-.08-.02-.11l-.032-.03h-.034c-.027 0-.055.012-.093.039a.788.786 0 0 1-.454.16a.7.699 0 0 1-.253-.05c-.708-.27-.65-.928-.617-1.126q.008-.062-.03-.092l-.05-.04l-.047.043a.728.726 0 0 1-.505.203a.73.728 0 0 1-.732-.725c0-.4.328-.722.732-.722c.364 0 .675.27.721.63l.026.195l.11-.165c.01-.018.307-.46.852-.46c.102 0 .21.016.316.05c.434.13.508.52.519.68c.008.094.075.1.09.1c.037 0 .064-.024.083-.045a.746.744 0 0 1 .54-.225q.193 0 .402.09c.69.293.379 1.158.374 1.167c-.058.144-.061.207-.005.244l.027.013h.02c.03 0 .07-.014.134-.035c.093-.032.235-.08.367-.08a.944.942 0 0 1 .94.93a.936.934 0 0 1-.94.928m7.302-4.171c-1.138-.98-3.768-3.24-4.481-3.77c-.406-.302-.685-.462-.928-.533a1.559 1.554 0 0 0-.456-.07q-.274 0-.58.095c-.46.145-.918.505-1.362.854l-.023.018c-.414.324-.84.66-1.164.73a1.986 1.98 0 0 1-.43.049c-.362 0-.687-.104-.81-.258q-.03-.037.04-.125l.008-.008l1-1.067c.783-.774 1.525-1.506 3.23-1.545h.085c1.062 0 2.12.469 2.24.524a7 7 0 0 0 3.056.724c1.076 0 2.188-.263 3.354-.795a9.135 9.11 0 0 0-.405-.317c-1.025.44-2.003.66-2.946.66c-.962 0-1.925-.229-2.858-.68c-.05-.022-1.22-.567-2.44-.57q-.049 0-.096.002c-1.434.033-2.24.536-2.782.976c-.528.013-.982.138-1.388.25c-.361.1-.673.186-.979.185c-.125 0-.35-.01-.37-.012c-.35-.01-2.115-.437-3.518-.962q-.213.15-.415.31c1.466.593 3.25 1.053 3.812 1.089c.157.01.323.027.491.027c.372 0 .744-.103 1.104-.203c.213-.059.446-.123.692-.17l-.196.194l-1.017 1.087c-.08.08-.254.294-.14.557a.705.703 0 0 0 .268.292c.243.162.677.27 1.08.271q.23 0 .43-.044c.427-.095.874-.448 1.349-.82c.377-.296.913-.672 1.323-.782a1.494 1.49 0 0 1 .37-.05a.611.61 0 0 1 .095.005c.27.034.533.125 1.003.472c.835.62 4.531 3.815 4.566 3.846c.002.002.238.203.22.537c-.007.186-.11.352-.294.466a.902.9 0 0 1-.484.15a.804.802 0 0 1-.428-.124c-.014-.01-1.28-1.157-1.746-1.543c-.074-.06-.146-.115-.22-.115a.12.12 0 0 0-.096.045c-.073.09.01.212.105.294l1.48 1.47c.002 0 .184.17.204.395q.017.367-.35.606a.957.955 0 0 1-.526.171a.766.764 0 0 1-.42-.127l-.214-.206a21.035 20.978 0 0 0-1.08-1.009c-.072-.058-.148-.112-.221-.112a.13.13 0 0 0-.094.038c-.033.037-.056.103.028.212a.698.696 0 0 0 .075.083l1.078 1.198c.01.01.222.26.024.511l-.038.048a1.18 1.178 0 0 1-.1.096c-.184.15-.43.164-.527.164a.8.798 0 0 1-.147-.012q-.16-.027-.212-.089l-.013-.013c-.06-.06-.602-.609-1.054-.98c-.059-.05-.133-.11-.21-.11a.13.13 0 0 0-.096.042c-.09.096.044.24.1.293l.92 1.003a.2.2 0 0 1-.033.062c-.033.044-.144.155-.479.196a.91.907 0 0 1-.122.007c-.345 0-.712-.164-.902-.264a1.343 1.34 0 0 0 .13-.576a1.368 1.365 0 0 0-1.42-1.357c.024-.342-.025-.99-.697-1.274a1.455 1.452 0 0 0-.575-.125q-.22 0-.42.075a1.153 1.15 0 0 0-.671-.564a1.52 1.515 0 0 0-.494-.085q-.421 0-.767.242a1.168 1.165 0 0 0-.903-.43a1.173 1.17 0 0 0-.82.335c-.287-.217-1.425-.93-4.467-1.613a17.39 17.344 0 0 1-.692-.189a4.822 4.82 0 0 0-.077.494l.67.157c3.108.682 4.136 1.391 4.309 1.525a1.145 1.142 0 0 0-.09.442a1.16 1.158 0 0 0 1.378 1.132c.096.467.406.821.879 1.003a1.165 1.162 0 0 0 .415.08q.135 0 .266-.034c.086.22.282.493.722.668a1.233 1.23 0 0 0 .457.094q.183 0 .355-.063a1.373 1.37 0 0 0 1.269.841c.37.002.726-.147.985-.41c.221.121.688.341 1.163.341q.09.001.175-.01c.47-.059.689-.24.789-.382a.571.57 0 0 0 .048-.078c.11.032.234.058.373.058c.255 0 .501-.086.75-.265c.244-.174.418-.424.444-.637v-.01q.125.026.251.026c.265 0 .527-.082.773-.242c.48-.31.562-.715.554-.98a1.28 1.279 0 0 0 .978-.194a1.04 1.04 0 0 0 .502-.808a1.088 1.085 0 0 0-.16-.653c.804-.342 2.636-1.003 4.795-1.483a4.734 4.721 0 0 0-.067-.492a27.742 27.667 0 0 0-5.049 1.62zm5.123-.763c0 4.027-5.166 7.293-11.537 7.293S.465 15.572.465 11.545S5.63 4.252 12.004 4.252c6.371 0 11.537 3.265 11.537 7.293zm.46.004c0-4.272-5.374-7.755-12-7.755S.002 7.277.002 11.55L0 12.004c0 4.533 4.695 8.203 11.999 8.203c7.347 0 12-3.67 12-8.204z"/></svg>
+category: payments
+author: Heddle
+homepage: https://www.mercadopago.com.br/developers/en/reference
+base_url: https://api.mercadopago.com/
+
+credential:
+  label: Mercado Pago
+  fields:
+    - {name: token, label: Access token, secret: true, required: true}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Payment
+    description: Starts the flow for each new payment, checking every 5 minutes.
+    fields:
+      - {name: status, label: Status, type: select, options: [{label: Approved, value: approved}, {label: Pending, value: pending}, {label: Rejected, value: rejected}, {label: Refunded, value: refunded}]}
+    request:
+      method: GET
+      path: v1/payments/search
+      query: {sort: date_created, criteria: desc, status: "{{fields.status}}", limit: 100}
+    output: {path: results}
+    poll: {every: 5, id: id}
+
+  - name: Payment Approved
+    description: Starts the flow each time a payment is approved, checking every 5 minutes.
+    request:
+      method: GET
+      path: v1/payments/search
+      query: {sort: date_approved, criteria: desc, status: approved, limit: 100}
+    output: {path: results}
+    poll: {every: 5, id: id}
+
+actions:
+  # Payments
+  - name: Create Pix Payment
+    resource: Payment
+    description: Charges by Pix; returns the QR code and the copy-and-paste code.
+    fields:
+      - {name: amount, label: Amount, type: number, required: true}
+      - {name: description, label: Description, required: true}
+      - {name: email, label: Payer email, required: true}
+      - {name: first_name, label: Payer first name}
+      - {name: last_name, label: Payer last name}
+      - {name: cpf, label: Payer CPF}
+      - {name: expires, label: Expires at, type: datetime, description: "24 hours when empty."}
+      - {name: external_reference, label: Your ID}
+      - {name: notification_url, label: Notification URL}
+      - {name: idempotency, label: Idempotency key, description: "The same key won't charge twice."}
+    request:
+      method: POST
+      path: v1/payments
+      headers: {X-Idempotency-Key: "{{fields.idempotency}}"}
+      body:
+        payment_method_id: pix
+        transaction_amount: "{{fields.amount}}"
+        description: "{{fields.description}}"
+        payer: {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", identification: {type: CPF, number: "{{fields.cpf}}", _if: "{{fields.cpf}}"}}
+        date_of_expiration: "{{fields.expires}}"
+        external_reference: "{{fields.external_reference}}"
+        notification_url: "{{fields.notification_url}}"
+
+  - name: Create Boleto Payment
+    resource: Payment
+    description: Charges by boleto; returns its link and barcode.
+    fields:
+      - {name: amount, label: Amount, type: number, required: true}
+      - {name: description, label: Description, required: true}
+      - {name: email, label: Payer email, required: true}
+      - {name: first_name, label: Payer first name, required: true}
+      - {name: last_name, label: Payer last name, required: true}
+      - {name: cpf, label: Payer CPF, required: true}
+      - {name: address, label: Payer address, type: json, required: true, description: '{"zip_code": "01000000", "street_name": "Rua A", "street_number": "1", "neighborhood": "Centro", "city": "São Paulo", "federal_unit": "SP"}'}
+      - {name: expires, label: Due at, type: datetime}
+      - {name: external_reference, label: Your ID}
+      - {name: idempotency, label: Idempotency key}
+    request:
+      method: POST
+      path: v1/payments
+      headers: {X-Idempotency-Key: "{{fields.idempotency}}"}
+      body:
+        payment_method_id: bolbradesco
+        transaction_amount: "{{fields.amount}}"
+        description: "{{fields.description}}"
+        payer: {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", identification: {type: CPF, number: "{{fields.cpf}}", _if: "{{fields.cpf}}"}, address: "{{fields.address}}"}
+        date_of_expiration: "{{fields.expires}}"
+        external_reference: "{{fields.external_reference}}"
+
+  - name: Create Card Payment
+    resource: Payment
+    description: Charges a card token made by Mercado Pago's checkout on your site.
+    fields:
+      - {name: amount, label: Amount, type: number, required: true}
+      - {name: token, label: Card token, required: true}
+      - {name: installments, label: Installments, type: number, default: 1}
+      - {name: payment_method, label: Brand, required: true, description: "Like visa or master"}
+      - {name: email, label: Payer email, required: true}
+      - {name: description, label: Description}
+      - {name: capture, label: Capture now, type: boolean, default: true}
+      - {name: external_reference, label: Your ID}
+      - {name: idempotency, label: Idempotency key}
+    request:
+      method: POST
+      path: v1/payments
+      headers: {X-Idempotency-Key: "{{fields.idempotency}}"}
+      body: {transaction_amount: "{{fields.amount}}", token: "{{fields.token}}", installments: "{{fields.installments}}", payment_method_id: "{{fields.payment_method}}", payer: {email: "{{fields.email}}"}, description: "{{fields.description}}", capture: "{{fields.capture}}", external_reference: "{{fields.external_reference}}"}
+
+  - name: Get Payment
+    resource: Payment
+    description: Reads a payment, with its status.
+    fields:
+      - {name: payment, label: Payment ID, required: true}
+    request: {method: GET, path: "v1/payments/{{fields.payment}}"}
+
+  - name: Search Payments
+    resource: Payment
+    description: Finds payments by status, your ID or dates, newest first.
+    fields:
+      - {name: status, label: Status, type: select, options: [{label: Approved, value: approved}, {label: Pending, value: pending}, {label: In process, value: in_process}, {label: Rejected, value: rejected}, {label: Refunded, value: refunded}, {label: Canceled, value: cancelled}]}
+      - {name: external_reference, label: Your ID}
+      - {name: begin_date, label: Since, type: datetime}
+      - {name: end_date, label: Until, type: datetime}
+    request:
+      method: GET
+      path: v1/payments/search
+      query: {status: "{{fields.status}}", external_reference: "{{fields.external_reference}}", range: date_created, begin_date: "{{fields.begin_date}}", end_date: "{{fields.end_date}}", sort: date_created, criteria: desc}
+    pagination: {type: offset, items_path: results, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Cancel Payment
+    resource: Payment
+    description: Cancels a pending or authorized payment.
+    fields:
+      - {name: payment, label: Payment ID, required: true}
+    request:
+      method: PUT
+      path: "v1/payments/{{fields.payment}}"
+      body: {status: cancelled}
+
+  - name: Capture Payment
+    resource: Payment
+    description: Captures a card payment that was only authorized.
+    fields:
+      - {name: payment, label: Payment ID, required: true}
+      - {name: amount, label: Amount, type: number, description: "All when empty."}
+    request:
+      method: PUT
+      path: "v1/payments/{{fields.payment}}"
+      body: {capture: true, transaction_amount: "{{fields.amount}}"}
+
+  - name: Refund Payment
+    resource: Payment
+    description: Refunds an approved payment, in full or in part.
+    fields:
+      - {name: payment, label: Payment ID, required: true}
+      - {name: amount, label: Amount, type: number, description: "All when empty."}
+      - {name: idempotency, label: Idempotency key}
+    request:
+      method: POST
+      path: "v1/payments/{{fields.payment}}/refunds"
+      headers: {X-Idempotency-Key: "{{fields.idempotency}}"}
+      body: {amount: "{{fields.amount}}"}
+
+  # Checkout
+  - name: Create Checkout Link
+    resource: Checkout
+    description: Makes a Checkout Pro link where the buyer pays by any method.
+    fields:
+      - {name: items, label: Items, type: json, required: true, description: '[{"title": "Curso", "quantity": 1, "unit_price": 197, "currency_id": "BRL"}]'}
+      - {name: email, label: Buyer email}
+      - {name: external_reference, label: Your ID}
+      - {name: notification_url, label: Notification URL}
+      - {name: back_urls, label: Return URLs, type: json, description: '{"success": "https://acme.com/ok", "failure": "...", "pending": "..."}'}
+      - {name: expires_flag, label: Expires, type: boolean, default: false}
+      - {name: expires, label: Expires at, type: datetime, description: "When Expires is on."}
+      - {name: max_installments, label: Up to installments, type: number}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: checkout/preferences
+      body:
+        items: "{{fields.items}}"
+        payer: {email: "{{fields.email}}"}
+        external_reference: "{{fields.external_reference}}"
+        notification_url: "{{fields.notification_url}}"
+        back_urls: "{{fields.back_urls}}"
+        expires: "{{fields.expires_flag}}"
+        expiration_date_to: "{{fields.expires}}"
+        payment_methods: {installments: "{{fields.max_installments}}"}
+        _merge: "{{fields.extra}}"
+
+  - name: Get Checkout Link
+    resource: Checkout
+    description: Reads a checkout preference.
+    fields:
+      - {name: preference, label: Preference ID, required: true}
+    request: {method: GET, path: "checkout/preferences/{{fields.preference}}"}
+
+  # Customers
+  - name: Create Customer
+    resource: Customer
+    description: Saves a customer, to keep their cards.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: cpf, label: CPF}
+      - {name: phone, label: Phone, type: json, description: '{"area_code": "11", "number": "999990000"}'}
+    request:
+      method: POST
+      path: v1/customers
+      body: {email: "{{fields.email}}", first_name: "{{fields.first_name}}", last_name: "{{fields.last_name}}", identification: {type: CPF, number: "{{fields.cpf}}", _if: "{{fields.cpf}}"}, phone: "{{fields.phone}}"}
+
+  - name: Search Customers
+    resource: Customer
+    description: Finds customers by email.
+    fields:
+      - {name: email, label: Email}
+    request: {method: GET, path: v1/customers/search, query: {email: "{{fields.email}}"}}
+    pagination: {type: offset, items_path: results, offset_param: offset, limit_param: limit, page_size: 100}
+
+  # Subscriptions
+  - name: Create Subscription
+    resource: Subscription
+    description: Makes a subscription link the payer accepts with a card; charges every period.
+    fields:
+      - {name: reason, label: Name, required: true}
+      - {name: email, label: Payer email, required: true}
+      - {name: amount, label: Amount, type: number, required: true}
+      - {name: frequency, label: Every, type: number, default: 1}
+      - {name: frequency_type, label: Unit, type: select, default: months, options: [{label: Months, value: months}, {label: Days, value: days}]}
+      - {name: back_url, label: Return URL, required: true}
+      - {name: external_reference, label: Your ID}
+    request:
+      method: POST
+      path: preapproval
+      body: {reason: "{{fields.reason}}", payer_email: "{{fields.email}}", back_url: "{{fields.back_url}}", external_reference: "{{fields.external_reference}}", auto_recurring: {frequency: "{{fields.frequency}}", frequency_type: "{{fields.frequency_type}}", transaction_amount: "{{fields.amount}}", currency_id: BRL}}
+
+  - name: Get Subscription
+    resource: Subscription
+    description: Reads a subscription.
+    fields:
+      - {name: subscription, label: Subscription ID, required: true}
+    request: {method: GET, path: "preapproval/{{fields.subscription}}"}
+
+  - name: Search Subscriptions
+    resource: Subscription
+    description: Finds subscriptions by payer email or status.
+    fields:
+      - {name: email, label: Payer email}
+      - {name: status, label: Status, type: select, options: [{label: Pending, value: pending}, {label: Authorized, value: authorized}, {label: Paused, value: paused}, {label: Canceled, value: cancelled}]}
+    request: {method: GET, path: preapproval/search, query: {payer_email: "{{fields.email}}", status: "{{fields.status}}"}}
+    pagination: {type: offset, items_path: results, offset_param: offset, limit_param: limit, page_size: 100}
+
+  - name: Update Subscription
+    resource: Subscription
+    description: Pauses, resumes or cancels a subscription, or changes its amount.
+    fields:
+      - {name: subscription, label: Subscription ID, required: true}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: authorized}, {label: Paused, value: paused}, {label: Canceled, value: cancelled}]}
+      - {name: amount, label: Amount, type: number}
+    request:
+      method: PUT
+      path: "preapproval/{{fields.subscription}}"
+      body: {status: "{{fields.status}}", auto_recurring: {transaction_amount: "{{fields.amount}}"}}
+
+  # Account
+  - name: Get Account
+    resource: Account
+    description: Reads the connected account.
+    request: {method: GET, path: users/me}
+
+i18n:
+  pt-BR:
+    description: "Pagamentos por Pix e cartão, links de checkout, clientes, estornos e assinaturas no Mercado Pago."
+    triggers:
+      New Payment: {name: "Novo pagamento", description: "Inicia o fluxo para cada pagamento novo, olhando a cada 5 minutos.", fields: {status: "Status"}}
+      Payment Approved: {name: "Pagamento aprovado", description: "Inicia o fluxo toda vez que um pagamento é aprovado, olhando a cada 5 minutos."}
+    actions:
+      Create Pix Payment: {name: "Cobrar por Pix", description: "Cobra por Pix; devolve o QR Code e o copia-e-cola.", fields: {amount: "Valor", description: "Descrição", email: "E-mail do pagador", first_name: "Nome do pagador", last_name: "Sobrenome do pagador", cpf: "CPF do pagador", expires: "Expira em", external_reference: "Seu ID", notification_url: "URL de notificação", idempotency: "Chave de idempotência"}}
+      Create Boleto Payment: {name: "Cobrar por boleto", description: "Cobra por boleto; devolve o link e o código de barras.", fields: {amount: "Valor", description: "Descrição", email: "E-mail do pagador", first_name: "Nome do pagador", last_name: "Sobrenome do pagador", cpf: "CPF do pagador", address: "Endereço do pagador", expires: "Vence em", external_reference: "Seu ID", idempotency: "Chave de idempotência"}}
+      Create Card Payment: {name: "Cobrar no cartão", description: "Cobra um token de cartão feito pelo checkout do Mercado Pago no seu site.", fields: {amount: "Valor", token: "Token do cartão", installments: "Parcelas", payment_method: "Bandeira", email: "E-mail do pagador", description: "Descrição", capture: "Capturar agora", external_reference: "Seu ID", idempotency: "Chave de idempotência"}}
+      Get Payment: {name: "Ler pagamento", description: "Lê um pagamento, com o status.", fields: {payment: "ID do pagamento"}}
+      Search Payments: {name: "Buscar pagamentos", description: "Encontra pagamentos por status, seu ID ou datas, dos mais novos.", fields: {status: "Status", external_reference: "Seu ID", begin_date: "Desde", end_date: "Até"}}
+      Cancel Payment: {name: "Cancelar pagamento", description: "Cancela um pagamento pendente ou autorizado.", fields: {payment: "ID do pagamento"}}
+      Capture Payment: {name: "Capturar pagamento", description: "Captura um pagamento no cartão que só foi autorizado.", fields: {payment: "ID do pagamento", amount: "Valor"}}
+      Refund Payment: {name: "Estornar pagamento", description: "Estorna um pagamento aprovado, inteiro ou em parte.", fields: {payment: "ID do pagamento", amount: "Valor", idempotency: "Chave de idempotência"}}
+      Create Checkout Link: {name: "Criar link de checkout", description: "Cria um link do Checkout Pro em que o comprador paga por qualquer forma.", fields: {items: "Itens", email: "E-mail do comprador", external_reference: "Seu ID", notification_url: "URL de notificação", back_urls: "URLs de retorno", expires_flag: "Expira", expires: "Expira em", max_installments: "Até quantas parcelas", extra: "Mais campos"}}
+      Get Checkout Link: {name: "Ler link de checkout", description: "Lê uma preferência de checkout.", fields: {preference: "ID da preferência"}}
+      Create Customer: {name: "Criar cliente", description: "Salva um cliente, para guardar os cartões dele.", fields: {email: "E-mail", first_name: "Nome", last_name: "Sobrenome", cpf: "CPF", phone: "Telefone"}}
+      Search Customers: {name: "Buscar clientes", description: "Encontra clientes por e-mail.", fields: {email: "E-mail"}}
+      Create Subscription: {name: "Criar assinatura", description: "Cria um link de assinatura que o pagador aceita com cartão; cobra a cada período.", fields: {reason: "Nome", email: "E-mail do pagador", amount: "Valor", frequency: "A cada", frequency_type: "Unidade", back_url: "URL de retorno", external_reference: "Seu ID"}}
+      Get Subscription: {name: "Ler assinatura", description: "Lê uma assinatura.", fields: {subscription: "ID da assinatura"}}
+      Search Subscriptions: {name: "Buscar assinaturas", description: "Encontra assinaturas por e-mail do pagador ou status.", fields: {email: "E-mail do pagador", status: "Status"}}
+      Update Subscription: {name: "Atualizar assinatura", description: "Pausa, retoma ou cancela uma assinatura, ou muda o valor.", fields: {subscription: "ID da assinatura", status: "Status", amount: "Valor"}}
+      Get Account: {name: "Ler conta", description: "Lê a conta conectada."}
