@@ -1,0 +1,309 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# WhatsApp Business Cloud API, on Meta's Graph API, with a system user's access token.
+# Messages go from the business phone number in the credential. Outside the 24 hours
+# after the customer's last message, only approved templates can be sent.
+id: whatsapp
+name: WhatsApp Business Cloud
+version: 1.0.0
+homepage: https://developers.facebook.com/docs/whatsapp/cloud-api/reference
+description: Send WhatsApp text, template, media, location and button messages, manage media and templates, and receive messages and delivery updates.
+icon: hero-chat-bubble-oval-left-ellipsis
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.05" y="3.00" width="17.90" height="18.00" viewBox="0 0 360 362"><path fill-rule="evenodd" clip-rule="evenodd" d="M307.546 52.5655C273.709 18.685 228.706 0.0171895 180.756 0C81.951 0 1.53846 80.404 1.50408 179.235C1.48689 210.829 9.74646 241.667 25.4319 268.844L0 361.736L95.0236 336.811C121.203 351.096 150.683 358.616 180.679 358.625H180.756C279.544 358.625 359.966 278.212 360 179.381C360.017 131.483 341.392 86.4547 307.546 52.5741V52.5655ZM180.756 328.354H180.696C153.966 328.346 127.744 321.16 104.865 307.589L99.4242 304.358L43.034 319.149L58.0834 264.168L54.5423 258.53C39.6304 234.809 31.749 207.391 31.7662 179.244C31.8006 97.1036 98.6334 30.2707 180.817 30.2707C220.61 30.2879 258.015 45.8015 286.145 73.9665C314.276 102.123 329.755 139.562 329.738 179.364C329.703 261.513 262.871 328.346 180.756 328.346V328.354ZM262.475 216.777C257.997 214.534 235.978 203.704 231.869 202.209C227.761 200.713 224.779 199.966 221.796 204.452C218.814 208.939 210.228 219.029 207.615 222.011C205.002 225.002 202.389 225.372 197.911 223.128C193.434 220.885 179.003 216.158 161.891 200.902C148.578 189.024 139.587 174.362 136.975 169.875C134.362 165.389 136.7 162.965 138.934 160.739C140.945 158.728 143.412 155.505 145.655 152.892C147.899 150.279 148.638 148.406 150.133 145.423C151.629 142.432 150.881 139.82 149.764 137.576C148.646 135.333 139.691 113.287 135.952 104.323C132.316 95.5909 128.621 96.777 125.879 96.6309C123.266 96.5019 120.284 96.4762 117.293 96.4762C114.302 96.4762 109.454 97.5935 105.346 102.08C101.238 106.566 89.6691 117.404 89.6691 139.441C89.6691 161.478 105.716 182.785 107.959 185.776C110.202 188.767 139.544 234.001 184.469 253.408C195.153 258.023 203.498 260.782 210.004 262.845C220.731 266.257 230.494 265.776 238.212 264.624C246.816 263.335 264.71 253.786 268.44 243.326C272.17 232.866 272.17 223.893 271.053 222.028C269.936 220.163 266.945 219.037 262.467 216.794L262.475 216.777Z" fill="#25D366"/></svg></svg>
+category: messaging
+base_url: https://graph.facebook.com/v23.0/
+
+credential:
+  label: WhatsApp Business
+  fields:
+    - {name: token, label: Access token, secret: true, required: true, description: "A system user's token with whatsapp_business_messaging and whatsapp_business_management."}
+    - {name: phone_number_id, label: Phone number ID, required: true, description: "From WhatsApp > API Setup in the Meta app; not the number itself."}
+    - {name: business_account_id, label: WhatsApp Business Account ID, required: true}
+    - {name: app_secret, label: App secret, secret: true, description: "From App settings > Basic; checks the events of the trigger."}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: Event
+    description: Starts the flow on each incoming message and each sent, delivered or read update. In the Meta app, set the callback URL and verify token to the ones shown here and subscribe to messages.
+    fields: []
+    webhook:
+      challenge: {query: hub.challenge, token_query: hub.verify_token, token: "{{webhook.secret}}"}
+      signature: {header: X-Hub-Signature-256, prefix: "sha256=", secret: "{{credential.app_secret}}"}
+
+actions:
+  # Messages
+  - name: Send Text
+    resource: Message
+    description: Sends a text message, within 24 hours of the customer's last message.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: text, label: Text, type: textarea, required: true, description: Up to 4096 characters.}
+      - {name: preview_url, label: Show link preview, type: boolean, default: false}
+      - {name: reply_to, label: Reply to message ID}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, recipient_type: individual, to: "{{fields.to}}", type: text, text: {body: "{{fields.text}}", preview_url: "{{fields.preview_url}}"}, context: {_if: "{{fields.reply_to}}", message_id: "{{fields.reply_to}}"}}
+
+  - name: Send Template
+    resource: Message
+    description: Sends an approved template, the only kind of message that can start a conversation.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: template, label: Template, type: select, required: true, options_from: {request: {method: GET, path: "{{credential.business_account_id}}/message_templates", query: {status: APPROVED, limit: 200, fields: "name,language"}}, path: data, label: name, value: name}}
+      - {name: language, label: Language, required: true, default: pt_BR, description: "The template's language code, like pt_BR or en_US."}
+      - {name: variables, label: Body variables, description: "The values of {{1}}, {{2}}... in order, separated by commas."}
+      - {name: components, label: Components, type: json, description: "For header, button or named variables, the components as the API takes them; replaces Body variables."}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body:
+        messaging_product: whatsapp
+        to: "{{fields.to}}"
+        type: template
+        template:
+          name: "{{fields.template}}"
+          language: {code: "{{fields.language}}"}
+          components: [{_if: "{{fields.variables}}", type: body, parameters: {_each: "{{fields.variables}}", type: text, text: "{{item}}"}}]
+          _merge: {_if: "{{fields.components}}", components: "{{fields.components}}"}
+
+  - name: Send Image
+    resource: Message
+    description: Sends an image from a public link or an uploaded media ID.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: link, label: Image URL, description: "JPEG or PNG, up to 5 MB; or fill Media ID."}
+      - {name: media_id, label: Media ID, description: From Upload Media.}
+      - {name: caption, label: Caption}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: image, image: {link: "{{fields.link}}", id: "{{fields.media_id}}", caption: "{{fields.caption}}"}}
+
+  - name: Send Document
+    resource: Message
+    description: Sends a document, like a PDF, from a public link or an uploaded media ID.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: link, label: Document URL, description: "Up to 100 MB; or fill Media ID."}
+      - {name: media_id, label: Media ID, description: From Upload Media.}
+      - {name: filename, label: File name, description: "Like invoice.pdf."}
+      - {name: caption, label: Caption}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: document, document: {link: "{{fields.link}}", id: "{{fields.media_id}}", filename: "{{fields.filename}}", caption: "{{fields.caption}}"}}
+
+  - name: Send Video
+    resource: Message
+    description: Sends a video from a public link or an uploaded media ID.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: link, label: Video URL, description: "MP4 or 3GP, up to 16 MB; or fill Media ID."}
+      - {name: media_id, label: Media ID, description: From Upload Media.}
+      - {name: caption, label: Caption}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: video, video: {link: "{{fields.link}}", id: "{{fields.media_id}}", caption: "{{fields.caption}}"}}
+
+  - name: Send Audio
+    resource: Message
+    description: Sends an audio from a public link or an uploaded media ID.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: link, label: Audio URL, description: "AAC, MP3, OGG or AMR, up to 16 MB; or fill Media ID."}
+      - {name: media_id, label: Media ID, description: From Upload Media.}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: audio, audio: {link: "{{fields.link}}", id: "{{fields.media_id}}"}}
+
+  - name: Send Location
+    resource: Message
+    description: Sends a place on the map.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: latitude, label: Latitude, type: number, required: true}
+      - {name: longitude, label: Longitude, type: number, required: true}
+      - {name: name, label: Place name}
+      - {name: address, label: Address}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: location, location: {latitude: "{{fields.latitude}}", longitude: "{{fields.longitude}}", name: "{{fields.name}}", address: "{{fields.address}}"}}
+
+  - name: Send Buttons
+    resource: Message
+    description: Sends a text with up to 3 reply buttons; the answer arrives in the trigger with the button's ID.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: buttons, label: Buttons, required: true, description: "Up to 3, separated by commas, of up to 20 characters; each is also its ID."}
+      - {name: footer, label: Footer}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body:
+        messaging_product: whatsapp
+        to: "{{fields.to}}"
+        type: interactive
+        interactive:
+          type: button
+          body: {text: "{{fields.text}}"}
+          footer: {_if: "{{fields.footer}}", text: "{{fields.footer}}"}
+          action: {buttons: {_each: "{{fields.buttons}}", type: reply, reply: {id: "{{item}}", title: "{{item}}"}}}
+
+  - name: Send Interactive
+    resource: Message
+    description: Sends an interactive message, like a list or a call-to-action link, written as the API takes it.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: interactive, label: Interactive, type: json, required: true, description: "Like {\"type\": \"cta_url\", \"body\": {\"text\": \"See it\"}, \"action\": {\"name\": \"cta_url\", \"parameters\": {\"display_text\": \"Open\", \"url\": \"https://example.com\"}}}."}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: interactive, interactive: "{{fields.interactive}}"}
+
+  - name: Send Reaction
+    resource: Message
+    description: Reacts to a message with an emoji; an empty emoji takes the reaction back.
+    fields:
+      - {name: to, label: To, required: true, description: "The number with country code, like 5511999998888."}
+      - {name: message_id, label: Message ID, required: true}
+      - {name: emoji, label: Emoji}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, to: "{{fields.to}}", type: reaction, reaction: {message_id: "{{fields.message_id}}", emoji: "{{fields.emoji | keep}}"}}
+
+  - name: Mark as Read
+    resource: Message
+    description: Marks a received message as read, with the blue checks.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/messages"
+      body: {messaging_product: whatsapp, status: read, message_id: "{{fields.message_id}}"}
+
+  # Media
+  - name: Upload Media
+    resource: Media
+    description: Uploads a file to send later by its media ID; it is kept 30 days.
+    fields:
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: mime, label: File type, required: true, description: "Like image/jpeg, application/pdf or audio/ogg."}
+    request:
+      method: POST
+      path: "{{credential.phone_number_id}}/media"
+      body_type: multipart
+      body: {messaging_product: whatsapp, type: "{{fields.mime}}", file: "{{fields.file}}"}
+
+  - name: Get Media
+    resource: Media
+    description: Reads a media's type and size and a download link valid for 5 minutes, which needs the token.
+    fields:
+      - {name: media_id, label: Media ID, required: true, description: "From an incoming message, or Upload Media."}
+    request: {method: GET, path: "{{fields.media_id}}"}
+
+  - name: Delete Media
+    resource: Media
+    description: Deletes an uploaded media.
+    fields:
+      - {name: media_id, label: Media ID, required: true}
+    request: {method: DELETE, path: "{{fields.media_id}}"}
+
+  # Templates
+  - name: List Templates
+    resource: Template
+    description: Lists the message templates, with their status and components.
+    fields:
+      - {name: status, label: Status, type: select, options: [{label: Approved, value: APPROVED}, {label: Pending, value: PENDING}, {label: Rejected, value: REJECTED}]}
+      - {name: limit, label: Limit, type: number, default: 100}
+    request:
+      method: GET
+      path: "{{credential.business_account_id}}/message_templates"
+      query: {status: "{{fields.status}}", limit: "{{fields.limit}}"}
+    output: {path: data}
+
+  - name: Create Template
+    resource: Template
+    description: Submits a template for Meta's review.
+    fields:
+      - {name: name, label: Name, required: true, description: "Lowercase letters, digits and underscores."}
+      - {name: category, label: Category, type: select, required: true, default: UTILITY, options: [{label: Utility, value: UTILITY}, {label: Marketing, value: MARKETING}, {label: Authentication, value: AUTHENTICATION}]}
+      - {name: language, label: Language, required: true, default: pt_BR}
+      - {name: body, label: Body, type: textarea, required: true, description: "Variables as {{1}}, {{2}}..."}
+      - {name: examples, label: Examples of the variables, description: "Separated by commas; required when the body has variables."}
+    request:
+      method: POST
+      path: "{{credential.business_account_id}}/message_templates"
+      body:
+        name: "{{fields.name}}"
+        category: "{{fields.category}}"
+        language: "{{fields.language}}"
+        components:
+          - type: BODY
+            text: "{{fields.body}}"
+            example: {_if: "{{fields.examples}}", body_text: [{_each: "{{fields.examples}}", _value: "{{item}}"}]}
+
+  - name: Delete Template
+    resource: Template
+    description: Deletes a template, in every language.
+    fields:
+      - {name: name, label: Name, required: true}
+    request:
+      method: DELETE
+      path: "{{credential.business_account_id}}/message_templates"
+      query: {name: "{{fields.name}}"}
+
+  # Phone number
+  - name: Get Phone Number
+    resource: Phone Number
+    description: Reads the business number, with its name, quality rating and messaging limit.
+    request:
+      method: GET
+      path: "{{credential.phone_number_id}}"
+      query: {fields: "display_phone_number,verified_name,quality_rating,messaging_limit_tier,name_status,status"}
+
+  - name: Get Business Profile
+    resource: Phone Number
+    description: Reads the business profile shown to customers.
+    request:
+      method: GET
+      path: "{{credential.phone_number_id}}/whatsapp_business_profile"
+      query: {fields: "about,address,description,email,profile_picture_url,websites,vertical"}
+    output: {path: data.0}
+
+i18n:
+  pt-BR:
+    description: "Envie mensagens de texto, modelo, mídia, localização e botões pelo WhatsApp, gerencie mídias e modelos e receba mensagens e status de entrega."
+    triggers:
+      Event: {name: "Evento", description: "Inicia o fluxo a cada mensagem recebida e a cada status de enviada, entregue ou lida. No app da Meta, configure a URL de callback e o token de verificação mostrados aqui e assine messages."}
+    actions:
+      Send Text: {name: "Enviar texto", description: "Envia uma mensagem de texto, dentro de 24 horas da última mensagem do cliente.", fields: {to: "Para", text: "Texto", preview_url: "Mostrar prévia do link", reply_to: "Responder à mensagem (ID)"}}
+      Send Template: {name: "Enviar modelo", description: "Envia um modelo aprovado, o único tipo de mensagem que inicia uma conversa.", fields: {to: "Para", template: "Modelo", language: "Idioma", variables: "Variáveis do corpo", components: "Componentes"}}
+      Send Image: {name: "Enviar imagem", description: "Envia uma imagem de um link público ou de uma mídia enviada.", fields: {to: "Para", link: "URL da imagem", media_id: "ID da mídia", caption: "Legenda"}}
+      Send Document: {name: "Enviar documento", description: "Envia um documento, como um PDF, de um link público ou de uma mídia enviada.", fields: {to: "Para", link: "URL do documento", media_id: "ID da mídia", filename: "Nome do arquivo", caption: "Legenda"}}
+      Send Video: {name: "Enviar vídeo", description: "Envia um vídeo de um link público ou de uma mídia enviada.", fields: {to: "Para", link: "URL do vídeo", media_id: "ID da mídia", caption: "Legenda"}}
+      Send Audio: {name: "Enviar áudio", description: "Envia um áudio de um link público ou de uma mídia enviada.", fields: {to: "Para", link: "URL do áudio", media_id: "ID da mídia"}}
+      Send Location: {name: "Enviar localização", description: "Envia um local no mapa.", fields: {to: "Para", latitude: "Latitude", longitude: "Longitude", name: "Nome do local", address: "Endereço"}}
+      Send Buttons: {name: "Enviar botões", description: "Envia um texto com até 3 botões de resposta; a resposta chega no gatilho com o ID do botão.", fields: {to: "Para", text: "Texto", buttons: "Botões", footer: "Rodapé"}}
+      Send Interactive: {name: "Enviar interativa", description: "Envia uma mensagem interativa, como lista ou link de ação, escrita no formato da API.", fields: {to: "Para", interactive: "Interativa"}}
+      Send Reaction: {name: "Enviar reação", description: "Reage a uma mensagem com um emoji; emoji vazio desfaz a reação.", fields: {to: "Para", message_id: "ID da mensagem", emoji: "Emoji"}}
+      Mark as Read: {name: "Marcar como lida", description: "Marca uma mensagem recebida como lida, com os tiques azuis.", fields: {message_id: "ID da mensagem"}}
+      Upload Media: {name: "Enviar mídia", description: "Envia um arquivo para usar depois pelo ID da mídia; fica guardado 30 dias.", fields: {file: "Arquivo", mime: "Tipo do arquivo"}}
+      Get Media: {name: "Ler mídia", description: "Lê tipo e tamanho de uma mídia e um link de download válido por 5 minutos, que exige o token.", fields: {media_id: "ID da mídia"}}
+      Delete Media: {name: "Apagar mídia", description: "Apaga uma mídia enviada.", fields: {media_id: "ID da mídia"}}
+      List Templates: {name: "Listar modelos", description: "Lista os modelos de mensagem, com status e componentes.", fields: {status: "Status", limit: "Limite"}}
+      Create Template: {name: "Criar modelo", description: "Envia um modelo para a revisão da Meta.", fields: {name: "Nome", category: "Categoria", language: "Idioma", body: "Corpo", examples: "Exemplos das variáveis"}}
+      Delete Template: {name: "Apagar modelo", description: "Apaga um modelo, em todos os idiomas.", fields: {name: "Nome"}}
+      Get Phone Number: {name: "Ler número", description: "Lê o número da empresa, com nome, avaliação de qualidade e limite de mensagens."}
+      Get Business Profile: {name: "Ler perfil comercial", description: "Lê o perfil comercial que os clientes veem."}

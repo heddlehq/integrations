@@ -1,0 +1,374 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# PayPal REST APIs with the client ID and secret of a REST app; the token comes by
+# client credentials. Amounts are text with a dot, like 10.50, in the given currency.
+id: paypal
+name: PayPal
+version: 1.0.0
+homepage: https://developer.paypal.com/api/rest/
+description: Take PayPal payments with orders, capture and refund them, send payouts and invoices, manage subscriptions and react to events.
+icon: hero-banknotes
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="4.53" y="3.00" width="14.94" height="18.00" viewBox="0 0 373.5096 450"><path fill="#002991" d="M318.58,103.5c0,55.74-51.44,121.5-129.27,121.5h-74.97l-3.68,23.22-17.49,111.78H0L56.05,0h150.95c50.83,0,90.82,28.33,105.55,67.7,4.2482,11.4467,6.2941,23.5933,6.03,35.8Z"/><path fill="#60cdff" d="M372.28,207c-10.2713,62.4081-64.2924,108.1528-127.54,108h-52.06l-21.67,135h-92.67l14.83-90,17.5-111.78,3.67-23.22h74.97c77.73,0,129.27-65.76,129.27-121.5,38.25,19.74,60.55,59.63,53.7,103.5Z"/><path fill="#008cff" d="M318.58,103.5c-16.04-8.39-35.49-13.5-56.66-13.5h-126.4l-21.18,135h74.97c77.73,0,129.27-65.76,129.27-121.5Z"/></svg></svg>
+category: payments
+base_url: "https://{{credential.host}}/"
+
+credential:
+  label: PayPal
+  fields:
+    - {name: client_id, label: Client ID, required: true, description: "From developer.paypal.com > Apps & Credentials."}
+    - {name: client_secret, label: Secret, secret: true, required: true}
+    - {name: host, label: Environment, type: select, required: true, default: api-m.paypal.com, options: [{label: Live, value: api-m.paypal.com}, {label: Sandbox, value: api-m.sandbox.paypal.com}]}
+  auth:
+    type: client_credentials
+    token_url: "https://{{credential.host}}/v1/oauth2/token"
+    client_id: "{{credential.client_id}}"
+    client_secret: "{{credential.client_secret}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Event
+    description: Starts the flow on PayPal events of the app, like a captured payment, a refund or a new subscription.
+    fields:
+      - {name: events, label: Events, default: "*", description: "Names separated by commas, like PAYMENT.CAPTURE.COMPLETED,CUSTOMER.DISPUTE.CREATED; * takes them all."}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: v1/notifications/webhooks
+          body: {url: "{{webhook.url}}", event_types: {_each: "{{fields.events}}", name: "{{item}}"}}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "v1/notifications/webhooks/{{webhook.id}}"}
+
+actions:
+  # Orders
+  - name: Create Order
+    resource: Order
+    description: Creates an order for the buyer to approve at the approve link, then capture it.
+    fields:
+      - {name: amount, label: Amount, required: true, description: "Like 10.50."}
+      - {name: currency, label: Currency, required: true, default: BRL, description: "Three letters, like BRL or USD."}
+      - {name: description, label: Description, description: Up to 127 characters.}
+      - {name: reference_id, label: Your reference}
+      - {name: invoice_id, label: Invoice number, description: "Must not repeat among your orders."}
+      - {name: intent, label: Intent, type: select, default: CAPTURE, options: [{label: Capture now, value: CAPTURE}, {label: Authorize to capture later, value: AUTHORIZE}]}
+      - {name: return_url, label: Return URL, description: Where the buyer goes after approving.}
+      - {name: cancel_url, label: Cancel URL}
+      - {name: brand_name, label: Store name}
+    request:
+      method: POST
+      path: v2/checkout/orders
+      body:
+        intent: "{{fields.intent}}"
+        purchase_units:
+          - {amount: {currency_code: "{{fields.currency}}", value: "{{fields.amount}}"}, description: "{{fields.description}}", reference_id: "{{fields.reference_id}}", invoice_id: "{{fields.invoice_id}}"}
+        payment_source:
+          paypal:
+            experience_context: {return_url: "{{fields.return_url}}", cancel_url: "{{fields.cancel_url}}", brand_name: "{{fields.brand_name}}", user_action: PAY_NOW}
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order and its status.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: GET, path: "v2/checkout/orders/{{fields.order_id}}"}
+
+  - name: Capture Order
+    resource: Order
+    description: Takes the payment of an order the buyer approved.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "v2/checkout/orders/{{fields.order_id}}/capture", body: {}}
+
+  - name: Authorize Order
+    resource: Order
+    description: Holds the amount of an approved order, to capture within 29 days.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "v2/checkout/orders/{{fields.order_id}}/authorize", body: {}}
+
+  # Payments
+  - name: Get Capture
+    resource: Payment
+    description: Reads a captured payment.
+    fields:
+      - {name: capture_id, label: Capture ID, required: true}
+    request: {method: GET, path: "v2/payments/captures/{{fields.capture_id}}"}
+
+  - name: Refund Capture
+    resource: Payment
+    description: Refunds a captured payment, all of it or part.
+    fields:
+      - {name: capture_id, label: Capture ID, required: true}
+      - {name: amount, label: Amount, description: "Empty refunds it all."}
+      - {name: currency, label: Currency, default: BRL}
+      - {name: note, label: Note to the buyer}
+    request:
+      method: POST
+      path: "v2/payments/captures/{{fields.capture_id}}/refund"
+      body:
+        amount: {_if: "{{fields.amount}}", value: "{{fields.amount}}", currency_code: "{{fields.currency}}"}
+        note_to_payer: "{{fields.note}}"
+
+  - name: Get Refund
+    resource: Payment
+    description: Reads a refund.
+    fields:
+      - {name: refund_id, label: Refund ID, required: true}
+    request: {method: GET, path: "v2/payments/refunds/{{fields.refund_id}}"}
+
+  - name: Get Authorization
+    resource: Payment
+    description: Reads an authorized payment.
+    fields:
+      - {name: authorization_id, label: Authorization ID, required: true}
+    request: {method: GET, path: "v2/payments/authorizations/{{fields.authorization_id}}"}
+
+  - name: Capture Authorization
+    resource: Payment
+    description: Captures an authorized payment, all of it or part.
+    fields:
+      - {name: authorization_id, label: Authorization ID, required: true}
+      - {name: amount, label: Amount, description: "Empty captures it all."}
+      - {name: currency, label: Currency, default: BRL}
+      - {name: final, label: Last capture, type: boolean, default: true}
+    request:
+      method: POST
+      path: "v2/payments/authorizations/{{fields.authorization_id}}/capture"
+      body:
+        amount: {_if: "{{fields.amount}}", value: "{{fields.amount}}", currency_code: "{{fields.currency}}"}
+        final_capture: "{{fields.final}}"
+
+  - name: Void Authorization
+    resource: Payment
+    description: Releases an authorized payment without capturing it.
+    fields:
+      - {name: authorization_id, label: Authorization ID, required: true}
+    request: {method: POST, path: "v2/payments/authorizations/{{fields.authorization_id}}/void", body: {}}
+
+  - name: List Transactions
+    resource: Payment
+    description: Lists the account's transactions in a period of up to 31 days; they show up within 3 hours.
+    fields:
+      - {name: start_date, label: From, type: datetime, required: true}
+      - {name: end_date, label: To, type: datetime, required: true}
+      - {name: transaction_id, label: Transaction ID}
+      - {name: limit, label: Limit, type: number, default: 100, description: Up to 500.}
+    request:
+      method: GET
+      path: v1/reporting/transactions
+      query: {start_date: "{{fields.start_date}}", end_date: "{{fields.end_date}}", transaction_id: "{{fields.transaction_id}}", page_size: "{{fields.limit}}", fields: all}
+    output: {path: transaction_details}
+
+  # Payouts
+  - name: Create Payout
+    resource: Payout
+    description: Sends money to a PayPal account by email, phone or PayPal ID.
+    fields:
+      - {name: receiver, label: Receiver, required: true}
+      - {name: recipient_type, label: Receiver is, type: select, default: EMAIL, options: [{label: Email, value: EMAIL}, {label: Phone, value: PHONE}, {label: PayPal ID, value: PAYPAL_ID}]}
+      - {name: amount, label: Amount, required: true}
+      - {name: currency, label: Currency, required: true, default: BRL}
+      - {name: note, label: Note}
+      - {name: batch_id, label: Your batch ID, description: "Must not repeat in 30 days; keeps a payout from going twice."}
+      - {name: email_subject, label: Email subject}
+    request:
+      method: POST
+      path: v1/payments/payouts
+      body:
+        sender_batch_header: {sender_batch_id: "{{fields.batch_id}}", email_subject: "{{fields.email_subject}}"}
+        items:
+          - {recipient_type: "{{fields.recipient_type}}", receiver: "{{fields.receiver}}", note: "{{fields.note}}", amount: {value: "{{fields.amount}}", currency: "{{fields.currency}}"}}
+
+  - name: Create Batch Payout
+    resource: Payout
+    description: Sends money to many receivers at once.
+    fields:
+      - {name: items, label: Items, type: json, required: true, description: "A list like [{\"recipient_type\": \"EMAIL\", \"receiver\": \"ana@example.com\", \"amount\": {\"value\": \"10.00\", \"currency\": \"BRL\"}}]."}
+      - {name: batch_id, label: Your batch ID}
+      - {name: email_subject, label: Email subject}
+    request:
+      method: POST
+      path: v1/payments/payouts
+      body: {sender_batch_header: {sender_batch_id: "{{fields.batch_id}}", email_subject: "{{fields.email_subject}}"}, items: "{{fields.items}}"}
+
+  - name: Get Payout
+    resource: Payout
+    description: Reads a payout batch and its items.
+    fields:
+      - {name: payout_batch_id, label: Payout batch ID, required: true}
+    request: {method: GET, path: "v1/payments/payouts/{{fields.payout_batch_id}}"}
+
+  - name: Get Payout Item
+    resource: Payout
+    description: Reads one item of a payout.
+    fields:
+      - {name: item_id, label: Payout item ID, required: true}
+    request: {method: GET, path: "v1/payments/payouts-item/{{fields.item_id}}"}
+
+  - name: Cancel Payout Item
+    resource: Payout
+    description: Cancels a payout item nobody claimed yet; the money comes back.
+    fields:
+      - {name: item_id, label: Payout item ID, required: true}
+    request: {method: POST, path: "v1/payments/payouts-item/{{fields.item_id}}/cancel"}
+
+  # Invoices
+  - name: Create Invoice
+    resource: Invoice
+    description: Creates a draft invoice with one item; send it with Send Invoice.
+    fields:
+      - {name: email, label: Customer email, required: true}
+      - {name: given_name, label: Customer first name}
+      - {name: surname, label: Customer last name}
+      - {name: item_name, label: Item, required: true}
+      - {name: amount, label: Unit price, required: true}
+      - {name: quantity, label: Quantity, default: "1"}
+      - {name: currency, label: Currency, required: true, default: BRL}
+      - {name: due_date, label: Due date, description: "YYYY-MM-DD."}
+      - {name: invoice_number, label: Invoice number, description: "Empty takes the next one."}
+      - {name: note, label: Note}
+    request:
+      method: POST
+      path: v2/invoicing/invoices
+      body:
+        detail: {currency_code: "{{fields.currency}}", invoice_number: "{{fields.invoice_number}}", note: "{{fields.note}}", payment_term: {_if: "{{fields.due_date}}", due_date: "{{fields.due_date}}"}}
+        primary_recipients:
+          - billing_info: {email_address: "{{fields.email}}", name: {given_name: "{{fields.given_name}}", surname: "{{fields.surname}}"}}
+        items:
+          - {name: "{{fields.item_name}}", quantity: "{{fields.quantity}}", unit_amount: {currency_code: "{{fields.currency}}", value: "{{fields.amount}}"}}
+
+  - name: Send Invoice
+    resource: Invoice
+    description: Sends a draft invoice to the customer.
+    fields:
+      - {name: invoice_id, label: Invoice ID, required: true}
+      - {name: subject, label: Email subject}
+      - {name: note, label: Email note}
+    request:
+      method: POST
+      path: "v2/invoicing/invoices/{{fields.invoice_id}}/send"
+      body: {subject: "{{fields.subject}}", note: "{{fields.note}}", send_to_recipient: true}
+
+  - name: Get Invoice
+    resource: Invoice
+    description: Reads an invoice and its status.
+    fields:
+      - {name: invoice_id, label: Invoice ID, required: true}
+    request: {method: GET, path: "v2/invoicing/invoices/{{fields.invoice_id}}"}
+
+  - name: List Invoices
+    resource: Invoice
+    description: Lists the invoices, newest first.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 100.}
+    request: {method: GET, path: v2/invoicing/invoices, query: {page_size: "{{fields.limit}}"}}
+    output: {path: items}
+
+  - name: Remind Invoice
+    resource: Invoice
+    description: Sends a reminder of an unpaid invoice.
+    fields:
+      - {name: invoice_id, label: Invoice ID, required: true}
+      - {name: subject, label: Email subject}
+      - {name: note, label: Email note}
+    request:
+      method: POST
+      path: "v2/invoicing/invoices/{{fields.invoice_id}}/remind"
+      body: {subject: "{{fields.subject}}", note: "{{fields.note}}", send_to_recipient: true}
+
+  - name: Cancel Invoice
+    resource: Invoice
+    description: Cancels a sent invoice and tells the customer.
+    fields:
+      - {name: invoice_id, label: Invoice ID, required: true}
+      - {name: note, label: Email note}
+    request:
+      method: POST
+      path: "v2/invoicing/invoices/{{fields.invoice_id}}/cancel"
+      body: {note: "{{fields.note}}", send_to_recipient: true}
+
+  - name: Delete Invoice
+    resource: Invoice
+    description: Deletes a draft invoice.
+    fields:
+      - {name: invoice_id, label: Invoice ID, required: true}
+    request: {method: DELETE, path: "v2/invoicing/invoices/{{fields.invoice_id}}"}
+
+  # Subscriptions
+  - name: List Plans
+    resource: Subscription
+    description: Lists the subscription plans.
+    fields:
+      - {name: product_id, label: Product ID}
+    request: {method: GET, path: v1/billing/plans, query: {product_id: "{{fields.product_id}}", page_size: 20}}
+    output: {path: plans}
+
+  - name: Get Subscription
+    resource: Subscription
+    description: Reads a subscription, with its status and next billing.
+    fields:
+      - {name: subscription_id, label: Subscription ID, required: true, description: "Starts with I-."}
+    request: {method: GET, path: "v1/billing/subscriptions/{{fields.subscription_id}}"}
+
+  - name: Cancel Subscription
+    resource: Subscription
+    description: Cancels a subscription for good.
+    fields:
+      - {name: subscription_id, label: Subscription ID, required: true}
+      - {name: reason, label: Reason, required: true}
+    request: {method: POST, path: "v1/billing/subscriptions/{{fields.subscription_id}}/cancel", body: {reason: "{{fields.reason}}"}}
+
+  - name: Suspend Subscription
+    resource: Subscription
+    description: Pauses a subscription; activate it again later.
+    fields:
+      - {name: subscription_id, label: Subscription ID, required: true}
+      - {name: reason, label: Reason, required: true}
+    request: {method: POST, path: "v1/billing/subscriptions/{{fields.subscription_id}}/suspend", body: {reason: "{{fields.reason}}"}}
+
+  - name: Activate Subscription
+    resource: Subscription
+    description: Resumes a suspended subscription.
+    fields:
+      - {name: subscription_id, label: Subscription ID, required: true}
+      - {name: reason, label: Reason}
+    request: {method: POST, path: "v1/billing/subscriptions/{{fields.subscription_id}}/activate", body: {reason: "{{fields.reason}}"}}
+
+i18n:
+  pt-BR:
+    description: "Receba pagamentos com pedidos do PayPal, capture e reembolse, envie payouts e faturas, gerencie assinaturas e reaja a eventos."
+    triggers:
+      Event: {name: "Evento", description: "Inicia o fluxo em eventos do PayPal do app, como pagamento capturado, reembolso ou nova assinatura.", fields: {events: "Eventos"}}
+    actions:
+      Create Order: {name: "Criar pedido", description: "Cria um pedido para o comprador aprovar no link approve e depois capturar.", fields: {amount: "Valor", currency: "Moeda", description: "Descrição", reference_id: "Sua referência", invoice_id: "Número da fatura", intent: "Intenção", return_url: "URL de retorno", cancel_url: "URL de cancelamento", brand_name: "Nome da loja"}}
+      Get Order: {name: "Ler pedido", description: "Lê um pedido e o status.", fields: {order_id: "ID do pedido"}}
+      Capture Order: {name: "Capturar pedido", description: "Recebe o pagamento de um pedido que o comprador aprovou.", fields: {order_id: "ID do pedido"}}
+      Authorize Order: {name: "Autorizar pedido", description: "Reserva o valor de um pedido aprovado, para capturar em até 29 dias.", fields: {order_id: "ID do pedido"}}
+      Get Capture: {name: "Ler captura", description: "Lê um pagamento capturado.", fields: {capture_id: "ID da captura"}}
+      Refund Capture: {name: "Reembolsar captura", description: "Reembolsa um pagamento capturado, total ou parcial.", fields: {capture_id: "ID da captura", amount: "Valor", currency: "Moeda", note: "Nota ao comprador"}}
+      Get Refund: {name: "Ler reembolso", description: "Lê um reembolso.", fields: {refund_id: "ID do reembolso"}}
+      Get Authorization: {name: "Ler autorização", description: "Lê um pagamento autorizado.", fields: {authorization_id: "ID da autorização"}}
+      Capture Authorization: {name: "Capturar autorização", description: "Captura um pagamento autorizado, total ou parcial.", fields: {authorization_id: "ID da autorização", amount: "Valor", currency: "Moeda", final: "Última captura"}}
+      Void Authorization: {name: "Cancelar autorização", description: "Libera um pagamento autorizado sem capturar.", fields: {authorization_id: "ID da autorização"}}
+      List Transactions: {name: "Listar transações", description: "Lista as transações da conta num período de até 31 dias; elas aparecem em até 3 horas.", fields: {start_date: "De", end_date: "Até", transaction_id: "ID da transação", limit: "Limite"}}
+      Create Payout: {name: "Criar payout", description: "Envia dinheiro para uma conta PayPal por e-mail, telefone ou PayPal ID.", fields: {receiver: "Destinatário", recipient_type: "Destinatário é", amount: "Valor", currency: "Moeda", note: "Nota", batch_id: "Seu ID de lote", email_subject: "Assunto do e-mail"}}
+      Create Batch Payout: {name: "Payout em lote", description: "Envia dinheiro para vários destinatários de uma vez.", fields: {items: "Itens", batch_id: "Seu ID de lote", email_subject: "Assunto do e-mail"}}
+      Get Payout: {name: "Ler payout", description: "Lê um lote de payout e seus itens.", fields: {payout_batch_id: "ID do lote de payout"}}
+      Get Payout Item: {name: "Ler item de payout", description: "Lê um item de um payout.", fields: {item_id: "ID do item de payout"}}
+      Cancel Payout Item: {name: "Cancelar item de payout", description: "Cancela um item de payout ainda não resgatado; o dinheiro volta.", fields: {item_id: "ID do item de payout"}}
+      Create Invoice: {name: "Criar fatura", description: "Cria um rascunho de fatura com um item; envie com Enviar fatura.", fields: {email: "E-mail do cliente", given_name: "Nome do cliente", surname: "Sobrenome do cliente", item_name: "Item", amount: "Preço unitário", quantity: "Quantidade", currency: "Moeda", due_date: "Vencimento", invoice_number: "Número da fatura", note: "Nota"}}
+      Send Invoice: {name: "Enviar fatura", description: "Envia um rascunho de fatura ao cliente.", fields: {invoice_id: "ID da fatura", subject: "Assunto do e-mail", note: "Nota do e-mail"}}
+      Get Invoice: {name: "Ler fatura", description: "Lê uma fatura e o status.", fields: {invoice_id: "ID da fatura"}}
+      List Invoices: {name: "Listar faturas", description: "Lista as faturas, as mais novas primeiro.", fields: {limit: "Limite"}}
+      Remind Invoice: {name: "Lembrar fatura", description: "Envia um lembrete de uma fatura não paga.", fields: {invoice_id: "ID da fatura", subject: "Assunto do e-mail", note: "Nota do e-mail"}}
+      Cancel Invoice: {name: "Cancelar fatura", description: "Cancela uma fatura enviada e avisa o cliente.", fields: {invoice_id: "ID da fatura", note: "Nota do e-mail"}}
+      Delete Invoice: {name: "Apagar fatura", description: "Apaga um rascunho de fatura.", fields: {invoice_id: "ID da fatura"}}
+      List Plans: {name: "Listar planos", description: "Lista os planos de assinatura.", fields: {product_id: "ID do produto"}}
+      Get Subscription: {name: "Ler assinatura", description: "Lê uma assinatura, com o status e a próxima cobrança.", fields: {subscription_id: "ID da assinatura"}}
+      Cancel Subscription: {name: "Cancelar assinatura", description: "Cancela uma assinatura de vez.", fields: {subscription_id: "ID da assinatura", reason: "Motivo"}}
+      Suspend Subscription: {name: "Suspender assinatura", description: "Pausa uma assinatura; reative depois.", fields: {subscription_id: "ID da assinatura", reason: "Motivo"}}
+      Activate Subscription: {name: "Reativar assinatura", description: "Retoma uma assinatura suspensa.", fields: {subscription_id: "ID da assinatura", reason: "Motivo"}}
