@@ -1,0 +1,957 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# HubSpot's CRM API v3, with a private app's token. Make the app in HubSpot, under
+# Settings > Integrations > Private Apps, with the CRM scopes you need.
+id: hubspot
+name: HubSpot
+version: 1.0.0
+description: Contacts, companies, deals, tickets, engagements, lists, associations and forms in HubSpot.
+icon: hero-user-group
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FF7A59" d="M18.164 7.93V5.084a2.198 2.198 0 001.267-1.978v-.067A2.2 2.2 0 0017.238.845h-.067a2.2 2.2 0 00-2.193 2.193v.067a2.196 2.196 0 001.252 1.973l.013.006v2.852a6.22 6.22 0 00-2.969 1.31l.012-.01-7.828-6.095A2.497 2.497 0 104.3 4.656l-.012.006 7.697 5.991a6.176 6.176 0 00-1.038 3.446c0 1.343.425 2.588 1.147 3.607l-.013-.02-2.342 2.343a1.968 1.968 0 00-.58-.095h-.002a2.033 2.033 0 102.033 2.033 1.978 1.978 0 00-.1-.595l.005.014 2.317-2.317a6.247 6.247 0 104.782-11.134l-.036-.005zm-.964 9.378a3.206 3.206 0 113.215-3.207v.002a3.206 3.206 0 01-3.207 3.207z"/></svg>
+category: crm
+author: Heddle
+homepage: https://developers.hubspot.com/docs/api/crm/understanding-the-crm
+base_url: https://api.hubapi.com/
+
+credential:
+  label: HubSpot
+  fields:
+    - {name: token, label: Private app token, secret: true, required: true, description: "Starts with pat-"}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Contact
+    description: Starts the flow for each new contact, checking every 5 minutes.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+    request:
+      method: POST
+      path: crm/v3/objects/contacts/search
+      body:
+        sorts: [{propertyName: createdate, direction: DESCENDING}]
+        properties: "{{fields.properties}}"
+        limit: 100
+    output: {path: results}
+    poll:
+      every: 5
+      id: id
+
+  - name: New Company
+    description: Starts the flow for each new company, checking every 5 minutes.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+    request:
+      method: POST
+      path: crm/v3/objects/companies/search
+      body:
+        sorts: [{propertyName: createdate, direction: DESCENDING}]
+        properties: "{{fields.properties}}"
+        limit: 100
+    output: {path: results}
+    poll:
+      every: 5
+      id: id
+
+  - name: New Deal
+    description: Starts the flow for each new deal, checking every 5 minutes.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+    request:
+      method: POST
+      path: crm/v3/objects/deals/search
+      body:
+        sorts: [{propertyName: createdate, direction: DESCENDING}]
+        properties: "{{fields.properties}}"
+        limit: 100
+    output: {path: results}
+    poll:
+      every: 5
+      id: id
+
+  - name: New Ticket
+    description: Starts the flow for each new ticket, checking every 5 minutes.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+    request:
+      method: POST
+      path: crm/v3/objects/tickets/search
+      body:
+        sorts: [{propertyName: createdate, direction: DESCENDING}]
+        properties: "{{fields.properties}}"
+        limit: 100
+    output: {path: results}
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Contacts
+  - name: Create Contact
+    resource: Contact
+    description: Creates a contact.
+    fields:
+      - {name: email, label: "Email"}
+      - {name: firstname, label: "First name"}
+      - {name: lastname, label: "Last name"}
+      - {name: phone, label: "Phone"}
+      - {name: mobilephone, label: "Mobile phone"}
+      - {name: company, label: "Company name"}
+      - {name: jobtitle, label: "Job title"}
+      - {name: website, label: "Website"}
+      - {name: address, label: "Street address"}
+      - {name: city, label: "City"}
+      - {name: state, label: "State"}
+      - {name: zip, label: "Postal code"}
+      - {name: country, label: "Country"}
+      - {name: lifecyclestage, label: "Lifecycle stage", type: select, options: [{label: "Subscriber", value: "subscriber"}, {label: "Lead", value: "lead"}, {label: "Marketing qualified lead", value: "marketingqualifiedlead"}, {label: "Sales qualified lead", value: "salesqualifiedlead"}, {label: "Opportunity", value: "opportunity"}, {label: "Customer", value: "customer"}, {label: "Evangelist", value: "evangelist"}, {label: "Other", value: "other"}]}
+      - {name: hs_lead_status, label: "Lead status", type: select, options: [{label: "New", value: "NEW"}, {label: "Open", value: "OPEN"}, {label: "In progress", value: "IN_PROGRESS"}, {label: "Open deal", value: "OPEN_DEAL"}, {label: "Unqualified", value: "UNQUALIFIED"}, {label: "Attempted to contact", value: "ATTEMPTED_TO_CONTACT"}, {label: "Connected", value: "CONNECTED"}, {label: "Bad timing", value: "BAD_TIMING"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+      - {name: associations, label: Associations, type: json, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 1}]}]"}
+    request:
+      method: POST
+      path: crm/v3/objects/contacts
+      body:
+        properties:
+          email: "{{fields.email}}"
+          firstname: "{{fields.firstname}}"
+          lastname: "{{fields.lastname}}"
+          phone: "{{fields.phone}}"
+          mobilephone: "{{fields.mobilephone}}"
+          company: "{{fields.company}}"
+          jobtitle: "{{fields.jobtitle}}"
+          website: "{{fields.website}}"
+          address: "{{fields.address}}"
+          city: "{{fields.city}}"
+          state: "{{fields.state}}"
+          zip: "{{fields.zip}}"
+          country: "{{fields.country}}"
+          lifecyclestage: "{{fields.lifecyclestage}}"
+          hs_lead_status: "{{fields.hs_lead_status}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+        associations: "{{fields.associations}}"
+
+  - name: Create or Update Contact
+    resource: Contact
+    description: Creates a contact, or updates the one with the same email.
+    fields:
+      - {name: email, label: "Email", required: true}
+      - {name: firstname, label: "First name"}
+      - {name: lastname, label: "Last name"}
+      - {name: phone, label: "Phone"}
+      - {name: mobilephone, label: "Mobile phone"}
+      - {name: company, label: "Company name"}
+      - {name: jobtitle, label: "Job title"}
+      - {name: website, label: "Website"}
+      - {name: address, label: "Street address"}
+      - {name: city, label: "City"}
+      - {name: state, label: "State"}
+      - {name: zip, label: "Postal code"}
+      - {name: country, label: "Country"}
+      - {name: lifecyclestage, label: "Lifecycle stage", type: select, options: [{label: "Subscriber", value: "subscriber"}, {label: "Lead", value: "lead"}, {label: "Marketing qualified lead", value: "marketingqualifiedlead"}, {label: "Sales qualified lead", value: "salesqualifiedlead"}, {label: "Opportunity", value: "opportunity"}, {label: "Customer", value: "customer"}, {label: "Evangelist", value: "evangelist"}, {label: "Other", value: "other"}]}
+      - {name: hs_lead_status, label: "Lead status", type: select, options: [{label: "New", value: "NEW"}, {label: "Open", value: "OPEN"}, {label: "In progress", value: "IN_PROGRESS"}, {label: "Open deal", value: "OPEN_DEAL"}, {label: "Unqualified", value: "UNQUALIFIED"}, {label: "Attempted to contact", value: "ATTEMPTED_TO_CONTACT"}, {label: "Connected", value: "CONNECTED"}, {label: "Bad timing", value: "BAD_TIMING"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+    request:
+      method: POST
+      path: crm/v3/objects/contacts/batch/upsert
+      body:
+        inputs:
+          - idProperty: email
+            id: "{{fields.email}}"
+            properties:
+              firstname: "{{fields.firstname}}"
+              lastname: "{{fields.lastname}}"
+              phone: "{{fields.phone}}"
+              mobilephone: "{{fields.mobilephone}}"
+              company: "{{fields.company}}"
+              jobtitle: "{{fields.jobtitle}}"
+              website: "{{fields.website}}"
+              address: "{{fields.address}}"
+              city: "{{fields.city}}"
+              state: "{{fields.state}}"
+              zip: "{{fields.zip}}"
+              country: "{{fields.country}}"
+              lifecyclestage: "{{fields.lifecyclestage}}"
+              hs_lead_status: "{{fields.hs_lead_status}}"
+              hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+              _merge: "{{fields.custom_properties}}"
+    output: {path: results.0}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact by its ID, or by email.
+    fields:
+      - {name: id, label: "Contact ID or email", required: true}
+      - {name: id_property, label: The ID is, type: select, default: hs_object_id, options: [{label: The record ID, value: hs_object_id}, {label: An email, value: email}]}
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: properties_with_history, label: Properties with history, description: Comma separated.}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "crm/v3/objects/contacts/{{fields.id}}"
+      query:
+        properties: "{{fields.properties}}"
+        propertiesWithHistory: "{{fields.properties_with_history}}"
+        associations: "{{fields.associations}}"
+        archived: "{{fields.archived}}"
+        idProperty: "{{fields.id_property}}"
+
+  - name: Get Contacts
+    resource: Contact
+    description: Lists every contact.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: crm/v3/objects/contacts
+      query: {properties: "{{fields.properties}}", associations: "{{fields.associations}}", archived: "{{fields.archived}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Search Contacts
+    resource: Contact
+    description: Finds contacts by filters, by text, or the most recently changed.
+    fields:
+      - {name: query, label: Text, description: Searches the default text properties.}
+      - {name: filter_groups, label: Filters, type: json, description: "Like [{\"filters\": [{\"propertyName\": \"createdate\", \"operator\": \"GTE\", \"value\": \"2026-01-01\"}]}]"}
+      - {name: sort_by, label: Sort by property, default: lastmodifieddate}
+      - {name: direction, label: Direction, type: select, default: DESCENDING, options: [{label: Descending, value: DESCENDING}, {label: Ascending, value: ASCENDING}]}
+      - {name: properties, label: Properties, type: json, description: "Like [\"email\", \"firstname\"]"}
+    request:
+      method: POST
+      path: crm/v3/objects/contacts/search
+      body:
+        query: "{{fields.query}}"
+        filterGroups: "{{fields.filter_groups}}"
+        sorts: [{propertyName: "{{fields.sort_by}}", direction: "{{fields.direction}}"}]
+        properties: "{{fields.properties}}"
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: id, label: "Contact ID", required: true}
+      - {name: email, label: "Email"}
+      - {name: firstname, label: "First name"}
+      - {name: lastname, label: "Last name"}
+      - {name: phone, label: "Phone"}
+      - {name: mobilephone, label: "Mobile phone"}
+      - {name: company, label: "Company name"}
+      - {name: jobtitle, label: "Job title"}
+      - {name: website, label: "Website"}
+      - {name: address, label: "Street address"}
+      - {name: city, label: "City"}
+      - {name: state, label: "State"}
+      - {name: zip, label: "Postal code"}
+      - {name: country, label: "Country"}
+      - {name: lifecyclestage, label: "Lifecycle stage", type: select, options: [{label: "Subscriber", value: "subscriber"}, {label: "Lead", value: "lead"}, {label: "Marketing qualified lead", value: "marketingqualifiedlead"}, {label: "Sales qualified lead", value: "salesqualifiedlead"}, {label: "Opportunity", value: "opportunity"}, {label: "Customer", value: "customer"}, {label: "Evangelist", value: "evangelist"}, {label: "Other", value: "other"}]}
+      - {name: hs_lead_status, label: "Lead status", type: select, options: [{label: "New", value: "NEW"}, {label: "Open", value: "OPEN"}, {label: "In progress", value: "IN_PROGRESS"}, {label: "Open deal", value: "OPEN_DEAL"}, {label: "Unqualified", value: "UNQUALIFIED"}, {label: "Attempted to contact", value: "ATTEMPTED_TO_CONTACT"}, {label: "Connected", value: "CONNECTED"}, {label: "Bad timing", value: "BAD_TIMING"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+    request:
+      method: PATCH
+      path: "crm/v3/objects/contacts/{{fields.id}}"
+      body:
+        properties:
+          email: "{{fields.email}}"
+          firstname: "{{fields.firstname}}"
+          lastname: "{{fields.lastname}}"
+          phone: "{{fields.phone}}"
+          mobilephone: "{{fields.mobilephone}}"
+          company: "{{fields.company}}"
+          jobtitle: "{{fields.jobtitle}}"
+          website: "{{fields.website}}"
+          address: "{{fields.address}}"
+          city: "{{fields.city}}"
+          state: "{{fields.state}}"
+          zip: "{{fields.zip}}"
+          country: "{{fields.country}}"
+          lifecyclestage: "{{fields.lifecyclestage}}"
+          hs_lead_status: "{{fields.hs_lead_status}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+
+  - name: Delete Contact
+    resource: Contact
+    description: Archives a contact, which HubSpot keeps for 90 days.
+    fields:
+      - {name: id, label: "Contact ID", required: true}
+    request:
+      method: DELETE
+      path: "crm/v3/objects/contacts/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Companies
+  - name: Create Company
+    resource: Company
+    description: Creates a company.
+    fields:
+      - {name: name, label: "Name"}
+      - {name: domain, label: "Domain"}
+      - {name: phone, label: "Phone"}
+      - {name: industry, label: "Industry"}
+      - {name: description, label: "Description", type: textarea}
+      - {name: website, label: "Website"}
+      - {name: address, label: "Street address"}
+      - {name: city, label: "City"}
+      - {name: state, label: "State"}
+      - {name: zip, label: "Postal code"}
+      - {name: country, label: "Country"}
+      - {name: numberofemployees, label: "Employees", type: number}
+      - {name: annualrevenue, label: "Annual revenue", type: number}
+      - {name: lifecyclestage, label: "Lifecycle stage", type: select, options: [{label: "Subscriber", value: "subscriber"}, {label: "Lead", value: "lead"}, {label: "Marketing qualified lead", value: "marketingqualifiedlead"}, {label: "Sales qualified lead", value: "salesqualifiedlead"}, {label: "Opportunity", value: "opportunity"}, {label: "Customer", value: "customer"}, {label: "Evangelist", value: "evangelist"}, {label: "Other", value: "other"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+      - {name: associations, label: Associations, type: json, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 1}]}]"}
+    request:
+      method: POST
+      path: crm/v3/objects/companies
+      body:
+        properties:
+          name: "{{fields.name}}"
+          domain: "{{fields.domain}}"
+          phone: "{{fields.phone}}"
+          industry: "{{fields.industry}}"
+          description: "{{fields.description}}"
+          website: "{{fields.website}}"
+          address: "{{fields.address}}"
+          city: "{{fields.city}}"
+          state: "{{fields.state}}"
+          zip: "{{fields.zip}}"
+          country: "{{fields.country}}"
+          numberofemployees: "{{fields.numberofemployees}}"
+          annualrevenue: "{{fields.annualrevenue}}"
+          lifecyclestage: "{{fields.lifecyclestage}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+        associations: "{{fields.associations}}"
+
+  - name: Get Company
+    resource: Company
+    description: Reads a company by its ID.
+    fields:
+      - {name: id, label: "Company ID", required: true}
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: properties_with_history, label: Properties with history, description: Comma separated.}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "crm/v3/objects/companies/{{fields.id}}"
+      query:
+        properties: "{{fields.properties}}"
+        propertiesWithHistory: "{{fields.properties_with_history}}"
+        associations: "{{fields.associations}}"
+        archived: "{{fields.archived}}"
+
+  - name: Get Companies
+    resource: Company
+    description: Lists every company.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: crm/v3/objects/companies
+      query: {properties: "{{fields.properties}}", associations: "{{fields.associations}}", archived: "{{fields.archived}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Search Companies
+    resource: Company
+    description: Finds companies by filters, by text, or the most recently changed.
+    fields:
+      - {name: query, label: Text, description: Searches the default text properties.}
+      - {name: filter_groups, label: Filters, type: json, description: "Like [{\"filters\": [{\"propertyName\": \"createdate\", \"operator\": \"GTE\", \"value\": \"2026-01-01\"}]}]"}
+      - {name: sort_by, label: Sort by property, default: lastmodifieddate}
+      - {name: direction, label: Direction, type: select, default: DESCENDING, options: [{label: Descending, value: DESCENDING}, {label: Ascending, value: ASCENDING}]}
+      - {name: properties, label: Properties, type: json, description: "Like [\"email\", \"firstname\"]"}
+    request:
+      method: POST
+      path: crm/v3/objects/companies/search
+      body:
+        query: "{{fields.query}}"
+        filterGroups: "{{fields.filter_groups}}"
+        sorts: [{propertyName: "{{fields.sort_by}}", direction: "{{fields.direction}}"}]
+        properties: "{{fields.properties}}"
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Search Companies by Domain
+    resource: Company
+    description: Finds the companies with a website domain.
+    fields:
+      - {name: domain, label: Domain, required: true, description: Like acme.com.}
+      - {name: properties, label: Properties, type: json, description: "Like [\"name\", \"domain\"]"}
+    request:
+      method: POST
+      path: crm/v3/objects/companies/search
+      body:
+        filterGroups: [{filters: [{propertyName: domain, operator: EQ, value: "{{fields.domain}}"}]}]
+        properties: "{{fields.properties}}"
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Update Company
+    resource: Company
+    description: Changes a company. Empty fields stay as they are.
+    fields:
+      - {name: id, label: "Company ID", required: true}
+      - {name: name, label: "Name"}
+      - {name: domain, label: "Domain"}
+      - {name: phone, label: "Phone"}
+      - {name: industry, label: "Industry"}
+      - {name: description, label: "Description", type: textarea}
+      - {name: website, label: "Website"}
+      - {name: address, label: "Street address"}
+      - {name: city, label: "City"}
+      - {name: state, label: "State"}
+      - {name: zip, label: "Postal code"}
+      - {name: country, label: "Country"}
+      - {name: numberofemployees, label: "Employees", type: number}
+      - {name: annualrevenue, label: "Annual revenue", type: number}
+      - {name: lifecyclestage, label: "Lifecycle stage", type: select, options: [{label: "Subscriber", value: "subscriber"}, {label: "Lead", value: "lead"}, {label: "Marketing qualified lead", value: "marketingqualifiedlead"}, {label: "Sales qualified lead", value: "salesqualifiedlead"}, {label: "Opportunity", value: "opportunity"}, {label: "Customer", value: "customer"}, {label: "Evangelist", value: "evangelist"}, {label: "Other", value: "other"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+    request:
+      method: PATCH
+      path: "crm/v3/objects/companies/{{fields.id}}"
+      body:
+        properties:
+          name: "{{fields.name}}"
+          domain: "{{fields.domain}}"
+          phone: "{{fields.phone}}"
+          industry: "{{fields.industry}}"
+          description: "{{fields.description}}"
+          website: "{{fields.website}}"
+          address: "{{fields.address}}"
+          city: "{{fields.city}}"
+          state: "{{fields.state}}"
+          zip: "{{fields.zip}}"
+          country: "{{fields.country}}"
+          numberofemployees: "{{fields.numberofemployees}}"
+          annualrevenue: "{{fields.annualrevenue}}"
+          lifecyclestage: "{{fields.lifecyclestage}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+
+  - name: Delete Company
+    resource: Company
+    description: Archives a company, which HubSpot keeps for 90 days.
+    fields:
+      - {name: id, label: "Company ID", required: true}
+    request:
+      method: DELETE
+      path: "crm/v3/objects/companies/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Deals
+  - name: Create Deal
+    resource: Deal
+    description: Creates a deal.
+    fields:
+      - {name: dealname, label: "Name"}
+      - {name: amount, label: "Amount", type: number}
+      - {name: pipeline, label: "Pipeline ID"}
+      - {name: dealstage, label: "Stage ID"}
+      - {name: closedate, label: "Close date", type: datetime}
+      - {name: dealtype, label: "Type", type: select, options: [{label: "New business", value: "newbusiness"}, {label: "Existing business", value: "existingbusiness"}]}
+      - {name: description, label: "Description", type: textarea}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+      - {name: associations, label: Associations, type: json, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 1}]}]"}
+    request:
+      method: POST
+      path: crm/v3/objects/deals
+      body:
+        properties:
+          dealname: "{{fields.dealname}}"
+          amount: "{{fields.amount}}"
+          pipeline: "{{fields.pipeline}}"
+          dealstage: "{{fields.dealstage}}"
+          closedate: "{{fields.closedate}}"
+          dealtype: "{{fields.dealtype}}"
+          description: "{{fields.description}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+        associations: "{{fields.associations}}"
+
+  - name: Get Deal
+    resource: Deal
+    description: Reads a deal by its ID.
+    fields:
+      - {name: id, label: "Deal ID", required: true}
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: properties_with_history, label: Properties with history, description: Comma separated.}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "crm/v3/objects/deals/{{fields.id}}"
+      query:
+        properties: "{{fields.properties}}"
+        propertiesWithHistory: "{{fields.properties_with_history}}"
+        associations: "{{fields.associations}}"
+        archived: "{{fields.archived}}"
+
+  - name: Get Deals
+    resource: Deal
+    description: Lists every deal.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: crm/v3/objects/deals
+      query: {properties: "{{fields.properties}}", associations: "{{fields.associations}}", archived: "{{fields.archived}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Search Deals
+    resource: Deal
+    description: Finds deals by filters, by text, or the most recently changed.
+    fields:
+      - {name: query, label: Text, description: Searches the default text properties.}
+      - {name: filter_groups, label: Filters, type: json, description: "Like [{\"filters\": [{\"propertyName\": \"createdate\", \"operator\": \"GTE\", \"value\": \"2026-01-01\"}]}]"}
+      - {name: sort_by, label: Sort by property, default: lastmodifieddate}
+      - {name: direction, label: Direction, type: select, default: DESCENDING, options: [{label: Descending, value: DESCENDING}, {label: Ascending, value: ASCENDING}]}
+      - {name: properties, label: Properties, type: json, description: "Like [\"email\", \"firstname\"]"}
+    request:
+      method: POST
+      path: crm/v3/objects/deals/search
+      body:
+        query: "{{fields.query}}"
+        filterGroups: "{{fields.filter_groups}}"
+        sorts: [{propertyName: "{{fields.sort_by}}", direction: "{{fields.direction}}"}]
+        properties: "{{fields.properties}}"
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Update Deal
+    resource: Deal
+    description: Changes a deal. Empty fields stay as they are.
+    fields:
+      - {name: id, label: "Deal ID", required: true}
+      - {name: dealname, label: "Name"}
+      - {name: amount, label: "Amount", type: number}
+      - {name: pipeline, label: "Pipeline ID"}
+      - {name: dealstage, label: "Stage ID"}
+      - {name: closedate, label: "Close date", type: datetime}
+      - {name: dealtype, label: "Type", type: select, options: [{label: "New business", value: "newbusiness"}, {label: "Existing business", value: "existingbusiness"}]}
+      - {name: description, label: "Description", type: textarea}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+    request:
+      method: PATCH
+      path: "crm/v3/objects/deals/{{fields.id}}"
+      body:
+        properties:
+          dealname: "{{fields.dealname}}"
+          amount: "{{fields.amount}}"
+          pipeline: "{{fields.pipeline}}"
+          dealstage: "{{fields.dealstage}}"
+          closedate: "{{fields.closedate}}"
+          dealtype: "{{fields.dealtype}}"
+          description: "{{fields.description}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+
+  - name: Delete Deal
+    resource: Deal
+    description: Archives a deal, which HubSpot keeps for 90 days.
+    fields:
+      - {name: id, label: "Deal ID", required: true}
+    request:
+      method: DELETE
+      path: "crm/v3/objects/deals/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Tickets
+  - name: Create Ticket
+    resource: Ticket
+    description: Creates a ticket.
+    fields:
+      - {name: subject, label: "Subject"}
+      - {name: content, label: "Description", type: textarea}
+      - {name: hs_pipeline, label: "Pipeline ID"}
+      - {name: hs_pipeline_stage, label: "Stage ID"}
+      - {name: hs_ticket_priority, label: "Priority", type: select, options: [{label: "Low", value: "LOW"}, {label: "Medium", value: "MEDIUM"}, {label: "High", value: "HIGH"}]}
+      - {name: hs_ticket_category, label: "Category"}
+      - {name: source_type, label: "Source", type: select, options: [{label: "Chat", value: "CHAT"}, {label: "Email", value: "EMAIL"}, {label: "Form", value: "FORM"}, {label: "Phone", value: "PHONE"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+      - {name: associations, label: Associations, type: json, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 1}]}]"}
+    request:
+      method: POST
+      path: crm/v3/objects/tickets
+      body:
+        properties:
+          subject: "{{fields.subject}}"
+          content: "{{fields.content}}"
+          hs_pipeline: "{{fields.hs_pipeline}}"
+          hs_pipeline_stage: "{{fields.hs_pipeline_stage}}"
+          hs_ticket_priority: "{{fields.hs_ticket_priority}}"
+          hs_ticket_category: "{{fields.hs_ticket_category}}"
+          source_type: "{{fields.source_type}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+        associations: "{{fields.associations}}"
+
+  - name: Get Ticket
+    resource: Ticket
+    description: Reads a ticket by its ID.
+    fields:
+      - {name: id, label: "Ticket ID", required: true}
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: properties_with_history, label: Properties with history, description: Comma separated.}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "crm/v3/objects/tickets/{{fields.id}}"
+      query:
+        properties: "{{fields.properties}}"
+        propertiesWithHistory: "{{fields.properties_with_history}}"
+        associations: "{{fields.associations}}"
+        archived: "{{fields.archived}}"
+
+  - name: Get Tickets
+    resource: Ticket
+    description: Lists every ticket.
+    fields:
+      - {name: properties, label: Properties, description: "Comma separated, besides the default ones"}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: crm/v3/objects/tickets
+      query: {properties: "{{fields.properties}}", associations: "{{fields.associations}}", archived: "{{fields.archived}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Search Tickets
+    resource: Ticket
+    description: Finds tickets by filters, by text, or the most recently changed.
+    fields:
+      - {name: query, label: Text, description: Searches the default text properties.}
+      - {name: filter_groups, label: Filters, type: json, description: "Like [{\"filters\": [{\"propertyName\": \"createdate\", \"operator\": \"GTE\", \"value\": \"2026-01-01\"}]}]"}
+      - {name: sort_by, label: Sort by property, default: lastmodifieddate}
+      - {name: direction, label: Direction, type: select, default: DESCENDING, options: [{label: Descending, value: DESCENDING}, {label: Ascending, value: ASCENDING}]}
+      - {name: properties, label: Properties, type: json, description: "Like [\"email\", \"firstname\"]"}
+    request:
+      method: POST
+      path: crm/v3/objects/tickets/search
+      body:
+        query: "{{fields.query}}"
+        filterGroups: "{{fields.filter_groups}}"
+        sorts: [{propertyName: "{{fields.sort_by}}", direction: "{{fields.direction}}"}]
+        properties: "{{fields.properties}}"
+    pagination: {type: cursor, in: body, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Update Ticket
+    resource: Ticket
+    description: Changes a ticket. Empty fields stay as they are.
+    fields:
+      - {name: id, label: "Ticket ID", required: true}
+      - {name: subject, label: "Subject"}
+      - {name: content, label: "Description", type: textarea}
+      - {name: hs_pipeline, label: "Pipeline ID"}
+      - {name: hs_pipeline_stage, label: "Stage ID"}
+      - {name: hs_ticket_priority, label: "Priority", type: select, options: [{label: "Low", value: "LOW"}, {label: "Medium", value: "MEDIUM"}, {label: "High", value: "HIGH"}]}
+      - {name: hs_ticket_category, label: "Category"}
+      - {name: source_type, label: "Source", type: select, options: [{label: "Chat", value: "CHAT"}, {label: "Email", value: "EMAIL"}, {label: "Form", value: "FORM"}, {label: "Phone", value: "PHONE"}]}
+      - {name: hubspot_owner_id, label: "Owner", type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: custom_properties, label: Other properties, type: json, description: "By internal name, like {\"my_field\": \"x\"}"}
+    request:
+      method: PATCH
+      path: "crm/v3/objects/tickets/{{fields.id}}"
+      body:
+        properties:
+          subject: "{{fields.subject}}"
+          content: "{{fields.content}}"
+          hs_pipeline: "{{fields.hs_pipeline}}"
+          hs_pipeline_stage: "{{fields.hs_pipeline_stage}}"
+          hs_ticket_priority: "{{fields.hs_ticket_priority}}"
+          hs_ticket_category: "{{fields.hs_ticket_category}}"
+          source_type: "{{fields.source_type}}"
+          hubspot_owner_id: "{{fields.hubspot_owner_id}}"
+          _merge: "{{fields.custom_properties}}"
+
+  - name: Delete Ticket
+    resource: Ticket
+    description: Archives a ticket, which HubSpot keeps for 90 days.
+    fields:
+      - {name: id, label: "Ticket ID", required: true}
+    request:
+      method: DELETE
+      path: "crm/v3/objects/tickets/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Engagements: notes, calls, emails, meetings and tasks
+  - name: Create Note
+    resource: Engagement
+    description: Adds a note to a contact, company, deal or ticket.
+    fields:
+      - {name: body, label: Note, type: textarea, required: true, description: HTML is fine.}
+      - {name: timestamp, label: When, type: datetime, description: Now when empty.}
+      - {name: owner, label: Owner, type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: associations, label: Associations, type: json, required: true, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 202}]}], 202 for a contact"}
+    request:
+      method: POST
+      path: crm/v3/objects/notes
+      body:
+        properties: {hs_note_body: "{{fields.body}}", hs_timestamp: "{{fields.timestamp}}", hubspot_owner_id: "{{fields.owner}}"}
+        associations: "{{fields.associations}}"
+
+  - name: Create Task
+    resource: Engagement
+    description: Creates a task, tied to records if you want.
+    fields:
+      - {name: subject, label: Subject, required: true}
+      - {name: body, label: Notes, type: textarea}
+      - {name: due, label: Due, type: datetime, required: true}
+      - {name: status, label: Status, type: select, default: NOT_STARTED, options: [{label: Not started, value: NOT_STARTED}, {label: In progress, value: IN_PROGRESS}, {label: Waiting, value: WAITING}, {label: Completed, value: COMPLETED}, {label: Deferred, value: DEFERRED}]}
+      - {name: priority, label: Priority, type: select, options: [{label: Low, value: LOW}, {label: Medium, value: MEDIUM}, {label: High, value: HIGH}]}
+      - {name: type, label: Type, type: select, default: TODO, options: [{label: To do, value: TODO}, {label: Call, value: CALL}, {label: Email, value: EMAIL}]}
+      - {name: owner, label: Owner, type: select, options_from: {request: {method: GET, path: crm/v3/owners, query: {limit: 500}}, path: results, label: email, value: id}}
+      - {name: associations, label: Associations, type: json, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 204}]}], 204 for a contact"}
+    request:
+      method: POST
+      path: crm/v3/objects/tasks
+      body:
+        properties:
+          hs_task_subject: "{{fields.subject}}"
+          hs_task_body: "{{fields.body}}"
+          hs_timestamp: "{{fields.due}}"
+          hs_task_status: "{{fields.status}}"
+          hs_task_priority: "{{fields.priority}}"
+          hs_task_type: "{{fields.type}}"
+          hubspot_owner_id: "{{fields.owner}}"
+        associations: "{{fields.associations}}"
+
+  - name: Create Engagement
+    resource: Engagement
+    description: Creates a note, call, email, meeting or task from its properties.
+    fields:
+      - {name: type, label: Type, type: select, required: true, default: notes, options: [{label: Note, value: notes}, {label: Call, value: calls}, {label: Email, value: emails}, {label: Meeting, value: meetings}, {label: Task, value: tasks}]}
+      - {name: properties, label: Properties, type: json, required: true, description: "Like {\"hs_timestamp\": \"2026-12-01T10:00:00Z\", \"hs_call_title\": \"Kickoff\"}"}
+      - {name: associations, label: Associations, type: json, description: "Like [{\"to\": {\"id\": \"123\"}, \"types\": [{\"associationCategory\": \"HUBSPOT_DEFINED\", \"associationTypeId\": 194}]}]"}
+    request:
+      method: POST
+      path: "crm/v3/objects/{{fields.type}}"
+      body: {properties: "{{fields.properties}}", associations: "{{fields.associations}}"}
+
+  - name: Get Engagement
+    resource: Engagement
+    description: Reads a note, call, email, meeting or task.
+    fields:
+      - {name: type, label: Type, type: select, required: true, default: notes, options: [{label: Note, value: notes}, {label: Call, value: calls}, {label: Email, value: emails}, {label: Meeting, value: meetings}, {label: Task, value: tasks}]}
+      - {name: id, label: ID, required: true}
+      - {name: properties, label: Properties, description: Comma separated.}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+    request:
+      method: GET
+      path: "crm/v3/objects/{{fields.type}}/{{fields.id}}"
+      query: {properties: "{{fields.properties}}", associations: "{{fields.associations}}"}
+
+  - name: Get Engagements
+    resource: Engagement
+    description: Lists every note, call, email, meeting or task.
+    fields:
+      - {name: type, label: Type, type: select, required: true, default: notes, options: [{label: Note, value: notes}, {label: Call, value: calls}, {label: Email, value: emails}, {label: Meeting, value: meetings}, {label: Task, value: tasks}]}
+      - {name: properties, label: Properties, description: Comma separated.}
+      - {name: associations, label: Associated, description: "Object types, like contacts,deals"}
+    request:
+      method: GET
+      path: "crm/v3/objects/{{fields.type}}"
+      query: {properties: "{{fields.properties}}", associations: "{{fields.associations}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Delete Engagement
+    resource: Engagement
+    description: Archives a note, call, email, meeting or task.
+    fields:
+      - {name: type, label: Type, type: select, required: true, default: notes, options: [{label: Note, value: notes}, {label: Call, value: calls}, {label: Email, value: emails}, {label: Meeting, value: meetings}, {label: Task, value: tasks}]}
+      - {name: id, label: ID, required: true}
+    request:
+      method: DELETE
+      path: "crm/v3/objects/{{fields.type}}/{{fields.id}}"
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Associations
+  - name: Associate Records
+    resource: Association
+    description: Ties two records together with their default association.
+    fields:
+      - {name: from_type, label: From type, required: true, default: contacts, description: "contacts, companies, deals, tickets or a custom object"}
+      - {name: from_id, label: From ID, required: true}
+      - {name: to_type, label: To type, required: true, default: companies}
+      - {name: to_id, label: To ID, required: true}
+    request:
+      method: PUT
+      path: "crm/v4/objects/{{fields.from_type}}/{{fields.from_id}}/associations/default/{{fields.to_type}}/{{fields.to_id}}"
+    output: {path: results}
+
+  - name: Get Associations
+    resource: Association
+    description: Lists the records of a type tied to a record.
+    fields:
+      - {name: from_type, label: From type, required: true, default: contacts}
+      - {name: from_id, label: From ID, required: true}
+      - {name: to_type, label: To type, required: true, default: companies}
+    request:
+      method: GET
+      path: "crm/v4/objects/{{fields.from_type}}/{{fields.from_id}}/associations/{{fields.to_type}}"
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 500}
+
+  - name: Remove Association
+    resource: Association
+    description: Unties two records.
+    fields:
+      - {name: from_type, label: From type, required: true, default: contacts}
+      - {name: from_id, label: From ID, required: true}
+      - {name: to_type, label: To type, required: true, default: companies}
+      - {name: to_id, label: To ID, required: true}
+    request:
+      method: DELETE
+      path: "crm/v4/objects/{{fields.from_type}}/{{fields.from_id}}/associations/{{fields.to_type}}/{{fields.to_id}}"
+    output:
+      value: {from_id: "{{fields.from_id}}", to_id: "{{fields.to_id}}", removed: true}
+
+  # Lists
+  - name: Get Lists
+    resource: List
+    description: Finds lists by name.
+    fields:
+      - {name: query, label: Name contains}
+    request:
+      method: POST
+      path: crm/v3/lists/search
+      body: {query: "{{fields.query}}", count: 500}
+    output: {path: lists}
+
+  - name: Add to List
+    resource: List
+    description: Adds records to a manual list.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: record_ids, label: Record IDs, type: json, required: true, description: "Like [\"123\", \"456\"]"}
+    request:
+      method: PUT
+      path: "crm/v3/lists/{{fields.list}}/memberships/add"
+      body: "{{fields.record_ids}}"
+
+  - name: Remove from List
+    resource: List
+    description: Takes records out of a manual list.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: record_ids, label: Record IDs, type: json, required: true, description: "Like [\"123\", \"456\"]"}
+    request:
+      method: PUT
+      path: "crm/v3/lists/{{fields.list}}/memberships/remove"
+      body: "{{fields.record_ids}}"
+
+  # Forms
+  - name: Get Forms
+    resource: Form
+    description: Lists the marketing forms.
+    request:
+      method: GET
+      path: marketing/v3/forms
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 100}
+
+  - name: Get Form
+    resource: Form
+    description: Reads a form with its fields.
+    fields:
+      - {name: form, label: Form ID, required: true}
+    request:
+      method: GET
+      path: "marketing/v3/forms/{{fields.form}}"
+
+  # Owners and pipelines
+  - name: Get Owners
+    resource: Owner
+    description: Lists the users who can own records.
+    fields:
+      - {name: email, label: Email}
+    request:
+      method: GET
+      path: crm/v3/owners
+      query: {email: "{{fields.email}}"}
+    pagination: {type: cursor, items_path: results, cursor_param: after, next_path: paging.next.after, limit_param: limit, page_size: 500}
+
+  - name: Get Pipelines
+    resource: Pipeline
+    description: Lists the pipelines of deals or tickets, with their stages.
+    fields:
+      - {name: type, label: Of, type: select, required: true, default: deals, options: [{label: Deals, value: deals}, {label: Tickets, value: tickets}]}
+    request:
+      method: GET
+      path: "crm/v3/pipelines/{{fields.type}}"
+    output: {path: results}
+
+i18n:
+  pt-BR:
+    description: "Contatos, empresas, negócios, tickets, atividades, listas, associações e formulários no HubSpot."
+    triggers:
+      New Contact: {name: "Novo contato", description: "Inicia o fluxo para cada contato novo, olhando a cada 5 minutos.", fields: {properties: Propriedades}}
+      New Company: {name: "Nova empresa", description: "Inicia o fluxo para cada empresa nova, olhando a cada 5 minutos.", fields: {properties: Propriedades}}
+      New Deal: {name: "Novo negócio", description: "Inicia o fluxo para cada negócio novo, olhando a cada 5 minutos.", fields: {properties: Propriedades}}
+      New Ticket: {name: "Novo ticket", description: "Inicia o fluxo para cada ticket novo, olhando a cada 5 minutos.", fields: {properties: Propriedades}}
+    actions:
+      Create Contact: {name: "Criar contato", description: "Cria um contato.", fields: {email: "E-mail", firstname: "Nome", lastname: "Sobrenome", phone: "Telefone", mobilephone: "Celular", company: "Nome da empresa", jobtitle: "Cargo", website: "Site", address: "Endereço", city: "Cidade", state: "Estado", zip: "CEP", country: "País", lifecyclestage: "Etapa do ciclo de vida", hs_lead_status: "Status do lead", hubspot_owner_id: "Dono", custom_properties: Outras propriedades, associations: Associações}}
+      Create or Update Contact: {name: Criar ou atualizar contato, description: "Cria um contato, ou atualiza o que tem o mesmo e-mail.", fields: {email: "E-mail", firstname: "Nome", lastname: "Sobrenome", phone: "Telefone", mobilephone: "Celular", company: "Nome da empresa", jobtitle: "Cargo", website: "Site", address: "Endereço", city: "Cidade", state: "Estado", zip: "CEP", country: "País", lifecyclestage: "Etapa do ciclo de vida", hs_lead_status: "Status do lead", hubspot_owner_id: "Dono", custom_properties: Outras propriedades}}
+      Get Contact: {name: "Ler contato", description: "Lê um contato pelo ID, ou pelo e-mail.", fields: {id: "ID do contato ou e-mail", id_property: O ID é, properties: Propriedades, properties_with_history: Propriedades com histórico, associations: Associados, archived: Arquivado}}
+      Get Contacts: {name: "Listar contatos", description: "Lista todos os contatos.", fields: {properties: Propriedades, associations: Associados, archived: Arquivados}}
+      Search Contacts: {name: "Buscar contatos", description: "Encontra contatos por filtros, por texto, ou os alterados por último.", fields: {query: Texto, filter_groups: Filtros, sort_by: Ordenar pela propriedade, direction: Direção, properties: Propriedades}}
+      Update Contact: {name: "Atualizar contato", description: "Muda um contato. Campos vazios ficam como estão.", fields: {id: "ID do contato", email: "E-mail", firstname: "Nome", lastname: "Sobrenome", phone: "Telefone", mobilephone: "Celular", company: "Nome da empresa", jobtitle: "Cargo", website: "Site", address: "Endereço", city: "Cidade", state: "Estado", zip: "CEP", country: "País", lifecyclestage: "Etapa do ciclo de vida", hs_lead_status: "Status do lead", hubspot_owner_id: "Dono", custom_properties: Outras propriedades}}
+      Delete Contact: {name: "Excluir contato", description: "Arquiva um contato, que o HubSpot guarda por 90 dias.", fields: {id: "ID do contato"}}
+      Create Company: {name: "Criar empresa", description: "Cria uma empresa.", fields: {name: "Nome", domain: "Domínio", phone: "Telefone", industry: "Setor", description: "Descrição", website: "Site", address: "Endereço", city: "Cidade", state: "Estado", zip: "CEP", country: "País", numberofemployees: "Funcionários", annualrevenue: "Receita anual", lifecyclestage: "Etapa do ciclo de vida", hubspot_owner_id: "Dono", custom_properties: Outras propriedades, associations: Associações}}
+      Get Company: {name: "Ler empresa", description: "Lê uma empresa pelo ID.", fields: {id: "ID da empresa", properties: Propriedades, properties_with_history: Propriedades com histórico, associations: Associados, archived: Arquivada}}
+      Get Companies: {name: "Listar empresas", description: "Lista todas as empresas.", fields: {properties: Propriedades, associations: Associados, archived: Arquivadas}}
+      Search Companies: {name: "Buscar empresas", description: "Encontra empresas por filtros, por texto, ou as alteradas por último.", fields: {query: Texto, filter_groups: Filtros, sort_by: Ordenar pela propriedade, direction: Direção, properties: Propriedades}}
+      Search Companies by Domain: {name: Buscar empresas por domínio, description: Encontra as empresas com um domínio de site., fields: {domain: Domínio, properties: Propriedades}}
+      Update Company: {name: "Atualizar empresa", description: "Muda uma empresa. Campos vazios ficam como estão.", fields: {id: "ID da empresa", name: "Nome", domain: "Domínio", phone: "Telefone", industry: "Setor", description: "Descrição", website: "Site", address: "Endereço", city: "Cidade", state: "Estado", zip: "CEP", country: "País", numberofemployees: "Funcionários", annualrevenue: "Receita anual", lifecyclestage: "Etapa do ciclo de vida", hubspot_owner_id: "Dono", custom_properties: Outras propriedades}}
+      Delete Company: {name: "Excluir empresa", description: "Arquiva uma empresa, que o HubSpot guarda por 90 dias.", fields: {id: "ID da empresa"}}
+      Create Deal: {name: "Criar negócio", description: "Cria um negócio.", fields: {dealname: "Nome", amount: "Valor", pipeline: "ID do funil", dealstage: "ID da etapa", closedate: "Data de fechamento", dealtype: "Tipo", description: "Descrição", hubspot_owner_id: "Dono", custom_properties: Outras propriedades, associations: Associações}}
+      Get Deal: {name: "Ler negócio", description: "Lê um negócio pelo ID.", fields: {id: "ID do negócio", properties: Propriedades, properties_with_history: Propriedades com histórico, associations: Associados, archived: Arquivado}}
+      Get Deals: {name: "Listar negócios", description: "Lista todos os negócios.", fields: {properties: Propriedades, associations: Associados, archived: Arquivados}}
+      Search Deals: {name: "Buscar negócios", description: "Encontra negócios por filtros, por texto, ou os alterados por último.", fields: {query: Texto, filter_groups: Filtros, sort_by: Ordenar pela propriedade, direction: Direção, properties: Propriedades}}
+      Update Deal: {name: "Atualizar negócio", description: "Muda um negócio. Campos vazios ficam como estão.", fields: {id: "ID do negócio", dealname: "Nome", amount: "Valor", pipeline: "ID do funil", dealstage: "ID da etapa", closedate: "Data de fechamento", dealtype: "Tipo", description: "Descrição", hubspot_owner_id: "Dono", custom_properties: Outras propriedades}}
+      Delete Deal: {name: "Excluir negócio", description: "Arquiva um negócio, que o HubSpot guarda por 90 dias.", fields: {id: "ID do negócio"}}
+      Create Ticket: {name: "Criar ticket", description: "Cria um ticket.", fields: {subject: "Assunto", content: "Descrição", hs_pipeline: "ID do funil", hs_pipeline_stage: "ID da etapa", hs_ticket_priority: "Prioridade", hs_ticket_category: "Categoria", source_type: "Origem", hubspot_owner_id: "Dono", custom_properties: Outras propriedades, associations: Associações}}
+      Get Ticket: {name: "Ler ticket", description: "Lê um ticket pelo ID.", fields: {id: "ID do ticket", properties: Propriedades, properties_with_history: Propriedades com histórico, associations: Associados, archived: Arquivado}}
+      Get Tickets: {name: "Listar tickets", description: "Lista todos os tickets.", fields: {properties: Propriedades, associations: Associados, archived: Arquivados}}
+      Search Tickets: {name: "Buscar tickets", description: "Encontra tickets por filtros, por texto, ou os alterados por último.", fields: {query: Texto, filter_groups: Filtros, sort_by: Ordenar pela propriedade, direction: Direção, properties: Propriedades}}
+      Update Ticket: {name: "Atualizar ticket", description: "Muda um ticket. Campos vazios ficam como estão.", fields: {id: "ID do ticket", subject: "Assunto", content: "Descrição", hs_pipeline: "ID do funil", hs_pipeline_stage: "ID da etapa", hs_ticket_priority: "Prioridade", hs_ticket_category: "Categoria", source_type: "Origem", hubspot_owner_id: "Dono", custom_properties: Outras propriedades}}
+      Delete Ticket: {name: "Excluir ticket", description: "Arquiva um ticket, que o HubSpot guarda por 90 dias.", fields: {id: "ID do ticket"}}
+      Create Note: {name: Criar nota, description: "Adiciona uma nota a um contato, empresa, negócio ou ticket.", fields: {body: Nota, timestamp: Quando, owner: Dono, associations: Associações}}
+      Create Task: {name: Criar tarefa, description: "Cria uma tarefa, ligada a registros se quiser.", fields: {subject: Assunto, body: Notas, due: Prazo, status: Status, priority: Prioridade, type: Tipo, owner: Dono, associations: Associações}}
+      Create Engagement: {name: Criar atividade, description: "Cria uma nota, ligação, e-mail, reunião ou tarefa a partir das propriedades.", fields: {type: Tipo, properties: Propriedades, associations: Associações}}
+      Get Engagement: {name: Ler atividade, description: "Lê uma nota, ligação, e-mail, reunião ou tarefa.", fields: {type: Tipo, id: ID, properties: Propriedades, associations: Associados}}
+      Get Engagements: {name: Listar atividades, description: "Lista todas as notas, ligações, e-mails, reuniões ou tarefas.", fields: {type: Tipo, properties: Propriedades, associations: Associados}}
+      Delete Engagement: {name: Excluir atividade, description: "Arquiva uma nota, ligação, e-mail, reunião ou tarefa.", fields: {type: Tipo, id: ID}}
+      Associate Records: {name: Associar registros, description: Liga dois registros com a associação padrão., fields: {from_type: Tipo de origem, from_id: ID de origem, to_type: Tipo de destino, to_id: ID de destino}}
+      Get Associations: {name: Listar associações, description: Lista os registros de um tipo ligados a um registro., fields: {from_type: Tipo de origem, from_id: ID de origem, to_type: Tipo de destino}}
+      Remove Association: {name: Desfazer associação, description: Desliga dois registros., fields: {from_type: Tipo de origem, from_id: ID de origem, to_type: Tipo de destino, to_id: ID de destino}}
+      Get Lists: {name: Listar listas, description: Encontra listas pelo nome., fields: {query: Nome contém}}
+      Add to List: {name: Adicionar à lista, description: Põe registros numa lista manual., fields: {list: ID da lista, record_ids: IDs dos registros}}
+      Remove from List: {name: Tirar da lista, description: Tira registros de uma lista manual., fields: {list: ID da lista, record_ids: IDs dos registros}}
+      Get Forms: {name: Listar formulários, description: Lista os formulários de marketing.}
+      Get Form: {name: Ler formulário, description: Lê um formulário com seus campos., fields: {form: ID do formulário}}
+      Get Owners: {name: Listar donos, description: Lista os usuários que podem ser donos de registros., fields: {email: E-mail}}
+      Get Pipelines: {name: Listar funis, description: "Lista os funis de negócios ou tickets, com suas etapas.", fields: {type: De}}

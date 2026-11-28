@@ -1,0 +1,580 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Asana's REST API 1.0. Bodies go inside {"data": ...} and answers come back the same way.
+id: asana
+name: Asana
+version: 1.0.0
+description: Tasks, subtasks, comments, projects, tags and users in Asana.
+icon: hero-check-circle
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#F06A6A" d="M18.78 12.653c-2.882 0-5.22 2.336-5.22 5.22s2.338 5.22 5.22 5.22 5.22-2.34 5.22-5.22-2.336-5.22-5.22-5.22zm-13.56 0c-2.88 0-5.22 2.337-5.22 5.22s2.338 5.22 5.22 5.22 5.22-2.338 5.22-5.22-2.336-5.22-5.22-5.22zm12-6.525c0 2.883-2.337 5.22-5.22 5.22-2.882 0-5.22-2.337-5.22-5.22 0-2.88 2.338-5.22 5.22-5.22 2.883 0 5.22 2.34 5.22 5.22z"/></svg>
+category: project
+author: Heddle
+homepage: https://developers.asana.com/reference/rest-api-reference
+base_url: https://app.asana.com/api/1.0/
+
+credential:
+  label: Asana
+  auth:
+    type: oauth2
+    authorize_url: https://app.asana.com/-/oauth_authorize
+    token_url: https://app.asana.com/-/oauth_token
+    token_auth: body
+    scopes: [default]
+
+errors:
+  message_path: errors.0.message
+
+triggers:
+  - name: New Task
+    description: Starts the flow for each new task in a project, checking every 5 minutes.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: project, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {workspace: "{{fields.workspace}}", archived: false}}, path: data, label: name, value: gid}}
+    request:
+      method: GET
+      path: tasks
+      query: {project: "{{fields.project}}", opt_fields: "name,notes,assignee,assignee.name,completed,due_on,created_at,modified_at,permalink_url"}
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+    poll:
+      every: 5
+      id: gid
+
+  - name: New Project
+    description: Starts the flow for each new project in a workspace, checking every 5 minutes.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+    request:
+      method: GET
+      path: projects
+      query: {workspace: "{{fields.workspace}}", opt_fields: "name,notes,owner,owner.name,team,team.name,created_at,permalink_url"}
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+    poll:
+      every: 5
+      id: gid
+
+actions:
+  # Tasks
+  - name: Create Task
+    resource: Task
+    description: Creates a task in a workspace.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: name, label: Name, required: true}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: html_notes, label: Notes in HTML, type: textarea, description: "Asana's rich text, inside <body>...</body>. Use it or Notes."}
+      - {name: assignee, label: Assignee, type: select, options_from: {request: {method: GET, path: users, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+      - {name: assignee_status, label: Assignee status, type: select, options: [{label: Inbox, value: inbox}, {label: Today, value: today}, {label: Upcoming, value: upcoming}, {label: Later, value: later}]}
+      - {name: projects, label: Projects, type: json, description: "Project IDs, like [\"1201\"]"}
+      - {name: completed, label: Completed, type: boolean}
+      - {name: due_on, label: Due on, type: datetime, description: "A date, like 2026-12-31."}
+      - {name: due_at, label: Due at, type: datetime, description: A date and time. Use it or Due on.}
+      - {name: start_on, label: Starts on, type: datetime}
+      - {name: liked, label: Liked, type: boolean}
+      - {name: parent, label: Parent task ID}
+      - {name: tags, label: Tags, type: json, description: "Tag IDs, like [\"1202\"]"}
+      - {name: followers, label: Followers, type: json, description: "User IDs or emails, like [\"ana@acme.test\"]"}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By custom field ID, like {\"1203\": \"High\"}"}
+    request:
+      method: POST
+      path: tasks
+      body:
+        data:
+          workspace: "{{fields.workspace}}"
+          name: "{{fields.name}}"
+          notes: "{{fields.notes}}"
+          html_notes: "{{fields.html_notes}}"
+          assignee: "{{fields.assignee}}"
+          assignee_status: "{{fields.assignee_status}}"
+          projects: "{{fields.projects}}"
+          completed: "{{fields.completed}}"
+          due_on: "{{fields.due_on}}"
+          due_at: "{{fields.due_at}}"
+          start_on: "{{fields.start_on}}"
+          liked: "{{fields.liked}}"
+          parent: "{{fields.parent}}"
+          tags: "{{fields.tags}}"
+          followers: "{{fields.followers}}"
+          custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Task
+    resource: Task
+    description: Reads a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: opt_fields, label: Fields, description: "Which fields to return, like name,assignee.name,due_on"}
+    request:
+      method: GET
+      path: "tasks/{{fields.task}}"
+      query: {opt_fields: "{{fields.opt_fields}}"}
+    output: {path: data}
+
+  - name: Get Tasks
+    resource: Task
+    description: Lists tasks by project, section, or assignee and workspace.
+    fields:
+      - {name: workspace, label: Workspace, type: select, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}, description: With an assignee.}
+      - {name: assignee, label: Assignee, type: select, options_from: {request: {method: GET, path: users, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+      - {name: project, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+      - {name: section, label: Section, type: select, options_from: {request: {method: GET, path: "projects/{{fields.project}}/sections"}, path: data, label: name, value: gid}}
+      - {name: completed_since, label: Incomplete or completed since, type: datetime, description: "now for incomplete tasks only"}
+      - {name: modified_since, label: Modified since, type: datetime}
+      - {name: opt_fields, label: Fields, description: "Which fields to return, like name,assignee.name,due_on"}
+    request:
+      method: GET
+      path: tasks
+      query:
+        workspace: "{{fields.workspace}}"
+        assignee: "{{fields.assignee}}"
+        project: "{{fields.project}}"
+        section: "{{fields.section}}"
+        completed_since: "{{fields.completed_since}}"
+        modified_since: "{{fields.modified_since}}"
+        opt_fields: "{{fields.opt_fields}}"
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+
+  - name: Search Tasks
+    resource: Task
+    description: Finds tasks in a workspace by text and other filters. Needs Asana Premium.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: text, label: Text}
+      - {name: completed, label: Completed, type: select, options: [{label: Yes, value: true}, {label: No, value: false}]}
+      - {name: assignee, label: Assignee IDs, description: "Comma separated, or me"}
+      - {name: projects, label: Project IDs, description: Comma separated}
+      - {name: tags, label: Tag IDs, description: Comma separated}
+      - {name: due_on_before, label: Due before, type: datetime}
+      - {name: due_on_after, label: Due after, type: datetime}
+      - {name: sort_by, label: Sort by, type: select, options: [{label: Modified, value: modified_at}, {label: Created, value: created_at}, {label: Due date, value: due_date}, {label: Completed, value: completed_at}, {label: Likes, value: likes}]}
+      - {name: opt_fields, label: Fields, description: "Which fields to return, like name,assignee.name,due_on"}
+    request:
+      method: GET
+      path: "workspaces/{{fields.workspace}}/tasks/search"
+      query:
+        text: "{{fields.text}}"
+        completed: "{{fields.completed}}"
+        assignee.any: "{{fields.assignee}}"
+        projects.any: "{{fields.projects}}"
+        tags.any: "{{fields.tags}}"
+        due_on.before: "{{fields.due_on_before}}"
+        due_on.after: "{{fields.due_on_after}}"
+        sort_by: "{{fields.sort_by}}"
+        opt_fields: "{{fields.opt_fields}}"
+        limit: 100
+    output: {path: data}
+
+  - name: Update Task
+    resource: Task
+    description: Changes a task. Empty fields stay as they are.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: name, label: Name}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: html_notes, label: Notes in HTML, type: textarea}
+      - {name: assignee, label: Assignee ID, description: A user ID or email.}
+      - {name: assignee_status, label: Assignee status, type: select, options: [{label: Inbox, value: inbox}, {label: Today, value: today}, {label: Upcoming, value: upcoming}, {label: Later, value: later}]}
+      - {name: completed, label: Completed, type: boolean}
+      - {name: due_on, label: Due on, type: datetime}
+      - {name: due_at, label: Due at, type: datetime}
+      - {name: start_on, label: Starts on, type: datetime}
+      - {name: liked, label: Liked, type: boolean}
+      - {name: custom_fields, label: Custom fields, type: json, description: "By custom field ID, like {\"1203\": \"High\"}"}
+    request:
+      method: PUT
+      path: "tasks/{{fields.task}}"
+      body:
+        data:
+          name: "{{fields.name}}"
+          notes: "{{fields.notes}}"
+          html_notes: "{{fields.html_notes}}"
+          assignee: "{{fields.assignee}}"
+          assignee_status: "{{fields.assignee_status}}"
+          completed: "{{fields.completed}}"
+          due_on: "{{fields.due_on}}"
+          due_at: "{{fields.due_at}}"
+          start_on: "{{fields.start_on}}"
+          liked: "{{fields.liked}}"
+          custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Move Task
+    resource: Task
+    description: Moves a task to a section of a project.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: workspace, label: Workspace, type: select, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: project, label: Project, type: select, options_from: {request: {method: GET, path: projects, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+      - {name: section, label: Section, type: select, required: true, options_from: {request: {method: GET, path: "projects/{{fields.project}}/sections"}, path: data, label: name, value: gid}}
+    request:
+      method: POST
+      path: "sections/{{fields.section}}/addTask"
+      body:
+        data: {task: "{{fields.task}}"}
+    output:
+      value: {task: "{{fields.task}}", section: "{{fields.section}}", moved: true}
+
+  - name: Duplicate Task
+    resource: Task
+    description: Copies a task, with what you choose to bring along.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: name, label: Name of the copy, required: true}
+      - {name: include, label: Bring along, type: multiselect, options: [{label: Notes, value: notes}, {label: Assignee, value: assignee}, {label: Subtasks, value: subtasks}, {label: Attachments, value: attachments}, {label: Tags, value: tags}, {label: Followers, value: followers}, {label: Projects, value: projects}, {label: Dates, value: dates}]}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/duplicate"
+      body:
+        data: {name: "{{fields.name}}", include: "{{fields.include}}"}
+    output: {path: data}
+
+  - name: Delete Task
+    resource: Task
+    description: Deletes a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+    request:
+      method: DELETE
+      path: "tasks/{{fields.task}}"
+    output:
+      value: {task: "{{fields.task}}", deleted: true}
+
+  # Subtasks
+  - name: Create Subtask
+    resource: Subtask
+    description: Creates a subtask under a task.
+    fields:
+      - {name: task, label: Parent task ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: assignee, label: Assignee ID, description: A user ID or email.}
+      - {name: assignee_status, label: Assignee status, type: select, options: [{label: Inbox, value: inbox}, {label: Today, value: today}, {label: Upcoming, value: upcoming}, {label: Later, value: later}]}
+      - {name: completed, label: Completed, type: boolean}
+      - {name: due_on, label: Due on, type: datetime}
+      - {name: liked, label: Liked, type: boolean}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/subtasks"
+      body:
+        data:
+          name: "{{fields.name}}"
+          notes: "{{fields.notes}}"
+          assignee: "{{fields.assignee}}"
+          assignee_status: "{{fields.assignee_status}}"
+          completed: "{{fields.completed}}"
+          due_on: "{{fields.due_on}}"
+          liked: "{{fields.liked}}"
+    output: {path: data}
+
+  - name: Get Subtasks
+    resource: Subtask
+    description: Lists the subtasks of a task.
+    fields:
+      - {name: task, label: Parent task ID, required: true}
+      - {name: opt_fields, label: Fields, description: "Which fields to return, like name,assignee.name,due_on"}
+    request:
+      method: GET
+      path: "tasks/{{fields.task}}/subtasks"
+      query: {opt_fields: "{{fields.opt_fields}}"}
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+
+  # Comments
+  - name: Add Comment
+    resource: Task Comment
+    description: Comments on a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: text, label: Text, type: textarea}
+      - {name: html_text, label: Text in HTML, type: textarea, description: "Inside <body>...</body>. Use it or Text."}
+      - {name: is_pinned, label: Pinned, type: boolean}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/stories"
+      body:
+        data: {text: "{{fields.text}}", html_text: "{{fields.html_text}}", is_pinned: "{{fields.is_pinned}}"}
+    output: {path: data}
+
+  - name: Get Comments
+    resource: Task Comment
+    description: Lists a task's comments and its history.
+    fields:
+      - {name: task, label: Task ID, required: true}
+    request:
+      method: GET
+      path: "tasks/{{fields.task}}/stories"
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+
+  - name: Delete Comment
+    resource: Task Comment
+    description: Deletes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+    request:
+      method: DELETE
+      path: "stories/{{fields.comment}}"
+    output:
+      value: {comment: "{{fields.comment}}", deleted: true}
+
+  # Task in projects
+  - name: Add Task to Project
+    resource: Task Project
+    description: Adds a task to a project, optionally in a section or next to another task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: workspace, label: Workspace, type: select, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: project, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+      - {name: section, label: Section, type: select, options_from: {request: {method: GET, path: "projects/{{fields.project}}/sections"}, path: data, label: name, value: gid}}
+      - {name: insert_after, label: After task ID}
+      - {name: insert_before, label: Before task ID}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/addProject"
+      body:
+        data:
+          project: "{{fields.project}}"
+          section: "{{fields.section}}"
+          insert_after: "{{fields.insert_after}}"
+          insert_before: "{{fields.insert_before}}"
+    output:
+      value: {task: "{{fields.task}}", project: "{{fields.project}}", added: true}
+
+  - name: Remove Task from Project
+    resource: Task Project
+    description: Takes a task out of a project.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: workspace, label: Workspace, type: select, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: project, label: Project, type: select, required: true, options_from: {request: {method: GET, path: projects, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/removeProject"
+      body:
+        data: {project: "{{fields.project}}"}
+    output:
+      value: {task: "{{fields.task}}", project: "{{fields.project}}", removed: true}
+
+  # Tags
+  - name: Add Tag to Task
+    resource: Task Tag
+    description: Tags a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: workspace, label: Workspace, type: select, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: tag, label: Tag, type: select, required: true, options_from: {request: {method: GET, path: tags, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/addTag"
+      body:
+        data: {tag: "{{fields.tag}}"}
+    output:
+      value: {task: "{{fields.task}}", tag: "{{fields.tag}}", added: true}
+
+  - name: Remove Tag from Task
+    resource: Task Tag
+    description: Takes a tag off a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: workspace, label: Workspace, type: select, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: tag, label: Tag, type: select, required: true, options_from: {request: {method: GET, path: tags, query: {workspace: "{{fields.workspace}}"}}, path: data, label: name, value: gid}}
+    request:
+      method: POST
+      path: "tasks/{{fields.task}}/removeTag"
+      body:
+        data: {tag: "{{fields.tag}}"}
+    output:
+      value: {task: "{{fields.task}}", tag: "{{fields.tag}}", removed: true}
+
+  - name: Create Tag
+    resource: Tag
+    description: Creates a tag in a workspace.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: name, label: Name, required: true}
+      - {name: color, label: Color, description: "Like dark-green or light-pink"}
+    request:
+      method: POST
+      path: tags
+      body:
+        data: {workspace: "{{fields.workspace}}", name: "{{fields.name}}", color: "{{fields.color}}"}
+    output: {path: data}
+
+  - name: Get Tags
+    resource: Tag
+    description: Lists the tags of a workspace.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+    request:
+      method: GET
+      path: tags
+      query: {workspace: "{{fields.workspace}}"}
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+
+  # Projects
+  - name: Create Project
+    resource: Project
+    description: Creates a project in a team.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: team, label: Team, type: select, required: true, options_from: {request: {method: GET, path: "organizations/{{fields.workspace}}/teams"}, path: data, label: name, value: gid}}
+      - {name: name, label: Name, required: true}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: color, label: Color, description: "Like dark-green or light-pink"}
+      - {name: due_on, label: Due on, type: datetime}
+      - {name: privacy_setting, label: Privacy, type: select, options: [{label: Private, value: private}, {label: Private to team, value: private_to_team}, {label: Public to workspace, value: public_to_workspace}]}
+      - {name: default_view, label: Default view, type: select, options: [{label: List, value: list}, {label: Board, value: board}, {label: Calendar, value: calendar}, {label: Timeline, value: timeline}]}
+    request:
+      method: POST
+      path: "teams/{{fields.team}}/projects"
+      body:
+        data:
+          name: "{{fields.name}}"
+          notes: "{{fields.notes}}"
+          color: "{{fields.color}}"
+          due_on: "{{fields.due_on}}"
+          privacy_setting: "{{fields.privacy_setting}}"
+          default_view: "{{fields.default_view}}"
+    output: {path: data}
+
+  - name: Get Project
+    resource: Project
+    description: Reads a project.
+    fields:
+      - {name: project, label: Project ID, required: true}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}"
+    output: {path: data}
+
+  - name: Get Projects
+    resource: Project
+    description: Lists the projects of a workspace, or of a team.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+      - {name: team, label: Team, type: select, options_from: {request: {method: GET, path: "organizations/{{fields.workspace}}/teams"}, path: data, label: name, value: gid}}
+      - {name: archived, label: Archived, type: select, options: [{label: Only archived, value: true}, {label: Only active, value: false}]}
+      - {name: opt_fields, label: Fields, description: "Which fields to return, like name,owner.name,due_on"}
+    request:
+      method: GET
+      path: projects
+      query: {workspace: "{{fields.workspace}}", team: "{{fields.team}}", archived: "{{fields.archived}}", opt_fields: "{{fields.opt_fields}}"}
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+
+  - name: Update Project
+    resource: Project
+    description: Changes a project. Empty fields stay as they are.
+    fields:
+      - {name: project, label: Project ID, required: true}
+      - {name: name, label: Name}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: color, label: Color}
+      - {name: due_on, label: Due on, type: datetime}
+      - {name: owner, label: Owner ID}
+      - {name: team, label: Team ID}
+      - {name: archived, label: Archived, type: boolean}
+      - {name: privacy_setting, label: Privacy, type: select, options: [{label: Private, value: private}, {label: Private to team, value: private_to_team}, {label: Public to workspace, value: public_to_workspace}]}
+    request:
+      method: PUT
+      path: "projects/{{fields.project}}"
+      body:
+        data:
+          name: "{{fields.name}}"
+          notes: "{{fields.notes}}"
+          color: "{{fields.color}}"
+          due_on: "{{fields.due_on}}"
+          owner: "{{fields.owner}}"
+          team: "{{fields.team}}"
+          archived: "{{fields.archived}}"
+          privacy_setting: "{{fields.privacy_setting}}"
+    output: {path: data}
+
+  - name: Delete Project
+    resource: Project
+    description: Deletes a project.
+    fields:
+      - {name: project, label: Project ID, required: true}
+    request:
+      method: DELETE
+      path: "projects/{{fields.project}}"
+    output:
+      value: {project: "{{fields.project}}", deleted: true}
+
+  - name: Create Section
+    resource: Project
+    description: Adds a section to a project.
+    fields:
+      - {name: project, label: Project ID, required: true}
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: "projects/{{fields.project}}/sections"
+      body:
+        data: {name: "{{fields.name}}"}
+    output: {path: data}
+
+  - name: Get Sections
+    resource: Project
+    description: Lists the sections of a project.
+    fields:
+      - {name: project, label: Project ID, required: true}
+    request:
+      method: GET
+      path: "projects/{{fields.project}}/sections"
+    output: {path: data}
+
+  # Users
+  - name: Get User
+    resource: User
+    description: Reads a user, or yourself with me.
+    fields:
+      - {name: user, label: User ID, required: true, default: me}
+    request:
+      method: GET
+      path: "users/{{fields.user}}"
+    output: {path: data}
+
+  - name: Get Users
+    resource: User
+    description: Lists the users of a workspace.
+    fields:
+      - {name: workspace, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: workspaces}, path: data, label: name, value: gid}}
+    request:
+      method: GET
+      path: "workspaces/{{fields.workspace}}/users"
+      query: {opt_fields: "name,email"}
+    pagination: {type: cursor, items_path: data, cursor_param: offset, next_path: next_page.offset, limit_param: limit, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: Tarefas, subtarefas, comentários, projetos, etiquetas e usuários no Asana.
+    triggers:
+      New Task: {name: Nova tarefa, description: "Inicia o fluxo para cada tarefa nova num projeto, olhando a cada 5 minutos.", fields: {workspace: Espaço de trabalho, project: Projeto}}
+      New Project: {name: Novo projeto, description: "Inicia o fluxo para cada projeto novo num espaço de trabalho, olhando a cada 5 minutos.", fields: {workspace: Espaço de trabalho}}
+    actions:
+      Create Task: {name: Criar tarefa, description: Cria uma tarefa num espaço de trabalho., fields: {workspace: Espaço de trabalho, name: Nome, notes: Notas, html_notes: Notas em HTML, assignee: Responsável, assignee_status: Situação para o responsável, projects: Projetos, completed: Concluída, due_on: Prazo, due_at: Prazo com hora, start_on: Começa em, liked: Curtida, parent: ID da tarefa pai, tags: Etiquetas, followers: Seguidores, custom_fields: Campos personalizados}}
+      Get Task: {name: Ler tarefa, description: Lê uma tarefa., fields: {task: ID da tarefa, opt_fields: Campos}}
+      Get Tasks: {name: Listar tarefas, description: "Lista tarefas por projeto, seção, ou responsável e espaço de trabalho.", fields: {workspace: Espaço de trabalho, assignee: Responsável, project: Projeto, section: Seção, completed_since: Abertas ou concluídas desde, modified_since: Alteradas desde, opt_fields: Campos}}
+      Search Tasks: {name: Buscar tarefas, description: Encontra tarefas num espaço de trabalho por texto e outros filtros. Exige o Asana Premium., fields: {workspace: Espaço de trabalho, text: Texto, completed: Concluída, assignee: IDs dos responsáveis, projects: IDs dos projetos, tags: IDs das etiquetas, due_on_before: Prazo antes de, due_on_after: Prazo depois de, sort_by: Ordenar por, opt_fields: Campos}}
+      Update Task: {name: Atualizar tarefa, description: Muda uma tarefa. Campos vazios ficam como estão., fields: {task: ID da tarefa, name: Nome, notes: Notas, html_notes: Notas em HTML, assignee: ID do responsável, assignee_status: Situação para o responsável, completed: Concluída, due_on: Prazo, due_at: Prazo com hora, start_on: Começa em, liked: Curtida, custom_fields: Campos personalizados}}
+      Move Task: {name: Mover tarefa, description: Move uma tarefa para uma seção de um projeto., fields: {task: ID da tarefa, workspace: Espaço de trabalho, project: Projeto, section: Seção}}
+      Duplicate Task: {name: Duplicar tarefa, description: "Copia uma tarefa, com o que você escolher levar junto.", fields: {task: ID da tarefa, name: Nome da cópia, include: Levar junto}}
+      Delete Task: {name: Excluir tarefa, description: Exclui uma tarefa., fields: {task: ID da tarefa}}
+      Create Subtask: {name: Criar subtarefa, description: Cria uma subtarefa dentro de uma tarefa., fields: {task: ID da tarefa pai, name: Nome, notes: Notas, assignee: ID do responsável, assignee_status: Situação para o responsável, completed: Concluída, due_on: Prazo, liked: Curtida}}
+      Get Subtasks: {name: Listar subtarefas, description: Lista as subtarefas de uma tarefa., fields: {task: ID da tarefa pai, opt_fields: Campos}}
+      Add Comment: {name: Comentar, description: Comenta numa tarefa., fields: {task: ID da tarefa, text: Texto, html_text: Texto em HTML, is_pinned: Fixado}}
+      Get Comments: {name: Listar comentários, description: Lista os comentários e o histórico de uma tarefa., fields: {task: ID da tarefa}}
+      Delete Comment: {name: Excluir comentário, description: Exclui um comentário., fields: {comment: ID do comentário}}
+      Add Task to Project: {name: Adicionar tarefa a projeto, description: "Põe uma tarefa num projeto, se quiser numa seção ou ao lado de outra tarefa.", fields: {task: ID da tarefa, workspace: Espaço de trabalho, project: Projeto, section: Seção, insert_after: Depois da tarefa, insert_before: Antes da tarefa}}
+      Remove Task from Project: {name: Tirar tarefa de projeto, description: Tira uma tarefa de um projeto., fields: {task: ID da tarefa, workspace: Espaço de trabalho, project: Projeto}}
+      Add Tag to Task: {name: Etiquetar tarefa, description: Põe uma etiqueta numa tarefa., fields: {task: ID da tarefa, workspace: Espaço de trabalho, tag: Etiqueta}}
+      Remove Tag from Task: {name: Tirar etiqueta de tarefa, description: Tira uma etiqueta de uma tarefa., fields: {task: ID da tarefa, workspace: Espaço de trabalho, tag: Etiqueta}}
+      Create Tag: {name: Criar etiqueta, description: Cria uma etiqueta num espaço de trabalho., fields: {workspace: Espaço de trabalho, name: Nome, color: Cor}}
+      Get Tags: {name: Listar etiquetas, description: Lista as etiquetas de um espaço de trabalho., fields: {workspace: Espaço de trabalho}}
+      Create Project: {name: Criar projeto, description: Cria um projeto num time., fields: {workspace: Espaço de trabalho, team: Time, name: Nome, notes: Notas, color: Cor, due_on: Prazo, privacy_setting: Privacidade, default_view: Visão padrão}}
+      Get Project: {name: Ler projeto, description: Lê um projeto., fields: {project: ID do projeto}}
+      Get Projects: {name: Listar projetos, description: "Lista os projetos de um espaço de trabalho, ou de um time.", fields: {workspace: Espaço de trabalho, team: Time, archived: Arquivados, opt_fields: Campos}}
+      Update Project: {name: Atualizar projeto, description: Muda um projeto. Campos vazios ficam como estão., fields: {project: ID do projeto, name: Nome, notes: Notas, color: Cor, due_on: Prazo, owner: ID do dono, team: ID do time, archived: Arquivado, privacy_setting: Privacidade}}
+      Delete Project: {name: Excluir projeto, description: Exclui um projeto., fields: {project: ID do projeto}}
+      Create Section: {name: Criar seção, description: Adiciona uma seção a um projeto., fields: {project: ID do projeto, name: Nome}}
+      Get Sections: {name: Listar seções, description: Lista as seções de um projeto., fields: {project: ID do projeto}}
+      Get User: {name: Ler usuário, description: "Lê um usuário, ou você mesmo com me.", fields: {user: ID do usuário}}
+      Get Users: {name: Listar usuários, description: Lista os usuários de um espaço de trabalho., fields: {workspace: Espaço de trabalho}}

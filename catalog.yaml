@@ -8,13 +8,13 @@ integrations:
   # Phase 1: the most used
   - {id: activecampaign, name: ActiveCampaign, category: marketing, phase: 1, origin: n8n, auth: header, n8n: ActiveCampaign, host: true, kind: manifest, status: draft}
   - {id: airtable, name: Airtable, category: database, phase: 1, origin: n8n, auth: bearer, n8n: Airtable, kind: manifest, status: draft}
-  - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: planned}
+  - {id: asana, name: Asana, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Asana, kind: manifest, status: draft}
   - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: draft}
   - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: planned}
   - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Calendly, kind: manifest, status: planned}
-  - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: ClickUp, kind: manifest, status: planned}
-  - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: planned}
+  - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: header, n8n: ClickUp, kind: manifest, status: draft}
+  - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: draft}
   - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: Discord, kind: package, lib: {name: nostrum, version: 0.10.4, released: 2025-03-02}, status: planned}
   - {id: dropbox, name: Dropbox, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Dropbox, kind: manifest, status: planned}
   - {id: email, name: Email (IMAP/SMTP), category: email, phase: 1, origin: n8n, auth: basic, n8n: EmailReadImap, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: official}
@@ -35,11 +35,11 @@ integrations:
   - {id: google_sheets, name: Google Sheets, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Sheet, kind: package, lib: {name: google_api_sheets, version: 0.35.0, released: 2025-04-15}, status: official}
   - {id: google_slides, name: Google Slides, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Slides, kind: package, lib: {name: google_api_slides, version: 0.24.0, released: 2025-04-15}, status: planned}
   - {id: google_tasks, name: Google Tasks, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Task, kind: package, lib: {name: google_api_tasks, version: 0.17.0, released: 2025-04-15}, status: planned}
-  - {id: hubspot, name: HubSpot, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Hubspot, kind: manifest, status: planned}
+  - {id: hubspot, name: HubSpot, category: crm, phase: 1, origin: n8n, auth: bearer, n8n: Hubspot, kind: manifest, status: draft}
   - {id: instagram, name: Instagram, category: social, phase: 1, origin: extra, auth: oauth2, kind: manifest, status: planned}
   - {id: intercom, name: Intercom, category: support, phase: 1, origin: n8n, auth: bearer, n8n: Intercom, kind: manifest, status: draft}
-  - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: planned}
-  - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: oauth2, n8n: Linear, kind: manifest, status: planned}
+  - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: draft}
+  - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: header, n8n: Linear, kind: manifest, status: draft}
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
   - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: Mailchimp, kind: manifest, status: planned}
   - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
@@ -49,13 +49,13 @@ integrations:
   - {id: microsoft_sharepoint, name: Microsoft SharePoint, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/SharePoint, kind: manifest, status: planned}
   - {id: microsoft_teams, name: Microsoft Teams, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Teams, kind: manifest, status: planned}
   - {id: microsoft_todo, name: Microsoft To Do, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/ToDo, kind: manifest, status: planned}
-  - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: bearer, n8n: MondayCom, kind: manifest, status: planned}
+  - {id: monday, name: monday.com, category: project, phase: 1, origin: n8n, auth: header, n8n: MondayCom, kind: manifest, status: draft}
   - {id: mongodb, name: MongoDB, category: database, phase: 1, origin: n8n, auth: basic, n8n: MongoDb, kind: package, lib: {name: mongodb_driver, version: 1.6.4, released: 2026-07-24}, status: official}
   - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: draft}
   - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
   - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: login, n8n: Odoo, host: true, kind: manifest, status: planned}
   - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
-  - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Pipedrive, kind: manifest, status: planned}
+  - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: header, n8n: Pipedrive, kind: manifest, status: draft}
   - {id: postmark, name: Postmark, category: email, phase: 1, origin: n8n, auth: header, n8n: Postmark, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: quickbooks, name: QuickBooks Online, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: QuickBooks, kind: manifest, status: planned}
   - {id: redis, name: Redis, category: database, phase: 1, origin: n8n, auth: basic, n8n: Redis, kind: package, lib: {name: redix, version: 1.10.0, released: 2026-10-22}, status: official}
@@ -80,7 +80,7 @@ integrations:
   - {id: x, name: X (Twitter), category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Twitter, kind: manifest, status: planned}
   - {id: xero, name: Xero, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: Xero, kind: manifest, status: planned}
   - {id: youtube, name: YouTube, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Google/YouTube, kind: package, lib: {name: google_api_you_tube, version: 0.54.0, released: 2025-04-15}, status: planned}
-  - {id: zendesk, name: Zendesk, category: support, phase: 1, origin: n8n, auth: oauth2, n8n: Zendesk, host: true, kind: manifest, status: planned}
+  - {id: zendesk, name: Zendesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Zendesk, host: true, kind: manifest, status: draft}
   - {id: zoho_crm, name: Zoho CRM, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Zoho, host: true, kind: manifest, status: planned}
   - {id: zoom, name: Zoom, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Zoom, kind: manifest, status: planned}
 

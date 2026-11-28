@@ -1,0 +1,1119 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# ClickUp's API v2. The personal token is in ClickUp, under Settings > Apps > API Token.
+# Dates are milliseconds since 1970, so date fields use format: unix_ms.
+id: clickup
+name: ClickUp
+version: 1.0.0
+description: Tasks, lists, folders, comments, checklists, goals, tags, guests and time tracking in ClickUp.
+icon: hero-check-badge
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#7B68EE" d="M2 18.439l3.69-2.828c1.961 2.56 4.044 3.739 6.363 3.739 2.307 0 4.33-1.166 6.203-3.704L22 18.405C19.298 22.065 15.941 24 12.053 24 8.178 24 4.788 22.078 2 18.439zM12.04 6.15l-6.568 5.66-3.036-3.52L12.055 0l9.543 8.296-3.05 3.509z"/></svg>
+category: project
+author: Heddle
+homepage: https://clickup.com/api/
+base_url: https://api.clickup.com/api/v2/
+
+credential:
+  label: ClickUp
+  fields:
+    - {name: token, label: API token, secret: true, required: true, description: "Starts with pk_"}
+  auth:
+    type: header
+    name: Authorization
+    value: "{{credential.token}}"
+
+errors:
+  message_path: err
+
+triggers:
+  - name: Event
+    description: Starts the flow when something you choose happens in a workspace, optionally only in a space, folder, list or task.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        options:
+          - {label: Everything, value: "*"}
+          - {label: Task created, value: taskCreated}
+          - {label: Task updated, value: taskUpdated}
+          - {label: Task deleted, value: taskDeleted}
+          - {label: Task status changed, value: taskStatusUpdated}
+          - {label: Task assignees changed, value: taskAssigneeUpdated}
+          - {label: Task due date changed, value: taskDueDateUpdated}
+          - {label: Task tags changed, value: taskTagUpdated}
+          - {label: Task moved, value: taskMoved}
+          - {label: Task comment posted, value: taskCommentPosted}
+          - {label: Task comment updated, value: taskCommentUpdated}
+          - {label: Task time estimate changed, value: taskTimeEstimateUpdated}
+          - {label: Task time tracked changed, value: taskTimeTrackedUpdated}
+          - {label: List created, value: listCreated}
+          - {label: List updated, value: listUpdated}
+          - {label: List deleted, value: listDeleted}
+          - {label: Folder created, value: folderCreated}
+          - {label: Folder updated, value: folderUpdated}
+          - {label: Folder deleted, value: folderDeleted}
+          - {label: Space created, value: spaceCreated}
+          - {label: Space updated, value: spaceUpdated}
+          - {label: Space deleted, value: spaceDeleted}
+          - {label: Goal created, value: goalCreated}
+          - {label: Goal updated, value: goalUpdated}
+          - {label: Goal deleted, value: goalDeleted}
+          - {label: Key result created, value: keyResultCreated}
+          - {label: Key result updated, value: keyResultUpdated}
+          - {label: Key result deleted, value: keyResultDeleted}
+      - {name: space_id, label: Only in space ID}
+      - {name: folder_id, label: Only in folder ID}
+      - {name: list_id, label: Only in list ID}
+      - {name: task_id, label: Only in task ID}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "team/{{fields.team}}/webhook"
+          body:
+            endpoint: "{{webhook.url}}"
+            events: "{{fields.events}}"
+            space_id: "{{fields.space_id}}"
+            folder_id: "{{fields.folder_id}}"
+            list_id: "{{fields.list_id}}"
+            task_id: "{{fields.task_id}}"
+        id_path: id
+        secret_path: webhook.secret
+      unregister:
+        request: {method: DELETE, path: "webhook/{{webhook.id}}"}
+      signature:
+        header: X-Signature
+        secret: "{{webhook.secret}}"
+
+actions:
+  # Tasks
+  - name: Create Task
+    resource: Task
+    description: Creates a task in a list.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: markdown_content, label: Description, type: textarea, description: Markdown is fine.}
+      - {name: assignees, label: Assignees, type: json, description: "User IDs, like [183, 184]"}
+      - {name: tags, label: Tags, type: json, description: "Tag names, like [\"bug\"]"}
+      - {name: status, label: Status}
+      - {name: priority, label: Priority, type: select, options: [{label: Urgent, value: 1}, {label: High, value: 2}, {label: Normal, value: 3}, {label: Low, value: 4}]}
+      - {name: due_date, label: Due date, type: datetime, format: unix_ms}
+      - {name: due_date_time, label: Due date has a time, type: boolean}
+      - {name: start_date, label: Start date, type: datetime, format: unix_ms}
+      - {name: start_date_time, label: Start date has a time, type: boolean}
+      - {name: time_estimate, label: Time estimate (ms), type: number}
+      - {name: points, label: Sprint points, type: number}
+      - {name: notify_all, label: Notify everyone, type: boolean}
+      - {name: parent, label: Parent task ID, description: To create a subtask.}
+      - {name: links_to, label: Linked task ID}
+      - {name: custom_item_id, label: Task type ID, type: number}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like [{\"id\": \"0a52c486\", \"value\": 23}]"}
+    request:
+      method: POST
+      path: "list/{{fields.list}}/task"
+      body:
+        name: "{{fields.name}}"
+        markdown_content: "{{fields.markdown_content}}"
+        assignees: "{{fields.assignees}}"
+        tags: "{{fields.tags}}"
+        status: "{{fields.status}}"
+        priority: "{{fields.priority}}"
+        due_date: "{{fields.due_date}}"
+        due_date_time: "{{fields.due_date_time}}"
+        start_date: "{{fields.start_date}}"
+        start_date_time: "{{fields.start_date_time}}"
+        time_estimate: "{{fields.time_estimate}}"
+        points: "{{fields.points}}"
+        notify_all: "{{fields.notify_all}}"
+        parent: "{{fields.parent}}"
+        links_to: "{{fields.links_to}}"
+        custom_item_id: "{{fields.custom_item_id}}"
+        custom_fields: "{{fields.custom_fields}}"
+
+  - name: Get Task
+    resource: Task
+    description: Reads a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: include_subtasks, label: Include subtasks, type: boolean}
+      - {name: include_markdown_description, label: Description in Markdown, type: boolean}
+    request:
+      method: GET
+      path: "task/{{fields.task}}"
+      query: {include_subtasks: "{{fields.include_subtasks}}", include_markdown_description: "{{fields.include_markdown_description}}"}
+
+  - name: Get Tasks
+    resource: Task
+    description: Lists the tasks of a list, with filters.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: archived, label: Archived, type: boolean}
+      - {name: include_closed, label: Include closed, type: boolean}
+      - {name: subtasks, label: Include subtasks, type: boolean}
+      - {name: statuses, label: Statuses, type: json, description: "Like [\"to do\", \"in progress\"]"}
+      - {name: assignees, label: Assignees, type: json, description: "User IDs, like [183]"}
+      - {name: tags, label: Tags, type: json, description: "Tag names, like [\"bug\"]"}
+      - {name: due_date_gt, label: Due after, type: datetime, format: unix_ms}
+      - {name: due_date_lt, label: Due before, type: datetime, format: unix_ms}
+      - {name: date_created_gt, label: Created after, type: datetime, format: unix_ms}
+      - {name: date_created_lt, label: Created before, type: datetime, format: unix_ms}
+      - {name: date_updated_gt, label: Updated after, type: datetime, format: unix_ms}
+      - {name: date_updated_lt, label: Updated before, type: datetime, format: unix_ms}
+      - {name: order_by, label: Order by, type: select, options: [{label: Created, value: created}, {label: Updated, value: updated}, {label: Due date, value: due_date}, {label: ID, value: id}]}
+      - {name: reverse, label: Reverse order, type: boolean}
+      - {name: custom_fields, label: Custom field filters, type: json, description: "Like [{\"field_id\": \"abc\", \"operator\": \"=\", \"value\": \"1\"}]"}
+    request:
+      method: GET
+      path: "list/{{fields.list}}/task"
+      query:
+        archived: "{{fields.archived}}"
+        include_closed: "{{fields.include_closed}}"
+        subtasks: "{{fields.subtasks}}"
+        "statuses[]": "{{fields.statuses}}"
+        "assignees[]": "{{fields.assignees}}"
+        "tags[]": "{{fields.tags}}"
+        due_date_gt: "{{fields.due_date_gt}}"
+        due_date_lt: "{{fields.due_date_lt}}"
+        date_created_gt: "{{fields.date_created_gt}}"
+        date_created_lt: "{{fields.date_created_lt}}"
+        date_updated_gt: "{{fields.date_updated_gt}}"
+        date_updated_lt: "{{fields.date_updated_lt}}"
+        order_by: "{{fields.order_by}}"
+        reverse: "{{fields.reverse}}"
+        custom_fields: "{{fields.custom_fields}}"
+    pagination: {type: page, items_path: tasks, first_page: 0, page_size: 100}
+
+  - name: Update Task
+    resource: Task
+    description: Changes a task. Empty fields stay as they are.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: name, label: Name}
+      - {name: markdown_content, label: Description, type: textarea}
+      - {name: status, label: Status}
+      - {name: priority, label: Priority, type: select, options: [{label: Urgent, value: 1}, {label: High, value: 2}, {label: Normal, value: 3}, {label: Low, value: 4}]}
+      - {name: due_date, label: Due date, type: datetime, format: unix_ms}
+      - {name: due_date_time, label: Due date has a time, type: boolean}
+      - {name: start_date, label: Start date, type: datetime, format: unix_ms}
+      - {name: start_date_time, label: Start date has a time, type: boolean}
+      - {name: time_estimate, label: Time estimate (ms), type: number}
+      - {name: points, label: Sprint points, type: number}
+      - {name: add_assignees, label: Add assignees, type: json, description: "User IDs, like [183]"}
+      - {name: remove_assignees, label: Remove assignees, type: json, description: "User IDs, like [184]"}
+      - {name: parent, label: Move under task ID}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: PUT
+      path: "task/{{fields.task}}"
+      body:
+        name: "{{fields.name}}"
+        markdown_content: "{{fields.markdown_content}}"
+        status: "{{fields.status}}"
+        priority: "{{fields.priority}}"
+        due_date: "{{fields.due_date}}"
+        due_date_time: "{{fields.due_date_time}}"
+        start_date: "{{fields.start_date}}"
+        start_date_time: "{{fields.start_date_time}}"
+        time_estimate: "{{fields.time_estimate}}"
+        points: "{{fields.points}}"
+        assignees: {add: "{{fields.add_assignees}}", rem: "{{fields.remove_assignees}}"}
+        parent: "{{fields.parent}}"
+        archived: "{{fields.archived}}"
+
+  - name: Delete Task
+    resource: Task
+    description: Deletes a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+    request:
+      method: DELETE
+      path: "task/{{fields.task}}"
+    output:
+      value: {task: "{{fields.task}}", deleted: true}
+
+  - name: Get Task Members
+    resource: Task
+    description: Lists who can see a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+    request:
+      method: GET
+      path: "task/{{fields.task}}/member"
+    output: {path: members}
+
+  - name: Set Custom Field
+    resource: Task
+    description: Sets the value of a custom field on a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: field, label: Custom field ID, required: true}
+      - {name: value, label: Value, type: json, required: true, description: "As JSON: \"text\", 42, true or {\"add\": [\"id\"]}"}
+    request:
+      method: POST
+      path: "task/{{fields.task}}/field/{{fields.field}}"
+      body: {value: "{{fields.value}}"}
+    output:
+      value: {task: "{{fields.task}}", field: "{{fields.field}}", set: true}
+
+  - name: Add Task Dependency
+    resource: Task Dependency
+    description: Makes a task wait on another.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: depends_on, label: Waits on task ID, required: true}
+    request:
+      method: POST
+      path: "task/{{fields.task}}/dependency"
+      body: {depends_on: "{{fields.depends_on}}"}
+    output:
+      value: {task: "{{fields.task}}", depends_on: "{{fields.depends_on}}", added: true}
+
+  - name: Remove Task Dependency
+    resource: Task Dependency
+    description: Stops a task waiting on another.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: depends_on, label: Waits on task ID, required: true}
+    request:
+      method: DELETE
+      path: "task/{{fields.task}}/dependency"
+      query: {depends_on: "{{fields.depends_on}}"}
+    output:
+      value: {task: "{{fields.task}}", depends_on: "{{fields.depends_on}}", removed: true}
+
+  - name: Add Task to List
+    resource: Task List
+    description: Puts a task in one more list.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: task, label: Task ID, required: true}
+    request:
+      method: POST
+      path: "list/{{fields.list}}/task/{{fields.task}}"
+    output:
+      value: {task: "{{fields.task}}", list: "{{fields.list}}", added: true}
+
+  - name: Remove Task from List
+    resource: Task List
+    description: Takes a task out of an extra list.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: task, label: Task ID, required: true}
+    request:
+      method: DELETE
+      path: "list/{{fields.list}}/task/{{fields.task}}"
+    output:
+      value: {task: "{{fields.task}}", list: "{{fields.list}}", removed: true}
+
+  - name: Add Tag to Task
+    resource: Task Tag
+    description: Tags a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: tag, label: Tag name, required: true}
+    request:
+      method: POST
+      path: "task/{{fields.task}}/tag/{{fields.tag}}"
+    output:
+      value: {task: "{{fields.task}}", tag: "{{fields.tag}}", added: true}
+
+  - name: Remove Tag from Task
+    resource: Task Tag
+    description: Takes a tag off a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: tag, label: Tag name, required: true}
+    request:
+      method: DELETE
+      path: "task/{{fields.task}}/tag/{{fields.tag}}"
+    output:
+      value: {task: "{{fields.task}}", tag: "{{fields.tag}}", removed: true}
+
+  # Checklists
+  - name: Create Checklist
+    resource: Checklist
+    description: Adds a checklist to a task.
+    fields:
+      - {name: task, label: Task ID, required: true}
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: "task/{{fields.task}}/checklist"
+      body: {name: "{{fields.name}}"}
+    output: {path: checklist}
+
+  - name: Update Checklist
+    resource: Checklist
+    description: Renames or moves a checklist.
+    fields:
+      - {name: checklist, label: Checklist ID, required: true}
+      - {name: name, label: Name}
+      - {name: position, label: Position, type: number, description: 0 puts it first.}
+    request:
+      method: PUT
+      path: "checklist/{{fields.checklist}}"
+      body: {name: "{{fields.name}}", position: "{{fields.position}}"}
+    output: {path: checklist}
+
+  - name: Delete Checklist
+    resource: Checklist
+    description: Deletes a checklist.
+    fields:
+      - {name: checklist, label: Checklist ID, required: true}
+    request:
+      method: DELETE
+      path: "checklist/{{fields.checklist}}"
+    output:
+      value: {checklist: "{{fields.checklist}}", deleted: true}
+
+  - name: Create Checklist Item
+    resource: Checklist Item
+    description: Adds an item to a checklist.
+    fields:
+      - {name: checklist, label: Checklist ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: assignee, label: Assignee ID, type: number}
+    request:
+      method: POST
+      path: "checklist/{{fields.checklist}}/checklist_item"
+      body: {name: "{{fields.name}}", assignee: "{{fields.assignee}}"}
+    output: {path: checklist}
+
+  - name: Update Checklist Item
+    resource: Checklist Item
+    description: Changes, checks or nests a checklist item.
+    fields:
+      - {name: checklist, label: Checklist ID, required: true}
+      - {name: item, label: Item ID, required: true}
+      - {name: name, label: Name}
+      - {name: resolved, label: Checked, type: boolean}
+      - {name: assignee, label: Assignee ID, type: number}
+      - {name: parent, label: Nest under item ID}
+    request:
+      method: PUT
+      path: "checklist/{{fields.checklist}}/checklist_item/{{fields.item}}"
+      body: {name: "{{fields.name}}", resolved: "{{fields.resolved}}", assignee: "{{fields.assignee}}", parent: "{{fields.parent}}"}
+    output: {path: checklist}
+
+  - name: Delete Checklist Item
+    resource: Checklist Item
+    description: Deletes a checklist item.
+    fields:
+      - {name: checklist, label: Checklist ID, required: true}
+      - {name: item, label: Item ID, required: true}
+    request:
+      method: DELETE
+      path: "checklist/{{fields.checklist}}/checklist_item/{{fields.item}}"
+    output:
+      value: {item: "{{fields.item}}", deleted: true}
+
+  # Comments
+  - name: Create Comment
+    resource: Comment
+    description: Comments on a task, a list or a chat view.
+    fields:
+      - {name: on, label: On, type: select, required: true, default: task, options: [{label: Task, value: task}, {label: List, value: list}, {label: Chat view, value: view}]}
+      - {name: id, label: "Task, list or view ID", required: true}
+      - {name: comment_text, label: Text, type: textarea, required: true}
+      - {name: assignee, label: Assign to user ID, type: number}
+      - {name: notify_all, label: Notify everyone, type: boolean}
+    request:
+      method: POST
+      path: "{{fields.on}}/{{fields.id}}/comment"
+      body: {comment_text: "{{fields.comment_text}}", assignee: "{{fields.assignee}}", notify_all: "{{fields.notify_all}}"}
+
+  - name: Get Comments
+    resource: Comment
+    description: Lists the comments of a task, a list or a chat view.
+    fields:
+      - {name: on, label: On, type: select, required: true, default: task, options: [{label: Task, value: task}, {label: List, value: list}, {label: Chat view, value: view}]}
+      - {name: id, label: "Task, list or view ID", required: true}
+    request:
+      method: GET
+      path: "{{fields.on}}/{{fields.id}}/comment"
+    output: {path: comments}
+
+  - name: Update Comment
+    resource: Comment
+    description: Changes a comment, its assignee or whether it's resolved.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+      - {name: comment_text, label: Text, type: textarea}
+      - {name: assignee, label: Assign to user ID, type: number}
+      - {name: resolved, label: Resolved, type: boolean}
+    request:
+      method: PUT
+      path: "comment/{{fields.comment}}"
+      body: {comment_text: "{{fields.comment_text}}", assignee: "{{fields.assignee}}", resolved: "{{fields.resolved}}"}
+    output:
+      value: {comment: "{{fields.comment}}", updated: true}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+    request:
+      method: DELETE
+      path: "comment/{{fields.comment}}"
+    output:
+      value: {comment: "{{fields.comment}}", deleted: true}
+
+  # Lists
+  - name: Create List
+    resource: List
+    description: Creates a list in a folder, or in a space outside folders.
+    fields:
+      - {name: in, label: In, type: select, required: true, default: folder, options: [{label: Folder, value: folder}, {label: Space, value: space}]}
+      - {name: parent, label: Folder or space ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: markdown_content, label: Description, type: textarea}
+      - {name: due_date, label: Due date, type: datetime, format: unix_ms}
+      - {name: due_date_time, label: Due date has a time, type: boolean}
+      - {name: priority, label: Priority, type: select, options: [{label: Urgent, value: 1}, {label: High, value: 2}, {label: Normal, value: 3}, {label: Low, value: 4}]}
+      - {name: assignee, label: Owner ID, type: number}
+      - {name: status, label: Color status}
+    request:
+      method: POST
+      path: "{{fields.in}}/{{fields.parent}}/list"
+      body:
+        name: "{{fields.name}}"
+        markdown_content: "{{fields.markdown_content}}"
+        due_date: "{{fields.due_date}}"
+        due_date_time: "{{fields.due_date_time}}"
+        priority: "{{fields.priority}}"
+        assignee: "{{fields.assignee}}"
+        status: "{{fields.status}}"
+
+  - name: Get List
+    resource: List
+    description: Reads a list.
+    fields:
+      - {name: list, label: List ID, required: true}
+    request:
+      method: GET
+      path: "list/{{fields.list}}"
+
+  - name: Get Lists
+    resource: List
+    description: Lists the lists of a folder, or those of a space outside folders.
+    fields:
+      - {name: in, label: In, type: select, required: true, default: folder, options: [{label: Folder, value: folder}, {label: Space, value: space}]}
+      - {name: parent, label: Folder or space ID, required: true}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "{{fields.in}}/{{fields.parent}}/list"
+      query: {archived: "{{fields.archived}}"}
+    output: {path: lists}
+
+  - name: Update List
+    resource: List
+    description: Changes a list. Empty fields stay as they are.
+    fields:
+      - {name: list, label: List ID, required: true}
+      - {name: name, label: Name}
+      - {name: markdown_content, label: Description, type: textarea}
+      - {name: due_date, label: Due date, type: datetime, format: unix_ms}
+      - {name: due_date_time, label: Due date has a time, type: boolean}
+      - {name: priority, label: Priority, type: select, options: [{label: Urgent, value: 1}, {label: High, value: 2}, {label: Normal, value: 3}, {label: Low, value: 4}]}
+      - {name: assignee, label: Owner ID}
+      - {name: unset_status, label: Clear color status, type: boolean}
+    request:
+      method: PUT
+      path: "list/{{fields.list}}"
+      body:
+        name: "{{fields.name}}"
+        markdown_content: "{{fields.markdown_content}}"
+        due_date: "{{fields.due_date}}"
+        due_date_time: "{{fields.due_date_time}}"
+        priority: "{{fields.priority}}"
+        assignee: "{{fields.assignee}}"
+        unset_status: "{{fields.unset_status}}"
+
+  - name: Delete List
+    resource: List
+    description: Deletes a list.
+    fields:
+      - {name: list, label: List ID, required: true}
+    request:
+      method: DELETE
+      path: "list/{{fields.list}}"
+    output:
+      value: {list: "{{fields.list}}", deleted: true}
+
+  - name: Get List Custom Fields
+    resource: List
+    description: Lists the custom fields a list's tasks can have.
+    fields:
+      - {name: list, label: List ID, required: true}
+    request:
+      method: GET
+      path: "list/{{fields.list}}/field"
+    output: {path: fields}
+
+  - name: Get List Members
+    resource: List
+    description: Lists who can see a list.
+    fields:
+      - {name: list, label: List ID, required: true}
+    request:
+      method: GET
+      path: "list/{{fields.list}}/member"
+    output: {path: members}
+
+  # Folders
+  - name: Create Folder
+    resource: Folder
+    description: Creates a folder in a space.
+    fields:
+      - {name: space, label: Space ID, required: true}
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: "space/{{fields.space}}/folder"
+      body: {name: "{{fields.name}}"}
+
+  - name: Get Folder
+    resource: Folder
+    description: Reads a folder.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+    request:
+      method: GET
+      path: "folder/{{fields.folder}}"
+
+  - name: Get Folders
+    resource: Folder
+    description: Lists the folders of a space.
+    fields:
+      - {name: space, label: Space ID, required: true}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "space/{{fields.space}}/folder"
+      query: {archived: "{{fields.archived}}"}
+    output: {path: folders}
+
+  - name: Update Folder
+    resource: Folder
+    description: Renames a folder.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+      - {name: name, label: Name, required: true}
+    request:
+      method: PUT
+      path: "folder/{{fields.folder}}"
+      body: {name: "{{fields.name}}"}
+
+  - name: Delete Folder
+    resource: Folder
+    description: Deletes a folder.
+    fields:
+      - {name: folder, label: Folder ID, required: true}
+    request:
+      method: DELETE
+      path: "folder/{{fields.folder}}"
+    output:
+      value: {folder: "{{fields.folder}}", deleted: true}
+
+  # Spaces
+  - name: Get Spaces
+    resource: Space
+    description: Lists the spaces of a workspace.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: archived, label: Archived, type: boolean}
+    request:
+      method: GET
+      path: "team/{{fields.team}}/space"
+      query: {archived: "{{fields.archived}}"}
+    output: {path: spaces}
+
+  - name: Get Space Tags
+    resource: Space Tag
+    description: Lists the tags of a space.
+    fields:
+      - {name: space, label: Space ID, required: true}
+    request:
+      method: GET
+      path: "space/{{fields.space}}/tag"
+    output: {path: tags}
+
+  - name: Create Space Tag
+    resource: Space Tag
+    description: Creates a tag in a space.
+    fields:
+      - {name: space, label: Space ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: tag_fg, label: Text color, description: "Like #ffffff"}
+      - {name: tag_bg, label: Background color, description: "Like #7b68ee"}
+    request:
+      method: POST
+      path: "space/{{fields.space}}/tag"
+      body:
+        tag: {name: "{{fields.name}}", tag_fg: "{{fields.tag_fg}}", tag_bg: "{{fields.tag_bg}}"}
+    output:
+      value: {space: "{{fields.space}}", tag: "{{fields.name}}", created: true}
+
+  - name: Update Space Tag
+    resource: Space Tag
+    description: Renames or recolors a tag.
+    fields:
+      - {name: space, label: Space ID, required: true}
+      - {name: tag, label: Tag name, required: true}
+      - {name: name, label: New name, required: true}
+      - {name: tag_fg, label: Text color, required: true, description: "Like #ffffff"}
+      - {name: tag_bg, label: Background color, required: true, description: "Like #7b68ee"}
+    request:
+      method: PUT
+      path: "space/{{fields.space}}/tag/{{fields.tag}}"
+      body:
+        tag: {name: "{{fields.name}}", fg_color: "{{fields.tag_fg}}", bg_color: "{{fields.tag_bg}}"}
+    output:
+      value: {space: "{{fields.space}}", tag: "{{fields.name}}", updated: true}
+
+  - name: Delete Space Tag
+    resource: Space Tag
+    description: Deletes a tag from a space.
+    fields:
+      - {name: space, label: Space ID, required: true}
+      - {name: tag, label: Tag name, required: true}
+    request:
+      method: DELETE
+      path: "space/{{fields.space}}/tag/{{fields.tag}}"
+    output:
+      value: {space: "{{fields.space}}", tag: "{{fields.tag}}", deleted: true}
+
+  # Goals
+  - name: Create Goal
+    resource: Goal
+    description: Creates a goal in a workspace.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: due_date, label: Due date, type: datetime, format: unix_ms}
+      - {name: description, label: Description, type: textarea}
+      - {name: owners, label: Owners, type: json, description: "User IDs, like [183]"}
+      - {name: multiple_owners, label: Several owners, type: boolean}
+      - {name: color, label: Color, description: "Like #32a852"}
+    request:
+      method: POST
+      path: "team/{{fields.team}}/goal"
+      body:
+        name: "{{fields.name}}"
+        due_date: "{{fields.due_date}}"
+        description: "{{fields.description}}"
+        owners: "{{fields.owners}}"
+        multiple_owners: "{{fields.multiple_owners}}"
+        color: "{{fields.color}}"
+    output: {path: goal}
+
+  - name: Get Goal
+    resource: Goal
+    description: Reads a goal and its key results.
+    fields:
+      - {name: goal, label: Goal ID, required: true}
+    request:
+      method: GET
+      path: "goal/{{fields.goal}}"
+    output: {path: goal}
+
+  - name: Get Goals
+    resource: Goal
+    description: Lists the goals of a workspace.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: include_completed, label: Include completed, type: boolean}
+    request:
+      method: GET
+      path: "team/{{fields.team}}/goal"
+      query: {include_completed: "{{fields.include_completed}}"}
+    output: {path: goals}
+
+  - name: Update Goal
+    resource: Goal
+    description: Changes a goal. Empty fields stay as they are.
+    fields:
+      - {name: goal, label: Goal ID, required: true}
+      - {name: name, label: Name}
+      - {name: due_date, label: Due date, type: datetime, format: unix_ms}
+      - {name: description, label: Description, type: textarea}
+      - {name: add_owners, label: Add owners, type: json, description: "User IDs, like [183]"}
+      - {name: rem_owners, label: Remove owners, type: json, description: "User IDs, like [184]"}
+      - {name: color, label: Color}
+    request:
+      method: PUT
+      path: "goal/{{fields.goal}}"
+      body:
+        name: "{{fields.name}}"
+        due_date: "{{fields.due_date}}"
+        description: "{{fields.description}}"
+        add_owners: "{{fields.add_owners}}"
+        rem_owners: "{{fields.rem_owners}}"
+        color: "{{fields.color}}"
+    output: {path: goal}
+
+  - name: Delete Goal
+    resource: Goal
+    description: Deletes a goal.
+    fields:
+      - {name: goal, label: Goal ID, required: true}
+    request:
+      method: DELETE
+      path: "goal/{{fields.goal}}"
+    output:
+      value: {goal: "{{fields.goal}}", deleted: true}
+
+  - name: Create Key Result
+    resource: Goal Key Result
+    description: Adds a key result to a goal.
+    fields:
+      - {name: goal, label: Goal ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: type, label: Type, type: select, required: true, default: number, options: [{label: Number, value: number}, {label: Currency, value: currency}, {label: Yes or no, value: boolean}, {label: Percentage, value: percentage}, {label: Automatic, value: automatic}]}
+      - {name: steps_start, label: Start value, type: number}
+      - {name: steps_end, label: Target value, type: number}
+      - {name: unit, label: Unit}
+      - {name: owners, label: Owners, type: json, description: "User IDs, like [183]"}
+      - {name: task_ids, label: Task IDs, type: json, description: For automatic key results.}
+      - {name: list_ids, label: List IDs, type: json, description: For automatic key results.}
+    request:
+      method: POST
+      path: "goal/{{fields.goal}}/key_result"
+      body:
+        name: "{{fields.name}}"
+        type: "{{fields.type}}"
+        steps_start: "{{fields.steps_start}}"
+        steps_end: "{{fields.steps_end}}"
+        unit: "{{fields.unit}}"
+        owners: "{{fields.owners}}"
+        task_ids: "{{fields.task_ids}}"
+        list_ids: "{{fields.list_ids}}"
+    output: {path: key_result}
+
+  - name: Update Key Result
+    resource: Goal Key Result
+    description: Records progress on a key result, or renames it.
+    fields:
+      - {name: key_result, label: Key result ID, required: true}
+      - {name: steps_current, label: Current value, type: number}
+      - {name: note, label: Note}
+      - {name: name, label: Name}
+      - {name: unit, label: Unit}
+    request:
+      method: PUT
+      path: "key_result/{{fields.key_result}}"
+      body: {steps_current: "{{fields.steps_current}}", note: "{{fields.note}}", name: "{{fields.name}}", unit: "{{fields.unit}}"}
+    output: {path: key_result}
+
+  - name: Delete Key Result
+    resource: Goal Key Result
+    description: Deletes a key result.
+    fields:
+      - {name: key_result, label: Key result ID, required: true}
+    request:
+      method: DELETE
+      path: "key_result/{{fields.key_result}}"
+    output:
+      value: {key_result: "{{fields.key_result}}", deleted: true}
+
+  # Guests (Enterprise)
+  - name: Invite Guest
+    resource: Guest
+    description: Invites a guest to a workspace. Needs ClickUp Enterprise.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - {name: can_edit_tags, label: Can edit tags, type: boolean}
+      - {name: can_see_time_spent, label: Can see time spent, type: boolean}
+      - {name: can_see_time_estimated, label: Can see time estimated, type: boolean}
+      - {name: can_create_views, label: Can create views, type: boolean}
+    request:
+      method: POST
+      path: "team/{{fields.team}}/guest"
+      body:
+        email: "{{fields.email}}"
+        can_edit_tags: "{{fields.can_edit_tags}}"
+        can_see_time_spent: "{{fields.can_see_time_spent}}"
+        can_see_time_estimated: "{{fields.can_see_time_estimated}}"
+        can_create_views: "{{fields.can_create_views}}"
+
+  - name: Get Guest
+    resource: Guest
+    description: Reads a guest. Needs ClickUp Enterprise.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: guest, label: Guest ID, required: true}
+    request:
+      method: GET
+      path: "team/{{fields.team}}/guest/{{fields.guest}}"
+    output: {path: guest}
+
+  - name: Update Guest
+    resource: Guest
+    description: Changes what a guest can do. Needs ClickUp Enterprise.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: guest, label: Guest ID, required: true}
+      - {name: username, label: Name}
+      - {name: can_edit_tags, label: Can edit tags, type: boolean}
+      - {name: can_see_time_spent, label: Can see time spent, type: boolean}
+      - {name: can_see_time_estimated, label: Can see time estimated, type: boolean}
+      - {name: can_create_views, label: Can create views, type: boolean}
+    request:
+      method: PUT
+      path: "team/{{fields.team}}/guest/{{fields.guest}}"
+      body:
+        username: "{{fields.username}}"
+        can_edit_tags: "{{fields.can_edit_tags}}"
+        can_see_time_spent: "{{fields.can_see_time_spent}}"
+        can_see_time_estimated: "{{fields.can_see_time_estimated}}"
+        can_create_views: "{{fields.can_create_views}}"
+    output: {path: guest}
+
+  - name: Remove Guest
+    resource: Guest
+    description: Removes a guest from a workspace. Needs ClickUp Enterprise.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: guest, label: Guest ID, required: true}
+    request:
+      method: DELETE
+      path: "team/{{fields.team}}/guest/{{fields.guest}}"
+    output:
+      value: {guest: "{{fields.guest}}", removed: true}
+
+  # Time tracking
+  - name: Create Time Entry
+    resource: Time Entry
+    description: Records time already spent.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: start, label: Start, type: datetime, format: unix_ms, required: true}
+      - {name: duration, label: Duration (ms), type: number, required: true}
+      - {name: tid, label: Task ID}
+      - {name: description, label: Description}
+      - {name: billable, label: Billable, type: boolean}
+      - {name: assignee, label: For user ID, type: number, description: Workspace owners and admins only.}
+      - {name: tags, label: Tags, type: json, description: "Like [{\"name\": \"design\"}]"}
+    request:
+      method: POST
+      path: "team/{{fields.team}}/time_entries"
+      body:
+        start: "{{fields.start}}"
+        duration: "{{fields.duration}}"
+        tid: "{{fields.tid}}"
+        description: "{{fields.description}}"
+        billable: "{{fields.billable}}"
+        assignee: "{{fields.assignee}}"
+        tags: "{{fields.tags}}"
+    output: {path: data}
+
+  - name: Get Time Entry
+    resource: Time Entry
+    description: Reads a time entry.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: entry, label: Time entry ID, required: true}
+    request:
+      method: GET
+      path: "team/{{fields.team}}/time_entries/{{fields.entry}}"
+    output: {path: data}
+
+  - name: Get Time Entries
+    resource: Time Entry
+    description: Lists time entries in a date range, the last 30 days when left empty.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: start_date, label: From, type: datetime, format: unix_ms}
+      - {name: end_date, label: To, type: datetime, format: unix_ms}
+      - {name: assignee, label: User IDs, description: "Comma separated, admins only"}
+      - {name: task_id, label: Task ID}
+      - {name: list_id, label: List ID}
+      - {name: space_id, label: Space ID}
+      - {name: include_task_tags, label: Include task tags, type: boolean}
+      - {name: include_location_names, label: Include location names, type: boolean}
+    request:
+      method: GET
+      path: "team/{{fields.team}}/time_entries"
+      query:
+        start_date: "{{fields.start_date}}"
+        end_date: "{{fields.end_date}}"
+        assignee: "{{fields.assignee}}"
+        task_id: "{{fields.task_id}}"
+        list_id: "{{fields.list_id}}"
+        space_id: "{{fields.space_id}}"
+        include_task_tags: "{{fields.include_task_tags}}"
+        include_location_names: "{{fields.include_location_names}}"
+    output: {path: data}
+
+  - name: Update Time Entry
+    resource: Time Entry
+    description: Changes a time entry. Empty fields stay as they are.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: entry, label: Time entry ID, required: true}
+      - {name: start, label: Start, type: datetime, format: unix_ms}
+      - {name: duration, label: Duration (ms), type: number}
+      - {name: tid, label: Task ID}
+      - {name: description, label: Description}
+      - {name: billable, label: Billable, type: boolean}
+    request:
+      method: PUT
+      path: "team/{{fields.team}}/time_entries/{{fields.entry}}"
+      body:
+        start: "{{fields.start}}"
+        duration: "{{fields.duration}}"
+        tid: "{{fields.tid}}"
+        description: "{{fields.description}}"
+        billable: "{{fields.billable}}"
+    output:
+      value: {entry: "{{fields.entry}}", updated: true}
+
+  - name: Delete Time Entry
+    resource: Time Entry
+    description: Deletes a time entry.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: entry, label: Time entry ID, required: true}
+    request:
+      method: DELETE
+      path: "team/{{fields.team}}/time_entries/{{fields.entry}}"
+    output: {path: data}
+
+  - name: Start Timer
+    resource: Time Entry
+    description: Starts the timer, on a task or not.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: tid, label: Task ID}
+      - {name: description, label: Description}
+      - {name: billable, label: Billable, type: boolean}
+      - {name: tags, label: Tags, type: json, description: "Like [{\"name\": \"design\"}]"}
+    request:
+      method: POST
+      path: "team/{{fields.team}}/time_entries/start"
+      body: {tid: "{{fields.tid}}", description: "{{fields.description}}", billable: "{{fields.billable}}", tags: "{{fields.tags}}"}
+    output: {path: data}
+
+  - name: Stop Timer
+    resource: Time Entry
+    description: Stops the timer that is running.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+    request:
+      method: POST
+      path: "team/{{fields.team}}/time_entries/stop"
+    output: {path: data}
+
+  - name: Get Time Entry Tags
+    resource: Time Entry Tag
+    description: Lists the tags used on time entries.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+    request:
+      method: GET
+      path: "team/{{fields.team}}/time_entries/tags"
+    output: {path: data}
+
+  - name: Add Tags to Time Entries
+    resource: Time Entry Tag
+    description: Tags time entries.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: time_entry_ids, label: Time entry IDs, type: json, required: true, description: "Like [\"2004\"]"}
+      - {name: tags, label: Tags, type: json, required: true, description: "Like [{\"name\": \"design\"}]"}
+    request:
+      method: POST
+      path: "team/{{fields.team}}/time_entries/tags"
+      body: {time_entry_ids: "{{fields.time_entry_ids}}", tags: "{{fields.tags}}"}
+    output:
+      value: {added: true}
+
+  - name: Remove Tags from Time Entries
+    resource: Time Entry Tag
+    description: Takes tags off time entries.
+    fields:
+      - {name: team, label: Workspace, type: select, required: true, options_from: {request: {method: GET, path: team}, path: teams, label: name, value: id}}
+      - {name: time_entry_ids, label: Time entry IDs, type: json, required: true, description: "Like [\"2004\"]"}
+      - {name: tags, label: Tags, type: json, required: true, description: "Like [{\"name\": \"design\"}]"}
+    request:
+      method: DELETE
+      path: "team/{{fields.team}}/time_entries/tags"
+      body: {time_entry_ids: "{{fields.time_entry_ids}}", tags: "{{fields.tags}}"}
+    output:
+      value: {removed: true}
+
+i18n:
+  pt-BR:
+    description: "Tarefas, listas, pastas, comentários, checklists, metas, etiquetas, convidados e controle de tempo no ClickUp."
+    triggers:
+      Event: {name: Evento, description: "Inicia o fluxo quando acontece o que você escolher num espaço de trabalho, se quiser só num espaço, pasta, lista ou tarefa.", fields: {team: Espaço de trabalho, events: Eventos, space_id: Só no espaço (ID), folder_id: Só na pasta (ID), list_id: Só na lista (ID), task_id: Só na tarefa (ID)}}
+    actions:
+      Create Task: {name: Criar tarefa, description: Cria uma tarefa numa lista., fields: {list: ID da lista, name: Nome, markdown_content: Descrição, assignees: Responsáveis, tags: Etiquetas, status: Status, priority: Prioridade, due_date: Prazo, due_date_time: Prazo tem hora, start_date: Início, start_date_time: Início tem hora, time_estimate: Estimativa (ms), points: Pontos do sprint, notify_all: Avisar todos, parent: ID da tarefa pai, links_to: ID da tarefa ligada, custom_item_id: ID do tipo de tarefa, custom_fields: Campos personalizados}}
+      Get Task: {name: Ler tarefa, description: Lê uma tarefa., fields: {task: ID da tarefa, include_subtasks: Incluir subtarefas, include_markdown_description: Descrição em Markdown}}
+      Get Tasks: {name: Listar tarefas, description: "Lista as tarefas de uma lista, com filtros.", fields: {list: ID da lista, archived: Arquivadas, include_closed: Incluir fechadas, subtasks: Incluir subtarefas, statuses: Status, assignees: Responsáveis, tags: Etiquetas, due_date_gt: Prazo depois de, due_date_lt: Prazo antes de, date_created_gt: Criadas depois de, date_created_lt: Criadas antes de, date_updated_gt: Alteradas depois de, date_updated_lt: Alteradas antes de, order_by: Ordenar por, reverse: Ordem inversa, custom_fields: Filtros de campos personalizados}}
+      Update Task: {name: Atualizar tarefa, description: Muda uma tarefa. Campos vazios ficam como estão., fields: {task: ID da tarefa, name: Nome, markdown_content: Descrição, status: Status, priority: Prioridade, due_date: Prazo, due_date_time: Prazo tem hora, start_date: Início, start_date_time: Início tem hora, time_estimate: Estimativa (ms), points: Pontos do sprint, add_assignees: Adicionar responsáveis, remove_assignees: Tirar responsáveis, parent: Mover para dentro da tarefa, archived: Arquivada}}
+      Delete Task: {name: Excluir tarefa, description: Exclui uma tarefa., fields: {task: ID da tarefa}}
+      Get Task Members: {name: Listar membros da tarefa, description: Lista quem vê uma tarefa., fields: {task: ID da tarefa}}
+      Set Custom Field: {name: Preencher campo personalizado, description: Define o valor de um campo personalizado numa tarefa., fields: {task: ID da tarefa, field: ID do campo, value: Valor}}
+      Add Task Dependency: {name: Adicionar dependência, description: Faz uma tarefa esperar por outra., fields: {task: ID da tarefa, depends_on: Espera pela tarefa (ID)}}
+      Remove Task Dependency: {name: Tirar dependência, description: Faz uma tarefa parar de esperar por outra., fields: {task: ID da tarefa, depends_on: Espera pela tarefa (ID)}}
+      Add Task to List: {name: Adicionar tarefa a lista, description: Põe uma tarefa em mais uma lista., fields: {list: ID da lista, task: ID da tarefa}}
+      Remove Task from List: {name: Tirar tarefa de lista, description: Tira uma tarefa de uma lista extra., fields: {list: ID da lista, task: ID da tarefa}}
+      Add Tag to Task: {name: Etiquetar tarefa, description: Põe uma etiqueta numa tarefa., fields: {task: ID da tarefa, tag: Nome da etiqueta}}
+      Remove Tag from Task: {name: Tirar etiqueta de tarefa, description: Tira uma etiqueta de uma tarefa., fields: {task: ID da tarefa, tag: Nome da etiqueta}}
+      Create Checklist: {name: Criar checklist, description: Adiciona uma checklist a uma tarefa., fields: {task: ID da tarefa, name: Nome}}
+      Update Checklist: {name: Atualizar checklist, description: Renomeia ou move uma checklist., fields: {checklist: ID da checklist, name: Nome, position: Posição}}
+      Delete Checklist: {name: Excluir checklist, description: Exclui uma checklist., fields: {checklist: ID da checklist}}
+      Create Checklist Item: {name: Criar item de checklist, description: Adiciona um item a uma checklist., fields: {checklist: ID da checklist, name: Nome, assignee: ID do responsável}}
+      Update Checklist Item: {name: Atualizar item de checklist, description: "Muda, marca ou aninha um item de checklist.", fields: {checklist: ID da checklist, item: ID do item, name: Nome, resolved: Marcado, assignee: ID do responsável, parent: Aninhar no item (ID)}}
+      Delete Checklist Item: {name: Excluir item de checklist, description: Exclui um item de checklist., fields: {checklist: ID da checklist, item: ID do item}}
+      Create Comment: {name: Comentar, description: "Comenta numa tarefa, lista ou visão de chat.", fields: {on: Em, id: "ID da tarefa, lista ou visão", comment_text: Texto, assignee: Atribuir ao usuário (ID), notify_all: Avisar todos}}
+      Get Comments: {name: Listar comentários, description: "Lista os comentários de uma tarefa, lista ou visão de chat.", fields: {on: Em, id: "ID da tarefa, lista ou visão"}}
+      Update Comment: {name: Atualizar comentário, description: "Muda um comentário, a quem está atribuído ou se está resolvido.", fields: {comment: ID do comentário, comment_text: Texto, assignee: Atribuir ao usuário (ID), resolved: Resolvido}}
+      Delete Comment: {name: Excluir comentário, description: Exclui um comentário., fields: {comment: ID do comentário}}
+      Create List: {name: Criar lista, description: "Cria uma lista numa pasta, ou num espaço fora das pastas.", fields: {in: Em, parent: ID da pasta ou do espaço, name: Nome, markdown_content: Descrição, due_date: Prazo, due_date_time: Prazo tem hora, priority: Prioridade, assignee: ID do dono, status: Status de cor}}
+      Get List: {name: Ler lista, description: Lê uma lista., fields: {list: ID da lista}}
+      Get Lists: {name: Listar listas, description: "Lista as listas de uma pasta, ou as de um espaço fora das pastas.", fields: {in: Em, parent: ID da pasta ou do espaço, archived: Arquivadas}}
+      Update List: {name: Atualizar lista, description: Muda uma lista. Campos vazios ficam como estão., fields: {list: ID da lista, name: Nome, markdown_content: Descrição, due_date: Prazo, due_date_time: Prazo tem hora, priority: Prioridade, assignee: ID do dono, unset_status: Limpar status de cor}}
+      Delete List: {name: Excluir lista, description: Exclui uma lista., fields: {list: ID da lista}}
+      Get List Custom Fields: {name: Listar campos personalizados, description: Lista os campos personalizados que as tarefas de uma lista podem ter., fields: {list: ID da lista}}
+      Get List Members: {name: Listar membros da lista, description: Lista quem vê uma lista., fields: {list: ID da lista}}
+      Create Folder: {name: Criar pasta, description: Cria uma pasta num espaço., fields: {space: ID do espaço, name: Nome}}
+      Get Folder: {name: Ler pasta, description: Lê uma pasta., fields: {folder: ID da pasta}}
+      Get Folders: {name: Listar pastas, description: Lista as pastas de um espaço., fields: {space: ID do espaço, archived: Arquivadas}}
+      Update Folder: {name: Renomear pasta, description: Renomeia uma pasta., fields: {folder: ID da pasta, name: Nome}}
+      Delete Folder: {name: Excluir pasta, description: Exclui uma pasta., fields: {folder: ID da pasta}}
+      Get Spaces: {name: Listar espaços, description: Lista os espaços de um espaço de trabalho., fields: {team: Espaço de trabalho, archived: Arquivados}}
+      Get Space Tags: {name: Listar etiquetas do espaço, description: Lista as etiquetas de um espaço., fields: {space: ID do espaço}}
+      Create Space Tag: {name: Criar etiqueta, description: Cria uma etiqueta num espaço., fields: {space: ID do espaço, name: Nome, tag_fg: Cor do texto, tag_bg: Cor do fundo}}
+      Update Space Tag: {name: Atualizar etiqueta, description: Renomeia ou muda a cor de uma etiqueta., fields: {space: ID do espaço, tag: Nome da etiqueta, name: Novo nome, tag_fg: Cor do texto, tag_bg: Cor do fundo}}
+      Delete Space Tag: {name: Excluir etiqueta, description: Exclui uma etiqueta de um espaço., fields: {space: ID do espaço, tag: Nome da etiqueta}}
+      Create Goal: {name: Criar meta, description: Cria uma meta num espaço de trabalho., fields: {team: Espaço de trabalho, name: Nome, due_date: Prazo, description: Descrição, owners: Donos, multiple_owners: Vários donos, color: Cor}}
+      Get Goal: {name: Ler meta, description: Lê uma meta e seus resultados-chave., fields: {goal: ID da meta}}
+      Get Goals: {name: Listar metas, description: Lista as metas de um espaço de trabalho., fields: {team: Espaço de trabalho, include_completed: Incluir concluídas}}
+      Update Goal: {name: Atualizar meta, description: Muda uma meta. Campos vazios ficam como estão., fields: {goal: ID da meta, name: Nome, due_date: Prazo, description: Descrição, add_owners: Adicionar donos, rem_owners: Tirar donos, color: Cor}}
+      Delete Goal: {name: Excluir meta, description: Exclui uma meta., fields: {goal: ID da meta}}
+      Create Key Result: {name: Criar resultado-chave, description: Adiciona um resultado-chave a uma meta., fields: {goal: ID da meta, name: Nome, type: Tipo, steps_start: Valor inicial, steps_end: Valor alvo, unit: Unidade, owners: Donos, task_ids: IDs das tarefas, list_ids: IDs das listas}}
+      Update Key Result: {name: Atualizar resultado-chave, description: "Registra o progresso de um resultado-chave, ou o renomeia.", fields: {key_result: ID do resultado-chave, steps_current: Valor atual, note: Nota, name: Nome, unit: Unidade}}
+      Delete Key Result: {name: Excluir resultado-chave, description: Exclui um resultado-chave., fields: {key_result: ID do resultado-chave}}
+      Invite Guest: {name: Convidar, description: Convida alguém para um espaço de trabalho. Exige o ClickUp Enterprise., fields: {team: Espaço de trabalho, email: E-mail, can_edit_tags: Pode editar etiquetas, can_see_time_spent: Vê o tempo gasto, can_see_time_estimated: Vê o tempo estimado, can_create_views: Pode criar visões}}
+      Get Guest: {name: Ler convidado, description: Lê um convidado. Exige o ClickUp Enterprise., fields: {team: Espaço de trabalho, guest: ID do convidado}}
+      Update Guest: {name: Atualizar convidado, description: Muda o que um convidado pode fazer. Exige o ClickUp Enterprise., fields: {team: Espaço de trabalho, guest: ID do convidado, username: Nome, can_edit_tags: Pode editar etiquetas, can_see_time_spent: Vê o tempo gasto, can_see_time_estimated: Vê o tempo estimado, can_create_views: Pode criar visões}}
+      Remove Guest: {name: Remover convidado, description: Tira um convidado de um espaço de trabalho. Exige o ClickUp Enterprise., fields: {team: Espaço de trabalho, guest: ID do convidado}}
+      Create Time Entry: {name: Lançar tempo, description: Registra tempo já gasto., fields: {team: Espaço de trabalho, start: Início, duration: Duração (ms), tid: ID da tarefa, description: Descrição, billable: Faturável, assignee: Para o usuário (ID), tags: Etiquetas}}
+      Get Time Entry: {name: Ler lançamento de tempo, description: Lê um lançamento de tempo., fields: {team: Espaço de trabalho, entry: ID do lançamento}}
+      Get Time Entries: {name: Listar lançamentos de tempo, description: "Lista lançamentos de tempo num período, os últimos 30 dias quando vazio.", fields: {team: Espaço de trabalho, start_date: De, end_date: Até, assignee: IDs dos usuários, task_id: ID da tarefa, list_id: ID da lista, space_id: ID do espaço, include_task_tags: Incluir etiquetas da tarefa, include_location_names: Incluir nomes dos locais}}
+      Update Time Entry: {name: Atualizar lançamento de tempo, description: Muda um lançamento de tempo. Campos vazios ficam como estão., fields: {team: Espaço de trabalho, entry: ID do lançamento, start: Início, duration: Duração (ms), tid: ID da tarefa, description: Descrição, billable: Faturável}}
+      Delete Time Entry: {name: Excluir lançamento de tempo, description: Exclui um lançamento de tempo., fields: {team: Espaço de trabalho, entry: ID do lançamento}}
+      Start Timer: {name: Iniciar cronômetro, description: "Inicia o cronômetro, numa tarefa ou não.", fields: {team: Espaço de trabalho, tid: ID da tarefa, description: Descrição, billable: Faturável, tags: Etiquetas}}
+      Stop Timer: {name: Parar cronômetro, description: Para o cronômetro que está rodando., fields: {team: Espaço de trabalho}}
+      Get Time Entry Tags: {name: Listar etiquetas de tempo, description: Lista as etiquetas usadas em lançamentos de tempo., fields: {team: Espaço de trabalho}}
+      Add Tags to Time Entries: {name: Etiquetar lançamentos de tempo, description: Põe etiquetas em lançamentos de tempo., fields: {team: Espaço de trabalho, time_entry_ids: IDs dos lançamentos, tags: Etiquetas}}
+      Remove Tags from Time Entries: {name: Tirar etiquetas de lançamentos, description: Tira etiquetas de lançamentos de tempo., fields: {team: Espaço de trabalho, time_entry_ids: IDs dos lançamentos, tags: Etiquetas}}

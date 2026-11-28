@@ -1,0 +1,348 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Confluence Cloud's REST API v2, and v1 where v2 has no equivalent yet (search, labels
+# and uploads). The API token is made at id.atlassian.com, under Security. Page bodies
+# are in Confluence's storage format, which is XHTML.
+id: confluence
+name: Confluence
+version: 1.0.0
+description: Pages, their comments, labels and attachments, spaces and search in Confluence Cloud.
+icon: hero-book-open
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#fff"/><path fill="#172B4D" transform="translate(3.6 3.6) scale(0.7)" d="M.87 18.257c-.248.382-.53.875-.763 1.245a.764.764 0 0 0 .255 1.04l4.965 3.054a.764.764 0 0 0 1.058-.26c.199-.332.454-.763.733-1.221 1.967-3.247 3.945-2.853 7.508-1.146l4.957 2.337a.764.764 0 0 0 1.028-.382l2.364-5.346a.764.764 0 0 0-.382-1 599.851 599.851 0 0 1-4.965-2.361C10.911 10.97 5.224 11.185.87 18.257zM23.131 5.743c.249-.405.531-.875.764-1.25a.764.764 0 0 0-.256-1.034L18.675.404a.764.764 0 0 0-1.058.26c-.195.335-.451.763-.734 1.225-1.966 3.246-3.945 2.85-7.508 1.146L4.437.694a.764.764 0 0 0-1.027.382L1.046 6.422a.764.764 0 0 0 .382 1c1.039.49 3.105 1.467 4.965 2.361 6.698 3.246 12.392 3.029 16.738-4.04z"/></svg>
+category: productivity
+author: Heddle
+homepage: https://developer.atlassian.com/cloud/confluence/rest/v2/
+base_url: "{{credential.url}}/wiki/"
+
+credential:
+  label: Confluence
+  fields:
+    - {name: url, label: Site address, required: true, description: "Like https://acme.atlassian.net"}
+    - {name: email, label: Email, required: true}
+    - {name: api_token, label: API token, secret: true, required: true}
+  auth:
+    type: basic
+    username: "{{credential.email}}"
+    password: "{{credential.api_token}}"
+
+errors:
+  message_path: errors.0.title
+
+triggers:
+  - name: New Page
+    description: Starts the flow for each new page in a space, checking every 5 minutes.
+    fields:
+      - {name: space, label: Space, type: select, required: true, options_from: {request: {method: GET, path: api/v2/spaces, query: {limit: 250}}, path: results}}
+    request:
+      method: GET
+      path: "api/v2/spaces/{{fields.space}}/pages"
+      query: {sort: "-created-date", limit: 100}
+    output: {path: results}
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Pages
+  - name: Create Page
+    resource: Page
+    description: Creates a page in a space, under another page if you want.
+    fields:
+      - {name: space, label: Space, type: select, required: true, options_from: {request: {method: GET, path: api/v2/spaces, query: {limit: 250}}, path: results}}
+      - {name: title, label: Title, required: true}
+      - {name: body, label: Content, type: textarea, description: "In storage format, like <p>Hello</p>"}
+      - {name: parent, label: Parent page ID}
+      - {name: status, label: Status, type: select, default: current, options: [{label: Published, value: current}, {label: Draft, value: draft}]}
+      - {name: private, label: Only I can see it, type: boolean}
+    request:
+      method: POST
+      path: api/v2/pages
+      query: {private: "{{fields.private}}"}
+      body:
+        spaceId: "{{fields.space}}"
+        title: "{{fields.title}}"
+        parentId: "{{fields.parent}}"
+        status: "{{fields.status}}"
+        body: {representation: storage, value: "{{fields.body}}"}
+
+  - name: Get Page
+    resource: Page
+    description: Reads a page, with its content.
+    fields:
+      - {name: id, label: Page ID, required: true}
+      - {name: body_format, label: Content as, type: select, default: storage, options: [{label: Storage format, value: storage}, {label: Atlas doc format, value: atlas_doc_format}, {label: View (HTML), value: view}]}
+      - {name: version, label: Version, type: number, description: The latest when empty.}
+      - {name: include_labels, label: Include labels, type: boolean}
+    request:
+      method: GET
+      path: "api/v2/pages/{{fields.id}}"
+      query: {body-format: "{{fields.body_format}}", version: "{{fields.version}}", include-labels: "{{fields.include_labels}}"}
+
+  - name: Get Pages
+    resource: Page
+    description: Lists pages, all of them or those of a space or with a title.
+    fields:
+      - {name: space, label: Space ID}
+      - {name: title, label: Title}
+      - {name: status, label: Status, type: multiselect, options: [{label: Published, value: current}, {label: Archived, value: archived}, {label: Draft, value: draft}, {label: Trashed, value: trashed}]}
+      - {name: sort, label: Sort, type: select, options: [{label: Newest first, value: "-created-date"}, {label: Oldest first, value: created-date}, {label: Recently changed, value: "-modified-date"}, {label: Title, value: title}]}
+      - {name: body_format, label: Content as, type: select, options: [{label: Storage format, value: storage}, {label: Atlas doc format, value: atlas_doc_format}]}
+    request:
+      method: GET
+      path: api/v2/pages
+      query:
+        space-id: "{{fields.space}}"
+        title: "{{fields.title}}"
+        status: "{{fields.status}}"
+        sort: "{{fields.sort}}"
+        body-format: "{{fields.body_format}}"
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  - name: Get Child Pages
+    resource: Page
+    description: Lists the pages right under a page, or every page below it.
+    fields:
+      - {name: id, label: Page ID, required: true}
+      - {name: which, label: Which, type: select, default: children, options: [{label: Right under it, value: children}, {label: Everything below it, value: descendants}]}
+    request:
+      method: GET
+      path: "api/v2/pages/{{fields.id}}/{{fields.which}}"
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  - name: Update Page
+    resource: Page
+    description: Changes a page's title or content. Confluence needs the next version number.
+    fields:
+      - {name: id, label: Page ID, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: body, label: Content, type: textarea, required: true, description: "In storage format, like <p>Hello</p>"}
+      - {name: version, label: New version number, type: number, required: true, description: "The current one plus one; Get Page returns it at version.number."}
+      - {name: message, label: Version comment}
+      - {name: status, label: Status, type: select, default: current, options: [{label: Published, value: current}, {label: Draft, value: draft}]}
+      - {name: parent, label: Move under page ID}
+    request:
+      method: PUT
+      path: "api/v2/pages/{{fields.id}}"
+      body:
+        id: "{{fields.id}}"
+        status: "{{fields.status}}"
+        title: "{{fields.title}}"
+        parentId: "{{fields.parent}}"
+        body: {representation: storage, value: "{{fields.body}}"}
+        version: {number: "{{fields.version}}", message: "{{fields.message}}"}
+
+  - name: Delete Page
+    resource: Page
+    description: Moves a page to the trash, or purges it from there.
+    fields:
+      - {name: id, label: Page ID, required: true}
+      - {name: purge, label: Purge from the trash, type: boolean}
+      - {name: draft, label: It's a draft, type: boolean}
+    request:
+      method: DELETE
+      path: "api/v2/pages/{{fields.id}}"
+      query: {purge: "{{fields.purge}}", draft: "{{fields.draft}}"}
+    output:
+      value: {id: "{{fields.id}}", deleted: true}
+
+  # Comments
+  - name: Add Comment
+    resource: Comment
+    description: Comments at the foot of a page, or answers a comment.
+    fields:
+      - {name: page, label: Page ID}
+      - {name: parent, label: Answer comment ID, description: Instead of a page.}
+      - {name: body, label: Comment, type: textarea, required: true, description: "In storage format, like <p>Looks good</p>"}
+    request:
+      method: POST
+      path: api/v2/footer-comments
+      body:
+        pageId: "{{fields.page}}"
+        parentCommentId: "{{fields.parent}}"
+        body: {representation: storage, value: "{{fields.body}}"}
+
+  - name: Get Comments
+    resource: Comment
+    description: Lists the comments at the foot of a page.
+    fields:
+      - {name: page, label: Page ID, required: true}
+      - {name: body_format, label: Content as, type: select, default: storage, options: [{label: Storage format, value: storage}, {label: Atlas doc format, value: atlas_doc_format}]}
+    request:
+      method: GET
+      path: "api/v2/pages/{{fields.page}}/footer-comments"
+      query: {body-format: "{{fields.body_format}}"}
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment.
+    fields:
+      - {name: comment, label: Comment ID, required: true}
+    request:
+      method: DELETE
+      path: "api/v2/footer-comments/{{fields.comment}}"
+    output:
+      value: {comment: "{{fields.comment}}", deleted: true}
+
+  # Labels
+  - name: Add Labels
+    resource: Label
+    description: Labels a page.
+    fields:
+      - {name: page, label: Page ID, required: true}
+      - {name: labels, label: Labels, type: json, required: true, description: "Like [{\"prefix\": \"global\", \"name\": \"release\"}]"}
+    request:
+      method: POST
+      path: "rest/api/content/{{fields.page}}/label"
+      body: "{{fields.labels}}"
+    output: {path: results}
+
+  - name: Get Labels
+    resource: Label
+    description: Lists the labels of a page.
+    fields:
+      - {name: page, label: Page ID, required: true}
+      - {name: prefix, label: Prefix, type: select, options: [{label: Global, value: global}, {label: My, value: my}, {label: Team, value: team}]}
+    request:
+      method: GET
+      path: "api/v2/pages/{{fields.page}}/labels"
+      query: {prefix: "{{fields.prefix}}"}
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  - name: Remove Label
+    resource: Label
+    description: Takes a label off a page.
+    fields:
+      - {name: page, label: Page ID, required: true}
+      - {name: label, label: Label name, required: true}
+    request:
+      method: DELETE
+      path: "rest/api/content/{{fields.page}}/label"
+      query: {name: "{{fields.label}}"}
+    output:
+      value: {page: "{{fields.page}}", label: "{{fields.label}}", removed: true}
+
+  - name: Get Pages by Label
+    resource: Label
+    description: Lists the pages with a label.
+    fields:
+      - {name: label, label: Label ID, required: true, description: Get Labels returns it.}
+      - {name: space, label: Only in space ID}
+    request:
+      method: GET
+      path: "api/v2/labels/{{fields.label}}/pages"
+      query: {space-id: "{{fields.space}}"}
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  # Attachments
+  - name: Upload Attachment
+    resource: Attachment
+    description: Attaches a file to a page, or adds a version of an attachment with the same name.
+    fields:
+      - {name: page, label: Page ID, required: true}
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: comment, label: Comment}
+      - {name: minor_edit, label: Don't notify watchers, type: boolean}
+    request:
+      method: PUT
+      path: "rest/api/content/{{fields.page}}/child/attachment"
+      headers: {X-Atlassian-Token: no-check}
+      body_type: multipart
+      body:
+        file: "{{fields.file}}"
+        comment: "{{fields.comment}}"
+        minorEdit: "{{fields.minor_edit}}"
+    output: {path: results}
+
+  - name: Get Attachments
+    resource: Attachment
+    description: Lists the attachments of a page.
+    fields:
+      - {name: page, label: Page ID, required: true}
+      - {name: filename, label: File name}
+      - {name: media_type, label: Type, description: "Like image/png"}
+    request:
+      method: GET
+      path: "api/v2/pages/{{fields.page}}/attachments"
+      query: {filename: "{{fields.filename}}", mediaType: "{{fields.media_type}}"}
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  - name: Delete Attachment
+    resource: Attachment
+    description: Moves an attachment to the trash, or purges it from there.
+    fields:
+      - {name: attachment, label: Attachment ID, required: true}
+      - {name: purge, label: Purge from the trash, type: boolean}
+    request:
+      method: DELETE
+      path: "api/v2/attachments/{{fields.attachment}}"
+      query: {purge: "{{fields.purge}}"}
+    output:
+      value: {attachment: "{{fields.attachment}}", deleted: true}
+
+  # Spaces
+  - name: Get Space
+    resource: Space
+    description: Reads a space.
+    fields:
+      - {name: space, label: Space ID, required: true}
+      - {name: description_format, label: Description as, type: select, options: [{label: Plain text, value: plain}, {label: View (HTML), value: view}]}
+    request:
+      method: GET
+      path: "api/v2/spaces/{{fields.space}}"
+      query: {description-format: "{{fields.description_format}}"}
+
+  - name: Get Spaces
+    resource: Space
+    description: Lists spaces, all of them or those that match.
+    fields:
+      - {name: keys, label: Keys, description: "Comma separated, like ENG,OPS"}
+      - {name: type, label: Type, type: select, options: [{label: Global, value: global}, {label: Personal, value: personal}, {label: Collaboration, value: collaboration}, {label: Knowledge base, value: knowledge_base}]}
+      - {name: status, label: Status, type: select, options: [{label: Current, value: current}, {label: Archived, value: archived}]}
+      - {name: labels, label: Labels, description: Comma separated.}
+    request:
+      method: GET
+      path: api/v2/spaces
+      query: {keys: "{{fields.keys}}", type: "{{fields.type}}", status: "{{fields.status}}", labels: "{{fields.labels}}"}
+    pagination: {type: link, items_path: results, next_path: _links.next, limit_param: limit, page_size: 250}
+
+  # Search
+  - name: Search
+    resource: Search
+    description: Finds pages, blog posts and more with CQL.
+    fields:
+      - {name: cql, label: CQL, required: true, description: "Like type = page AND space = ENG AND text ~ \"release\""}
+      - {name: excerpt, label: Excerpt, type: select, options: [{label: Highlighted, value: highlight}, {label: Indexed, value: indexed}, {label: None, value: none}]}
+      - {name: include_archived, label: Include archived spaces, type: boolean}
+    request:
+      method: GET
+      path: rest/api/search
+      query: {cql: "{{fields.cql}}", excerpt: "{{fields.excerpt}}", includeArchivedSpaces: "{{fields.include_archived}}"}
+    pagination: {type: offset, items_path: results, offset_param: start, limit_param: limit, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: "Páginas, seus comentários, rótulos e anexos, espaços e busca no Confluence Cloud."
+    triggers:
+      New Page: {name: Nova página, description: "Inicia o fluxo para cada página nova num espaço, olhando a cada 5 minutos.", fields: {space: Espaço}}
+    actions:
+      Create Page: {name: Criar página, description: "Cria uma página num espaço, dentro de outra página se quiser.", fields: {space: Espaço, title: Título, body: Conteúdo, parent: ID da página pai, status: Status, private: Só eu vejo}}
+      Get Page: {name: Ler página, description: "Lê uma página, com o conteúdo.", fields: {id: ID da página, body_format: Conteúdo como, version: Versão, include_labels: Incluir rótulos}}
+      Get Pages: {name: Listar páginas, description: "Lista páginas, todas ou as de um espaço ou com um título.", fields: {space: ID do espaço, title: Título, status: Status, sort: Ordem, body_format: Conteúdo como}}
+      Get Child Pages: {name: Listar páginas filhas, description: "Lista as páginas logo abaixo de uma página, ou todas abaixo dela.", fields: {id: ID da página, which: Quais}}
+      Update Page: {name: Atualizar página, description: Muda o título ou o conteúdo de uma página. O Confluence pede o número da próxima versão., fields: {id: ID da página, title: Título, body: Conteúdo, version: Número da nova versão, message: Comentário da versão, status: Status, parent: Mover para dentro da página (ID)}}
+      Delete Page: {name: Excluir página, description: "Manda uma página para a lixeira, ou a apaga de lá.", fields: {id: ID da página, purge: Apagar da lixeira, draft: É um rascunho}}
+      Add Comment: {name: Comentar, description: "Comenta no rodapé de uma página, ou responde um comentário.", fields: {page: ID da página, parent: Responder ao comentário (ID), body: Comentário}}
+      Get Comments: {name: Listar comentários, description: Lista os comentários do rodapé de uma página., fields: {page: ID da página, body_format: Conteúdo como}}
+      Delete Comment: {name: Excluir comentário, description: Exclui um comentário., fields: {comment: ID do comentário}}
+      Add Labels: {name: Adicionar rótulos, description: Põe rótulos numa página., fields: {page: ID da página, labels: Rótulos}}
+      Get Labels: {name: Listar rótulos, description: Lista os rótulos de uma página., fields: {page: ID da página, prefix: Prefixo}}
+      Remove Label: {name: Tirar rótulo, description: Tira um rótulo de uma página., fields: {page: ID da página, label: Nome do rótulo}}
+      Get Pages by Label: {name: Listar páginas por rótulo, description: Lista as páginas com um rótulo., fields: {label: ID do rótulo, space: Só no espaço (ID)}}
+      Upload Attachment: {name: Anexar arquivo, description: "Anexa um arquivo a uma página, ou adiciona uma versão de um anexo com o mesmo nome.", fields: {page: ID da página, file: Arquivo, comment: Comentário, minor_edit: Não avisar quem acompanha}}
+      Get Attachments: {name: Listar anexos, description: Lista os anexos de uma página., fields: {page: ID da página, filename: Nome do arquivo, media_type: Tipo}}
+      Delete Attachment: {name: Excluir anexo, description: "Manda um anexo para a lixeira, ou o apaga de lá.", fields: {attachment: ID do anexo, purge: Apagar da lixeira}}
+      Get Space: {name: Ler espaço, description: Lê um espaço., fields: {space: ID do espaço, description_format: Descrição como}}
+      Get Spaces: {name: Listar espaços, description: "Lista espaços, todos ou os que batem.", fields: {keys: Chaves, type: Tipo, status: Status, labels: Rótulos}}
+      Search: {name: Buscar, description: "Encontra páginas, posts de blog e mais com CQL.", fields: {cql: CQL, excerpt: Trecho, include_archived: Incluir espaços arquivados}}

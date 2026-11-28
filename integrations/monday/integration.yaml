@@ -1,0 +1,735 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# monday.com's GraphQL API. Each action sends a fixed query; what people fill goes in its
+# variables. Column values travel as JSON text, as monday asks. The token is in monday,
+# under your avatar > Developers > My access tokens.
+id: monday
+name: monday.com
+version: 1.0.0
+description: Boards, groups, columns, items, subitems and updates in monday.com.
+icon: hero-table-cells
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -50 256 256"><g><path d="M31.8458633,153.488694 C20.3244423,153.513586 9.68073708,147.337265 3.98575204,137.321731 C-1.62714067,127.367831 -1.29055839,115.129325 4.86093879,105.498969 L62.2342919,15.4033556 C68.2125882,5.54538256 79.032489,-0.333585033 90.5563073,0.0146553508 C102.071737,0.290611552 112.546041,6.74705604 117.96667,16.9106216 C123.315033,27.0238906 122.646488,39.1914174 116.240607,48.6847625 L58.9037201,138.780375 C52.9943022,147.988884 42.7873202,153.537154 31.8458633,153.488694 L31.8458633,153.488694 Z" fill="#F62B54"></path><path d="M130.25575,153.488484 C118.683837,153.488484 108.035731,147.301291 102.444261,137.358197 C96.8438154,127.431292 97.1804475,115.223704 103.319447,105.620522 L160.583402,15.7315506 C166.47539,5.73210989 177.327374,-0.284878136 188.929728,0.0146553508 C200.598885,0.269918151 211.174058,6.7973526 216.522421,17.0078646 C221.834319,27.2183766 221.056375,39.4588356 214.456008,48.9278699 L157.204209,138.816842 C151.313487,147.985468 141.153618,153.5168 130.25575,153.488484 Z" fill="#FFCC00"></path><ellipse fill="#00CA72" cx="226.465527" cy="125.324379" rx="29.5375538" ry="28.9176274"></ellipse></g></svg>
+category: project
+author: Heddle
+homepage: https://developer.monday.com/api-reference/
+base_url: https://api.monday.com/
+headers:
+  API-Version: "2025-04"
+
+credential:
+  label: monday.com
+  fields:
+    - {name: token, label: API token, secret: true, required: true}
+  auth:
+    type: header
+    name: Authorization
+    value: "{{credential.token}}"
+
+errors:
+  error_path: errors
+  message_path: errors.0.message
+
+triggers:
+  - name: New Item
+    description: Starts the flow for each new item on a board, checking every 5 minutes.
+    fields:
+      - {name: board, label: Board, type: select, required: true, options_from: {request: {method: POST, path: v2, body: {query: "{ boards(limit: 500, state: active) { id name } }"}}, path: data.boards}}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!]) { boards(ids: $board) { items_page(limit: 100, query_params: {order_by: [{column_id: \"__creation_log__\", direction: desc}]}) { items { id name created_at updated_at group { id title } column_values { id text value } } } } }"
+        variables: {board: ["{{fields.board}}"]}
+    output: {path: data.boards.0.items_page.items}
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Boards
+  - name: Create Board
+    resource: Board
+    description: Creates a board.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: kind, label: Kind, type: select, required: true, default: public, options: [{label: Public, value: public}, {label: Private, value: private}, {label: Shareable, value: share}]}
+      - {name: workspace, label: Workspace ID}
+      - {name: folder, label: Folder ID}
+      - {name: template, label: Template ID}
+      - {name: description, label: Description}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($name: String!, $kind: BoardKind!, $workspace: ID, $folder: ID, $template: ID, $description: String) { create_board(board_name: $name, board_kind: $kind, workspace_id: $workspace, folder_id: $folder, template_id: $template, description: $description) { id name url state board_kind } }"
+        variables: {name: "{{fields.name}}", kind: "{{fields.kind}}", workspace: "{{fields.workspace}}", folder: "{{fields.folder}}", template: "{{fields.template}}", description: "{{fields.description}}"}
+    output: {path: data.create_board}
+
+  - name: Get Board
+    resource: Board
+    description: Reads a board, with its columns and groups.
+    fields:
+      - {name: board, label: Board ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!]) { boards(ids: $board) { id name description url state board_kind workspace_id items_count owners { id name } columns { id title type settings_str } groups { id title color position } } }"
+        variables: {board: ["{{fields.board}}"]}
+    output: {path: data.boards.0}
+
+  - name: Get Boards
+    resource: Board
+    description: Lists boards, all of them or those of a workspace.
+    fields:
+      - {name: workspaces, label: Workspace IDs, type: json, description: "Like [\"1234\"]"}
+      - {name: state, label: State, type: select, default: active, options: [{label: Active, value: active}, {label: Archived, value: archived}, {label: Deleted, value: deleted}, {label: All, value: all}]}
+      - {name: kind, label: Kind, type: select, options: [{label: Public, value: public}, {label: Private, value: private}, {label: Shareable, value: share}]}
+      - {name: order_by, label: Order, type: select, options: [{label: Newest first, value: created_at}, {label: Last used, value: used_at}]}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($limit: Int, $page: Int, $workspaces: [ID], $state: State, $kind: BoardKind, $order: BoardsOrderBy) { boards(limit: $limit, page: $page, workspace_ids: $workspaces, state: $state, board_kind: $kind, order_by: $order) { id name description url state board_kind workspace_id items_count } }"
+        variables: {workspaces: "{{fields.workspaces}}", state: "{{fields.state}}", kind: "{{fields.kind}}", order: "{{fields.order_by}}"}
+    pagination: {type: page, in: body, items_path: data.boards, page_param: variables.page, limit_param: variables.limit, page_size: 100}
+
+  - name: Duplicate Board
+    resource: Board
+    description: Copies a board, with or without its items and updates.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: type, label: Copy, type: select, required: true, default: duplicate_board_with_structure, options: [{label: Structure only, value: duplicate_board_with_structure}, {label: Structure and items, value: duplicate_board_with_pulses}, {label: "Structure, items and updates", value: duplicate_board_with_pulses_and_updates}]}
+      - {name: name, label: Name of the copy}
+      - {name: workspace, label: Workspace ID}
+      - {name: folder, label: Folder ID}
+      - {name: keep_subscribers, label: Keep subscribers, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $type: DuplicateBoardType!, $name: String, $workspace: ID, $folder: ID, $keep: Boolean) { duplicate_board(board_id: $board, duplicate_type: $type, board_name: $name, workspace_id: $workspace, folder_id: $folder, keep_subscribers: $keep) { board { id name url } } }"
+        variables: {board: "{{fields.board}}", type: "{{fields.type}}", name: "{{fields.name}}", workspace: "{{fields.workspace}}", folder: "{{fields.folder}}", keep: "{{fields.keep_subscribers}}"}
+    output: {path: data.duplicate_board.board}
+
+  - name: Update Board
+    resource: Board
+    description: Renames a board or changes its description or communication.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: attribute, label: What, type: select, required: true, options: [{label: Name, value: name}, {label: Description, value: description}, {label: Communication, value: communication}]}
+      - {name: value, label: New value, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $attribute: BoardAttributes!, $value: String!) { update_board(board_id: $board, board_attribute: $attribute, new_value: $value) }"
+        variables: {board: "{{fields.board}}", attribute: "{{fields.attribute}}", value: "{{fields.value}}"}
+    output:
+      value: {board: "{{fields.board}}", updated: true}
+
+  - name: Archive Board
+    resource: Board
+    description: Archives a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!) { archive_board(board_id: $board) { id state } }"
+        variables: {board: "{{fields.board}}"}
+    output: {path: data.archive_board}
+
+  - name: Delete Board
+    resource: Board
+    description: Deletes a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!) { delete_board(board_id: $board) { id state } }"
+        variables: {board: "{{fields.board}}"}
+    output: {path: data.delete_board}
+
+  - name: Get Activity Logs
+    resource: Board
+    description: Lists what happened on a board, in a date range.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: from, label: From, type: datetime}
+      - {name: to, label: To, type: datetime}
+      - {name: user_ids, label: Only by user IDs, type: json, description: "Like [\"1234\"]"}
+      - {name: item_ids, label: Only on item IDs, type: json, description: "Like [\"5678\"]"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!], $from: ISO8601DateTime, $to: ISO8601DateTime, $users: [ID!], $items: [ID!], $limit: Int, $page: Int) { boards(ids: $board) { activity_logs(from: $from, to: $to, user_ids: $users, item_ids: $items, limit: $limit, page: $page) { id event entity user_id created_at data } } }"
+        variables: {board: ["{{fields.board}}"], from: "{{fields.from}}", to: "{{fields.to}}", users: "{{fields.user_ids}}", items: "{{fields.item_ids}}"}
+    pagination: {type: page, in: body, items_path: data.boards.0.activity_logs, page_param: variables.page, limit_param: variables.limit, page_size: 100}
+
+  - name: Get Board Subscribers
+    resource: Board
+    description: Lists who follows a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!]) { boards(ids: $board) { subscribers { id name email } } }"
+        variables: {board: ["{{fields.board}}"]}
+    output: {path: data.boards.0.subscribers}
+
+  - name: Add Board Subscribers
+    resource: Board
+    description: Adds users to a board, as subscribers or owners.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: users, label: User IDs, type: json, required: true, description: "Like [\"1234\"]"}
+      - {name: kind, label: As, type: select, default: subscriber, options: [{label: Subscribers, value: subscriber}, {label: Owners, value: owner}]}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $users: [ID!]!, $kind: BoardSubscriberKind) { add_users_to_board(board_id: $board, user_ids: $users, kind: $kind) { id name } }"
+        variables: {board: "{{fields.board}}", users: "{{fields.users}}", kind: "{{fields.kind}}"}
+    output: {path: data.add_users_to_board}
+
+  - name: Remove Board Subscribers
+    resource: Board
+    description: Takes users off a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: users, label: User IDs, type: json, required: true, description: "Like [\"1234\"]"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $users: [ID!]!) { delete_subscribers_from_board(board_id: $board, user_ids: $users) { id name } }"
+        variables: {board: "{{fields.board}}", users: "{{fields.users}}"}
+    output: {path: data.delete_subscribers_from_board}
+
+  # Columns
+  - name: Create Column
+    resource: Column
+    description: Adds a column to a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: title, label: Title, required: true}
+      - name: type
+        label: Type
+        type: select
+        required: true
+        default: text
+        options:
+          - {label: Text, value: text}
+          - {label: Long text, value: long_text}
+          - {label: Numbers, value: numbers}
+          - {label: Status, value: status}
+          - {label: Dropdown, value: dropdown}
+          - {label: Date, value: date}
+          - {label: Timeline, value: timeline}
+          - {label: People, value: people}
+          - {label: Email, value: email}
+          - {label: Phone, value: phone}
+          - {label: Link, value: link}
+          - {label: Checkbox, value: checkbox}
+          - {label: Rating, value: rating}
+          - {label: Tags, value: tags}
+          - {label: Country, value: country}
+          - {label: Location, value: location}
+          - {label: Hour, value: hour}
+          - {label: Week, value: week}
+          - {label: World clock, value: world_clock}
+          - {label: Files, value: file}
+          - {label: Connect boards, value: board_relation}
+          - {label: Dependency, value: dependency}
+      - {name: description, label: Description}
+      - {name: defaults, label: Settings, type: textarea, description: "As JSON text, like {\"labels\": {\"1\": \"Done\"}}"}
+      - {name: after, label: After column ID}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $title: String!, $type: ColumnType!, $description: String, $defaults: JSON, $after: ID) { create_column(board_id: $board, title: $title, column_type: $type, description: $description, defaults: $defaults, after_column_id: $after) { id title type } }"
+        variables: {board: "{{fields.board}}", title: "{{fields.title}}", type: "{{fields.type}}", description: "{{fields.description}}", defaults: "{{fields.defaults}}", after: "{{fields.after}}"}
+    output: {path: data.create_column}
+
+  - name: Get Columns
+    resource: Column
+    description: Lists the columns of a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!]) { boards(ids: $board) { columns { id title type description settings_str archived } } }"
+        variables: {board: ["{{fields.board}}"]}
+    output: {path: data.boards.0.columns}
+
+  - name: Update Column
+    resource: Column
+    description: Renames a column or changes its description.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: column, label: Column ID, required: true}
+      - {name: property, label: What, type: select, required: true, default: title, options: [{label: Title, value: title}, {label: Description, value: description}]}
+      - {name: value, label: New value, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $column: String!, $property: ColumnProperty!, $value: String!) { change_column_metadata(board_id: $board, column_id: $column, column_property: $property, value: $value) { id title description } }"
+        variables: {board: "{{fields.board}}", column: "{{fields.column}}", property: "{{fields.property}}", value: "{{fields.value}}"}
+    output: {path: data.change_column_metadata}
+
+  - name: Delete Column
+    resource: Column
+    description: Deletes a column.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: column, label: Column ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $column: String!) { delete_column(board_id: $board, column_id: $column) { id } }"
+        variables: {board: "{{fields.board}}", column: "{{fields.column}}"}
+    output: {path: data.delete_column}
+
+  - name: Create or Get Tag
+    resource: Column
+    description: Returns a tag by name, creating it when it doesn't exist.
+    fields:
+      - {name: name, label: Tag name, required: true}
+      - {name: board, label: Board ID, description: For a private board's tag.}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($name: String!, $board: ID) { create_or_get_tag(tag_name: $name, board_id: $board) { id name color } }"
+        variables: {name: "{{fields.name}}", board: "{{fields.board}}"}
+    output: {path: data.create_or_get_tag}
+
+  # Groups
+  - name: Create Group
+    resource: Group
+    description: Adds a group to a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: color, label: Color, description: "Like #037f4c"}
+      - {name: relative_to, label: Next to group ID}
+      - {name: position, label: Where, type: select, options: [{label: Before it, value: before_at}, {label: After it, value: after_at}]}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $name: String!, $color: String, $relative: String, $position: PositionRelative) { create_group(board_id: $board, group_name: $name, group_color: $color, relative_to: $relative, position_relative_method: $position) { id title color } }"
+        variables: {board: "{{fields.board}}", name: "{{fields.name}}", color: "{{fields.color}}", relative: "{{fields.relative_to}}", position: "{{fields.position}}"}
+    output: {path: data.create_group}
+
+  - name: Get Groups
+    resource: Group
+    description: Lists the groups of a board.
+    fields:
+      - {name: board, label: Board ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!]) { boards(ids: $board) { groups { id title color position archived deleted } } }"
+        variables: {board: ["{{fields.board}}"]}
+    output: {path: data.boards.0.groups}
+
+  - name: Update Group
+    resource: Group
+    description: Renames, recolors or moves a group.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: group, label: Group ID, required: true}
+      - {name: attribute, label: What, type: select, required: true, options: [{label: Title, value: title}, {label: Color, value: color}, {label: Position, value: position}, {label: Relative position after, value: relative_position_after}, {label: Relative position before, value: relative_position_before}]}
+      - {name: value, label: New value, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $group: String!, $attribute: GroupAttributes!, $value: String!) { update_group(board_id: $board, group_id: $group, group_attribute: $attribute, new_value: $value) { id title color } }"
+        variables: {board: "{{fields.board}}", group: "{{fields.group}}", attribute: "{{fields.attribute}}", value: "{{fields.value}}"}
+    output: {path: data.update_group}
+
+  - name: Duplicate Group
+    resource: Group
+    description: Copies a group and its items.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: group, label: Group ID, required: true}
+      - {name: title, label: Title of the copy}
+      - {name: add_to_top, label: Put it on top, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $group: String!, $title: String, $top: Boolean) { duplicate_group(board_id: $board, group_id: $group, group_title: $title, add_to_top: $top) { id title } }"
+        variables: {board: "{{fields.board}}", group: "{{fields.group}}", title: "{{fields.title}}", top: "{{fields.add_to_top}}"}
+    output: {path: data.duplicate_group}
+
+  - name: Archive Group
+    resource: Group
+    description: Archives a group.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: group, label: Group ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $group: String!) { archive_group(board_id: $board, group_id: $group) { id archived } }"
+        variables: {board: "{{fields.board}}", group: "{{fields.group}}"}
+    output: {path: data.archive_group}
+
+  - name: Delete Group
+    resource: Group
+    description: Deletes a group and its items.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: group, label: Group ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $group: String!) { delete_group(board_id: $board, group_id: $group) { id deleted } }"
+        variables: {board: "{{fields.board}}", group: "{{fields.group}}"}
+    output: {path: data.delete_group}
+
+  # Items
+  - name: Create Item
+    resource: Item
+    description: Creates an item on a board.
+    fields:
+      - {name: board, label: Board, type: select, required: true, options_from: {request: {method: POST, path: v2, body: {query: "{ boards(limit: 500, state: active) { id name } }"}}, path: data.boards}}
+      - {name: group, label: Group, type: select, options_from: {request: {method: POST, path: v2, body: {query: "query($board: [ID!]) { boards(ids: $board) { groups { id title } } }", variables: {board: ["{{fields.board}}"]}}}, path: data.boards.0.groups, label: title, value: id}}
+      - {name: name, label: Name, required: true}
+      - {name: column_values, label: Column values, type: textarea, description: "As JSON text, by column ID, like {\"status\": {\"label\": \"Done\"}, \"date4\": {\"date\": \"2026-12-31\"}}"}
+      - {name: create_labels, label: Create missing labels, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $group: String, $name: String!, $values: JSON, $labels: Boolean) { create_item(board_id: $board, group_id: $group, item_name: $name, column_values: $values, create_labels_if_missing: $labels) { id name url created_at group { id title } column_values { id text value } } }"
+        variables: {board: "{{fields.board}}", group: "{{fields.group}}", name: "{{fields.name}}", values: "{{fields.column_values}}", labels: "{{fields.create_labels}}"}
+    output: {path: data.create_item}
+
+  - name: Create Subitem
+    resource: Item
+    description: Creates a subitem under an item.
+    fields:
+      - {name: parent, label: Parent item ID, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: column_values, label: Column values, type: textarea, description: "As JSON text, by column ID"}
+      - {name: create_labels, label: Create missing labels, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($parent: ID!, $name: String!, $values: JSON, $labels: Boolean) { create_subitem(parent_item_id: $parent, item_name: $name, column_values: $values, create_labels_if_missing: $labels) { id name url board { id } column_values { id text value } } }"
+        variables: {parent: "{{fields.parent}}", name: "{{fields.name}}", values: "{{fields.column_values}}", labels: "{{fields.create_labels}}"}
+    output: {path: data.create_subitem}
+
+  - name: Get Item
+    resource: Item
+    description: Reads an item with its column values.
+    fields:
+      - {name: item, label: Item ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($item: [ID!]) { items(ids: $item) { id name url state created_at updated_at creator_id board { id name } group { id title } column_values { id type text value } subitems { id name } } }"
+        variables: {item: ["{{fields.item}}"]}
+    output: {path: data.items.0}
+
+  - name: Get Items
+    resource: Item
+    description: Lists the items of a board, all of them or those that match.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: query_params, label: Filter, type: json, description: "monday's ItemsQuery, like {\"rules\": [{\"column_id\": \"status\", \"compare_value\": [1]}]}"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: [ID!], $limit: Int, $cursor: String, $params: ItemsQuery) { boards(ids: $board) { items_page(limit: $limit, cursor: $cursor, query_params: $params) { cursor items { id name url state created_at updated_at group { id title } column_values { id type text value } } } } }"
+        variables: {board: ["{{fields.board}}"], params: "{{fields.query_params}}"}
+    pagination: {type: cursor, in: body, items_path: data.boards.0.items_page.items, limit_param: variables.limit, cursor_param: variables.cursor, next_path: data.boards.0.items_page.cursor, page_size: 500}
+
+  - name: Find Items by Column Value
+    resource: Item
+    description: Finds the items of a board whose column has one of the values.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: column, label: Column ID, required: true}
+      - {name: values, label: Values, type: json, required: true, description: "Like [\"Done\", \"Stuck\"]"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($board: ID!, $columns: [ItemsPageByColumnValuesQuery!], $limit: Int, $cursor: String) { items_page_by_column_values(board_id: $board, columns: $columns, limit: $limit, cursor: $cursor) { cursor items { id name url group { id title } column_values { id type text value } } } }"
+        variables:
+          board: "{{fields.board}}"
+          columns: [{column_id: "{{fields.column}}", column_values: "{{fields.values}}"}]
+    pagination: {type: cursor, in: body, items_path: data.items_page_by_column_values.items, limit_param: variables.limit, cursor_param: variables.cursor, next_path: data.items_page_by_column_values.cursor, page_size: 500}
+
+  - name: Get Column Value
+    resource: Item
+    description: Reads the value of some columns of an item.
+    fields:
+      - {name: item, label: Item ID, required: true}
+      - {name: columns, label: Column IDs, type: json, required: true, description: "Like [\"status\", \"date4\"]"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($item: [ID!], $columns: [String!]) { items(ids: $item) { id column_values(ids: $columns) { id type text value } } }"
+        variables: {item: ["{{fields.item}}"], columns: "{{fields.columns}}"}
+    output: {path: data.items.0.column_values}
+
+  - name: Update Item
+    resource: Item
+    description: Changes the column values of an item.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: item, label: Item ID, required: true}
+      - {name: column_values, label: Column values, type: textarea, required: true, description: "As JSON text, by column ID, like {\"status\": {\"label\": \"Done\"}}. Use name for the item's name."}
+      - {name: create_labels, label: Create missing labels, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $item: ID!, $values: JSON!, $labels: Boolean) { change_multiple_column_values(board_id: $board, item_id: $item, column_values: $values, create_labels_if_missing: $labels) { id name column_values { id text value } } }"
+        variables: {board: "{{fields.board}}", item: "{{fields.item}}", values: "{{fields.column_values}}", labels: "{{fields.create_labels}}"}
+    output: {path: data.change_multiple_column_values}
+
+  - name: Set Column Text
+    resource: Item
+    description: Sets one column of an item from plain text, like Done or 2026-12-31.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: item, label: Item ID, required: true}
+      - {name: column, label: Column ID, required: true}
+      - {name: value, label: Value, required: true}
+      - {name: create_labels, label: Create missing labels, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $item: ID, $column: String!, $value: String, $labels: Boolean) { change_simple_column_value(board_id: $board, item_id: $item, column_id: $column, value: $value, create_labels_if_missing: $labels) { id name } }"
+        variables: {board: "{{fields.board}}", item: "{{fields.item}}", column: "{{fields.column}}", value: "{{fields.value}}", labels: "{{fields.create_labels}}"}
+    output: {path: data.change_simple_column_value}
+
+  - name: Clear Column Values
+    resource: Item
+    description: Empties some columns of an item.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: item, label: Item ID, required: true}
+      - {name: column_values, label: Columns to clear, type: textarea, required: true, description: "As JSON text, like {\"status\": null, \"text0\": \"\"}"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $item: ID!, $values: JSON!) { change_multiple_column_values(board_id: $board, item_id: $item, column_values: $values) { id name } }"
+        variables: {board: "{{fields.board}}", item: "{{fields.item}}", values: "{{fields.column_values}}"}
+    output: {path: data.change_multiple_column_values}
+
+  - name: Move Item to Group
+    resource: Item
+    description: Moves an item to another group of its board.
+    fields:
+      - {name: item, label: Item ID, required: true}
+      - {name: group, label: Group ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($item: ID!, $group: String!) { move_item_to_group(item_id: $item, group_id: $group) { id group { id title } } }"
+        variables: {item: "{{fields.item}}", group: "{{fields.group}}"}
+    output: {path: data.move_item_to_group}
+
+  - name: Move Item to Board
+    resource: Item
+    description: Moves an item to a group of another board.
+    fields:
+      - {name: item, label: Item ID, required: true}
+      - {name: board, label: Board ID, required: true}
+      - {name: group, label: Group ID, required: true}
+      - {name: columns_mapping, label: Column mapping, type: json, description: "Like [{\"source\": \"status\", \"target\": \"status1\"}]"}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($item: ID!, $board: ID!, $group: ID!, $mapping: [ColumnMappingInput!]) { move_item_to_board(item_id: $item, board_id: $board, group_id: $group, columns_mapping: $mapping) { id board { id } group { id } } }"
+        variables: {item: "{{fields.item}}", board: "{{fields.board}}", group: "{{fields.group}}", mapping: "{{fields.columns_mapping}}"}
+    output: {path: data.move_item_to_board}
+
+  - name: Duplicate Item
+    resource: Item
+    description: Copies an item, with its updates if you want.
+    fields:
+      - {name: board, label: Board ID, required: true}
+      - {name: item, label: Item ID, required: true}
+      - {name: with_updates, label: With updates, type: boolean}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($board: ID!, $item: ID!, $updates: Boolean) { duplicate_item(board_id: $board, item_id: $item, with_updates: $updates) { id name } }"
+        variables: {board: "{{fields.board}}", item: "{{fields.item}}", updates: "{{fields.with_updates}}"}
+    output: {path: data.duplicate_item}
+
+  - name: Get Item Subscribers
+    resource: Item
+    description: Lists who follows an item.
+    fields:
+      - {name: item, label: Item ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($item: [ID!]) { items(ids: $item) { subscribers { id name email } } }"
+        variables: {item: ["{{fields.item}}"]}
+    output: {path: data.items.0.subscribers}
+
+  - name: Archive Item
+    resource: Item
+    description: Archives an item.
+    fields:
+      - {name: item, label: Item ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($item: ID!) { archive_item(item_id: $item) { id state } }"
+        variables: {item: "{{fields.item}}"}
+    output: {path: data.archive_item}
+
+  - name: Delete Item
+    resource: Item
+    description: Deletes an item.
+    fields:
+      - {name: item, label: Item ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($item: ID!) { delete_item(item_id: $item) { id state } }"
+        variables: {item: "{{fields.item}}"}
+    output: {path: data.delete_item}
+
+  # Updates
+  - name: Create Update
+    resource: Update
+    description: Posts an update on an item, or answers one.
+    fields:
+      - {name: item, label: Item ID, required: true}
+      - {name: body, label: Text, type: textarea, required: true, description: HTML is fine.}
+      - {name: parent, label: Answer update ID}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($item: ID, $body: String!, $parent: ID) { create_update(item_id: $item, body: $body, parent_id: $parent) { id body created_at creator { id name } } }"
+        variables: {item: "{{fields.item}}", body: "{{fields.body}}", parent: "{{fields.parent}}"}
+    output: {path: data.create_update}
+
+  - name: Get Updates
+    resource: Update
+    description: Lists the updates of an item, or the account's latest.
+    fields:
+      - {name: item, label: Item ID, description: Empty for the whole account.}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "query($item: [ID!], $limit: Int, $page: Int) { updates(item_ids: $item, limit: $limit, page: $page) { id body text_body created_at updated_at item_id creator { id name } replies { id text_body creator { id name } } } }"
+        variables: {item: "{{fields.item}}"}
+    pagination: {type: page, in: body, items_path: data.updates, page_param: variables.page, limit_param: variables.limit, page_size: 100}
+
+  - name: Delete Update
+    resource: Update
+    description: Deletes an update.
+    fields:
+      - {name: update, label: Update ID, required: true}
+    request:
+      method: POST
+      path: v2
+      body:
+        query: "mutation($update: ID!) { delete_update(id: $update) { id } }"
+        variables: {update: "{{fields.update}}"}
+    output: {path: data.delete_update}
+
+  - name: Run Query
+    resource: GraphQL
+    description: Sends a GraphQL query or mutation of your own, like an aggregation.
+    fields:
+      - {name: query, label: Query, type: textarea, required: true}
+      - {name: variables, label: Variables, type: json}
+    request:
+      method: POST
+      path: v2
+      body: {query: "{{fields.query}}", variables: "{{fields.variables}}"}
+    output: {path: data}
+
+i18n:
+  pt-BR:
+    description: "Quadros, grupos, colunas, itens, subitens e atualizações no monday.com."
+    triggers:
+      New Item: {name: Novo item, description: "Inicia o fluxo para cada item novo num quadro, olhando a cada 5 minutos.", fields: {board: Quadro}}
+    actions:
+      Create Board: {name: Criar quadro, description: Cria um quadro., fields: {name: Nome, kind: Tipo, workspace: ID do espaço de trabalho, folder: ID da pasta, template: ID do modelo, description: Descrição}}
+      Get Board: {name: Ler quadro, description: "Lê um quadro, com suas colunas e grupos.", fields: {board: ID do quadro}}
+      Get Boards: {name: Listar quadros, description: "Lista quadros, todos ou os de um espaço de trabalho.", fields: {workspaces: IDs dos espaços de trabalho, state: Estado, kind: Tipo, order_by: Ordem}}
+      Duplicate Board: {name: Duplicar quadro, description: "Copia um quadro, com ou sem itens e atualizações.", fields: {board: ID do quadro, type: Copiar, name: Nome da cópia, workspace: ID do espaço de trabalho, folder: ID da pasta, keep_subscribers: Manter inscritos}}
+      Update Board: {name: Atualizar quadro, description: "Renomeia um quadro ou muda sua descrição ou comunicação.", fields: {board: ID do quadro, attribute: O quê, value: Novo valor}}
+      Archive Board: {name: Arquivar quadro, description: Arquiva um quadro., fields: {board: ID do quadro}}
+      Delete Board: {name: Excluir quadro, description: Exclui um quadro., fields: {board: ID do quadro}}
+      Get Activity Logs: {name: Ler atividades, description: "Lista o que aconteceu num quadro, num período.", fields: {board: ID do quadro, from: De, to: Até, user_ids: Só dos usuários (IDs), item_ids: Só nos itens (IDs)}}
+      Get Board Subscribers: {name: Listar inscritos do quadro, description: Lista quem segue um quadro., fields: {board: ID do quadro}}
+      Add Board Subscribers: {name: Adicionar inscritos ao quadro, description: "Põe usuários num quadro, como inscritos ou donos.", fields: {board: ID do quadro, users: IDs dos usuários, kind: Como}}
+      Remove Board Subscribers: {name: Tirar inscritos do quadro, description: Tira usuários de um quadro., fields: {board: ID do quadro, users: IDs dos usuários}}
+      Create Column: {name: Criar coluna, description: Adiciona uma coluna a um quadro., fields: {board: ID do quadro, title: Título, type: Tipo, description: Descrição, defaults: Configuração, after: Depois da coluna (ID)}}
+      Get Columns: {name: Listar colunas, description: Lista as colunas de um quadro., fields: {board: ID do quadro}}
+      Update Column: {name: Atualizar coluna, description: Renomeia uma coluna ou muda sua descrição., fields: {board: ID do quadro, column: ID da coluna, property: O quê, value: Novo valor}}
+      Delete Column: {name: Excluir coluna, description: Exclui uma coluna., fields: {board: ID do quadro, column: ID da coluna}}
+      Create or Get Tag: {name: Criar ou ler etiqueta, description: "Devolve uma etiqueta pelo nome, criando-a se não existir.", fields: {name: Nome da etiqueta, board: ID do quadro}}
+      Create Group: {name: Criar grupo, description: Adiciona um grupo a um quadro., fields: {board: ID do quadro, name: Nome, color: Cor, relative_to: Ao lado do grupo (ID), position: Onde}}
+      Get Groups: {name: Listar grupos, description: Lista os grupos de um quadro., fields: {board: ID do quadro}}
+      Update Group: {name: Atualizar grupo, description: "Renomeia, muda a cor ou move um grupo.", fields: {board: ID do quadro, group: ID do grupo, attribute: O quê, value: Novo valor}}
+      Duplicate Group: {name: Duplicar grupo, description: Copia um grupo e seus itens., fields: {board: ID do quadro, group: ID do grupo, title: Título da cópia, add_to_top: Pôr no topo}}
+      Archive Group: {name: Arquivar grupo, description: Arquiva um grupo., fields: {board: ID do quadro, group: ID do grupo}}
+      Delete Group: {name: Excluir grupo, description: Exclui um grupo e seus itens., fields: {board: ID do quadro, group: ID do grupo}}
+      Create Item: {name: Criar item, description: Cria um item num quadro., fields: {board: Quadro, group: Grupo, name: Nome, column_values: Valores das colunas, create_labels: Criar rótulos que faltam}}
+      Create Subitem: {name: Criar subitem, description: Cria um subitem dentro de um item., fields: {parent: ID do item pai, name: Nome, column_values: Valores das colunas, create_labels: Criar rótulos que faltam}}
+      Get Item: {name: Ler item, description: Lê um item com os valores das colunas., fields: {item: ID do item}}
+      Get Items: {name: Listar itens, description: "Lista os itens de um quadro, todos ou os que batem.", fields: {board: ID do quadro, query_params: Filtro}}
+      Find Items by Column Value: {name: Buscar itens por valor de coluna, description: Encontra os itens de um quadro cuja coluna tem um dos valores., fields: {board: ID do quadro, column: ID da coluna, values: Valores}}
+      Get Column Value: {name: Ler valor de coluna, description: Lê o valor de algumas colunas de um item., fields: {item: ID do item, columns: IDs das colunas}}
+      Update Item: {name: Atualizar item, description: Muda os valores das colunas de um item., fields: {board: ID do quadro, item: ID do item, column_values: Valores das colunas, create_labels: Criar rótulos que faltam}}
+      Set Column Text: {name: Preencher coluna com texto, description: "Define uma coluna de um item a partir de texto, como Done ou 2026-12-31.", fields: {board: ID do quadro, item: ID do item, column: ID da coluna, value: Valor, create_labels: Criar rótulos que faltam}}
+      Clear Column Values: {name: Limpar colunas, description: Esvazia algumas colunas de um item., fields: {board: ID do quadro, item: ID do item, column_values: Colunas a limpar}}
+      Move Item to Group: {name: Mover item para grupo, description: Move um item para outro grupo do mesmo quadro., fields: {item: ID do item, group: ID do grupo}}
+      Move Item to Board: {name: Mover item para quadro, description: Move um item para um grupo de outro quadro., fields: {item: ID do item, board: ID do quadro, group: ID do grupo, columns_mapping: Mapa de colunas}}
+      Duplicate Item: {name: Duplicar item, description: "Copia um item, com as atualizações se quiser.", fields: {board: ID do quadro, item: ID do item, with_updates: Com atualizações}}
+      Get Item Subscribers: {name: Listar inscritos do item, description: Lista quem segue um item., fields: {item: ID do item}}
+      Archive Item: {name: Arquivar item, description: Arquiva um item., fields: {item: ID do item}}
+      Delete Item: {name: Excluir item, description: Exclui um item., fields: {item: ID do item}}
+      Create Update: {name: Criar atualização, description: "Publica uma atualização num item, ou responde uma.", fields: {item: ID do item, body: Texto, parent: Responder à atualização (ID)}}
+      Get Updates: {name: Listar atualizações, description: "Lista as atualizações de um item, ou as últimas da conta.", fields: {item: ID do item}}
+      Delete Update: {name: Excluir atualização, description: Exclui uma atualização., fields: {update: ID da atualização}}
+      Run Query: {name: Rodar consulta, description: "Manda uma consulta ou mutação GraphQL sua, como uma agregação.", fields: {query: Consulta, variables: Variáveis}}

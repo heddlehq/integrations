@@ -1,0 +1,459 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Jira Cloud's REST API 2, which takes plain text and wiki markup where version 3 wants
+# Atlassian Document Format. The API token is made at id.atlassian.com, under Security.
+id: jira
+name: Jira
+version: 1.0.0
+description: Issues, their comments, attachments, transitions and notifications, and users in Jira Cloud.
+icon: hero-bug-ant
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0052CC" d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005zm5.723-5.756H5.736a5.215 5.215 0 0 0 5.215 5.214h2.129v2.058a5.218 5.218 0 0 0 5.215 5.214V6.758a1.001 1.001 0 0 0-1.001-1.001zM23.013 0H11.455a5.215 5.215 0 0 0 5.215 5.215h2.129v2.057A5.215 5.215 0 0 0 24 12.483V1.005A1.001 1.001 0 0 0 23.013 0Z"/></svg>
+category: project
+author: Heddle
+homepage: https://developer.atlassian.com/cloud/jira/platform/rest/v2/
+base_url: "{{credential.url}}/rest/api/2/"
+
+credential:
+  label: Jira
+  fields:
+    - {name: url, label: Site address, required: true, description: "Like https://acme.atlassian.net"}
+    - {name: email, label: Email, required: true}
+    - {name: api_token, label: API token, secret: true, required: true}
+  auth:
+    type: basic
+    username: "{{credential.email}}"
+    password: "{{credential.api_token}}"
+
+errors:
+  message_path: errorMessages.0
+
+triggers:
+  - name: New Issue
+    description: Starts the flow for each new issue a JQL query finds, checking every 5 minutes.
+    fields:
+      - {name: jql, label: JQL, required: true, description: "Like project = PROJ AND issuetype = Bug"}
+    request:
+      method: GET
+      path: search/jql
+      query:
+        jql: "{{fields.jql}} ORDER BY created DESC"
+        fields: "*navigable"
+        maxResults: 100
+    output: {path: issues}
+    poll:
+      every: 5
+      id: id
+
+actions:
+  # Issues
+  - name: Create Issue
+    resource: Issue
+    description: Creates an issue, or a subtask with a parent.
+    fields:
+      - {name: project, label: Project, type: select, required: true, options_from: {request: {method: GET, path: project/search}, path: values, label: name, value: id}}
+      - {name: issuetype, label: Issue type, type: select, required: true, options_from: {request: {method: GET, path: issuetype/project, query: {projectId: "{{fields.project}}"}}, label: name, value: id}}
+      - {name: summary, label: Summary, required: true}
+      - {name: description, label: Description, type: textarea, description: Plain text or Jira wiki markup.}
+      - {name: assignee, label: Assignee, type: select, options_from: {request: {method: GET, path: user/assignable/search, query: {project: "{{fields.project}}"}}, label: displayName, value: accountId}}
+      - {name: reporter, label: Reporter account ID}
+      - {name: priority, label: Priority, type: select, options_from: {request: {method: GET, path: priority}, label: name, value: id}}
+      - {name: labels, label: Labels, type: json, description: "Like [\"backend\", \"urgent\"]"}
+      - {name: components, label: Components, type: json, description: "Like [{\"id\": \"10000\"}]"}
+      - {name: parent, label: Parent issue key, description: For a subtask.}
+      - {name: duedate, label: Due date, type: datetime}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like {\"customfield_10010\": \"x\"}"}
+      - {name: update_history, label: Add the project to recently viewed, type: boolean}
+    request:
+      method: POST
+      path: issue
+      query: {updateHistory: "{{fields.update_history}}"}
+      body:
+        fields:
+          project: {id: "{{fields.project}}"}
+          issuetype: {id: "{{fields.issuetype}}"}
+          summary: "{{fields.summary}}"
+          description: "{{fields.description}}"
+          assignee: {accountId: "{{fields.assignee}}"}
+          reporter: {accountId: "{{fields.reporter}}"}
+          priority: {id: "{{fields.priority}}"}
+          labels: "{{fields.labels}}"
+          components: "{{fields.components}}"
+          parent: {key: "{{fields.parent}}"}
+          duedate: "{{fields.duedate}}"
+          _merge: "{{fields.custom_fields}}"
+
+  - name: Get Issue
+    resource: Issue
+    description: Reads an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true, description: Like PROJ-123.}
+      - {name: fields, label: Fields, description: "Comma separated, like summary,status. All when empty."}
+      - {name: expand, label: Expand, type: multiselect, options: [{label: Rendered fields, value: renderedFields}, {label: Field names, value: names}, {label: Field schema, value: schema}, {label: Transitions, value: transitions}, {label: Edit metadata, value: editmeta}, {label: Changelog, value: changelog}, {label: Versioned representations, value: versionedRepresentations}]}
+      - {name: fields_by_keys, label: Fields given by key, type: boolean}
+      - {name: properties, label: Properties, description: Comma separated.}
+      - {name: update_history, label: Add to recently viewed, type: boolean}
+    request:
+      method: GET
+      path: "issue/{{fields.issue}}"
+      query:
+        fields: "{{fields.fields}}"
+        expand: "{{fields.expand}}"
+        fieldsByKeys: "{{fields.fields_by_keys}}"
+        properties: "{{fields.properties}}"
+        updateHistory: "{{fields.update_history}}"
+
+  - name: Search Issues
+    resource: Issue
+    description: Lists the issues a JQL query finds.
+    fields:
+      - {name: jql, label: JQL, required: true, description: "Like project = PROJ AND status = \"In Progress\""}
+      - {name: fields, label: Fields, default: "*navigable", description: "Comma separated, like summary,status. *all for every field."}
+      - {name: expand, label: Expand, type: multiselect, options: [{label: Rendered fields, value: renderedFields}, {label: Field names, value: names}, {label: Field schema, value: schema}, {label: Transitions, value: transitions}, {label: Edit metadata, value: editmeta}, {label: Changelog, value: changelog}]}
+      - {name: fields_by_keys, label: Fields given by key, type: boolean}
+    request:
+      method: GET
+      path: search/jql
+      query:
+        jql: "{{fields.jql}}"
+        fields: "{{fields.fields}}"
+        expand: "{{fields.expand}}"
+        fieldsByKeys: "{{fields.fields_by_keys}}"
+    pagination: {type: cursor, items_path: issues, cursor_param: nextPageToken, next_path: nextPageToken, limit_param: maxResults, page_size: 100}
+
+  - name: Update Issue
+    resource: Issue
+    description: Changes an issue. Empty fields stay as they are.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: summary, label: Summary}
+      - {name: description, label: Description, type: textarea}
+      - {name: issuetype, label: Issue type ID}
+      - {name: assignee, label: Assignee account ID}
+      - {name: reporter, label: Reporter account ID}
+      - {name: priority, label: Priority, type: select, options_from: {request: {method: GET, path: priority}, label: name, value: id}}
+      - {name: labels, label: Labels, type: json, description: "Replaces them, like [\"backend\"]"}
+      - {name: parent, label: Parent issue key}
+      - {name: duedate, label: Due date, type: datetime}
+      - {name: custom_fields, label: Custom fields, type: json, description: "Like {\"customfield_10010\": \"x\"}"}
+      - {name: notify_users, label: Notify watchers, type: boolean, default: true}
+    request:
+      method: PUT
+      path: "issue/{{fields.issue}}"
+      query: {notifyUsers: "{{fields.notify_users}}"}
+      body:
+        fields:
+          summary: "{{fields.summary}}"
+          description: "{{fields.description}}"
+          issuetype: {id: "{{fields.issuetype}}"}
+          assignee: {accountId: "{{fields.assignee}}"}
+          reporter: {accountId: "{{fields.reporter}}"}
+          priority: {id: "{{fields.priority}}"}
+          labels: "{{fields.labels}}"
+          parent: {key: "{{fields.parent}}"}
+          duedate: "{{fields.duedate}}"
+          _merge: "{{fields.custom_fields}}"
+    output:
+      value: {issue: "{{fields.issue}}", updated: true}
+
+  - name: Transition Issue
+    resource: Issue
+    description: Moves an issue to another status through one of its transitions.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: transition, label: Transition, type: select, required: true, options_from: {request: {method: GET, path: "issue/{{fields.issue}}/transitions"}, path: transitions, label: name, value: id}}
+      - {name: fields, label: Fields, type: json, description: "Fields the transition asks for, like {\"resolution\": {\"name\": \"Done\"}}"}
+    request:
+      method: POST
+      path: "issue/{{fields.issue}}/transitions"
+      body:
+        transition: {id: "{{fields.transition}}"}
+        fields: "{{fields.fields}}"
+    output:
+      value: {issue: "{{fields.issue}}", transition: "{{fields.transition}}", done: true}
+
+  - name: Get Transitions
+    resource: Issue
+    description: Lists the transitions an issue can take now.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: transition, label: Only transition ID}
+      - {name: expand_fields, label: Include the fields each asks for, type: boolean}
+      - {name: skip_remote_only, label: Skip remote-only conditions, type: boolean}
+    request:
+      method: GET
+      path: "issue/{{fields.issue}}/transitions"
+      query:
+        transitionId: "{{fields.transition}}"
+        expand: "{{fields.expand_fields}}"
+        skipRemoteOnlyCondition: "{{fields.skip_remote_only}}"
+    output: {path: transitions}
+
+  - name: Get Changelog
+    resource: Issue
+    description: Lists every change made to an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+    request:
+      method: GET
+      path: "issue/{{fields.issue}}/changelog"
+    pagination: {type: offset, items_path: values, offset_param: startAt, limit_param: maxResults, page_size: 100}
+
+  - name: Notify
+    resource: Issue
+    description: Emails people about an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: subject, label: Subject}
+      - {name: text_body, label: Text, type: textarea}
+      - {name: html_body, label: HTML, type: textarea}
+      - {name: reporter, label: To the reporter, type: boolean}
+      - {name: assignee, label: To the assignee, type: boolean}
+      - {name: watchers, label: To the watchers, type: boolean}
+      - {name: voters, label: To the voters, type: boolean}
+      - {name: users, label: To users, type: json, description: "Like [{\"accountId\": \"5b10a2844c20165700ede21g\"}]"}
+      - {name: groups, label: To groups, type: json, description: "Like [{\"name\": \"jira-software-users\"}]"}
+      - {name: restrict, label: Only to, type: json, description: "Like {\"groups\": [{\"name\": \"admins\"}]}"}
+    request:
+      method: POST
+      path: "issue/{{fields.issue}}/notify"
+      body:
+        subject: "{{fields.subject}}"
+        textBody: "{{fields.text_body}}"
+        htmlBody: "{{fields.html_body}}"
+        to:
+          reporter: "{{fields.reporter}}"
+          assignee: "{{fields.assignee}}"
+          watchers: "{{fields.watchers}}"
+          voters: "{{fields.voters}}"
+          users: "{{fields.users}}"
+          groups: "{{fields.groups}}"
+        restrict: "{{fields.restrict}}"
+    output:
+      value: {issue: "{{fields.issue}}", notified: true}
+
+  - name: Delete Issue
+    resource: Issue
+    description: Deletes an issue, and its subtasks when asked.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: delete_subtasks, label: Delete subtasks too, type: boolean}
+    request:
+      method: DELETE
+      path: "issue/{{fields.issue}}"
+      query: {deleteSubtasks: "{{fields.delete_subtasks}}"}
+    output:
+      value: {issue: "{{fields.issue}}", deleted: true}
+
+  # Comments
+  - name: Add Comment
+    resource: Issue Comment
+    description: Comments on an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: body, label: Comment, type: textarea, required: true, description: Plain text or Jira wiki markup.}
+      - {name: visibility, label: Visible to, type: json, description: "Like {\"type\": \"role\", \"value\": \"Administrators\"}"}
+      - {name: expand, label: Rendered body too, type: select, options: [{label: Yes, value: renderedBody}]}
+    request:
+      method: POST
+      path: "issue/{{fields.issue}}/comment"
+      query: {expand: "{{fields.expand}}"}
+      body: {body: "{{fields.body}}", visibility: "{{fields.visibility}}"}
+
+  - name: Get Comment
+    resource: Issue Comment
+    description: Reads a comment.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: comment, label: Comment ID, required: true}
+      - {name: expand, label: Rendered body too, type: select, options: [{label: Yes, value: renderedBody}]}
+    request:
+      method: GET
+      path: "issue/{{fields.issue}}/comment/{{fields.comment}}"
+      query: {expand: "{{fields.expand}}"}
+
+  - name: Get Comments
+    resource: Issue Comment
+    description: Lists the comments of an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: order_by, label: Order, type: select, options: [{label: Oldest first, value: created}, {label: Newest first, value: "-created"}]}
+      - {name: expand, label: Rendered body too, type: select, options: [{label: Yes, value: renderedBody}]}
+    request:
+      method: GET
+      path: "issue/{{fields.issue}}/comment"
+      query: {orderBy: "{{fields.order_by}}", expand: "{{fields.expand}}"}
+    pagination: {type: offset, items_path: comments, offset_param: startAt, limit_param: maxResults, page_size: 100}
+
+  - name: Update Comment
+    resource: Issue Comment
+    description: Changes a comment.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: comment, label: Comment ID, required: true}
+      - {name: body, label: Comment, type: textarea, required: true}
+      - {name: visibility, label: Visible to, type: json, description: "Like {\"type\": \"role\", \"value\": \"Administrators\"}"}
+      - {name: notify_users, label: Notify watchers, type: boolean, default: true}
+    request:
+      method: PUT
+      path: "issue/{{fields.issue}}/comment/{{fields.comment}}"
+      query: {notifyUsers: "{{fields.notify_users}}"}
+      body: {body: "{{fields.body}}", visibility: "{{fields.visibility}}"}
+
+  - name: Delete Comment
+    resource: Issue Comment
+    description: Deletes a comment.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: comment, label: Comment ID, required: true}
+    request:
+      method: DELETE
+      path: "issue/{{fields.issue}}/comment/{{fields.comment}}"
+    output:
+      value: {comment: "{{fields.comment}}", deleted: true}
+
+  # Attachments
+  - name: Add Attachment
+    resource: Issue Attachment
+    description: Attaches a file to an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+    request:
+      method: POST
+      path: "issue/{{fields.issue}}/attachments"
+      headers: {X-Atlassian-Token: no-check}
+      body_type: multipart
+      body: {file: "{{fields.file}}"}
+
+  - name: Get Attachment
+    resource: Issue Attachment
+    description: Reads an attachment's details.
+    fields:
+      - {name: attachment, label: Attachment ID, required: true}
+    request:
+      method: GET
+      path: "attachment/{{fields.attachment}}"
+
+  - name: Get Attachments
+    resource: Issue Attachment
+    description: Lists the attachments of an issue.
+    fields:
+      - {name: issue, label: Issue key, required: true}
+    request:
+      method: GET
+      path: "issue/{{fields.issue}}"
+      query: {fields: attachment}
+    output: {path: fields.attachment}
+
+  - name: Download Attachment
+    resource: Issue Attachment
+    description: Downloads an attachment as a file.
+    fields:
+      - {name: attachment, label: Attachment ID, required: true}
+    request:
+      method: GET
+      path: "attachment/content/{{fields.attachment}}"
+    output:
+      file: true
+
+  - name: Delete Attachment
+    resource: Issue Attachment
+    description: Deletes an attachment.
+    fields:
+      - {name: attachment, label: Attachment ID, required: true}
+    request:
+      method: DELETE
+      path: "attachment/{{fields.attachment}}"
+    output:
+      value: {attachment: "{{fields.attachment}}", deleted: true}
+
+  # Projects
+  - name: Get Projects
+    resource: Project
+    description: Lists the projects you can see.
+    fields:
+      - {name: query, label: Name or key contains}
+    request:
+      method: GET
+      path: project/search
+      query: {query: "{{fields.query}}"}
+    pagination: {type: offset, items_path: values, offset_param: startAt, limit_param: maxResults, page_size: 50}
+
+  # Users
+  - name: Create User
+    resource: User
+    description: Invites a user to the site. Needs site admin rights.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: display_name, label: Name}
+      - {name: products, label: Products, type: multiselect, required: true, default: [jira-software], options: [{label: Jira Software, value: jira-software}, {label: Jira Service Management, value: jira-servicedesk}, {label: Jira Work Management, value: jira-core}, {label: Jira Product Discovery, value: jira-product-discovery}]}
+    request:
+      method: POST
+      path: user
+      body: {emailAddress: "{{fields.email}}", displayName: "{{fields.display_name}}", products: "{{fields.products}}"}
+
+  - name: Get User
+    resource: User
+    description: Reads a user.
+    fields:
+      - {name: account_id, label: Account ID, required: true}
+      - {name: expand, label: Include, type: multiselect, options: [{label: Groups, value: groups}, {label: Application roles, value: applicationRoles}]}
+    request:
+      method: GET
+      path: user
+      query: {accountId: "{{fields.account_id}}", expand: "{{fields.expand}}"}
+
+  - name: Search Users
+    resource: User
+    description: Finds users by name or email.
+    fields:
+      - {name: query, label: Name or email, required: true}
+    request:
+      method: GET
+      path: user/search
+      query: {query: "{{fields.query}}"}
+    pagination: {type: offset, offset_param: startAt, limit_param: maxResults, page_size: 100}
+
+  - name: Delete User
+    resource: User
+    description: Removes a user from the site. Needs site admin rights.
+    fields:
+      - {name: account_id, label: Account ID, required: true}
+    request:
+      method: DELETE
+      path: user
+      query: {accountId: "{{fields.account_id}}"}
+    output:
+      value: {account_id: "{{fields.account_id}}", deleted: true}
+
+i18n:
+  pt-BR:
+    description: "Issues, seus comentários, anexos, transições e avisos, e usuários no Jira Cloud."
+    triggers:
+      New Issue: {name: Nova issue, description: "Inicia o fluxo para cada issue nova que uma busca JQL encontra, olhando a cada 5 minutos.", fields: {jql: JQL}}
+    actions:
+      Create Issue: {name: Criar issue, description: "Cria uma issue, ou uma subtarefa com uma issue pai.", fields: {project: Projeto, issuetype: Tipo, summary: Resumo, description: Descrição, assignee: Responsável, reporter: ID do relator, priority: Prioridade, labels: Rótulos, components: Componentes, parent: Chave da issue pai, duedate: Prazo, custom_fields: Campos personalizados, update_history: Pôr o projeto nos vistos recentemente}}
+      Get Issue: {name: Ler issue, description: Lê uma issue., fields: {issue: Chave da issue, fields: Campos, expand: Expandir, fields_by_keys: Campos dados por chave, properties: Propriedades, update_history: Pôr nos vistos recentemente}}
+      Search Issues: {name: Buscar issues, description: Lista as issues que uma busca JQL encontra., fields: {jql: JQL, fields: Campos, expand: Expandir, fields_by_keys: Campos dados por chave}}
+      Update Issue: {name: Atualizar issue, description: Muda uma issue. Campos vazios ficam como estão., fields: {issue: Chave da issue, summary: Resumo, description: Descrição, issuetype: ID do tipo, assignee: ID do responsável, reporter: ID do relator, priority: Prioridade, labels: Rótulos, parent: Chave da issue pai, duedate: Prazo, custom_fields: Campos personalizados, notify_users: Avisar quem acompanha}}
+      Transition Issue: {name: Mudar status da issue, description: Move uma issue para outro status por uma de suas transições., fields: {issue: Chave da issue, transition: Transição, fields: Campos}}
+      Get Transitions: {name: Listar transições, description: Lista as transições que uma issue pode fazer agora., fields: {issue: Chave da issue, transition: Só a transição (ID), expand_fields: Incluir os campos que cada uma pede, skip_remote_only: Ignorar condições só remotas}}
+      Get Changelog: {name: Ler histórico, description: Lista cada mudança feita numa issue., fields: {issue: Chave da issue}}
+      Notify: {name: Avisar, description: Manda e-mail sobre uma issue., fields: {issue: Chave da issue, subject: Assunto, text_body: Texto, html_body: HTML, reporter: Para o relator, assignee: Para o responsável, watchers: Para quem acompanha, voters: Para quem votou, users: Para usuários, groups: Para grupos, restrict: Só para}}
+      Delete Issue: {name: Excluir issue, description: "Exclui uma issue, e as subtarefas se pedir.", fields: {issue: Chave da issue, delete_subtasks: Excluir subtarefas também}}
+      Add Comment: {name: Comentar, description: Comenta numa issue., fields: {issue: Chave da issue, body: Comentário, visibility: Visível para, expand: Corpo renderizado também}}
+      Get Comment: {name: Ler comentário, description: Lê um comentário., fields: {issue: Chave da issue, comment: ID do comentário, expand: Corpo renderizado também}}
+      Get Comments: {name: Listar comentários, description: Lista os comentários de uma issue., fields: {issue: Chave da issue, order_by: Ordem, expand: Corpo renderizado também}}
+      Update Comment: {name: Atualizar comentário, description: Muda um comentário., fields: {issue: Chave da issue, comment: ID do comentário, body: Comentário, visibility: Visível para, notify_users: Avisar quem acompanha}}
+      Delete Comment: {name: Excluir comentário, description: Exclui um comentário., fields: {issue: Chave da issue, comment: ID do comentário}}
+      Add Attachment: {name: Anexar arquivo, description: Anexa um arquivo a uma issue., fields: {issue: Chave da issue, file: Arquivo}}
+      Get Attachment: {name: Ler anexo, description: Lê os detalhes de um anexo., fields: {attachment: ID do anexo}}
+      Get Attachments: {name: Listar anexos, description: Lista os anexos de uma issue., fields: {issue: Chave da issue}}
+      Download Attachment: {name: Baixar anexo, description: Baixa um anexo como arquivo., fields: {attachment: ID do anexo}}
+      Delete Attachment: {name: Excluir anexo, description: Exclui um anexo., fields: {attachment: ID do anexo}}
+      Get Projects: {name: Listar projetos, description: Lista os projetos que você vê., fields: {query: Nome ou chave contém}}
+      Create User: {name: Criar usuário, description: Convida alguém para o site. Exige ser admin do site., fields: {email: E-mail, display_name: Nome, products: Produtos}}
+      Get User: {name: Ler usuário, description: Lê um usuário., fields: {account_id: ID da conta, expand: Incluir}}
+      Search Users: {name: Buscar usuários, description: Encontra usuários por nome ou e-mail., fields: {query: Nome ou e-mail}}
+      Delete User: {name: Excluir usuário, description: Tira um usuário do site. Exige ser admin do site., fields: {account_id: ID da conta}}
