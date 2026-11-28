@@ -1,0 +1,367 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Mailchimp, through the Marketing API 3.0. Connect with an API key from Mailchimp's
+# Profile › Extras › API keys. The part after the dash, like us21, is the data center.
+# A member is named by its email, which Mailchimp takes in place of its hash.
+# Mailchimp doesn't sign its webhooks, so the triggers check for news every 5 minutes.
+id: mailchimp
+name: Mailchimp
+version: 1.0.0
+description: Audiences, contacts, tags and campaigns in Mailchimp.
+icon: hero-envelope-open
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#241C15" d="M11.267 0C6.791-.015-1.82 10.246 1.397 12.964l.79.669a3.9 3.9 0 0 0-.22 1.792c.084.84.518 1.644 1.22 2.266c.666.59 1.542.964 2.392.964c1.406 3.24 4.62 5.228 8.386 5.34c4.04.12 7.433-1.776 8.854-5.182c.093-.24.488-1.316.488-2.267c0-.956-.54-1.352-.885-1.352c-.01-.037-.078-.286-.172-.586s-.19-.51-.19-.51c.375-.563.382-1.065.332-1.35c-.053-.353-.2-.653-.496-.964s-.902-.63-1.753-.868l-.446-.124c-.002-.019-.024-1.053-.043-1.497c-.014-.32-.042-.822-.197-1.315c-.186-.668-.508-1.253-.911-1.627c1.112-1.152 1.806-2.422 1.804-3.511c-.003-2.095-2.576-2.729-5.746-1.416l-.672.285L12.7.504C12.304.159 11.817.002 11.267 0m.073.873q.25 0 .465.058c.297.084 1.28 1.224 1.28 1.224s-1.826 1.013-3.52 2.426c-2.28 1.757-4.005 4.311-5.037 7.082c-.811.158-1.526.618-1.963 1.253c-.261-.218-.748-.64-.834-.804c-.698-1.326.761-3.902 1.781-5.357C5.834 3.44 9.37.867 11.34.873m3.286 3.273c.04-.002.06.05.028.074c-.143.11-.299.26-.413.414a.04.04 0 0 0 .031.064c.659.004 1.587.235 2.192.574c.041.023.012.103-.034.092c-.915-.21-2.414-.369-3.97.01c-1.39.34-2.45.863-3.224 1.426c-.04.028-.086-.023-.055-.06c.896-1.035 1.999-1.935 2.987-2.44c.034-.018.07.019.052.052c-.079.143-.23.447-.278.678c-.007.035.032.063.062.042c.615-.42 1.684-.868 2.622-.926m3.023 3.205l.056.001a.9.9 0 0 1 .456.146c.534.355.61 1.216.638 1.845c.015.36.059 1.229.074 1.478c.034.571.184.651.487.751c.17.057.33.098.563.164c.706.198 1.125.4 1.39.658c.157.162.23.333.253.497c.083.608-.472 1.36-1.942 2.041c-1.607.746-3.557.935-4.904.785l-.471-.053c-1.078-.145-1.693 1.247-1.046 2.201c.417.615 1.552 1.015 2.688 1.015c2.604 0 4.605-1.111 5.35-2.072a1 1 0 0 0 .06-.085c.036-.055.006-.085-.04-.054c-.608.416-3.31 2.069-6.2 1.571c0 0-.351-.057-.672-.182c-.255-.1-.788-.344-.853-.891c2.333.72 3.801.039 3.801.039a.07.07 0 0 0 .042-.072a.067.067 0 0 0-.074-.06s-1.911.283-3.718-.378c.197-.64.72-.408 1.51-.345a11 11 0 0 0 3.647-.394c.818-.234 1.892-.697 2.727-1.356c.281.618.38 1.299.38 1.299s.219-.04.4.073c.173.106.299.326.213.895c-.176 1.063-.628 1.926-1.387 2.72a5.7 5.7 0 0 1-1.666 1.244q-.511.27-1.087.46c-2.863.935-5.794-.093-6.739-2.3a3.6 3.6 0 0 1-.189-.522c-.403-1.455-.06-3.2 1.008-4.299c.065-.07.132-.153.132-.256c0-.087-.055-.179-.102-.243c-.374-.543-1.669-1.466-1.409-3.254c.187-1.284 1.31-2.189 2.357-2.135l.266.015c.453.027.85.085 1.223.1c.625.028 1.187-.063 1.853-.618c.225-.187.405-.35.71-.401c.028-.005.092-.028.215-.028m.022 2.18a.4.4 0 0 0-.06.005c-.335.054-.347.468-.228 1.04c.068.32.187.595.32.765q.264-.031.498 0c.089-.205.104-.557.024-.942c-.112-.535-.261-.872-.554-.868m-3.66 1.546a1.72 1.72 0 0 0-1.016.326c-.16.117-.311.28-.29.378c.008.032.031.056.088.063c.131.015.592-.217 1.122-.25c.374-.023.684.094.923.2c.239.104.386.173.443.113c.037-.038.026-.11-.031-.204c-.118-.192-.36-.387-.618-.497a1.6 1.6 0 0 0-.621-.129m4.082.81c-.171-.003-.313.186-.317.42c-.004.236.131.43.303.432s.314-.185.318-.42c.004-.236-.132-.429-.304-.432m-3.58.172q-.075 0-.155.008c-.311.05-.483.152-.593.247c-.094.082-.152.173-.152.237a.075.075 0 0 0 .075.076c.07 0 .228-.063.228-.063a2 2 0 0 1 1.001-.104c.157.018.23.027.265-.026c.01-.016.022-.049-.01-.1c-.063-.103-.311-.269-.66-.275zm2.26.4c-.127 0-.235.051-.283.148c-.075.154.035.363.246.466c.21.104.443.063.52-.09c.075-.155-.035-.364-.246-.467a.54.54 0 0 0-.237-.058zm-11.635.024q.072 0 .149.003c.73.04 1.806.6 2.052 2.19c.217 1.41-.128 2.843-1.449 3.069q-.185.03-.374.026c-1.22-.033-2.539-1.132-2.67-2.435c-.145-1.44.591-2.548 1.894-2.811q.177-.037.398-.042m-.07.927a1.14 1.14 0 0 0-.847.364c-.38.418-.439.988-.366 1.19c.027.073.07.094.1.098c.064.008.16-.039.22-.2l.017-.052a1.6 1.6 0 0 1 .157-.37a.69.69 0 0 1 .955-.199c.266.174.369.5.255.81c-.058.161-.154.469-.133.721c.043.511.357.717.64.738c.274.01.466-.143.515-.256c.029-.067.005-.107-.011-.125c-.043-.053-.113-.037-.18-.021a.6.6 0 0 1-.16.022a.35.35 0 0 1-.294-.148c-.078-.12-.073-.3.013-.504l.04-.092c.138-.308.368-.825.11-1.317c-.195-.37-.513-.602-.894-.65a1 1 0 0 0-.138-.01z"/></svg>
+category: marketing
+author: Heddle
+homepage: https://mailchimp.com/developer/marketing/api/
+base_url: "https://{{credential.host}}.api.mailchimp.com/3.0/"
+
+credential:
+  label: Mailchimp
+  fields:
+    - {name: api_key, label: API key, secret: true, required: true}
+    - {name: host, label: Data center, required: true, description: "The end of the key, like us21."}
+  auth:
+    type: basic
+    username: heddle
+    password: "{{credential.api_key}}"
+
+errors:
+  message_path: detail
+
+triggers:
+  - name: New Subscriber
+    description: Starts the flow for each new contact in an audience, checking every 5 minutes.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+    request:
+      method: GET
+      path: "lists/{{fields.list}}/members"
+      query: {sort_field: timestamp_opt, sort_dir: DESC, count: 200}
+    output: {path: members}
+    poll: {every: 5, id: id}
+
+  - name: Unsubscribed
+    description: Starts the flow for each contact who leaves an audience, checking every 5 minutes.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+    request:
+      method: GET
+      path: "lists/{{fields.list}}/members"
+      query: {status: unsubscribed, sort_field: last_changed, sort_dir: DESC, count: 200}
+    output: {path: members}
+    poll: {every: 5, id: id}
+
+actions:
+  # Members
+  - name: Add Member
+    resource: Member
+    description: Adds a contact to an audience, or updates it when it's there.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - {name: status, label: Status, type: select, default: subscribed, options: [{label: Subscribed, value: subscribed}, {label: Pending (sends a confirmation), value: pending}, {label: Unsubscribed, value: unsubscribed}, {label: Transactional only, value: transactional}]}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: merge_fields, label: Other fields, type: json, description: 'Audience fields by tag, like {"PHONE": "+55 11 99999-0000"}'}
+      - {name: tags, label: Tags, description: "Like vip, 2026"}
+      - {name: language, label: Language, description: "Like pt or en"}
+      - {name: vip, label: VIP, type: boolean}
+    request:
+      method: PUT
+      path: "lists/{{fields.list}}/members/{{fields.email}}"
+      body:
+        email_address: "{{fields.email}}"
+        status_if_new: "{{fields.status}}"
+        status: "{{fields.status}}"
+        merge_fields: {FNAME: "{{fields.first_name}}", LNAME: "{{fields.last_name}}", _merge: "{{fields.merge_fields}}"}
+        tags: {_each: "{{fields.tags}}", _value: "{{item}}"}
+        language: "{{fields.language}}"
+        vip: "{{fields.vip}}"
+
+  - name: Update Member
+    resource: Member
+    description: Changes a contact. Empty fields stay as they are.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - {name: new_email, label: New email}
+      - {name: status, label: Status, type: select, options: [{label: Subscribed, value: subscribed}, {label: Unsubscribed, value: unsubscribed}, {label: Cleaned, value: cleaned}, {label: Pending, value: pending}, {label: Transactional only, value: transactional}]}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: merge_fields, label: Other fields, type: json}
+      - {name: vip, label: VIP, type: boolean}
+    request:
+      method: PATCH
+      path: "lists/{{fields.list}}/members/{{fields.email}}"
+      body:
+        email_address: "{{fields.new_email}}"
+        status: "{{fields.status}}"
+        merge_fields: {FNAME: "{{fields.first_name}}", LNAME: "{{fields.last_name}}", _merge: "{{fields.merge_fields}}"}
+        vip: "{{fields.vip}}"
+
+  - name: Get Member
+    resource: Member
+    description: Reads a contact of an audience.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+    request: {method: GET, path: "lists/{{fields.list}}/members/{{fields.email}}"}
+
+  - name: List Members
+    resource: Member
+    description: Lists the contacts of an audience.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: status, label: Status, type: select, options: [{label: Subscribed, value: subscribed}, {label: Unsubscribed, value: unsubscribed}, {label: Cleaned, value: cleaned}, {label: Pending, value: pending}, {label: Transactional only, value: transactional}, {label: Archived, value: archived}]}
+      - {name: since_changed, label: Changed since, type: datetime}
+      - {name: since_opt, label: Joined since, type: datetime}
+    request:
+      method: GET
+      path: "lists/{{fields.list}}/members"
+      query: {status: "{{fields.status}}", since_last_changed: "{{fields.since_changed}}", since_timestamp_opt: "{{fields.since_opt}}"}
+    pagination: {type: offset, items_path: members, offset_param: offset, limit_param: count, page_size: 1000}
+
+  - name: Search Members
+    resource: Member
+    description: Finds contacts by email or name, in one audience or all.
+    fields:
+      - {name: query, label: Search, required: true}
+      - {name: list, label: Audience ID, description: "All audiences when empty."}
+    request:
+      method: GET
+      path: search-members
+      query: {query: "{{fields.query}}", list_id: "{{fields.list}}"}
+    output: {path: full_search.members}
+
+  - name: Archive Member
+    resource: Member
+    description: Archives a contact. It can be added again later.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+    request: {method: DELETE, path: "lists/{{fields.list}}/members/{{fields.email}}"}
+    output:
+      value: {email: "{{fields.email}}", archived: true}
+
+  - name: Delete Member Permanently
+    resource: Member
+    description: Erases a contact and its history. It can't be added again with the API.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+    request: {method: POST, path: "lists/{{fields.list}}/members/{{fields.email}}/actions/delete-permanent"}
+    output:
+      value: {email: "{{fields.email}}", deleted: true}
+
+  - name: Add Note
+    resource: Member
+    description: Writes a note on a contact.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - {name: note, label: Note, type: textarea, required: true}
+    request:
+      method: POST
+      path: "lists/{{fields.list}}/members/{{fields.email}}/notes"
+      body: {note: "{{fields.note}}"}
+
+  # Tags
+  - name: Add Tags
+    resource: Tag
+    description: Puts tags on a contact. Tags that don't exist are created.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - {name: tags, label: Tags, required: true, description: "Like vip, 2026"}
+    request:
+      method: POST
+      path: "lists/{{fields.list}}/members/{{fields.email}}/tags"
+      body: {tags: {_each: "{{fields.tags}}", name: "{{item}}", status: active}}
+    output:
+      value: {email: "{{fields.email}}", tags: "{{fields.tags}}"}
+
+  - name: Remove Tags
+    resource: Tag
+    description: Takes tags off a contact.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: email, label: Email, required: true}
+      - {name: tags, label: Tags, required: true, description: "Like vip, 2026"}
+    request:
+      method: POST
+      path: "lists/{{fields.list}}/members/{{fields.email}}/tags"
+      body: {tags: {_each: "{{fields.tags}}", name: "{{item}}", status: inactive}}
+    output:
+      value: {email: "{{fields.email}}", removed: "{{fields.tags}}"}
+
+  - name: List Tags
+    resource: Tag
+    description: Lists the tags of an audience.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+    request: {method: GET, path: "lists/{{fields.list}}/tag-search"}
+    output: {path: tags}
+
+  # Audiences
+  - name: List Audiences
+    resource: Audience
+    description: Lists the audiences, with their stats.
+    request: {method: GET, path: lists}
+    pagination: {type: offset, items_path: lists, offset_param: offset, limit_param: count, page_size: 1000}
+
+  - name: Get Audience
+    resource: Audience
+    description: Reads an audience.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+    request: {method: GET, path: "lists/{{fields.list}}"}
+
+  - name: List Segments
+    resource: Audience
+    description: Lists the segments and saved tags of an audience.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+    request: {method: GET, path: "lists/{{fields.list}}/segments"}
+    pagination: {type: offset, items_path: segments, offset_param: offset, limit_param: count, page_size: 1000}
+
+  # Campaigns
+  - name: List Campaigns
+    resource: Campaign
+    description: Lists the campaigns.
+    fields:
+      - {name: status, label: Status, type: select, options: [{label: Draft, value: save}, {label: Paused, value: paused}, {label: Scheduled, value: schedule}, {label: Sending, value: sending}, {label: Sent, value: sent}]}
+      - {name: list, label: Audience ID}
+      - {name: since_sent, label: Sent since, type: datetime}
+    request:
+      method: GET
+      path: campaigns
+      query: {status: "{{fields.status}}", list_id: "{{fields.list}}", since_send_time: "{{fields.since_sent}}", sort_field: create_time, sort_dir: DESC}
+    pagination: {type: offset, items_path: campaigns, offset_param: offset, limit_param: count, page_size: 1000}
+
+  - name: Get Campaign
+    resource: Campaign
+    description: Reads a campaign.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+    request: {method: GET, path: "campaigns/{{fields.campaign}}"}
+
+  - name: Create Campaign
+    resource: Campaign
+    description: Creates a regular email campaign to an audience, as a draft.
+    fields:
+      - {name: list, label: Audience, type: select, required: true, options_from: {request: {method: GET, path: lists, query: {count: 1000}}, path: lists, label: name, value: id}}
+      - {name: subject, label: Subject, required: true}
+      - {name: from_name, label: From name, required: true}
+      - {name: reply_to, label: Reply-to email, required: true}
+      - {name: title, label: Internal name}
+      - {name: preview, label: Preview text}
+      - {name: segment, label: Segment ID, type: number}
+    request:
+      method: POST
+      path: campaigns
+      body:
+        type: regular
+        recipients: {list_id: "{{fields.list}}", segment_opts: {saved_segment_id: "{{fields.segment}}"}}
+        settings: {subject_line: "{{fields.subject}}", from_name: "{{fields.from_name}}", reply_to: "{{fields.reply_to}}", title: "{{fields.title}}", preview_text: "{{fields.preview}}"}
+
+  - name: Set Campaign Content
+    resource: Campaign
+    description: Sets the HTML of a draft campaign.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+      - {name: html, label: HTML, type: textarea, required: true}
+    request:
+      method: PUT
+      path: "campaigns/{{fields.campaign}}/content"
+      body: {html: "{{fields.html}}"}
+
+  - name: Send Campaign
+    resource: Campaign
+    description: Sends a draft campaign now.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+    request: {method: POST, path: "campaigns/{{fields.campaign}}/actions/send"}
+    output:
+      value: {id: "{{fields.campaign}}", sent: true}
+
+  - name: Schedule Campaign
+    resource: Campaign
+    description: Schedules a draft campaign, at a quarter hour like 09:15.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+      - {name: at, label: Send at, type: datetime, required: true}
+    request:
+      method: POST
+      path: "campaigns/{{fields.campaign}}/actions/schedule"
+      body: {schedule_time: "{{fields.at}}"}
+    output:
+      value: {id: "{{fields.campaign}}", scheduled: "{{fields.at}}"}
+
+  - name: Send Test Email
+    resource: Campaign
+    description: Sends a test of a campaign to some emails.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+      - {name: emails, label: Emails, required: true, description: "Like ana@acme.com, bia@acme.com"}
+    request:
+      method: POST
+      path: "campaigns/{{fields.campaign}}/actions/test"
+      body: {test_emails: {_each: "{{fields.emails}}", _value: "{{item}}"}, send_type: html}
+    output:
+      value: {id: "{{fields.campaign}}", tested: "{{fields.emails}}"}
+
+  - name: Replicate Campaign
+    resource: Campaign
+    description: Makes a copy of a campaign, as a draft.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+    request: {method: POST, path: "campaigns/{{fields.campaign}}/actions/replicate"}
+
+  - name: Delete Campaign
+    resource: Campaign
+    description: Deletes a campaign that wasn't sent.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+    request: {method: DELETE, path: "campaigns/{{fields.campaign}}"}
+    output:
+      value: {id: "{{fields.campaign}}", deleted: true}
+
+  - name: Get Campaign Report
+    resource: Campaign
+    description: Reads how a sent campaign did, with opens, clicks and bounces.
+    fields:
+      - {name: campaign, label: Campaign ID, required: true}
+    request: {method: GET, path: "reports/{{fields.campaign}}"}
+
+i18n:
+  pt-BR:
+    description: Públicos, contatos, tags e campanhas no Mailchimp.
+    triggers:
+      New Subscriber: {name: Novo inscrito, description: "Inicia o fluxo para cada contato novo num público, olhando a cada 5 minutos.", fields: {list: Público}}
+      Unsubscribed: {name: Descadastrou, description: "Inicia o fluxo para cada contato que sai de um público, olhando a cada 5 minutos.", fields: {list: Público}}
+    actions:
+      Add Member: {name: Adicionar contato, description: "Adiciona um contato a um público, ou atualiza se já existir.", fields: {list: Público, email: E-mail, status: Status, first_name: Nome, last_name: Sobrenome, merge_fields: Outros campos, tags: Tags, language: Idioma, vip: VIP}}
+      Update Member: {name: Atualizar contato, description: Altera um contato. Campos vazios ficam como estão., fields: {list: Público, email: E-mail, new_email: Novo e-mail, status: Status, first_name: Nome, last_name: Sobrenome, merge_fields: Outros campos, vip: VIP}}
+      Get Member: {name: Ler contato, description: Lê um contato de um público., fields: {list: Público, email: E-mail}}
+      List Members: {name: Listar contatos, description: Lista os contatos de um público., fields: {list: Público, status: Status, since_changed: Alterado desde, since_opt: Entrou desde}}
+      Search Members: {name: Buscar contatos, description: "Encontra contatos por e-mail ou nome, num público ou em todos.", fields: {query: Busca, list: ID do público}}
+      Archive Member: {name: Arquivar contato, description: Arquiva um contato. Dá para adicionar de novo depois., fields: {list: Público, email: E-mail}}
+      Delete Member Permanently: {name: Excluir contato de vez, description: Apaga um contato e o histórico. Não dá para adicionar de novo pela API., fields: {list: Público, email: E-mail}}
+      Add Note: {name: Adicionar nota, description: Escreve uma nota num contato., fields: {list: Público, email: E-mail, note: Nota}}
+      Add Tags: {name: Adicionar tags, description: Põe tags num contato. Tags que não existem são criadas., fields: {list: Público, email: E-mail, tags: Tags}}
+      Remove Tags: {name: Remover tags, description: Tira tags de um contato., fields: {list: Público, email: E-mail, tags: Tags}}
+      List Tags: {name: Listar tags, description: Lista as tags de um público., fields: {list: Público}}
+      List Audiences: {name: Listar públicos, description: "Lista os públicos, com as estatísticas."}
+      Get Audience: {name: Ler público, description: Lê um público., fields: {list: Público}}
+      List Segments: {name: Listar segmentos, description: Lista os segmentos e tags salvas de um público., fields: {list: Público}}
+      List Campaigns: {name: Listar campanhas, description: Lista as campanhas., fields: {status: Status, list: ID do público, since_sent: Enviada desde}}
+      Get Campaign: {name: Ler campanha, description: Lê uma campanha., fields: {campaign: ID da campanha}}
+      Create Campaign: {name: Criar campanha, description: "Cria uma campanha de e-mail para um público, como rascunho.", fields: {list: Público, subject: Assunto, from_name: Nome do remetente, reply_to: E-mail de resposta, title: Nome interno, preview: Texto de pré-visualização, segment: ID do segmento}}
+      Set Campaign Content: {name: Definir conteúdo da campanha, description: Define o HTML de uma campanha em rascunho., fields: {campaign: ID da campanha, html: HTML}}
+      Send Campaign: {name: Enviar campanha, description: Envia agora uma campanha em rascunho., fields: {campaign: ID da campanha}}
+      Schedule Campaign: {name: Agendar campanha, description: "Agenda uma campanha em rascunho, num quarto de hora como 09:15.", fields: {campaign: ID da campanha, at: Enviar em}}
+      Send Test Email: {name: Enviar teste, description: Envia um teste da campanha para alguns e-mails., fields: {campaign: ID da campanha, emails: E-mails}}
+      Replicate Campaign: {name: Duplicar campanha, description: "Faz uma cópia da campanha, como rascunho.", fields: {campaign: ID da campanha}}
+      Delete Campaign: {name: Excluir campanha, description: Exclui uma campanha não enviada., fields: {campaign: ID da campanha}}
+      Get Campaign Report: {name: Ler relatório da campanha, description: "Lê como foi uma campanha enviada, com aberturas, cliques e devoluções.", fields: {campaign: ID da campanha}}
