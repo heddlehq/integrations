@@ -68,7 +68,7 @@ integrations:
   - {id: sql, name: "SQL (Postgres, MySQL, SQL Server, SQLite, Oracle)", category: database, phase: 1, origin: n8n, auth: basic, n8n: Postgres, kind: package, lib: {name: exqlite, version: 0.43.0, released: 2026-10-20}, status: official}
   - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: package, lib: {name: stripity_stripe, version: 3.3.3, released: 2026-10-29}, status: planned}
   - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: package, lib: {name: supabase_potion, version: 1.0.0, released: 2026-07-17}, status: planned}
-  - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: package, lib: {name: ex_gram, version: 0.71.0, released: 2026-10-01}, status: planned}
+  - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: manifest, status: draft}
   - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
   - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: draft}
   - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: draft}
