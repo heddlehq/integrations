@@ -25,8 +25,8 @@ integrations:
   - {id: github, name: GitHub, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Github, kind: package, lib: {name: tentacat, version: 2.5.0, released: 2024-12-20}, status: community}
   - {id: gitlab, name: GitLab, category: dev, phase: 1, origin: n8n, auth: bearer, n8n: Gitlab, host: true, kind: manifest, status: draft}
   - {id: gmail, name: Gmail, category: email, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Gmail, kind: manifest, status: draft}
-  - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: package, lib: {name: google_api_analytics_admin, version: 0.26.0, released: 2025-04-15}, status: planned}
-  - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: package, lib: {name: google_api_big_query, version: 0.88.0, released: 2025-04-15}, status: planned}
+  - {id: google_analytics, name: Google Analytics, category: analytics, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Analytics, kind: manifest, status: draft}
+  - {id: google_bigquery, name: Google BigQuery, category: database, phase: 1, origin: n8n, auth: oauth2, n8n: Google/BigQuery, kind: manifest, status: draft}
   - {id: google_calendar, name: Google Calendar, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Calendar, kind: manifest, status: draft}
   - {id: google_contacts, name: Google Contacts, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Contacts, kind: manifest, status: draft}
   - {id: google_docs, name: Google Docs, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Google/Docs, kind: manifest, status: draft}
@@ -191,7 +191,7 @@ integrations:
   - {id: firecrawl, name: Firecrawl, category: ai, phase: 3, origin: ai, auth: bearer, kind: package, lib: {name: firecrawl, version: 1.12.6, released: 2026-10-22}, status: planned}
   - {id: google_cloud_natural_language, name: Google Cloud Natural Language, category: ai, phase: 3, origin: n8n, auth: oauth2, n8n: Google/CloudNaturalLanguage, kind: package, lib: {name: google_api_language, version: 0.16.3, released: 2025-04-15}, status: planned}
   - {id: google_perspective, name: Google Perspective, category: ai, phase: 3, origin: n8n, auth: query, n8n: Google/Perspective, kind: manifest, status: planned}
-  - {id: google_translate, name: Google Translate, category: ai, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Translate, kind: package, lib: {name: google_api_translate, version: 0.22.0, released: 2025-04-15}, status: planned}
+  - {id: google_translate, name: Google Translate, category: ai, phase: 3, origin: n8n, auth: oauth2, n8n: Google/Translate, kind: manifest, status: draft}
   - {id: google_vision, name: Google Cloud Vision, category: ai, phase: 3, origin: ai, auth: oauth2, kind: manifest, status: planned}
   - {id: heygen, name: HeyGen, category: ai, phase: 3, origin: ai, auth: header, kind: manifest, status: planned}
   - {id: hugging_face, name: Hugging Face Inference, category: ai, phase: 3, origin: ai, auth: bearer, kind: manifest, status: planned}

@@ -1,0 +1,127 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Google Analytics 4 with Google OAuth: reports from the Data API, accounts and
+# properties from the Admin API, which lives at its own address.
+id: google_analytics
+name: Google Analytics
+version: 1.0.0
+homepage: https://developers.google.com/analytics/devguides/reporting/data/v1/rest
+description: Run Google Analytics 4 reports, in real time or over dates, and list accounts, properties and data streams.
+icon: hero-chart-bar
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 48 48"><path fill="#F9AB00" d="M45.3,41.6c0,3.2-2.6,5.9-5.8,5.9c-0.2,0-0.5,0-0.7,0c-3-0.4-5.2-3.1-5.1-6.1V6.6c-0.1-3,2.1-5.6,5.1-6.1 c3.2-0.4,6.1,1.9,6.5,5.1c0,0.2,0,0.5,0,0.7V41.6z"/><path fill="#E37400" d="M8.6,35.9c3.2,0,5.8,2.6,5.8,5.8c0,3.2-2.6,5.8-5.8,5.8s-5.8-2.6-5.8-5.8c0,0,0,0,0,0 C2.7,38.5,5.4,35.9,8.6,35.9z M23.9,18.2c-3.2,0.2-5.7,2.9-5.7,6.1V40c0,4.2,1.9,6.8,4.6,7.4c3.2,0.6,6.2-1.4,6.9-4.6 c0.1-0.4,0.1-0.8,0.1-1.2V24.1c0-3.2-2.6-5.9-5.8-5.9C24,18.2,23.9,18.2,23.9,18.2z"/></svg></svg>
+category: analytics
+base_url: https://analyticsdata.googleapis.com/v1beta/
+
+credential:
+  label: Google Analytics
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/analytics.readonly]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+actions:
+  - name: Run Report
+    resource: Report
+    description: Reports metrics, like active users or sessions, split by dimensions, like date or country, over a date range.
+    fields:
+      - {name: property_id, label: Property ID, required: true, description: "The number in Admin > Property details, or from List Account Summaries."}
+      - {name: start_date, label: From, required: true, default: 7daysAgo, description: "YYYY-MM-DD, or today, yesterday or NdaysAgo."}
+      - {name: end_date, label: To, required: true, default: today}
+      - {name: metrics, label: Metrics, required: true, default: activeUsers, description: "Separated by commas, like activeUsers,sessions,screenPageViews."}
+      - {name: dimensions, label: Dimensions, description: "Separated by commas, like date,country,pagePath."}
+      - {name: order_by_metric, label: Order by metric, description: "Sorts by this metric, highest first."}
+      - {name: limit, label: Limit, type: number, default: 1000, description: Rows, up to 250000.}
+      - {name: keep_empty_rows, label: Keep empty rows, type: boolean, default: false}
+    request:
+      method: POST
+      path: "properties/{{fields.property_id}}:runReport"
+      body:
+        dateRanges: [{startDate: "{{fields.start_date}}", endDate: "{{fields.end_date}}"}]
+        metrics: {_each: "{{fields.metrics}}", name: "{{item}}"}
+        dimensions: {_each: "{{fields.dimensions}}", name: "{{item}}"}
+        orderBys: {_each: "{{fields.order_by_metric}}", metric: {metricName: "{{item}}"}, desc: true}
+        limit: "{{fields.limit}}"
+        keepEmptyRows: "{{fields.keep_empty_rows}}"
+
+  - name: Run Realtime Report
+    resource: Report
+    description: Reports what happened in the last 30 minutes, like active users by country.
+    fields:
+      - {name: property_id, label: Property ID, required: true, description: "The number in Admin > Property details, or from List Account Summaries."}
+      - {name: metrics, label: Metrics, required: true, default: activeUsers, description: "Separated by commas, like activeUsers,eventCount."}
+      - {name: dimensions, label: Dimensions, description: "Separated by commas, like country,unifiedScreenName."}
+      - {name: limit, label: Limit, type: number, default: 1000}
+    request:
+      method: POST
+      path: "properties/{{fields.property_id}}:runRealtimeReport"
+      body:
+        metrics: {_each: "{{fields.metrics}}", name: "{{item}}"}
+        dimensions: {_each: "{{fields.dimensions}}", name: "{{item}}"}
+        limit: "{{fields.limit}}"
+
+  - name: Run Custom Report
+    resource: Report
+    description: Runs a report from a request written in the Data API's own format, for filters and more.
+    fields:
+      - {name: property_id, label: Property ID, required: true}
+      - {name: request, label: Request, type: json, required: true, description: "Like {\"dateRanges\": [{\"startDate\": \"30daysAgo\", \"endDate\": \"today\"}], \"metrics\": [{\"name\": \"sessions\"}]}."}
+    request:
+      method: POST
+      path: "properties/{{fields.property_id}}:runReport"
+      body: {_merge: "{{fields.request}}"}
+
+  - name: Get Metadata
+    resource: Report
+    description: Lists the dimensions and metrics a property can report, custom ones included.
+    fields:
+      - {name: property_id, label: Property ID, required: true}
+    request: {method: GET, path: "properties/{{fields.property_id}}/metadata"}
+
+  - name: List Account Summaries
+    resource: Account
+    description: Lists the accounts the connected user can see, each with its properties.
+    request:
+      base_url: https://analyticsadmin.googleapis.com/v1beta/
+      method: GET
+      path: accountSummaries
+      query: {pageSize: 200}
+    output: {path: accountSummaries}
+
+  - name: Get Property
+    resource: Property
+    description: Reads a property, with its time zone, currency and industry.
+    fields:
+      - {name: property_id, label: Property ID, required: true}
+    request:
+      base_url: https://analyticsadmin.googleapis.com/v1beta/
+      method: GET
+      path: "properties/{{fields.property_id}}"
+
+  - name: List Data Streams
+    resource: Property
+    description: Lists the web and app streams of a property, with their measurement IDs.
+    fields:
+      - {name: property_id, label: Property ID, required: true}
+    request:
+      base_url: https://analyticsadmin.googleapis.com/v1beta/
+      method: GET
+      path: "properties/{{fields.property_id}}/dataStreams"
+    output: {path: dataStreams}
+
+i18n:
+  pt-BR:
+    description: "Gere relatórios do Google Analytics 4, em tempo real ou por período, e liste contas, propriedades e fluxos de dados."
+    actions:
+      Run Report: {name: "Gerar relatório", description: "Reporta métricas, como usuários ativos ou sessões, divididas por dimensões, como data ou país, num período.", fields: {property_id: "ID da propriedade", start_date: "De", end_date: "Até", metrics: "Métricas", dimensions: "Dimensões", order_by_metric: "Ordenar pela métrica", limit: "Limite", keep_empty_rows: "Manter linhas vazias"}}
+      Run Realtime Report: {name: "Relatório em tempo real", description: "Reporta o que aconteceu nos últimos 30 minutos, como usuários ativos por país.", fields: {property_id: "ID da propriedade", metrics: "Métricas", dimensions: "Dimensões", limit: "Limite"}}
+      Run Custom Report: {name: "Relatório personalizado", description: "Gera um relatório a partir de uma requisição no formato da Data API, para filtros e mais.", fields: {property_id: "ID da propriedade", request: "Requisição"}}
+      Get Metadata: {name: "Ler metadados", description: "Lista as dimensões e métricas que uma propriedade reporta, incluindo as personalizadas.", fields: {property_id: "ID da propriedade"}}
+      List Account Summaries: {name: "Listar contas", description: "Lista as contas que o usuário conectado vê, cada uma com suas propriedades."}
+      Get Property: {name: "Ler propriedade", description: "Lê uma propriedade, com fuso horário, moeda e setor.", fields: {property_id: "ID da propriedade"}}
+      List Data Streams: {name: "Listar fluxos de dados", description: "Lista os fluxos web e de app de uma propriedade, com os IDs de medição.", fields: {property_id: "ID da propriedade"}}
