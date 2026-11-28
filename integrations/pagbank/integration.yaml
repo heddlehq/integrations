@@ -154,7 +154,7 @@ actions:
       - {name: items, label: Items, type: json, required: true, description: '[{"reference_id": "1", "name": "Curso", "quantity": 1, "unit_amount": 19700}]'}
       - {name: methods, label: Methods, type: multiselect, default: [PIX, CREDIT_CARD, BOLETO], options: [{label: Pix, value: PIX}, {label: Credit card, value: CREDIT_CARD}, {label: Debit card, value: DEBIT_CARD}, {label: Boleto, value: BOLETO}]}
       - {name: expires, label: Expires at, type: datetime}
-      - {name: redirect_url, label: After paying, go to}
+      - {name: redirect_url, label: "After paying, go to"}
       - {name: reference, label: Your ID}
       - {name: notification_url, label: Notification URL}
       - {name: extra, label: More fields, type: json, description: 'Like {"customer": {...}, "shipping": {...}}'}

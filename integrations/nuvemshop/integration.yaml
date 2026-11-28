@@ -160,7 +160,7 @@ actions:
       - {name: shipping_status, label: Shipping, type: select, options: [{label: Unpacked, value: unpacked}, {label: Not shipped, value: unfulfilled}, {label: Shipped, value: fulfilled}]}
       - {name: created_at_min, label: Created since, type: datetime}
       - {name: updated_at_min, label: Changed since, type: datetime}
-      - {name: q, label: Search, description: Order number, customer name or email.}
+      - {name: q, label: Search, description: "Order number, customer name or email."}
       - {name: page, label: Page, type: number, default: 1}
       - {name: per_page, label: Per page, type: number, default: 50}
     request:
