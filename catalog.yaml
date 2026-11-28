@@ -92,7 +92,7 @@ integrations:
   - {id: banco_do_brasil, name: Banco do Brasil, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: banco_inter, name: Banco Inter, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: inter, version: 0.7.0, released: 2026-09-25}, status: planned}
   - {id: bcb, name: "Banco Central (SGS, PTAX)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
-  - {id: bling, name: Bling, category: erp, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: bling, name: Bling, category: erp, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: blip, name: Blip, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: bradesco, name: Bradesco, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: braip, name: Braip, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
@@ -116,7 +116,7 @@ integrations:
   - {id: frenet, name: Frenet, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: getnet, name: Getnet, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: gupy, name: Gupy, category: hr, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
-  - {id: hotmart, name: Hotmart, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: hotmart, name: Hotmart, category: ecommerce, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
   - {id: ifood, name: iFood Merchant, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: intelipost, name: Intelipost, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: itau, name: Itaú, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
@@ -139,7 +139,7 @@ integrations:
   - {id: nuvemshop, name: Nuvemshop, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: octadesk, name: Octadesk, category: support, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: olist, name: Olist, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
-  - {id: omie, name: Omie, category: erp, phase: 2, origin: br, auth: body, kind: manifest, status: planned}
+  - {id: omie, name: Omie, category: erp, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
   - {id: pagarme, name: Pagar.me, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
   - {id: pagbank, name: PagBank (PagSeguro), category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: pipefy, name: Pipefy, category: project, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
@@ -167,7 +167,7 @@ integrations:
   - {id: vtex, name: VTEX, category: ecommerce, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
   - {id: woovi, name: Woovi (OpenPix), category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: yampi, name: Yampi, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
-  - {id: z_api, name: Z-API, category: messaging, phase: 2, origin: br, auth: path, kind: manifest, status: planned}
+  - {id: z_api, name: Z-API, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: zapsign, name: ZapSign, category: esign, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: zenvia, name: Zenvia, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
 
