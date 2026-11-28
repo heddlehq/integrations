@@ -96,7 +96,7 @@ integrations:
   - {id: blip, name: Blip, category: messaging, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: bradesco, name: Bradesco, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: braip, name: Braip, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
-  - {id: brasil_api, name: "BrasilAPI (CEP, CNPJ, bancos, feriados)", category: data, phase: 2, origin: br, auth: none, kind: package, lib: {name: brasilapi, version: 1.0.3, released: 2026-04-26}, status: draft}
+  - {id: brasil_api, name: "BrasilAPI (CEP, CNPJ, bancos, feriados)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
   - {id: btg_empresas, name: BTG Pactual Empresas, category: banking, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: cielo, name: Cielo, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: clicksign, name: Clicksign, category: esign, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
