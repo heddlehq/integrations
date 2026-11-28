@@ -89,7 +89,7 @@ integrations:
   - {id: agendor, name: Agendor, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: appmax, name: Appmax, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: asaas, name: Asaas, category: payments, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
-  - {id: banco_do_brasil, name: Banco do Brasil, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
+  - {id: banco_do_brasil, name: Banco do Brasil, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: draft}
   - {id: banco_inter, name: Banco Inter, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: draft}
   - {id: bcb, name: "Banco Central (SGS, PTAX)", category: data, phase: 2, origin: br, auth: none, kind: manifest, status: draft}
   - {id: bling, name: Bling, category: erp, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
@@ -151,7 +151,7 @@ integrations:
   - {id: receitaws, name: ReceitaWS, category: data, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: sankhya, name: Sankhya, category: erp, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
   - {id: santander, name: Santander, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
-  - {id: serpro, name: "Serpro (CPF, CNPJ, NF-e)", category: data, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: serpro, name: "Serpro (CPF, CNPJ, NF-e)", category: data, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: draft}
   - {id: shopee, name: Shopee, category: ecommerce, phase: 2, origin: br, auth: hmac, kind: manifest, status: planned}
   - {id: sicoob, name: Sicoob, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
   - {id: sicredi, name: Sicredi, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
