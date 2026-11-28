@@ -147,7 +147,7 @@ integrations:
   - {id: ploomes, name: Ploomes, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: plugnotas, name: PlugNotas (TecnoSpeed), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: rd_station_crm, name: RD Station CRM, category: crm, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
-  - {id: rd_station_marketing, name: RD Station Marketing, category: marketing, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
+  - {id: rd_station_marketing, name: RD Station Marketing, category: marketing, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: receitaws, name: ReceitaWS, category: data, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: sankhya, name: Sankhya, category: erp, phase: 2, origin: br, auth: login, host: true, kind: manifest, status: planned}
   - {id: santander, name: Santander, category: banking, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: manifest, status: planned}
