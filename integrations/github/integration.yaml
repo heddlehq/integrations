@@ -1,22 +1,28 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# GitHub, through the REST API. Connect with a fine-grained personal access token from
+# GitHub's Settings › Developer settings. Repositories go as owner/name, like
+# heddlehq/heddle; issues and pull requests by their number.
 id: github
 name: GitHub
-version: 1.0.1
-description: Issues and comments in GitHub repositories.
+version: 2.0.0
+description: Files, issues, pull requests, reviews, releases, repositories and Actions workflows in GitHub.
 icon: hero-code-bracket
 logo: |
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#fff"/><path fill="#181717" transform="translate(3.6 3.6) scale(0.7)" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-author: heddlehq
+category: dev
+author: Heddle
 homepage: https://docs.github.com/rest
 base_url: https://api.github.com/
+headers:
+  Accept: application/vnd.github+json
+  X-GitHub-Api-Version: "2022-11-28"
+  User-Agent: Heddle
 
 credential:
   label: GitHub
   fields:
-    - name: token
-      label: Personal access token
-      secret: true
-      required: true
+    - {name: token, label: Personal access token, secret: true, required: true, description: "A fine-grained token with access to the repositories you use."}
   auth:
     type: bearer
     token: "{{credential.token}}"
@@ -24,59 +30,778 @@ credential:
 errors:
   message_path: message
 
-actions:
-  - name: Create Issue
-    description: Opens an issue in a repository.
+triggers:
+  - name: Repository Event
+    description: Starts the flow when something happens in a repository, like a push, an issue or a pull request.
     fields:
-      - {name: repo, label: "Repository, like owner/name"}
-      - {name: title, label: Title}
+      - {name: repo, label: Repository, required: true, description: "Like heddlehq/heddle"}
+      - name: events
+        label: Events
+        type: multiselect
+        required: true
+        default: [push]
+        options:
+          - {label: Push, value: push}
+          - {label: Issue, value: issues}
+          - {label: Issue comment, value: issue_comment}
+          - {label: Pull request, value: pull_request}
+          - {label: Pull request review, value: pull_request_review}
+          - {label: Pull request review comment, value: pull_request_review_comment}
+          - {label: Release, value: release}
+          - {label: Branch or tag created, value: create}
+          - {label: Branch or tag deleted, value: delete}
+          - {label: Fork, value: fork}
+          - {label: Star, value: star}
+          - {label: Watch, value: watch}
+          - {label: Workflow run, value: workflow_run}
+          - {label: Workflow job, value: workflow_job}
+          - {label: Check run, value: check_run}
+          - {label: Check suite, value: check_suite}
+          - {label: Deployment, value: deployment}
+          - {label: Deployment status, value: deployment_status}
+          - {label: Discussion, value: discussion}
+          - {label: Discussion comment, value: discussion_comment}
+          - {label: Commit comment, value: commit_comment}
+          - {label: Label, value: label}
+          - {label: Milestone, value: milestone}
+          - {label: Collaborator, value: member}
+          - {label: Visibility made public, value: public}
+          - {label: Repository, value: repository}
+          - {label: Status, value: status}
+          - {label: Wiki page, value: gollum}
+          - {label: Everything, value: "*"}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: "repos/{{fields.repo | path}}/hooks"
+          body: {name: web, active: true, events: "{{fields.events}}", config: {url: "{{webhook.url}}", content_type: json, secret: "{{webhook.secret}}"}}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "repos/{{fields.repo | path}}/hooks/{{webhook.id}}"}
+      signature: {header: X-Hub-Signature-256, prefix: "sha256=", secret: "{{webhook.secret}}"}
+
+actions:
+  # Files
+  - name: Get File
+    resource: File
+    description: Reads a file or lists a folder. A file's content comes in base64.
+    fields:
+      - {name: repo, label: Repository, required: true, description: "Like heddlehq/heddle"}
+      - {name: path, label: Path, required: true, description: "Like docs/README.md"}
+      - {name: ref, label: "Branch, tag or commit"}
+    request:
+      method: GET
+      path: "repos/{{fields.repo | path}}/contents/{{fields.path | path}}"
+      query: {ref: "{{fields.ref}}"}
+
+  - name: Download File
+    resource: File
+    description: Downloads a file, kept as a file for the next nodes.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: path, label: Path, required: true}
+      - {name: ref, label: "Branch, tag or commit"}
+    request:
+      method: GET
+      path: "repos/{{fields.repo | path}}/contents/{{fields.path | path}}"
+      query: {ref: "{{fields.ref}}"}
+      headers: {Accept: application/vnd.github.raw+json}
+    output:
+      file: true
+
+  - name: Create or Update File
+    resource: File
+    description: Commits a file. To change one that exists, give its current SHA from Get File.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: path, label: Path, required: true}
+      - {name: content, label: Content, type: textarea, required: true}
+      - {name: message, label: Commit message, required: true}
+      - {name: sha, label: Current SHA, description: Needed when the file exists.}
+      - {name: branch, label: Branch, description: Empty uses the default branch.}
+      - {name: author_name, label: Author name}
+      - {name: author_email, label: Author email}
+    request:
+      method: PUT
+      path: "repos/{{fields.repo | path}}/contents/{{fields.path | path}}"
+      body: {message: "{{fields.message}}", content: "{{fields.content | base64}}", sha: "{{fields.sha}}", branch: "{{fields.branch}}", author: {_if: "{{fields.author_email}}", name: "{{fields.author_name}}", email: "{{fields.author_email}}"}}
+
+  - name: Upload File
+    resource: File
+    description: Commits a file from an earlier node, like a download. To replace one, give its current SHA.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: path, label: Path, required: true}
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: message, label: Commit message, required: true}
+      - {name: sha, label: Current SHA}
+      - {name: branch, label: Branch}
+    request:
+      method: PUT
+      path: "repos/{{fields.repo | path}}/contents/{{fields.path | path}}"
+      body: {message: "{{fields.message}}", content: "{{fields.file | base64}}", sha: "{{fields.sha}}", branch: "{{fields.branch}}"}
+
+  - name: Delete File
+    resource: File
+    description: Commits the removal of a file.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: path, label: Path, required: true}
+      - {name: sha, label: Current SHA, required: true}
+      - {name: message, label: Commit message, required: true}
+      - {name: branch, label: Branch}
+    request:
+      method: DELETE
+      path: "repos/{{fields.repo | path}}/contents/{{fields.path | path}}"
+      body: {message: "{{fields.message}}", sha: "{{fields.sha}}", branch: "{{fields.branch}}"}
+
+  # Issues
+  - name: Create Issue
+    resource: Issue
+    description: Opens an issue.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: title, label: Title, required: true}
       - {name: body, label: Body, type: textarea}
+      - {name: labels, label: Labels, type: json, description: 'Like ["bug", "urgent"]'}
+      - {name: assignees, label: Assignees, type: json, description: 'Logins, like ["octocat"]'}
+      - {name: milestone, label: Milestone number, type: number}
     request:
       method: POST
       path: "repos/{{fields.repo | path}}/issues"
-      headers:
-        Accept: application/vnd.github+json
-      body:
-        title: "{{fields.title}}"
-        body: "{{fields.body}}"
-    output:
-      pick: [number, html_url, state]
+      body: {title: "{{fields.title}}", body: "{{fields.body}}", labels: "{{fields.labels}}", assignees: "{{fields.assignees}}", milestone: "{{fields.milestone}}"}
+
+  - name: Get Issue
+    resource: Issue
+    description: Reads an issue or pull request by number.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/issues/{{fields.number}}"}
 
   - name: List Issues
-    description: Returns the issues of a repository, every page.
+    resource: Issue
+    description: Lists a repository's issues, by state, label, assignee or date.
     fields:
-      - {name: repo, label: "Repository, like owner/name"}
-      - name: state
-        label: State
-        type: select
-        default: open
-        options:
-          - {label: Open, value: open}
-          - {label: Closed, value: closed}
-          - {label: All, value: all}
+      - {name: repo, label: Repository, required: true}
+      - {name: state, label: State, type: select, default: open, options: [{label: Open, value: open}, {label: Closed, value: closed}, {label: All, value: all}]}
+      - {name: labels, label: Labels, description: "Comma-separated, like bug,urgent"}
+      - {name: assignee, label: Assignee, description: "A login, none or *"}
+      - {name: creator, label: Creator}
+      - {name: mentioned, label: Mentioning}
+      - {name: since, label: Updated since, description: "Like 2026-02-10T00:00:00Z"}
+      - {name: sort, label: Sort by, type: select, default: created, options: [{label: Created, value: created}, {label: Updated, value: updated}, {label: Comments, value: comments}]}
+      - {name: direction, label: Order, type: select, default: desc, options: [{label: Newest first, value: desc}, {label: Oldest first, value: asc}]}
     request:
       method: GET
       path: "repos/{{fields.repo | path}}/issues"
-      query:
-        state: "{{fields.state}}"
-    output:
-      pick: [number, title, html_url, state]
-    pagination:
-      type: link
-      items_path: ""
-      limit_param: per_page
-      page_size: 100
+      query: {state: "{{fields.state}}", labels: "{{fields.labels}}", assignee: "{{fields.assignee}}", creator: "{{fields.creator}}", mentioned: "{{fields.mentioned}}", since: "{{fields.since}}", sort: "{{fields.sort}}", direction: "{{fields.direction}}"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Update Issue
+    resource: Issue
+    description: Changes an issue, closing or reopening it. Empty fields stay as they are.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: title, label: Title}
+      - {name: body, label: Body, type: textarea}
+      - {name: state, label: State, type: select, options: [{label: Open, value: open}, {label: Closed, value: closed}]}
+      - {name: state_reason, label: Closed as, type: select, options: [{label: Completed, value: completed}, {label: Not planned, value: not_planned}, {label: Reopened, value: reopened}]}
+      - {name: labels, label: Labels, type: json}
+      - {name: assignees, label: Assignees, type: json}
+      - {name: milestone, label: Milestone number, type: number}
+    request:
+      method: PATCH
+      path: "repos/{{fields.repo | path}}/issues/{{fields.number}}"
+      body: {title: "{{fields.title}}", body: "{{fields.body}}", state: "{{fields.state}}", state_reason: "{{fields.state_reason}}", labels: "{{fields.labels}}", assignees: "{{fields.assignees}}", milestone: "{{fields.milestone}}"}
+
+  - name: Lock Issue
+    resource: Issue
+    description: Locks the conversation of an issue or pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: lock_reason, label: Reason, type: select, options: [{label: Off-topic, value: off-topic}, {label: Too heated, value: too heated}, {label: Resolved, value: resolved}, {label: Spam, value: spam}]}
+    request:
+      method: PUT
+      path: "repos/{{fields.repo | path}}/issues/{{fields.number}}/lock"
+      body: {lock_reason: "{{fields.lock_reason}}"}
+
+  - name: Unlock Issue
+    resource: Issue
+    description: Unlocks the conversation of an issue or pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+    request: {method: DELETE, path: "repos/{{fields.repo | path}}/issues/{{fields.number}}/lock"}
 
   - name: Comment on Issue
-    description: Adds a comment to an issue or pull request.
+    resource: Issue
+    description: Comments on an issue or pull request.
     fields:
-      - {name: repo, label: "Repository, like owner/name"}
-      - {name: number, label: Issue number, default: "{{result.number}}"}
-      - {name: body, label: Comment, type: textarea}
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: body, label: Comment, type: textarea, required: true}
     request:
       method: POST
       path: "repos/{{fields.repo | path}}/issues/{{fields.number}}/comments"
-      body:
-        body: "{{fields.body}}"
-    output:
-      pick: [id, html_url]
+      body: {body: "{{fields.body}}"}
+
+  - name: List Issue Comments
+    resource: Issue
+    description: Lists the comments on an issue or pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: since, label: Since}
+    request:
+      method: GET
+      path: "repos/{{fields.repo | path}}/issues/{{fields.number}}/comments"
+      query: {since: "{{fields.since}}"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Add Labels
+    resource: Issue
+    description: Adds labels to an issue or pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: labels, label: Labels, type: json, required: true, description: 'Like ["bug"]'}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/issues/{{fields.number}}/labels"
+      body: {labels: "{{fields.labels}}"}
+
+  - name: Search Issues
+    resource: Issue
+    description: Searches issues and pull requests across GitHub.
+    fields:
+      - {name: q, label: Query, required: true, description: "GitHub search, like repo:heddlehq/heddle is:open label:bug"}
+      - {name: sort, label: Sort by, type: select, options: [{label: Best match, value: ""}, {label: Created, value: created}, {label: Updated, value: updated}, {label: Comments, value: comments}, {label: Reactions, value: reactions}]}
+    request:
+      method: GET
+      path: search/issues
+      query: {q: "{{fields.q}}", sort: "{{fields.sort}}"}
+    pagination: {type: link, items_path: items, limit_param: per_page, page_size: 100}
+
+  # Pull requests
+  - name: Create Pull Request
+    resource: Pull Request
+    description: Opens a pull request from one branch into another.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: head, label: From branch, required: true, description: "Like feature or owner:feature for a fork"}
+      - {name: base, label: Into branch, required: true, default: main}
+      - {name: body, label: Body, type: textarea}
+      - {name: draft, label: Draft, type: boolean, default: false}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/pulls"
+      body: {title: "{{fields.title}}", head: "{{fields.head}}", base: "{{fields.base}}", body: "{{fields.body}}", draft: "{{fields.draft}}"}
+
+  - name: Get Pull Request
+    resource: Pull Request
+    description: Reads a pull request, with whether it can be merged.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}"}
+
+  - name: List Pull Requests
+    resource: Pull Request
+    description: Lists a repository's pull requests.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: state, label: State, type: select, default: open, options: [{label: Open, value: open}, {label: Closed, value: closed}, {label: All, value: all}]}
+      - {name: head, label: From branch, description: "Like owner:feature"}
+      - {name: base, label: Into branch}
+      - {name: sort, label: Sort by, type: select, default: created, options: [{label: Created, value: created}, {label: Updated, value: updated}, {label: Popularity, value: popularity}]}
+    request:
+      method: GET
+      path: "repos/{{fields.repo | path}}/pulls"
+      query: {state: "{{fields.state}}", head: "{{fields.head}}", base: "{{fields.base}}", sort: "{{fields.sort}}"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Update Pull Request
+    resource: Pull Request
+    description: Changes a pull request, or closes it. Empty fields stay as they are.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: title, label: Title}
+      - {name: body, label: Body, type: textarea}
+      - {name: state, label: State, type: select, options: [{label: Open, value: open}, {label: Closed, value: closed}]}
+      - {name: base, label: Into branch}
+    request:
+      method: PATCH
+      path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}"
+      body: {title: "{{fields.title}}", body: "{{fields.body}}", state: "{{fields.state}}", base: "{{fields.base}}"}
+
+  - name: Merge Pull Request
+    resource: Pull Request
+    description: Merges a pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: merge_method, label: Method, type: select, default: merge, options: [{label: Merge commit, value: merge}, {label: Squash, value: squash}, {label: Rebase, value: rebase}]}
+      - {name: commit_title, label: Commit title}
+      - {name: commit_message, label: Commit message, type: textarea}
+      - {name: sha, label: Only if head is at SHA}
+    request:
+      method: PUT
+      path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/merge"
+      body: {merge_method: "{{fields.merge_method}}", commit_title: "{{fields.commit_title}}", commit_message: "{{fields.commit_message}}", sha: "{{fields.sha}}"}
+
+  - name: List Pull Request Files
+    resource: Pull Request
+    description: Lists the files a pull request changes, with their patches.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/files"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Request Reviewers
+    resource: Pull Request
+    description: Asks people or teams to review a pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Number, type: number, required: true}
+      - {name: reviewers, label: Reviewers, type: json, description: 'Logins, like ["octocat"]'}
+      - {name: team_reviewers, label: Teams, type: json, description: 'Team slugs, like ["backend"]'}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/requested_reviewers"
+      body: {reviewers: "{{fields.reviewers}}", team_reviewers: "{{fields.team_reviewers}}"}
+
+  # Reviews
+  - name: Create Review
+    resource: Review
+    description: Reviews a pull request, approving it, asking for changes or commenting.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Pull request number, type: number, required: true}
+      - {name: event, label: Verdict, type: select, required: true, default: COMMENT, options: [{label: Approve, value: APPROVE}, {label: Request changes, value: REQUEST_CHANGES}, {label: Comment, value: COMMENT}, {label: Leave pending, value: ""}]}
+      - {name: body, label: Body, type: textarea}
+      - {name: commit_id, label: Commit SHA, description: Empty reviews the latest commit.}
+      - {name: comments, label: Line comments, type: json, description: 'Like [{"path": "lib/a.ex", "line": 10, "body": "Typo"}]'}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/reviews"
+      body: {event: "{{fields.event}}", body: "{{fields.body}}", commit_id: "{{fields.commit_id}}", comments: "{{fields.comments}}"}
+
+  - name: Get Review
+    resource: Review
+    description: Reads a review.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Pull request number, type: number, required: true}
+      - {name: review, label: Review ID, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/reviews/{{fields.review}}"}
+
+  - name: List Reviews
+    resource: Review
+    description: Lists the reviews of a pull request.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Pull request number, type: number, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/reviews"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Update Review
+    resource: Review
+    description: Changes the body of a review.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: number, label: Pull request number, type: number, required: true}
+      - {name: review, label: Review ID, required: true}
+      - {name: body, label: Body, type: textarea, required: true}
+    request:
+      method: PUT
+      path: "repos/{{fields.repo | path}}/pulls/{{fields.number}}/reviews/{{fields.review}}"
+      body: {body: "{{fields.body}}"}
+
+  # Releases
+  - name: Create Release
+    resource: Release
+    description: Publishes a release from a tag, making the tag if it doesn't exist.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: tag_name, label: Tag, required: true, description: "Like v1.2.0"}
+      - {name: name, label: Title}
+      - {name: body, label: Notes, type: textarea}
+      - {name: target_commitish, label: From branch or commit, description: Used when the tag doesn't exist.}
+      - {name: draft, label: Draft, type: boolean, default: false}
+      - {name: prerelease, label: Pre-release, type: boolean, default: false}
+      - {name: generate_release_notes, label: Write notes from the pull requests, type: boolean, default: false}
+      - {name: make_latest, label: Mark as latest, type: select, default: "true", options: [{label: "Yes", value: "true"}, {label: "No", value: "false"}, {label: By version, value: legacy}]}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/releases"
+      body: {tag_name: "{{fields.tag_name}}", name: "{{fields.name}}", body: "{{fields.body}}", target_commitish: "{{fields.target_commitish}}", draft: "{{fields.draft}}", prerelease: "{{fields.prerelease}}", generate_release_notes: "{{fields.generate_release_notes}}", make_latest: "{{fields.make_latest}}"}
+
+  - name: Get Release
+    resource: Release
+    description: Reads a release by ID, or the latest one with latest.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: release, label: Release ID, default: latest}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/releases/{{fields.release}}"}
+
+  - name: List Releases
+    resource: Release
+    description: Lists a repository's releases, newest first.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/releases"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Update Release
+    resource: Release
+    description: Changes a release, or publishes a draft. Empty fields stay as they are.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: release, label: Release ID, required: true}
+      - {name: tag_name, label: Tag}
+      - {name: name, label: Title}
+      - {name: body, label: Notes, type: textarea}
+      - {name: draft, label: Draft, type: select, options: [{label: "Yes", value: "true"}, {label: "No (publish)", value: "false"}]}
+      - {name: prerelease, label: Pre-release, type: select, options: [{label: "Yes", value: "true"}, {label: "No", value: "false"}]}
+    request:
+      method: PATCH
+      path: "repos/{{fields.repo | path}}/releases/{{fields.release}}"
+      body: {tag_name: "{{fields.tag_name}}", name: "{{fields.name}}", body: "{{fields.body}}", draft: "{{fields.draft}}", prerelease: "{{fields.prerelease}}"}
+
+  - name: Delete Release
+    resource: Release
+    description: Deletes a release. The tag stays.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: release, label: Release ID, required: true}
+    request: {method: DELETE, path: "repos/{{fields.repo | path}}/releases/{{fields.release}}"}
+
+  # Repositories
+  - name: Get Repository
+    resource: Repository
+    description: Reads a repository.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}"}
+
+  - name: Create Repository
+    resource: Repository
+    description: Creates a repository under your account.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: description, label: Description}
+      - {name: private, label: Private, type: boolean, default: true}
+      - {name: auto_init, label: Start with a README, type: boolean, default: false}
+    request:
+      method: POST
+      path: user/repos
+      body: {name: "{{fields.name}}", description: "{{fields.description}}", private: "{{fields.private}}", auto_init: "{{fields.auto_init}}"}
+
+  - name: Create Organization Repository
+    resource: Repository
+    description: Creates a repository in an organization.
+    fields:
+      - {name: org, label: Organization, required: true}
+      - {name: name, label: Name, required: true}
+      - {name: description, label: Description}
+      - {name: visibility, label: Visibility, type: select, default: private, options: [{label: Private, value: private}, {label: Internal, value: internal}, {label: Public, value: public}]}
+      - {name: auto_init, label: Start with a README, type: boolean, default: false}
+    request:
+      method: POST
+      path: "orgs/{{fields.org}}/repos"
+      body: {name: "{{fields.name}}", description: "{{fields.description}}", visibility: "{{fields.visibility}}", auto_init: "{{fields.auto_init}}"}
+
+  - name: List My Repositories
+    resource: Repository
+    description: Lists the repositories you can reach.
+    fields:
+      - {name: affiliation, label: Where you are, type: multiselect, default: [owner, collaborator, organization_member], options: [{label: Owner, value: owner}, {label: Collaborator, value: collaborator}, {label: Organization member, value: organization_member}]}
+      - {name: sort, label: Sort by, type: select, default: full_name, options: [{label: Name, value: full_name}, {label: Created, value: created}, {label: Updated, value: updated}, {label: Pushed, value: pushed}]}
+    request:
+      method: GET
+      path: user/repos
+      query: {affiliation: "{{fields.affiliation}}", sort: "{{fields.sort}}"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: List Organization Repositories
+    resource: Repository
+    description: Lists an organization's repositories.
+    fields:
+      - {name: org, label: Organization, required: true}
+      - {name: type, label: Type, type: select, default: all, options: [{label: All, value: all}, {label: Public, value: public}, {label: Private, value: private}, {label: Forks, value: forks}, {label: Sources, value: sources}]}
+    request:
+      method: GET
+      path: "orgs/{{fields.org}}/repos"
+      query: {type: "{{fields.type}}"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: List User Repositories
+    resource: Repository
+    description: Lists another user's public repositories.
+    fields:
+      - {name: user, label: User, required: true}
+    request: {method: GET, path: "users/{{fields.user}}/repos"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Get License
+    resource: Repository
+    description: Reads a repository's license.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/license"}
+
+  - name: List Branches
+    resource: Repository
+    description: Lists a repository's branches.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/branches"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: Create Branch
+    resource: Repository
+    description: Creates a branch at a commit.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: branch, label: Name, required: true}
+      - {name: sha, label: At commit SHA, required: true}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/git/refs"
+      body: {ref: "refs/heads/{{fields.branch}}", sha: "{{fields.sha}}"}
+
+  - name: List Commits
+    resource: Repository
+    description: Lists commits, by branch, path, author or date.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: sha, label: Branch or SHA}
+      - {name: path, label: Only touching path}
+      - {name: author, label: Author}
+      - {name: since, label: Since}
+      - {name: until, label: Until}
+    request:
+      method: GET
+      path: "repos/{{fields.repo | path}}/commits"
+      query: {sha: "{{fields.sha}}", path: "{{fields.path}}", author: "{{fields.author}}", since: "{{fields.since}}", until: "{{fields.until}}"}
+    pagination: {type: link, limit_param: per_page, page_size: 100}
+
+  - name: List Popular Paths
+    resource: Repository
+    description: Lists the most viewed paths of a repository in the last 14 days.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/traffic/popular/paths"}
+
+  - name: List Referrers
+    resource: Repository
+    description: Lists the sites that sent the most visitors in the last 14 days.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/traffic/popular/referrers"}
+
+  - name: Search Repositories
+    resource: Repository
+    description: Searches repositories across GitHub.
+    fields:
+      - {name: q, label: Query, required: true, description: "Like elixir workflow stars:>100"}
+      - {name: sort, label: Sort by, type: select, options: [{label: Best match, value: ""}, {label: Stars, value: stars}, {label: Forks, value: forks}, {label: Updated, value: updated}]}
+    request:
+      method: GET
+      path: search/repositories
+      query: {q: "{{fields.q}}", sort: "{{fields.sort}}"}
+    pagination: {type: link, items_path: items, limit_param: per_page, page_size: 100}
+
+  # Users and organizations
+  - name: Get User
+    resource: User
+    description: Reads a user's public profile.
+    fields:
+      - {name: user, label: Login, required: true}
+    request: {method: GET, path: "users/{{fields.user}}"}
+
+  - name: Get Me
+    resource: User
+    description: Reads the account the token belongs to.
+    request: {method: GET, path: user}
+
+  - name: Invite to Organization
+    resource: User
+    description: Invites someone to an organization by email or user ID.
+    fields:
+      - {name: org, label: Organization, required: true}
+      - {name: email, label: Email}
+      - {name: invitee_id, label: User ID, type: number}
+      - {name: role, label: Role, type: select, default: direct_member, options: [{label: Member, value: direct_member}, {label: Admin, value: admin}, {label: Billing manager, value: billing_manager}]}
+    request:
+      method: POST
+      path: "orgs/{{fields.org}}/invitations"
+      body: {email: "{{fields.email}}", invitee_id: "{{fields.invitee_id}}", role: "{{fields.role}}"}
+
+  - name: Add Collaborator
+    resource: User
+    description: Invites someone to a repository.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: user, label: Login, required: true}
+      - {name: permission, label: Permission, type: select, default: push, options: [{label: Read, value: pull}, {label: Triage, value: triage}, {label: Write, value: push}, {label: Maintain, value: maintain}, {label: Admin, value: admin}]}
+    request:
+      method: PUT
+      path: "repos/{{fields.repo | path}}/collaborators/{{fields.user}}"
+      body: {permission: "{{fields.permission}}"}
+
+  # Workflows
+  - name: List Workflows
+    resource: Workflow
+    description: Lists a repository's Actions workflows.
+    fields:
+      - {name: repo, label: Repository, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/actions/workflows"}
+    pagination: {type: link, items_path: workflows, limit_param: per_page, page_size: 100}
+
+  - name: Get Workflow
+    resource: Workflow
+    description: Reads a workflow, by ID or file name.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: workflow, label: Workflow, required: true, description: "An ID or a file name, like ci.yml"}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/actions/workflows/{{fields.workflow}}"}
+
+  - name: Run Workflow
+    resource: Workflow
+    description: Starts a workflow that has a workflow_dispatch trigger.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: workflow, label: Workflow, required: true, description: "An ID or a file name, like deploy.yml"}
+      - {name: ref, label: Branch or tag, required: true, default: main}
+      - {name: inputs, label: Inputs, type: json, description: 'Like {"environment": "production"}'}
+    request:
+      method: POST
+      path: "repos/{{fields.repo | path}}/actions/workflows/{{fields.workflow}}/dispatches"
+      body: {ref: "{{fields.ref}}", inputs: "{{fields.inputs}}"}
+
+  - name: Enable Workflow
+    resource: Workflow
+    description: Turns a workflow on.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: workflow, label: Workflow, required: true}
+    request: {method: PUT, path: "repos/{{fields.repo | path}}/actions/workflows/{{fields.workflow}}/enable"}
+
+  - name: Disable Workflow
+    resource: Workflow
+    description: Turns a workflow off.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: workflow, label: Workflow, required: true}
+    request: {method: PUT, path: "repos/{{fields.repo | path}}/actions/workflows/{{fields.workflow}}/disable"}
+
+  - name: List Workflow Runs
+    resource: Workflow
+    description: Lists the runs of every workflow in a repository.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: branch, label: Branch}
+      - {name: status, label: Status, type: select, options: [{label: Queued, value: queued}, {label: In progress, value: in_progress}, {label: Completed, value: completed}, {label: Success, value: success}, {label: Failure, value: failure}, {label: Cancelled, value: cancelled}]}
+      - {name: event, label: Triggered by, description: "Like push or workflow_dispatch"}
+    request:
+      method: GET
+      path: "repos/{{fields.repo | path}}/actions/runs"
+      query: {branch: "{{fields.branch}}", status: "{{fields.status}}", event: "{{fields.event}}"}
+    pagination: {type: link, items_path: workflow_runs, limit_param: per_page, page_size: 100}
+
+  - name: Rerun Workflow Run
+    resource: Workflow
+    description: Runs a finished workflow run again, or only its failed jobs.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: run, label: Run ID, required: true}
+      - {name: what, label: Run again, type: select, default: rerun, options: [{label: All jobs, value: rerun}, {label: Only failed jobs, value: rerun-failed-jobs}]}
+    request: {method: POST, path: "repos/{{fields.repo | path}}/actions/runs/{{fields.run}}/{{fields.what}}"}
+
+  - name: Cancel Workflow Run
+    resource: Workflow
+    description: Cancels a workflow run in progress.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: run, label: Run ID, required: true}
+    request: {method: POST, path: "repos/{{fields.repo | path}}/actions/runs/{{fields.run}}/cancel"}
+
+  - name: Get Workflow Usage
+    resource: Workflow
+    description: Reads how many billable minutes a workflow used this month.
+    fields:
+      - {name: repo, label: Repository, required: true}
+      - {name: workflow, label: Workflow, required: true}
+    request: {method: GET, path: "repos/{{fields.repo | path}}/actions/workflows/{{fields.workflow}}/timing"}
+
+i18n:
+  pt-BR:
+    description: "Arquivos, issues, pull requests, revisões, releases, repositórios e workflows do Actions no GitHub."
+    triggers:
+      Repository Event: {name: "Evento do repositório", description: "Inicia o fluxo quando algo acontece num repositório, como um push, uma issue ou um pull request.", fields: {repo: "Repositório", events: "Eventos"}}
+    actions:
+      Get File: {name: "Ler arquivo", description: "Lê um arquivo ou lista uma pasta. O conteúdo de um arquivo vem em base64.", fields: {repo: "Repositório", path: "Caminho", ref: "Branch, tag ou commit"}}
+      Download File: {name: "Baixar arquivo", description: "Baixa um arquivo, guardado como arquivo para os próximos nós.", fields: {repo: "Repositório", path: "Caminho", ref: "Branch, tag ou commit"}}
+      Create or Update File: {name: "Criar ou atualizar arquivo", description: "Faz commit de um arquivo. Para alterar um que existe, informe o SHA atual de Ler arquivo.", fields: {repo: "Repositório", path: "Caminho", content: "Conteúdo", message: "Mensagem do commit", sha: "SHA atual", branch: "Branch", author_name: "Nome do autor", author_email: "E-mail do autor"}}
+      Upload File: {name: "Enviar arquivo", description: "Faz commit de um arquivo de um nó anterior, como um download. Para substituir, informe o SHA atual.", fields: {repo: "Repositório", path: "Caminho", file: "Arquivo", message: "Mensagem do commit", sha: "SHA atual", branch: "Branch"}}
+      Delete File: {name: "Excluir arquivo", description: "Faz commit da remoção de um arquivo.", fields: {repo: "Repositório", path: "Caminho", sha: "SHA atual", message: "Mensagem do commit", branch: "Branch"}}
+      Create Issue: {name: "Criar issue", description: "Abre uma issue.", fields: {repo: "Repositório", title: "Título", body: "Texto", labels: "Etiquetas", assignees: "Responsáveis", milestone: "Número do marco"}}
+      Get Issue: {name: "Ler issue", description: "Lê uma issue ou pull request pelo número.", fields: {repo: "Repositório", number: "Número"}}
+      List Issues: {name: "Listar issues", description: "Lista as issues de um repositório, por estado, etiqueta, responsável ou data.", fields: {repo: "Repositório", state: "Estado", labels: "Etiquetas", assignee: "Responsável", creator: "Criador", mentioned: "Mencionando", since: "Desde", sort: "Ordenar por", direction: "Ordem"}}
+      Update Issue: {name: "Atualizar issue", description: "Altera uma issue, fechando ou reabrindo. Campos vazios ficam como estão.", fields: {repo: "Repositório", number: "Número", title: "Título", body: "Texto", state: "Estado", state_reason: "Fechada como", labels: "Etiquetas", assignees: "Responsáveis", milestone: "Número do marco"}}
+      Lock Issue: {name: "Trancar issue", description: "Tranca a conversa de uma issue ou pull request.", fields: {repo: "Repositório", number: "Número", lock_reason: "Motivo"}}
+      Unlock Issue: {name: "Destrancar issue", description: "Destranca a conversa de uma issue ou pull request.", fields: {repo: "Repositório", number: "Número"}}
+      Comment on Issue: {name: "Comentar na issue", description: "Comenta numa issue ou pull request.", fields: {repo: "Repositório", number: "Número", body: "Comentário"}}
+      List Issue Comments: {name: "Listar comentários", description: "Lista os comentários de uma issue ou pull request.", fields: {repo: "Repositório", number: "Número", since: "Desde"}}
+      Add Labels: {name: "Adicionar etiquetas", description: "Adiciona etiquetas a uma issue ou pull request.", fields: {repo: "Repositório", number: "Número", labels: "Etiquetas"}}
+      Search Issues: {name: "Buscar issues", description: "Busca issues e pull requests em todo o GitHub.", fields: {q: "Busca", sort: "Ordenar por"}}
+      Create Pull Request: {name: "Criar pull request", description: "Abre um pull request de um branch para outro.", fields: {repo: "Repositório", title: "Título", head: "Do branch", base: "Para o branch", body: "Texto", draft: "Rascunho"}}
+      Get Pull Request: {name: "Ler pull request", description: "Lê um pull request, com se dá para fazer merge.", fields: {repo: "Repositório", number: "Número"}}
+      List Pull Requests: {name: "Listar pull requests", description: "Lista os pull requests de um repositório.", fields: {repo: "Repositório", state: "Estado", head: "Do branch", base: "Para o branch", sort: "Ordenar por"}}
+      Update Pull Request: {name: "Atualizar pull request", description: "Altera ou fecha um pull request. Campos vazios ficam como estão.", fields: {repo: "Repositório", number: "Número", title: "Título", body: "Texto", state: "Estado", base: "Para o branch"}}
+      Merge Pull Request: {name: "Fazer merge", description: "Faz o merge de um pull request.", fields: {repo: "Repositório", number: "Número", merge_method: "Método", commit_title: "Título do commit", commit_message: "Mensagem do commit", sha: "Só se o head estiver no SHA"}}
+      List Pull Request Files: {name: "Listar arquivos do pull request", description: "Lista os arquivos que um pull request altera, com os patches.", fields: {repo: "Repositório", number: "Número"}}
+      Request Reviewers: {name: "Pedir revisão", description: "Pede a pessoas ou times que revisem um pull request.", fields: {repo: "Repositório", number: "Número", reviewers: "Revisores", team_reviewers: "Times"}}
+      Create Review: {name: "Criar revisão", description: "Revisa um pull request, aprovando, pedindo mudanças ou comentando.", fields: {repo: "Repositório", number: "Número do pull request", event: "Veredito", body: "Texto", commit_id: "SHA do commit", comments: "Comentários de linha"}}
+      Get Review: {name: "Ler revisão", description: "Lê uma revisão.", fields: {repo: "Repositório", number: "Número do pull request", review: "ID da revisão"}}
+      List Reviews: {name: "Listar revisões", description: "Lista as revisões de um pull request.", fields: {repo: "Repositório", number: "Número do pull request"}}
+      Update Review: {name: "Atualizar revisão", description: "Altera o texto de uma revisão.", fields: {repo: "Repositório", number: "Número do pull request", review: "ID da revisão", body: "Texto"}}
+      Create Release: {name: "Criar release", description: "Publica uma release a partir de uma tag, criando a tag se não existir.", fields: {repo: "Repositório", tag_name: "Tag", name: "Título", body: "Notas", target_commitish: "A partir do branch ou commit", draft: "Rascunho", prerelease: "Pré-release", generate_release_notes: "Escrever notas pelos pull requests", make_latest: "Marcar como mais recente"}}
+      Get Release: {name: "Ler release", description: "Lê uma release pelo ID, ou a mais recente com latest.", fields: {repo: "Repositório", release: "ID da release"}}
+      List Releases: {name: "Listar releases", description: "Lista as releases de um repositório, as mais novas primeiro.", fields: {repo: "Repositório"}}
+      Update Release: {name: "Atualizar release", description: "Altera uma release ou publica um rascunho. Campos vazios ficam como estão.", fields: {repo: "Repositório", release: "ID da release", tag_name: "Tag", name: "Título", body: "Notas", draft: "Rascunho", prerelease: "Pré-release"}}
+      Delete Release: {name: "Excluir release", description: "Exclui uma release. A tag fica.", fields: {repo: "Repositório", release: "ID da release"}}
+      Get Repository: {name: "Ler repositório", description: "Lê um repositório.", fields: {repo: "Repositório"}}
+      Create Repository: {name: "Criar repositório", description: "Cria um repositório na sua conta.", fields: {name: "Nome", description: "Descrição", private: "Privado", auto_init: "Começar com README"}}
+      Create Organization Repository: {name: "Criar repositório na organização", description: "Cria um repositório numa organização.", fields: {org: "Organização", name: "Nome", description: "Descrição", visibility: "Visibilidade", auto_init: "Começar com README"}}
+      List My Repositories: {name: "Listar meus repositórios", description: "Lista os repositórios que você alcança.", fields: {affiliation: "Onde você está", sort: "Ordenar por"}}
+      List Organization Repositories: {name: "Listar repositórios da organização", description: "Lista os repositórios de uma organização.", fields: {org: "Organização", type: "Tipo"}}
+      List User Repositories: {name: "Listar repositórios de usuário", description: "Lista os repositórios públicos de outro usuário.", fields: {user: "Login"}}
+      Get License: {name: "Ler licença", description: "Lê a licença de um repositório.", fields: {repo: "Repositório"}}
+      List Branches: {name: "Listar branches", description: "Lista os branches de um repositório.", fields: {repo: "Repositório"}}
+      Create Branch: {name: "Criar branch", description: "Cria um branch num commit.", fields: {repo: "Repositório", branch: "Nome", sha: "No commit SHA"}}
+      List Commits: {name: "Listar commits", description: "Lista commits, por branch, caminho, autor ou data.", fields: {repo: "Repositório", sha: "Branch ou SHA", path: "Só no caminho", author: "Autor", since: "Desde", until: "Até"}}
+      List Popular Paths: {name: "Listar caminhos populares", description: "Lista os caminhos mais vistos de um repositório nos últimos 14 dias.", fields: {repo: "Repositório"}}
+      List Referrers: {name: "Listar origens de visitas", description: "Lista os sites que mais mandaram visitantes nos últimos 14 dias.", fields: {repo: "Repositório"}}
+      Search Repositories: {name: "Buscar repositórios", description: "Busca repositórios em todo o GitHub.", fields: {q: "Busca", sort: "Ordenar por"}}
+      Get User: {name: "Ler usuário", description: "Lê o perfil público de um usuário.", fields: {user: "Login"}}
+      Get Me: {name: "Ler minha conta", description: "Lê a conta dona do token."}
+      Invite to Organization: {name: "Convidar para organização", description: "Convida alguém para uma organização por e-mail ou ID.", fields: {org: "Organização", email: "E-mail", invitee_id: "ID do usuário", role: "Papel"}}
+      Add Collaborator: {name: "Adicionar colaborador", description: "Convida alguém para um repositório.", fields: {repo: "Repositório", user: "Login", permission: "Permissão"}}
+      List Workflows: {name: "Listar workflows", description: "Lista os workflows do Actions de um repositório.", fields: {repo: "Repositório"}}
+      Get Workflow: {name: "Ler workflow", description: "Lê um workflow, pelo ID ou nome do arquivo.", fields: {repo: "Repositório", workflow: "Workflow"}}
+      Run Workflow: {name: "Rodar workflow", description: "Inicia um workflow que tem gatilho workflow_dispatch.", fields: {repo: "Repositório", workflow: "Workflow", ref: "Branch, tag ou commit", inputs: "Entradas"}}
+      Enable Workflow: {name: "Ativar workflow", description: "Liga um workflow.", fields: {repo: "Repositório", workflow: "Workflow"}}
+      Disable Workflow: {name: "Desativar workflow", description: "Desliga um workflow.", fields: {repo: "Repositório", workflow: "Workflow"}}
+      List Workflow Runs: {name: "Listar execuções", description: "Lista as execuções de todos os workflows de um repositório.", fields: {repo: "Repositório", branch: "Branch", status: "Status", event: "Disparado por"}}
+      Rerun Workflow Run: {name: "Rodar execução de novo", description: "Roda de novo uma execução terminada, ou só os jobs que falharam.", fields: {repo: "Repositório", run: "ID da execução", what: "Rodar de novo"}}
+      Cancel Workflow Run: {name: "Cancelar execução", description: "Cancela uma execução em andamento.", fields: {repo: "Repositório", run: "ID da execução"}}
+      Get Workflow Usage: {name: "Ler uso do workflow", description: "Lê quantos minutos cobrados um workflow usou neste mês.", fields: {repo: "Repositório", workflow: "Workflow"}}
