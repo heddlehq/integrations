@@ -1,0 +1,209 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# X (formerly Twitter), through the API v2. Connect with an app made in the X developer
+# portal, with OAuth 2.0 on (type Web App), the redirect URL Heddle shows, and a plan
+# that allows what the flow does: the free plan only posts and deletes.
+id: x
+name: X (Twitter)
+version: 1.0.0
+description: Posts, replies, likes, reposts, searches and direct messages on X.
+icon: hero-chat-bubble-left
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000000" d="M14.234 10.162L22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299l-.929-1.329L3.076 1.56h3.182l5.965 8.532l.929 1.329l7.754 11.09h-3.182z"/></svg>
+category: social
+author: Heddle
+homepage: https://docs.x.com/x-api/introduction
+base_url: https://api.x.com/2/
+
+credential:
+  label: X
+  auth:
+    type: oauth2
+    authorize_url: https://x.com/i/oauth2/authorize
+    token_url: https://api.x.com/2/oauth2/token
+    scopes: [tweet.read, tweet.write, users.read, like.write, like.read, dm.read, dm.write, offline.access]
+
+errors:
+  error_path: errors
+  message_path: errors.0.message
+
+triggers:
+  - name: New Mention
+    description: Starts the flow for each post that mentions you, checking every 5 minutes.
+    fields:
+      - {name: me, label: Your user ID, required: true, description: "id, from Get Me."}
+    request:
+      method: GET
+      path: "users/{{fields.me}}/mentions"
+      query: {max_results: 100, "tweet.fields": "created_at,author_id,conversation_id,in_reply_to_user_id"}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+  - name: New Search Result
+    description: Starts the flow for each new post that matches a search, checking every 15 minutes.
+    fields:
+      - {name: query, label: Search, required: true, description: "Like heddle -is:retweet lang:pt"}
+    request:
+      method: GET
+      path: tweets/search/recent
+      query: {query: "{{fields.query}}", max_results: 100, "tweet.fields": "created_at,author_id,lang"}
+    output: {path: data}
+    poll: {every: 15, id: id}
+
+actions:
+  - name: Create Post
+    resource: Post
+    description: Posts, up to 280 characters on a free account.
+    fields:
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: reply_to, label: Reply to post ID}
+      - {name: quote, label: Quote post ID}
+      - {name: reply_settings, label: Who can reply, type: select, options: [{label: Everyone, value: everyone}, {label: People you follow, value: following}, {label: People you mention, value: mentionedUsers}]}
+    request:
+      method: POST
+      path: tweets
+      body:
+        text: "{{fields.text}}"
+        reply: {in_reply_to_tweet_id: "{{fields.reply_to}}"}
+        quote_tweet_id: "{{fields.quote}}"
+        reply_settings: "{{fields.reply_settings}}"
+    output: {path: data}
+
+  - name: Delete Post
+    resource: Post
+    description: Deletes one of your posts.
+    fields:
+      - {name: post, label: Post ID, required: true}
+    request: {method: DELETE, path: "tweets/{{fields.post}}"}
+    output: {path: data}
+
+  - name: Get Post
+    resource: Post
+    description: Reads a post, with its metrics.
+    fields:
+      - {name: post, label: Post ID, required: true}
+    request:
+      method: GET
+      path: "tweets/{{fields.post}}"
+      query: {"tweet.fields": "created_at,author_id,public_metrics,conversation_id,entities", expansions: author_id}
+
+  - name: Search Posts
+    resource: Post
+    description: Finds posts of the last 7 days.
+    fields:
+      - {name: query, label: Search, required: true, description: "Like from:heddlehq has:links"}
+      - {name: start, label: Since, type: datetime}
+      - {name: end, label: Until, type: datetime}
+      - {name: sort, label: Order, type: select, default: recency, options: [{label: Newest, value: recency}, {label: Most relevant, value: relevancy}]}
+    request:
+      method: GET
+      path: tweets/search/recent
+      query: {query: "{{fields.query}}", start_time: "{{fields.start}}", end_time: "{{fields.end}}", sort_order: "{{fields.sort}}", "tweet.fields": "created_at,author_id,public_metrics,lang"}
+    pagination: {type: cursor, items_path: data, cursor_param: next_token, next_path: meta.next_token, limit_param: max_results, page_size: 100}
+
+  - name: List User Posts
+    resource: Post
+    description: Lists the latest posts of a user.
+    fields:
+      - {name: user, label: User ID, required: true}
+      - {name: exclude, label: Leave out, type: multiselect, options: [{label: Replies, value: replies}, {label: Reposts, value: retweets}]}
+    request:
+      method: GET
+      path: "users/{{fields.user}}/tweets"
+      query: {exclude: "{{fields.exclude}}", "tweet.fields": "created_at,public_metrics"}
+    pagination: {type: cursor, items_path: data, cursor_param: pagination_token, next_path: meta.next_token, limit_param: max_results, page_size: 100}
+
+  - name: Like Post
+    resource: Post
+    description: Likes a post.
+    fields:
+      - {name: me, label: Your user ID, required: true, description: "id, from Get Me."}
+      - {name: post, label: Post ID, required: true}
+    request:
+      method: POST
+      path: "users/{{fields.me}}/likes"
+      body: {tweet_id: "{{fields.post}}"}
+    output: {path: data}
+
+  - name: Unlike Post
+    resource: Post
+    description: Takes back a like.
+    fields:
+      - {name: me, label: Your user ID, required: true, description: "id, from Get Me."}
+      - {name: post, label: Post ID, required: true}
+    request: {method: DELETE, path: "users/{{fields.me}}/likes/{{fields.post}}"}
+    output: {path: data}
+
+  - name: Repost
+    resource: Post
+    description: Reposts a post.
+    fields:
+      - {name: me, label: Your user ID, required: true, description: "id, from Get Me."}
+      - {name: post, label: Post ID, required: true}
+    request:
+      method: POST
+      path: "users/{{fields.me}}/retweets"
+      body: {tweet_id: "{{fields.post}}"}
+    output: {path: data}
+
+  - name: Undo Repost
+    resource: Post
+    description: Takes back a repost.
+    fields:
+      - {name: me, label: Your user ID, required: true, description: "id, from Get Me."}
+      - {name: post, label: Post ID, required: true}
+    request: {method: DELETE, path: "users/{{fields.me}}/retweets/{{fields.post}}"}
+    output: {path: data}
+
+  - name: Get Me
+    resource: User
+    description: Reads the connected account, with its user ID.
+    request: {method: GET, path: users/me, query: {"user.fields": "created_at,description,public_metrics,profile_image_url,verified"}}
+    output: {path: data}
+
+  - name: Get User
+    resource: User
+    description: Reads a user by username.
+    fields:
+      - {name: username, label: Username, required: true, description: "Without the @."}
+    request: {method: GET, path: "users/by/username/{{fields.username}}", query: {"user.fields": "created_at,description,public_metrics,profile_image_url,verified,location,url"}}
+    output: {path: data}
+
+  - name: Send Direct Message
+    resource: Message
+    description: Sends a direct message to a user.
+    fields:
+      - {name: user, label: To user ID, required: true}
+      - {name: text, label: Text, type: textarea, required: true}
+    request:
+      method: POST
+      path: "dm_conversations/with/{{fields.user}}/messages"
+      body: {text: "{{fields.text}}"}
+    output: {path: data}
+
+  - name: List Direct Messages
+    resource: Message
+    description: Lists your recent direct messages, of the last 30 days.
+    request: {method: GET, path: dm_events, query: {"dm_event.fields": "created_at,sender_id,text,dm_conversation_id"}}
+    pagination: {type: cursor, items_path: data, cursor_param: pagination_token, next_path: meta.next_token, limit_param: max_results, page_size: 100}
+
+i18n:
+  pt-BR:
+    description: "Posts, respostas, curtidas, reposts, buscas e mensagens diretas no X."
+    triggers:
+      New Mention: {name: "Nova menção", description: "Inicia o fluxo para cada post que menciona você, olhando a cada 5 minutos.", fields: {me: "Seu ID de usuário"}}
+      New Search Result: {name: "Novo resultado de busca", description: "Inicia o fluxo para cada post novo que bate com uma busca, olhando a cada 15 minutos.", fields: {query: "Busca"}}
+    actions:
+      Create Post: {name: "Criar post", description: "Publica um post, de até 280 caracteres numa conta grátis.", fields: {text: "Texto", reply_to: "Responder ao post", quote: "Citar o post", reply_settings: "Quem pode responder"}}
+      Delete Post: {name: "Excluir post", description: "Exclui um post seu.", fields: {post: "ID do post"}}
+      Get Post: {name: "Ler post", description: "Lê um post, com as métricas.", fields: {post: "ID do post"}}
+      Search Posts: {name: "Buscar posts", description: "Encontra posts dos últimos 7 dias.", fields: {query: "Busca", start: "Desde", end: "Até", sort: "Ordem"}}
+      List User Posts: {name: "Listar posts do usuário", description: "Lista os posts mais recentes de um usuário.", fields: {user: "ID do usuário", exclude: "Deixar de fora"}}
+      Like Post: {name: "Curtir post", description: "Curte um post.", fields: {me: "Seu ID de usuário", post: "ID do post"}}
+      Unlike Post: {name: "Descurtir post", description: "Tira uma curtida.", fields: {me: "Seu ID de usuário", post: "ID do post"}}
+      Repost: {name: "Repostar", description: "Reposta um post.", fields: {me: "Seu ID de usuário", post: "ID do post"}}
+      Undo Repost: {name: "Desfazer repost", description: "Tira um repost.", fields: {me: "Seu ID de usuário", post: "ID do post"}}
+      Get Me: {name: "Ler minha conta", description: "Lê a conta conectada, com o ID de usuário."}
+      Get User: {name: "Ler usuário", description: "Lê um usuário pelo nome de usuário.", fields: {username: "Nome de usuário"}}
+      Send Direct Message: {name: "Enviar mensagem direta", description: "Envia uma mensagem direta a um usuário.", fields: {user: "Para o ID de usuário", text: "Texto"}}
+      List Direct Messages: {name: "Listar mensagens diretas", description: "Lista suas mensagens diretas dos últimos 30 dias."}
