@@ -1,0 +1,532 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Shopify, through the Admin REST API 2025-10. Connect with a custom app made in the
+# store's Settings › Apps and sales channels › Develop apps: give it the scopes for
+# orders, products, customers, inventory and fulfillments, install it, and copy the
+# Admin API access token and the API secret key, which signs the webhooks.
+id: shopify
+name: Shopify
+version: 1.0.0
+description: Orders, products and customers in a Shopify store.
+icon: hero-shopping-bag
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#7AB55C" d="m15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.114-.192-.211-.192s-1.929-.136-1.929-.136s-1.275-1.274-1.439-1.411a.4.4 0 0 0-.121-.074l-.914 21.104zM11.71 11.305s-.81-.424-1.774-.424c-1.447 0-1.504.906-1.504 1.141c0 1.232 3.24 1.715 3.24 4.629c0 2.295-1.44 3.76-3.406 3.76c-2.354 0-3.54-1.465-3.54-1.465l.646-2.086s1.245 1.066 2.28 1.066a.944.944 0 0 0 .975-.932c0-1.619-2.654-1.694-2.654-4.359c-.034-2.237 1.571-4.416 4.827-4.416c1.257 0 1.875.361 1.875.361l-.945 2.715zM11.17.83c.136 0 .271.038.405.135c-.984.465-2.064 1.639-2.508 3.992a63 63 0 0 1-1.889.578C7.697 3.75 8.951.84 11.17.84zm1.235 2.949v.135c-.754.232-1.583.484-2.394.736c.466-1.777 1.333-2.645 2.085-2.971c.193.501.309 1.176.309 2.1m.539-2.234c.694.074 1.141.867 1.429 1.755c-.349.114-.735.231-1.158.366v-.252c0-.752-.096-1.371-.271-1.871zm2.992 1.289c-.02 0-.06.021-.078.021s-.289.075-.714.21c-.423-1.233-1.176-2.37-2.508-2.37h-.115C12.135.209 11.669 0 11.265 0C8.159 0 6.675 3.877 6.21 5.846c-1.194.365-2.063.636-2.16.674c-.675.213-.694.232-.772.87c-.075.462-1.83 14.063-1.83 14.063L15.009 24z"/></svg>
+category: ecommerce
+author: Heddle
+homepage: https://shopify.dev/docs/api/admin-rest
+base_url: "https://{{credential.shop}}.myshopify.com/admin/api/2025-10/"
+
+credential:
+  label: Shopify
+  fields:
+    - {name: shop, label: Store, required: true, description: "acme, for acme.myshopify.com"}
+    - {name: token, label: Admin API access token, secret: true, required: true}
+    - {name: api_secret, label: API secret key, secret: true, description: "Signs the webhooks. Needed for the triggers."}
+  auth:
+    type: header
+    name: X-Shopify-Access-Token
+    value: "{{credential.token}}"
+
+errors:
+  message_path: errors
+
+triggers:
+  - name: Store Event
+    description: Starts the flow when something happens in the store, like a new order or a changed product.
+    fields:
+      - name: topic
+        label: Event
+        type: select
+        required: true
+        default: orders/create
+        options:
+          - {label: Order created, value: orders/create}
+          - {label: Order paid, value: orders/paid}
+          - {label: Order updated, value: orders/updated}
+          - {label: Order fulfilled, value: orders/fulfilled}
+          - {label: Order canceled, value: orders/cancelled}
+          - {label: Order deleted, value: orders/delete}
+          - {label: Draft order created, value: draft_orders/create}
+          - {label: Cart created, value: carts/create}
+          - {label: Checkout created, value: checkouts/create}
+          - {label: Refund created, value: refunds/create}
+          - {label: Fulfillment created, value: fulfillments/create}
+          - {label: Product created, value: products/create}
+          - {label: Product updated, value: products/update}
+          - {label: Product deleted, value: products/delete}
+          - {label: Inventory level changed, value: inventory_levels/update}
+          - {label: Customer created, value: customers/create}
+          - {label: Customer updated, value: customers/update}
+          - {label: Customer deleted, value: customers/delete}
+          - {label: Collection created, value: collections/create}
+          - {label: App uninstalled, value: app/uninstalled}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks.json
+          body: {webhook: {topic: "{{fields.topic}}", address: "{{webhook.url}}", format: json}}
+        id_path: webhook.id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}.json"}
+      signature:
+        header: X-Shopify-Hmac-Sha256
+        encoding: base64
+        secret: "{{credential.api_secret}}"
+
+  - name: New Order
+    description: Starts the flow for each new order, checking every 5 minutes.
+    fields:
+      - {name: status, label: Status, type: select, default: any, options: [{label: Any, value: any}, {label: Open, value: open}, {label: Closed, value: closed}, {label: Canceled, value: cancelled}]}
+    request:
+      method: GET
+      path: orders.json
+      query: {status: "{{fields.status}}", limit: 250, order: "created_at desc"}
+    output: {path: orders}
+    poll: {every: 5, id: id}
+
+actions:
+  # Orders
+  - name: Create Order
+    resource: Order
+    description: Creates an order, by default paid and without sending the customer a receipt.
+    fields:
+      - {name: line_items, label: Items, type: json, required: true, description: 'Like [{"variant_id": 447654529, "quantity": 1}] or [{"title": "Gift", "price": 10, "quantity": 1}]'}
+      - {name: email, label: Customer email}
+      - {name: customer_id, label: Customer ID}
+      - {name: financial_status, label: Payment, type: select, default: paid, options: [{label: Paid, value: paid}, {label: Pending, value: pending}, {label: Authorized, value: authorized}, {label: Partially paid, value: partially_paid}]}
+      - {name: shipping_address, label: Shipping address, type: json, description: 'Like {"first_name": "Ana", "address1": "Rua A, 1", "city": "São Paulo", "country": "BR", "zip": "01000-000"}'}
+      - {name: billing_address, label: Billing address, type: json}
+      - {name: note, label: Note, type: textarea}
+      - {name: tags, label: Tags, description: "Like vip, wholesale"}
+      - {name: send_receipt, label: Send the receipt, type: boolean, default: false}
+      - {name: inventory, label: Inventory, type: select, default: bypass, options: [{label: Leave stock as it is, value: bypass}, {label: Take from stock, value: decrement_ignoring_policy}, {label: Take from stock if there is, value: decrement_obeying_policy}]}
+      - {name: extra, label: More fields, type: json, description: 'Any other field of an order, like {"currency": "BRL"}'}
+    request:
+      method: POST
+      path: orders.json
+      body:
+        order:
+          line_items: "{{fields.line_items}}"
+          email: "{{fields.email}}"
+          customer: {id: "{{fields.customer_id}}"}
+          financial_status: "{{fields.financial_status}}"
+          shipping_address: "{{fields.shipping_address}}"
+          billing_address: "{{fields.billing_address}}"
+          note: "{{fields.note}}"
+          tags: "{{fields.tags}}"
+          send_receipt: "{{fields.send_receipt}}"
+          inventory_behaviour: "{{fields.inventory}}"
+          _merge: "{{fields.extra}}"
+    output: {path: order}
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order.
+    fields:
+      - {name: order, label: Order ID, required: true}
+    request: {method: GET, path: "orders/{{fields.order}}.json"}
+    output: {path: order}
+
+  - name: List Orders
+    resource: Order
+    description: Lists the orders, newest first.
+    fields:
+      - {name: status, label: Status, type: select, default: any, options: [{label: Any, value: any}, {label: Open, value: open}, {label: Closed, value: closed}, {label: Canceled, value: cancelled}]}
+      - {name: financial_status, label: Payment, type: select, options: [{label: Any, value: any}, {label: Paid, value: paid}, {label: Pending, value: pending}, {label: Authorized, value: authorized}, {label: Refunded, value: refunded}, {label: Unpaid, value: unpaid}]}
+      - {name: fulfillment_status, label: Fulfillment, type: select, options: [{label: Any, value: any}, {label: Shipped, value: shipped}, {label: Partial, value: partial}, {label: Unshipped, value: unshipped}]}
+      - {name: created_min, label: Created after, type: datetime}
+      - {name: created_max, label: Created before, type: datetime}
+      - {name: updated_min, label: Updated after, type: datetime}
+      - {name: ids, label: IDs, description: "Like 450789469, 450789470"}
+    request:
+      method: GET
+      path: orders.json
+      query:
+        status: "{{fields.status}}"
+        financial_status: "{{fields.financial_status}}"
+        fulfillment_status: "{{fields.fulfillment_status}}"
+        created_at_min: "{{fields.created_min}}"
+        created_at_max: "{{fields.created_max}}"
+        updated_at_min: "{{fields.updated_min}}"
+        ids: "{{fields.ids}}"
+    pagination: {type: link, items_path: orders, limit_param: limit, page_size: 250}
+
+  - name: Update Order
+    resource: Order
+    description: Changes an order's note, tags, email or shipping address. Empty fields stay as they are.
+    fields:
+      - {name: order, label: Order ID, required: true}
+      - {name: email, label: Email}
+      - {name: note, label: Note, type: textarea}
+      - {name: tags, label: Tags, description: "Replaces the tags, like vip, wholesale"}
+      - {name: shipping_address, label: Shipping address, type: json}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "orders/{{fields.order}}.json"
+      body:
+        order:
+          id: "{{fields.order}}"
+          email: "{{fields.email}}"
+          note: "{{fields.note}}"
+          tags: "{{fields.tags}}"
+          shipping_address: "{{fields.shipping_address}}"
+          _merge: "{{fields.extra}}"
+    output: {path: order}
+
+  - name: Cancel Order
+    resource: Order
+    description: Cancels an order, optionally refunding it and putting the items back in stock.
+    fields:
+      - {name: order, label: Order ID, required: true}
+      - {name: reason, label: Reason, type: select, default: other, options: [{label: Customer, value: customer}, {label: Fraud, value: fraud}, {label: Out of stock, value: inventory}, {label: Payment declined, value: declined}, {label: Other, value: other}]}
+      - {name: email, label: Tell the customer, type: boolean, default: false}
+      - {name: restock, label: Put the items back in stock, type: boolean, default: true}
+    request:
+      method: POST
+      path: "orders/{{fields.order}}/cancel.json"
+      body: {reason: "{{fields.reason}}", email: "{{fields.email}}", restock: "{{fields.restock}}"}
+    output: {path: order}
+
+  - name: Close Order
+    resource: Order
+    description: Closes an order, so it leaves the open list.
+    fields:
+      - {name: order, label: Order ID, required: true}
+    request: {method: POST, path: "orders/{{fields.order}}/close.json"}
+    output: {path: order}
+
+  - name: Delete Order
+    resource: Order
+    description: Deletes an order. Only canceled or archived orders, and those made by the API, can be.
+    fields:
+      - {name: order, label: Order ID, required: true}
+    request: {method: DELETE, path: "orders/{{fields.order}}.json"}
+    output:
+      value: {id: "{{fields.order}}", deleted: true}
+
+  - name: List Fulfillment Orders
+    resource: Fulfillment
+    description: Lists what's left to ship of an order, by location, to fulfill it.
+    fields:
+      - {name: order, label: Order ID, required: true}
+    request: {method: GET, path: "orders/{{fields.order}}/fulfillment_orders.json"}
+    output: {path: fulfillment_orders}
+
+  - name: Create Fulfillment
+    resource: Fulfillment
+    description: Marks a fulfillment order as shipped, with its tracking.
+    fields:
+      - {name: fulfillment_order, label: Fulfillment order ID, required: true}
+      - {name: tracking_number, label: Tracking number}
+      - {name: tracking_company, label: Carrier, description: "Like Correios or UPS"}
+      - {name: tracking_url, label: Tracking URL}
+      - {name: notify, label: Tell the customer, type: boolean, default: true}
+    request:
+      method: POST
+      path: fulfillments.json
+      body:
+        fulfillment:
+          line_items_by_fulfillment_order: [{fulfillment_order_id: "{{fields.fulfillment_order}}"}]
+          tracking_info: {number: "{{fields.tracking_number}}", company: "{{fields.tracking_company}}", url: "{{fields.tracking_url}}"}
+          notify_customer: "{{fields.notify}}"
+    output: {path: fulfillment}
+
+  # Products
+  - name: Create Product
+    resource: Product
+    description: Creates a product, with one variant unless others are given.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: body_html, label: Description, type: textarea, description: "In HTML."}
+      - {name: vendor, label: Vendor}
+      - {name: product_type, label: Type}
+      - {name: tags, label: Tags, description: "Like summer, cotton"}
+      - {name: status, label: Status, type: select, default: active, options: [{label: Active, value: active}, {label: Draft, value: draft}, {label: Archived, value: archived}]}
+      - {name: price, label: Price, description: "Of the single variant, like 49.90"}
+      - {name: sku, label: SKU}
+      - {name: options, label: Options, type: json, description: 'Like [{"name": "Size", "values": ["S", "M"]}]'}
+      - {name: images, label: Images, type: json, description: 'Like [{"src": "https://acme.com/a.jpg"}]'}
+      - {name: extra, label: More fields, type: json, description: 'Any other field, like {"variants": [{"option1": "S", "price": "49.90"}]} for several variants.'}
+    request:
+      method: POST
+      path: products.json
+      body:
+        product:
+          title: "{{fields.title}}"
+          body_html: "{{fields.body_html}}"
+          vendor: "{{fields.vendor}}"
+          product_type: "{{fields.product_type}}"
+          tags: "{{fields.tags}}"
+          status: "{{fields.status}}"
+          variants: [{price: "{{fields.price}}", sku: "{{fields.sku}}"}]
+          options: "{{fields.options}}"
+          images: "{{fields.images}}"
+          _merge: "{{fields.extra}}"
+    output: {path: product}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product, with its variants and images.
+    fields:
+      - {name: product, label: Product ID, required: true}
+    request: {method: GET, path: "products/{{fields.product}}.json"}
+    output: {path: product}
+
+  - name: List Products
+    resource: Product
+    description: Lists the products.
+    fields:
+      - {name: title, label: Title}
+      - {name: vendor, label: Vendor}
+      - {name: product_type, label: Type}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: active}, {label: Draft, value: draft}, {label: Archived, value: archived}]}
+      - {name: collection, label: Collection ID}
+      - {name: ids, label: IDs, description: "Like 632910392, 632910393"}
+      - {name: updated_min, label: Updated after, type: datetime}
+    request:
+      method: GET
+      path: products.json
+      query:
+        title: "{{fields.title}}"
+        vendor: "{{fields.vendor}}"
+        product_type: "{{fields.product_type}}"
+        status: "{{fields.status}}"
+        collection_id: "{{fields.collection}}"
+        ids: "{{fields.ids}}"
+        updated_at_min: "{{fields.updated_min}}"
+    pagination: {type: link, items_path: products, limit_param: limit, page_size: 250}
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. Empty fields stay as they are.
+    fields:
+      - {name: product, label: Product ID, required: true}
+      - {name: title, label: Title}
+      - {name: body_html, label: Description, type: textarea}
+      - {name: vendor, label: Vendor}
+      - {name: product_type, label: Type}
+      - {name: tags, label: Tags}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: active}, {label: Draft, value: draft}, {label: Archived, value: archived}]}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "products/{{fields.product}}.json"
+      body:
+        product:
+          id: "{{fields.product}}"
+          title: "{{fields.title}}"
+          body_html: "{{fields.body_html}}"
+          vendor: "{{fields.vendor}}"
+          product_type: "{{fields.product_type}}"
+          tags: "{{fields.tags}}"
+          status: "{{fields.status}}"
+          _merge: "{{fields.extra}}"
+    output: {path: product}
+
+  - name: Delete Product
+    resource: Product
+    description: Deletes a product.
+    fields:
+      - {name: product, label: Product ID, required: true}
+    request: {method: DELETE, path: "products/{{fields.product}}.json"}
+    output:
+      value: {id: "{{fields.product}}", deleted: true}
+
+  - name: Update Variant
+    resource: Product
+    description: Changes a variant's price, SKU or barcode.
+    fields:
+      - {name: variant, label: Variant ID, required: true}
+      - {name: price, label: Price}
+      - {name: compare_at_price, label: Compare-at price}
+      - {name: sku, label: SKU}
+      - {name: barcode, label: Barcode}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "variants/{{fields.variant}}.json"
+      body:
+        variant:
+          id: "{{fields.variant}}"
+          price: "{{fields.price}}"
+          compare_at_price: "{{fields.compare_at_price}}"
+          sku: "{{fields.sku}}"
+          barcode: "{{fields.barcode}}"
+          _merge: "{{fields.extra}}"
+    output: {path: variant}
+
+  # Inventory
+  - name: List Locations
+    resource: Inventory
+    description: Lists the store's locations.
+    request: {method: GET, path: locations.json}
+    output: {path: locations}
+
+  - name: Set Inventory Level
+    resource: Inventory
+    description: Sets how many of an item there are at a location.
+    fields:
+      - {name: item, label: Inventory item ID, required: true, description: "inventory_item_id of the variant."}
+      - {name: location, label: Location, type: select, required: true, options_from: {request: {method: GET, path: locations.json}, path: locations, label: name, value: id}}
+      - {name: available, label: Available, type: number, required: true}
+    request:
+      method: POST
+      path: inventory_levels/set.json
+      body: {inventory_item_id: "{{fields.item}}", location_id: "{{fields.location}}", available: "{{fields.available}}"}
+    output: {path: inventory_level}
+
+  - name: Adjust Inventory Level
+    resource: Inventory
+    description: Adds to or takes from the stock of an item at a location.
+    fields:
+      - {name: item, label: Inventory item ID, required: true}
+      - {name: location, label: Location, type: select, required: true, options_from: {request: {method: GET, path: locations.json}, path: locations, label: name, value: id}}
+      - {name: adjustment, label: Change, type: number, required: true, description: "Like 5, or -2."}
+    request:
+      method: POST
+      path: inventory_levels/adjust.json
+      body: {inventory_item_id: "{{fields.item}}", location_id: "{{fields.location}}", available_adjustment: "{{fields.adjustment}}"}
+    output: {path: inventory_level}
+
+  # Customers
+  - name: Create Customer
+    resource: Customer
+    description: Creates a customer.
+    fields:
+      - {name: email, label: Email}
+      - {name: phone, label: Phone, description: "Like +5511999990000"}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: tags, label: Tags}
+      - {name: note, label: Note, type: textarea}
+      - {name: marketing, label: Accepts email marketing, type: boolean}
+      - {name: addresses, label: Addresses, type: json}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: customers.json
+      body:
+        customer:
+          email: "{{fields.email}}"
+          phone: "{{fields.phone}}"
+          first_name: "{{fields.first_name}}"
+          last_name: "{{fields.last_name}}"
+          tags: "{{fields.tags}}"
+          note: "{{fields.note}}"
+          email_marketing_consent: {state: subscribed, opt_in_level: single_opt_in, _if: "{{fields.marketing}}"}
+          addresses: "{{fields.addresses}}"
+          _merge: "{{fields.extra}}"
+    output: {path: customer}
+
+  - name: Get Customer
+    resource: Customer
+    description: Reads a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request: {method: GET, path: "customers/{{fields.customer}}.json"}
+    output: {path: customer}
+
+  - name: Search Customers
+    resource: Customer
+    description: "Finds customers, like by email:ana@acme.com or country:Brazil."
+    fields:
+      - {name: query, label: Query, required: true}
+    request:
+      method: GET
+      path: customers/search.json
+      query: {query: "{{fields.query}}"}
+    pagination: {type: link, items_path: customers, limit_param: limit, page_size: 250}
+
+  - name: List Customers
+    resource: Customer
+    description: Lists the customers.
+    fields:
+      - {name: created_min, label: Created after, type: datetime}
+      - {name: updated_min, label: Updated after, type: datetime}
+    request:
+      method: GET
+      path: customers.json
+      query: {created_at_min: "{{fields.created_min}}", updated_at_min: "{{fields.updated_min}}"}
+    pagination: {type: link, items_path: customers, limit_param: limit, page_size: 250}
+
+  - name: Update Customer
+    resource: Customer
+    description: Changes a customer. Empty fields stay as they are.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: first_name, label: First name}
+      - {name: last_name, label: Last name}
+      - {name: tags, label: Tags}
+      - {name: note, label: Note, type: textarea}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "customers/{{fields.customer}}.json"
+      body:
+        customer:
+          id: "{{fields.customer}}"
+          email: "{{fields.email}}"
+          phone: "{{fields.phone}}"
+          first_name: "{{fields.first_name}}"
+          last_name: "{{fields.last_name}}"
+          tags: "{{fields.tags}}"
+          note: "{{fields.note}}"
+          _merge: "{{fields.extra}}"
+    output: {path: customer}
+
+  - name: Delete Customer
+    resource: Customer
+    description: Deletes a customer who has no orders.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request: {method: DELETE, path: "customers/{{fields.customer}}.json"}
+    output:
+      value: {id: "{{fields.customer}}", deleted: true}
+
+  - name: List Customer Orders
+    resource: Customer
+    description: Lists the orders of a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+    request:
+      method: GET
+      path: "customers/{{fields.customer}}/orders.json"
+      query: {status: any}
+    output: {path: orders}
+
+i18n:
+  pt-BR:
+    description: Pedidos, produtos e clientes numa loja Shopify.
+    triggers:
+      Store Event: {name: Evento da loja, description: "Inicia o fluxo quando algo acontece na loja, como um pedido novo ou um produto alterado.", fields: {topic: Evento}}
+      New Order: {name: Novo pedido, description: "Inicia o fluxo para cada pedido novo, olhando a cada 5 minutos.", fields: {status: Status}}
+    actions:
+      Create Order: {name: Criar pedido, description: "Cria um pedido, por padrão pago e sem mandar recibo ao cliente.", fields: {line_items: Itens, email: E-mail do cliente, customer_id: ID do cliente, financial_status: Pagamento, shipping_address: Endereço de entrega, billing_address: Endereço de cobrança, note: Observação, tags: Tags, send_receipt: Enviar o recibo, inventory: Estoque, extra: Mais campos}}
+      Get Order: {name: Ler pedido, description: Lê um pedido., fields: {order: ID do pedido}}
+      List Orders: {name: Listar pedidos, description: "Lista os pedidos, dos mais novos.", fields: {status: Status, financial_status: Pagamento, fulfillment_status: Envio, created_min: Criado depois de, created_max: Criado antes de, updated_min: Alterado depois de, ids: IDs}}
+      Update Order: {name: Atualizar pedido, description: "Altera a observação, as tags, o e-mail ou o endereço de entrega de um pedido. Campos vazios ficam como estão.", fields: {order: ID do pedido, email: E-mail, note: Observação, tags: Tags, shipping_address: Endereço de entrega, extra: Mais campos}}
+      Cancel Order: {name: Cancelar pedido, description: "Cancela um pedido, podendo reembolsar e devolver os itens ao estoque.", fields: {order: ID do pedido, reason: Motivo, email: Avisar o cliente, restock: Devolver ao estoque}}
+      Close Order: {name: Fechar pedido, description: "Fecha um pedido, que sai da lista de abertos.", fields: {order: ID do pedido}}
+      Delete Order: {name: Excluir pedido, description: "Exclui um pedido. Só pedidos cancelados, arquivados ou criados pela API.", fields: {order: ID do pedido}}
+      List Fulfillment Orders: {name: Listar pedidos de envio, description: "Lista o que falta enviar de um pedido, por local, para fazer o envio.", fields: {order: ID do pedido}}
+      Create Fulfillment: {name: Registrar envio, description: "Marca um pedido de envio como enviado, com o rastreio.", fields: {fulfillment_order: ID do pedido de envio, tracking_number: Código de rastreio, tracking_company: Transportadora, tracking_url: URL de rastreio, notify: Avisar o cliente}}
+      Create Product: {name: Criar produto, description: "Cria um produto, com uma variante se outras não forem dadas.", fields: {title: Título, body_html: Descrição, vendor: Fornecedor, product_type: Tipo, tags: Tags, status: Status, price: Preço, sku: SKU, options: Opções, images: Imagens, extra: Mais campos}}
+      Get Product: {name: Ler produto, description: "Lê um produto, com variantes e imagens.", fields: {product: ID do produto}}
+      List Products: {name: Listar produtos, description: Lista os produtos., fields: {title: Título, vendor: Fornecedor, product_type: Tipo, status: Status, collection: ID da coleção, ids: IDs, updated_min: Alterado depois de}}
+      Update Product: {name: Atualizar produto, description: Altera um produto. Campos vazios ficam como estão., fields: {product: ID do produto, title: Título, body_html: Descrição, vendor: Fornecedor, product_type: Tipo, tags: Tags, status: Status, extra: Mais campos}}
+      Delete Product: {name: Excluir produto, description: Exclui um produto., fields: {product: ID do produto}}
+      Update Variant: {name: Atualizar variante, description: "Altera o preço, o SKU ou o código de barras de uma variante.", fields: {variant: ID da variante, price: Preço, compare_at_price: Preço comparativo, sku: SKU, barcode: Código de barras, extra: Mais campos}}
+      List Locations: {name: Listar locais, description: Lista os locais da loja.}
+      Set Inventory Level: {name: Definir estoque, description: Define quantos de um item há num local., fields: {item: ID do item de estoque, location: Local, available: Disponível}}
+      Adjust Inventory Level: {name: Ajustar estoque, description: Soma ou tira do estoque de um item num local., fields: {item: ID do item de estoque, location: Local, adjustment: Ajuste}}
+      Create Customer: {name: Criar cliente, description: Cria um cliente., fields: {email: E-mail, phone: Telefone, first_name: Nome, last_name: Sobrenome, tags: Tags, note: Observação, marketing: Aceita e-mail marketing, addresses: Endereços, extra: Mais campos}}
+      Get Customer: {name: Ler cliente, description: Lê um cliente., fields: {customer: ID do cliente}}
+      Search Customers: {name: Buscar clientes, description: "Encontra clientes, como por email:ana@acme.com ou country:Brazil.", fields: {query: Busca}}
+      List Customers: {name: Listar clientes, description: Lista os clientes., fields: {created_min: Criado depois de, updated_min: Alterado depois de}}
+      Update Customer: {name: Atualizar cliente, description: Altera um cliente. Campos vazios ficam como estão., fields: {customer: ID do cliente, email: E-mail, phone: Telefone, first_name: Nome, last_name: Sobrenome, tags: Tags, note: Observação, extra: Mais campos}}
+      Delete Customer: {name: Excluir cliente, description: Exclui um cliente sem pedidos., fields: {customer: ID do cliente}}
+      List Customer Orders: {name: Listar pedidos do cliente, description: Lista os pedidos de um cliente., fields: {customer: ID do cliente}}
