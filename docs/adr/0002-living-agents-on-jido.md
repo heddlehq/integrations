@@ -1,7 +1,7 @@
 # 2. Agents: living agents on Jido
 
 Date: 2026-11-28
-Status: proposed
+Status: accepted
 
 ## Context
 
@@ -72,29 +72,37 @@ Sensor, Directive) mean nothing to them, and they shouldn't have to learn them.
 - Its schedule: **Schedule** and **Cancel Schedule**, on Oban.
 - Events: **Publish Event**, and the trigger **When an agent publishes an event** for
   any flow.
-- A person: a public chat page `/chat/:token`, and channels (WhatsApp, Slack) through
-  flows that send their messages.
+- A person: a public chat page `/c/:token`, each browser a conversation (an instance)
+  of its own, and channels (WhatsApp, Slack) through flows that send their messages.
 
-Agents work together by asking each other: **Ask an agent** as a tool of Think, plus
-events.
+Agents work together by asking each other: an **ask_agent** tool of Think, for the
+agents listed in its Agents it can ask, plus events.
 
 ### The nodes
 
-16 nodes:
+15 nodes, named `Agent: <action>` in the palette:
 
 | Where | Nodes |
 | --- | --- |
 | Trigger | Agent |
-| In the flow-agent | Think, Reply, Set State, Schedule, Cancel Schedule, Publish Event, End Instance |
-| In any flow | Send Message, Ask, Read Agent, List Instances, Publish Event, Pause/Resume, Reset Instance |
-| Trigger in any flow | When an agent publishes an event |
+| In the flow-agent | Think, Reply, Set State, Schedule, Cancel Schedule, End Instance |
+| In any flow | Send Message, Ask, Publish Event, Read Agent, List Instances, Pause or Resume, Reset Instance |
+| Trigger in any flow | When an Agent Publishes (`Agent Event`) |
+
+Publish Event is one node: in a flow-agent, the event says which agent and instance
+published it.
 
 ### Safety (v1)
 
-- **No loops**: a chain of agents messaging each other stops at depth 5.
-- **A budget per instance**: messages per hour and cost per day.
-- **Approval** before the tools marked for it (Jido's `review_tools`).
-- **Who may send**: a list of the flows and agents allowed to message an agent.
+- **No loops**: a chain of agents messaging each other, or of events, stops at depth 5.
+  A schedule starts a chain of its own. An agent can't be asked back by one that waits
+  for it, since neither would answer (their lanes hold).
+- **A budget per instance**: messages per hour and cost per day (US$), counted outside
+  the run, so a run that fails still counts.
+- **Approval** before the tools listed in Think's Tools that need approval. The run
+  waits on Heddle's Approvals page, and the tool runs only once approved.
+- **Who may send**: agent names, `chat`, `flows` or `flow:ID`. Blank lets anyone.
+- **Pause**: an agent, or one instance, takes no messages until resumed.
 
 ### Versions
 
@@ -104,8 +112,10 @@ goes. Publishing warns when a field changes type, since its value is lost.
 
 ### Memory
 
-The conversation keeps the last 20 messages (`context.max_messages`), a summary of the
-older ones, and a **remember** tool that writes to a declared field.
+The conversation keeps the last 20 messages (`context.max_messages`). Once its
+transcript passes 30 messages, one model call summarizes the older ones, the latest 10
+stay, and the Jido session starts over, with the summary and those 10 in the
+instructions. A **remember** tool writes to a declared field, with its type.
 
 ### Jido 3, through a bridge
 
@@ -123,21 +133,27 @@ older ones, and a **remember** tool that writes to a declared field.
 
 ### Heddle's side
 
-Generic extension points of the Bobbin host, in Heddle's core:
+Generic extension points of Heddle's core and Bobbin 0.7, which other packages can use:
 
-- `run_tool`: a package's node calls the nodes linked to its `tools` output.
-- `ai_connection` and `record_usage` (done).
-- A package's node waits and resumes (`wait_for_call`), for Ask.
-- A package registers a trigger that starts runs in a lane, and a schedule on Oban.
-- The `/chat/:token` route.
-- A panel in a node's drawer, filled by its package: for the Agent trigger, its
-  instances, state, messages, schedule and runs, and a **Chat** button to try it.
-- MCP: `list_nodes` with each node's docs, and `list_agents`, `read_agent`,
-  `message_agent`.
+- `{:with_tools, fun}`: a package's node calls the nodes linked to its `tools` output.
+- `ai_connection` and `record_usage`: the AI page's models, charged to the step.
+- `start_runs` (in a `lane`, now or `at:`), `cancel_run`, and the store with `with_run`.
+- Waits: `wait_for_call` (ended by `resume_run`) and `wait_for_approval` (on the
+  Approvals page). With `again: true`, the node is called again when the wait ends,
+  with `"resumed"` in its context. A `{:with_tools, fun}` can answer a wait too: that
+  is how a tool waits for an approval, or for another agent.
+- Optional callbacks of `Bobbin.Node`: `panel/2` fills a section of the node's drawer,
+  and `chat_message/4` with `chat_history/3` give a trigger a public chat page at
+  `/c/:token` (`HeddleCore.Chats`), and a **Chat** button in the drawer to try it.
+- `bobbin_templates` in a package's app env: flows offered on the Flows page, **From a
+  template**.
+- MCP: `list_nodes` with the docs of the packages' nodes, and `list_agents`,
+  `read_agent`, `message_agent`, on the same chat and panel callbacks.
 
 ### For those who don't know Jido
 
-- Four templates: Support Agent, SDR Follow-up, Collections, Triage Team.
+- Four templates: Support Agent, SDR Follow-up, Collections, Triage Team (three agents
+  in one flow).
 - A guide in English and Portuguese.
 - The editor's copilot knows how to build a flow-agent.
 - The Chat button in the trigger's panel, to talk to the agent before publishing it to
@@ -160,9 +176,11 @@ Generic extension points of the Bobbin host, in Heddle's core:
   Until it's released, it builds only with `BOBBIN_PATH` set to a checkout.
 - An instance handles one message at a time. A busy agent (a public chat with many
   people on one key) queues; one key per person avoids that.
-- Ask as a tool of Think needs a node that waits inside a tool, which Heddle doesn't
-  support yet. Until it does, Think can't ask another agent; it can only send it a
-  message.
+- A tool that waits ends the reasoning there: Think saves the conversation, the run
+  waits, and when it resumes the agent is told what happened (`[Bob replied: ...]`)
+  as a new message. The model sees its own "I'm waiting" turn before it.
+- Jido has no official logo to use, so the nodes show an Agents mark of Heddle's own.
+- Jido 3 needs Decimal 3, so the Cassandra package takes `~> 2.0 or ~> 3.0`.
 - The extension points (run a tool, wait, a panel in the drawer, a trigger in a lane)
   are generic. The next packages that need them get them for free.
 - Like every package, `jido` enters Heddle at build time (`HEDDLE_INTEGRATIONS`) and
