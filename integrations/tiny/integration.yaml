@@ -1,0 +1,404 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Tiny ERP (Olist Tiny), through its API 2.0. Connect with the API token from
+# Configurações › Outras configurações › Token da API. Every call answers with
+# HTTP 200 and a "retorno" whose "status" says "OK" or "Erro", with the reasons in
+# "erros". Records to create go as JSON objects in Tiny's format, and dates as
+# 31/01/2026.
+id: tiny
+name: Tiny ERP
+version: 1.0.0
+description: Search and create products, contacts, orders, invoices and bills, update stock and order status, and issue invoices, in Tiny ERP.
+icon: hero-building-storefront
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="6.00" y="3.00" width="12.00" height="18.00" viewBox="8.9 6.4 8 12"><path d="M12.8515 14.1709C10.8023 14.1709 9.14014 12.4937 9.14014 10.4259V14.3785C9.14014 16.4463 10.8023 18.1235 12.8515 18.1235C14.9007 18.1235 16.5628 16.4463 16.5628 14.3785V10.4259C16.5628 12.4937 14.9007 14.1709 12.8515 14.1709Z" fill="url(#paint0_linear_7608_120937)"/> <path d="M16.6245 10.7628C16.8182 8.69826 15.3016 6.86758 13.237 6.67387C11.1725 6.48017 9.3418 7.9968 9.14809 10.0614C8.95439 12.1259 10.471 13.9566 12.5356 14.1503C14.6001 14.344 16.4308 12.8274 16.6245 10.7628Z" fill="url(#paint1_linear_7608_120937)"/> <defs> <linearGradient id="paint0_linear_7608_120937" x1="12.3025" y1="17.732" x2="13.677" y2="9.62203" gradientUnits="userSpaceOnUse"> <stop stop-color="#E64E36"/> <stop offset="1" stop-color="#F0A028"/> </linearGradient> <linearGradient id="paint1_linear_7608_120937" x1="13.8833" y1="11.409" x2="16.9073" y2="6.87295" gradientUnits="userSpaceOnUse"> <stop stop-color="#0A4EE4"/> <stop offset="1" stop-color="#8DD7D7"/> </linearGradient> </defs></svg></svg>
+category: erp
+author: Heddle
+homepage: https://tiny.com.br/api-docs
+base_url: https://api.tiny.com.br/api2/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Tiny ERP
+  fields:
+    - {name: token, label: API token, secret: true, required: true, description: "From Configurações › Outras configurações › Token da API."}
+  auth:
+    type: query
+    name: token
+    value: "{{credential.token}}"
+
+triggers:
+  - name: New Order
+    description: Starts the flow for each new sales order, checking every 5 minutes.
+    request:
+      method: GET
+      path: pedidos.pesquisa.php
+      query: {formato: json, sort: DESC}
+    output: {path: retorno.pedidos}
+    poll: {every: 5, id: pedido.id}
+
+actions:
+  # Products
+  - name: Search Products
+    resource: Product
+    description: Searches products by name or code, 100 per page.
+    fields:
+      - {name: pesquisa, label: Search, description: "Name or code. Leave empty for all."}
+      - name: situacao
+        label: Status
+        type: select
+        options: [{label: Active, value: A}, {label: Inactive, value: I}, {label: Deleted, value: E}]
+      - {name: pagina, label: Page, type: number}
+    request:
+      method: GET
+      path: produtos.pesquisa.php
+      query: {formato: json, pesquisa: "{{fields.pesquisa}}", situacao: "{{fields.situacao}}", pagina: "{{fields.pagina}}"}
+    output: {path: retorno.produtos}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product, with prices, stock settings, variations and images.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: produto.obter.php, query: {formato: json, id: "{{fields.id}}"}}
+    output: {path: retorno.produto}
+
+  - name: Create Product
+    resource: Product
+    description: Creates a product.
+    fields:
+      - {name: produto, label: Product, type: json, required: true, description: 'Like {"sequencia": 1, "nome": "Camiseta", "codigo": "CAM-01", "unidade": "UN", "preco": 49.9, "origem": "0", "situacao": "A", "tipo": "P"}'}
+    request:
+      method: POST
+      path: produto.incluir.php
+      query: {formato: json}
+      body_type: form
+      body: {produto: '{"produtos": [{"produto": {{fields.produto}}}]}'}
+    output: {path: retorno.registros}
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. Send its id and the attributes to change.
+    fields:
+      - {name: produto, label: Product, type: json, required: true, description: 'Like {"sequencia": 1, "id": "123", "nome": "Camiseta", "preco": 59.9}'}
+    request:
+      method: POST
+      path: produto.alterar.php
+      query: {formato: json}
+      body_type: form
+      body: {produto: '{"produtos": [{"produto": {{fields.produto}}}]}'}
+    output: {path: retorno.registros}
+
+  - name: Get Product Stock
+    resource: Product
+    description: Reads a product's balance, in total and per warehouse.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: produto.obter.estoque.php, query: {formato: json, id: "{{fields.id}}"}}
+    output: {path: retorno.produto}
+
+  - name: Update Stock
+    resource: Product
+    description: Records a stock entry, exit or balance for a product.
+    fields:
+      - {name: estoque, label: Stock movement, type: json, required: true, description: 'Like {"idProduto": "123", "tipo": "E", "quantidade": 10, "observacoes": "Compra"}. Tipo is E (entry), S (exit) or B (balance).'}
+    request:
+      method: POST
+      path: produto.atualizar.estoque.php
+      query: {formato: json}
+      body_type: form
+      body: {estoque: '{"estoque": {{fields.estoque}}}'}
+    output: {path: retorno.registros}
+
+  - name: Get Product Categories
+    resource: Product
+    description: Reads the tree of product categories.
+    request: {method: GET, path: produtos.categorias.arvore.php, query: {formato: json}}
+    output: {path: retorno}
+
+  # Contacts
+  - name: Search Contacts
+    resource: Contact
+    description: Searches customers and suppliers by name, code or CPF/CNPJ, 100 per page.
+    fields:
+      - {name: pesquisa, label: Search, description: "Name or code."}
+      - {name: cpf_cnpj, label: CPF or CNPJ}
+      - name: situacao
+        label: Status
+        type: select
+        options: [{label: Active, value: Ativo}, {label: Inactive, value: Inativo}, {label: Deleted, value: Excluido}]
+      - {name: pagina, label: Page, type: number}
+    request:
+      method: GET
+      path: contatos.pesquisa.php
+      query: {formato: json, pesquisa: "{{fields.pesquisa}}", cpf_cnpj: "{{fields.cpf_cnpj}}", situacao: "{{fields.situacao}}", pagina: "{{fields.pagina}}"}
+    output: {path: retorno.contatos}
+
+  - name: Get Contact
+    resource: Contact
+    description: Reads a contact, with address and contact details.
+    fields:
+      - {name: id, label: Contact ID, required: true}
+    request: {method: GET, path: contato.obter.php, query: {formato: json, id: "{{fields.id}}"}}
+    output: {path: retorno.contato}
+
+  - name: Create Contact
+    resource: Contact
+    description: Creates a customer or supplier.
+    fields:
+      - {name: contato, label: Contact, type: json, required: true, description: 'Like {"sequencia": 1, "nome": "Maria Souza", "tipo_pessoa": "F", "cpf_cnpj": "12345678909", "email": "maria@acme.com", "cep": "01310-100", "cidade": "São Paulo", "uf": "SP", "situacao": "A"}'}
+    request:
+      method: POST
+      path: contato.incluir.php
+      query: {formato: json}
+      body_type: form
+      body: {contato: '{"contatos": [{"contato": {{fields.contato}}}]}'}
+    output: {path: retorno.registros}
+
+  - name: Update Contact
+    resource: Contact
+    description: Changes a contact. Send its id and the attributes to change.
+    fields:
+      - {name: contato, label: Contact, type: json, required: true, description: 'Like {"sequencia": 1, "id": "123", "email": "maria@acme.com"}'}
+    request:
+      method: POST
+      path: contato.alterar.php
+      query: {formato: json}
+      body_type: form
+      body: {contato: '{"contatos": [{"contato": {{fields.contato}}}]}'}
+    output: {path: retorno.registros}
+
+  # Orders
+  - name: Search Orders
+    resource: Order
+    description: Searches sales orders by number, customer, dates or status, 100 per page.
+    fields:
+      - {name: numero, label: Order number}
+      - {name: cliente, label: Customer name}
+      - {name: cpf_cnpj, label: Customer CPF or CNPJ}
+      - {name: dataInicial, label: Placed since, description: "Like 01/01/2026"}
+      - {name: dataFinal, label: Placed until, description: "Like 31/01/2026"}
+      - name: situacao
+        label: Status
+        type: select
+        options: [{label: Open, value: aberto}, {label: Approved, value: aprovado}, {label: Preparing shipment, value: preparando_envio}, {label: Invoiced, value: faturado}, {label: Ready to ship, value: pronto_envio}, {label: Shipped, value: enviado}, {label: Delivered, value: entregue}, {label: Not delivered, value: nao_entregue}, {label: Cancelled, value: cancelado}]
+      - {name: numeroEcommerce, label: Store order number}
+      - {name: pagina, label: Page, type: number}
+    request:
+      method: GET
+      path: pedidos.pesquisa.php
+      query: {formato: json, numero: "{{fields.numero}}", cliente: "{{fields.cliente}}", cpf_cnpj: "{{fields.cpf_cnpj}}", dataInicial: "{{fields.dataInicial}}", dataFinal: "{{fields.dataFinal}}", situacao: "{{fields.situacao}}", numeroEcommerce: "{{fields.numeroEcommerce}}", pagina: "{{fields.pagina}}"}
+    output: {path: retorno.pedidos}
+
+  - name: Get Order
+    resource: Order
+    description: Reads a sales order, with customer, items, installments and shipping.
+    fields:
+      - {name: id, label: Order ID, required: true}
+    request: {method: GET, path: pedido.obter.php, query: {formato: json, id: "{{fields.id}}"}}
+    output: {path: retorno.pedido}
+
+  - name: Create Order
+    resource: Order
+    description: Creates a sales order.
+    fields:
+      - {name: pedido, label: Order, type: json, required: true, description: 'Like {"cliente": {"nome": "Maria Souza", "cpf_cnpj": "12345678909"}, "itens": [{"item": {"codigo": "CAM-01", "descricao": "Camiseta", "unidade": "UN", "quantidade": 2, "valor_unitario": 49.9}}], "situacao": "aberto"}'}
+    request:
+      method: POST
+      path: pedido.incluir.php
+      query: {formato: json}
+      body_type: form
+      body: {pedido: '{"pedido": {{fields.pedido}}}'}
+    output: {path: retorno.registros}
+
+  - name: Update Order Status
+    resource: Order
+    description: Moves a sales order to another status.
+    fields:
+      - {name: id, label: Order ID, required: true}
+      - {name: situacao, label: Status, type: select, required: true, options: [{label: Open, value: aberto}, {label: Approved, value: aprovado}, {label: Preparing shipment, value: preparando_envio}, {label: Invoiced, value: faturado}, {label: Ready to ship, value: pronto_envio}, {label: Shipped, value: enviado}, {label: Delivered, value: entregue}, {label: Not delivered, value: nao_entregue}, {label: Cancelled, value: cancelado}]}
+    request:
+      method: POST
+      path: pedido.alterar.situacao.php
+      query: {formato: json}
+      body_type: form
+      body: {id: "{{fields.id}}", situacao: "{{fields.situacao}}"}
+    output: {path: retorno}
+
+  - name: Generate Order Invoice
+    resource: Order
+    description: Creates the invoice of a sales order, to issue next.
+    fields:
+      - {name: id, label: Order ID, required: true}
+      - name: modelo
+        label: Model
+        type: select
+        options: [{label: NF-e, value: NFe}, {label: NFC-e, value: NFCe}]
+    request:
+      method: POST
+      path: gerar.nota.fiscal.pedido.php
+      query: {formato: json}
+      body_type: form
+      body: {id: "{{fields.id}}", modelo: "{{fields.modelo}}"}
+    output: {path: retorno.registros}
+
+  # Invoices
+  - name: Search Invoices
+    resource: Invoice
+    description: Searches invoices by type, number, customer, dates or status, 100 per page.
+    fields:
+      - name: tipoNota
+        label: Type
+        type: select
+        options: [{label: Outgoing, value: S}, {label: Incoming, value: E}]
+      - {name: numero, label: Number}
+      - {name: cliente, label: Customer name}
+      - {name: dataInicial, label: Issued since, description: "Like 01/01/2026"}
+      - {name: dataFinal, label: Issued until, description: "Like 31/01/2026"}
+      - {name: pagina, label: Page, type: number}
+    request:
+      method: GET
+      path: notas.fiscais.pesquisa.php
+      query: {formato: json, tipoNota: "{{fields.tipoNota}}", numero: "{{fields.numero}}", cliente: "{{fields.cliente}}", dataInicial: "{{fields.dataInicial}}", dataFinal: "{{fields.dataFinal}}", pagina: "{{fields.pagina}}"}
+    output: {path: retorno.notas_fiscais}
+
+  - name: Get Invoice
+    resource: Invoice
+    description: Reads an invoice, with items, taxes and its key.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: nota.fiscal.obter.php, query: {formato: json, id: "{{fields.id}}"}}
+    output: {path: retorno.nota_fiscal}
+
+  - name: Issue Invoice
+    resource: Invoice
+    description: Sends an invoice to SEFAZ for authorization.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+    request:
+      method: POST
+      path: nota.fiscal.emitir.php
+      query: {formato: json}
+      body_type: form
+      body: {id: "{{fields.id}}"}
+    output: {path: retorno}
+
+  - name: Get Invoice Link
+    resource: Invoice
+    description: Reads the link to an invoice's DANFE.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: nota.fiscal.obter.link.php, query: {formato: json, id: "{{fields.id}}"}}
+    output: {path: retorno}
+
+  # Bills
+  - name: Search Receivables
+    resource: Bill
+    description: Searches accounts receivable by customer, due dates or status, 100 per page.
+    fields:
+      - {name: nome_cliente, label: Customer name}
+      - {name: data_ini_vencimento, label: Due since, description: "Like 01/01/2026"}
+      - {name: data_fim_vencimento, label: Due until, description: "Like 31/01/2026"}
+      - name: situacao
+        label: Status
+        type: select
+        options: [{label: Open, value: aberto}, {label: Paid, value: pago}, {label: Partially paid, value: parcial}, {label: Cancelled, value: cancelada}]
+      - {name: pagina, label: Page, type: number}
+    request:
+      method: GET
+      path: contas.receber.pesquisa.php
+      query: {formato: json, nome_cliente: "{{fields.nome_cliente}}", data_ini_vencimento: "{{fields.data_ini_vencimento}}", data_fim_vencimento: "{{fields.data_fim_vencimento}}", situacao: "{{fields.situacao}}", pagina: "{{fields.pagina}}"}
+    output: {path: retorno.contas}
+
+  - name: Create Receivable
+    resource: Bill
+    description: Creates an account receivable.
+    fields:
+      - {name: conta, label: Receivable, type: json, required: true, description: 'Like {"cliente": {"nome": "Maria Souza"}, "vencimento": "31/01/2026", "valor": 150, "historico": "Pedido 123"}'}
+    request:
+      method: POST
+      path: conta.receber.incluir.php
+      query: {formato: json}
+      body_type: form
+      body: {conta: '{"conta": {{fields.conta}}}'}
+    output: {path: retorno.registros}
+
+  - name: Search Payables
+    resource: Bill
+    description: Searches accounts payable by supplier, due dates or status, 100 per page.
+    fields:
+      - {name: nome_cliente, label: Supplier name}
+      - {name: data_ini_vencimento, label: Due since, description: "Like 01/01/2026"}
+      - {name: data_fim_vencimento, label: Due until, description: "Like 31/01/2026"}
+      - name: situacao
+        label: Status
+        type: select
+        options: [{label: Open, value: aberto}, {label: Paid, value: pago}, {label: Partially paid, value: parcial}, {label: Cancelled, value: cancelada}]
+      - {name: pagina, label: Page, type: number}
+    request:
+      method: GET
+      path: contas.pagar.pesquisa.php
+      query: {formato: json, nome_cliente: "{{fields.nome_cliente}}", data_ini_vencimento: "{{fields.data_ini_vencimento}}", data_fim_vencimento: "{{fields.data_fim_vencimento}}", situacao: "{{fields.situacao}}", pagina: "{{fields.pagina}}"}
+    output: {path: retorno.contas}
+
+  - name: Create Payable
+    resource: Bill
+    description: Creates an account payable.
+    fields:
+      - {name: conta, label: Payable, type: json, required: true, description: 'Like {"cliente": {"nome": "Fornecedor Ltda"}, "vencimento": "31/01/2026", "valor": 300, "historico": "Compra 45"}'}
+    request:
+      method: POST
+      path: conta.pagar.incluir.php
+      query: {formato: json}
+      body_type: form
+      body: {conta: '{"conta": {{fields.conta}}}'}
+    output: {path: retorno.registros}
+
+  # Account
+  - name: Search Sellers
+    resource: Account
+    description: Lists the sellers, by name.
+    fields:
+      - {name: pesquisa, label: Search}
+    request: {method: GET, path: vendedores.pesquisa.php, query: {formato: json, pesquisa: "{{fields.pesquisa}}"}}
+    output: {path: retorno.vendedores}
+
+  - name: Get Account Info
+    resource: Account
+    description: Reads the company's registration of the account.
+    request: {method: GET, path: info.php, query: {formato: json}}
+    output: {path: retorno.conta}
+
+i18n:
+  pt-BR:
+    description: "Pesquise e crie produtos, contatos, pedidos, notas e contas, atualize estoque e situação de pedidos e emita notas no Tiny ERP."
+    triggers:
+      New Order: {name: "Novo pedido", description: "Inicia o fluxo para cada novo pedido de venda, verificando a cada 5 minutos."}
+    actions:
+      Search Products: {name: "Pesquisar produtos", description: "Pesquisa produtos por nome ou código, 100 por página.", fields: {pesquisa: "Pesquisa", situacao: "Situação", pagina: "Página"}}
+      Get Product: {name: "Obter produto", description: "Lê um produto, com preços, estoque, variações e imagens.", fields: {id: "ID"}}
+      Create Product: {name: "Criar produto", description: "Cria um produto.", fields: {produto: "Produto"}}
+      Update Product: {name: "Alterar produto", description: "Altera um produto. Envie o id e os atributos a mudar.", fields: {produto: "Produto"}}
+      Get Product Stock: {name: "Obter estoque do produto", description: "Lê o saldo de um produto, no total e por depósito.", fields: {id: "ID"}}
+      Update Stock: {name: "Atualizar estoque", description: "Lança uma entrada, saída ou balanço de estoque de um produto.", fields: {estoque: "Movimento de estoque"}}
+      Get Product Categories: {name: "Obter categorias de produtos", description: "Lê a árvore de categorias de produtos."}
+      Search Contacts: {name: "Pesquisar contatos", description: "Pesquisa clientes e fornecedores por nome, código ou CPF/CNPJ, 100 por página.", fields: {pesquisa: "Pesquisa", cpf_cnpj: "CPF ou CNPJ", situacao: "Situação", pagina: "Página"}}
+      Get Contact: {name: "Obter contato", description: "Lê um contato, com endereço e dados de contato.", fields: {id: "ID"}}
+      Create Contact: {name: "Criar contato", description: "Cria um cliente ou fornecedor.", fields: {contato: "Contato"}}
+      Update Contact: {name: "Alterar contato", description: "Altera um contato. Envie o id e os atributos a mudar.", fields: {contato: "Contato"}}
+      Search Orders: {name: "Pesquisar pedidos", description: "Pesquisa pedidos de venda por número, cliente, datas ou situação, 100 por página.", fields: {numero: "Número", cliente: "Nome do cliente", cpf_cnpj: "CPF ou CNPJ", dataInicial: "Data inicial", dataFinal: "Data final", situacao: "Situação", numeroEcommerce: "Número no e-commerce", pagina: "Página"}}
+      Get Order: {name: "Obter pedido", description: "Lê um pedido de venda, com cliente, itens, parcelas e frete.", fields: {id: "ID"}}
+      Create Order: {name: "Criar pedido", description: "Cria um pedido de venda.", fields: {pedido: "Pedido"}}
+      Update Order Status: {name: "Alterar situação do pedido", description: "Muda a situação de um pedido de venda.", fields: {id: "ID", situacao: "Situação"}}
+      Generate Order Invoice: {name: "Gerar nota do pedido", description: "Gera a nota fiscal de um pedido de venda, para emitir em seguida.", fields: {id: "ID", modelo: "Modelo"}}
+      Search Invoices: {name: "Pesquisar notas fiscais", description: "Pesquisa notas por tipo, número, cliente, datas ou situação, 100 por página.", fields: {tipoNota: "Tipo", numero: "Número", cliente: "Nome do cliente", dataInicial: "Data inicial", dataFinal: "Data final", pagina: "Página"}}
+      Get Invoice: {name: "Obter nota fiscal", description: "Lê uma nota fiscal, com itens, impostos e chave.", fields: {id: "ID"}}
+      Issue Invoice: {name: "Emitir nota fiscal", description: "Envia uma nota fiscal à SEFAZ para autorização.", fields: {id: "ID"}}
+      Get Invoice Link: {name: "Obter link da nota", description: "Lê o link do DANFE de uma nota fiscal.", fields: {id: "ID"}}
+      Search Receivables: {name: "Pesquisar contas a receber", description: "Pesquisa contas a receber por cliente, vencimento ou situação, 100 por página.", fields: {nome_cliente: "Nome do cliente", data_ini_vencimento: "Vencimento inicial", data_fim_vencimento: "Vencimento final", situacao: "Situação", pagina: "Página"}}
+      Create Receivable: {name: "Criar conta a receber", description: "Cria uma conta a receber.", fields: {conta: "Conta"}}
+      Search Payables: {name: "Pesquisar contas a pagar", description: "Pesquisa contas a pagar por fornecedor, vencimento ou situação, 100 por página.", fields: {nome_cliente: "Nome do fornecedor", data_ini_vencimento: "Vencimento inicial", data_fim_vencimento: "Vencimento final", situacao: "Situação", pagina: "Página"}}
+      Create Payable: {name: "Criar conta a pagar", description: "Cria uma conta a pagar.", fields: {conta: "Conta"}}
+      Search Sellers: {name: "Pesquisar vendedores", description: "Lista os vendedores, por nome.", fields: {pesquisa: "Pesquisa"}}
+      Get Account Info: {name: "Obter dados da conta", description: "Lê o cadastro da empresa da conta."}
