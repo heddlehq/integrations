@@ -108,7 +108,7 @@ integrations:
   - {id: digisac, name: Digisac, category: messaging, phase: 2, origin: br, auth: bearer, host: true, kind: manifest, status: planned}
   - {id: ebanx, name: EBANX, category: payments, phase: 2, origin: br, auth: body, kind: manifest, status: planned}
   - {id: eduzz, name: Eduzz, category: ecommerce, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
-  - {id: efi, name: Efí (Gerencianet), category: payments, phase: 2, origin: br, auth: oauth2_cc, mtls: true, kind: package, lib: {name: gerencianet, version: 0.1.11, released: 2026-09-25}, status: planned}
+  - {id: efi, name: Efí (Gerencianet), category: payments, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
   - {id: enotas, name: eNotas (Nota Gateway), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: erede, name: e.Rede, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
   - {id: evolution_api, name: Evolution API, category: messaging, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: draft}
