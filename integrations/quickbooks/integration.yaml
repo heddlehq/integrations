@@ -1,0 +1,600 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# QuickBooks Online, through the Accounting API v3. Connect with an app made in the
+# Intuit Developer portal, with the redirect URL Heddle shows and the
+# com.intuit.quickbooks.accounting scope. Each request names the company by its
+# realm ID, shown in QuickBooks under Settings › Account and settings › Billing.
+# Changes need the record's SyncToken, which Get returns, so QuickBooks can refuse
+# changes made over someone else's. Intuit's webhooks are set in the app, so the
+# triggers check for news every 5 minutes.
+id: quickbooks
+name: QuickBooks Online
+version: 1.0.0
+description: Customers, invoices, payments, estimates, bills and items in QuickBooks Online.
+icon: hero-calculator
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#2CA01C" d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12a12 12 0 0 0 12-12A12 12 0 0 0 12 0m.642 4.134c.955 0 1.73.775 1.73 1.733v9.066h1.6a2.934 2.934 0 0 0 0-5.866h-.666V7.333h.665A4.663 4.663 0 0 1 20.63 12a4.66 4.66 0 0 1-4.658 4.667h-3.329zM7.984 7.333h3.329v12.533c-.956 0-1.73-.776-1.73-1.733V9.066h-1.6a2.934 2.934 0 0 0 0 5.867h.666v1.733h-.665A4.66 4.66 0 0 1 3.326 12a4.66 4.66 0 0 1 4.658-4.667"/></svg>
+category: accounting
+author: Heddle
+homepage: https://developer.intuit.com/app/developer/qbo/docs/api/accounting/all-entities/account
+base_url: "https://{{credential.host}}/v3/company/{{credential.account}}/"
+headers:
+  Accept: application/json
+
+credential:
+  label: QuickBooks Online
+  fields:
+    - {name: account, label: Company ID (realm), required: true}
+    - {name: host, label: API host, default: quickbooks.api.intuit.com, description: "sandbox-quickbooks.api.intuit.com for a sandbox company."}
+  auth:
+    type: oauth2
+    authorize_url: https://appcenter.intuit.com/connect/oauth2
+    token_url: https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer
+    scopes: [com.intuit.quickbooks.accounting]
+
+errors:
+  message_path: Fault.Error.0.Detail
+
+triggers:
+  - name: New Invoice
+    description: Starts the flow for each new invoice, checking every 5 minutes.
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Invoice orderby MetaData.CreateTime desc maxresults 100"}
+    output: {path: QueryResponse.Invoice}
+    poll: {every: 5, id: Id}
+
+  - name: New Customer
+    description: Starts the flow for each new customer, checking every 5 minutes.
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Customer orderby MetaData.CreateTime desc maxresults 100"}
+    output: {path: QueryResponse.Customer}
+    poll: {every: 5, id: Id}
+
+  - name: New Payment
+    description: Starts the flow for each new payment, checking every 5 minutes.
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Payment orderby MetaData.CreateTime desc maxresults 100"}
+    output: {path: QueryResponse.Payment}
+    poll: {every: 5, id: Id}
+
+  - name: New Estimate
+    description: Starts the flow for each new estimate, checking every 5 minutes.
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Estimate orderby MetaData.CreateTime desc maxresults 100"}
+    output: {path: QueryResponse.Estimate}
+    poll: {every: 5, id: Id}
+
+actions:
+  # Customers
+  - name: Create Customer
+    resource: Customer
+    description: Creates a customer.
+    fields:
+      - {name: name, label: Display name, required: true, description: "Unique among customers, vendors and employees."}
+      - {name: given_name, label: First name}
+      - {name: family_name, label: Last name}
+      - {name: company, label: Company}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: bill_address, label: Billing address, type: json, description: 'Like {"Line1": "Rua A, 1", "City": "São Paulo", "PostalCode": "01000-000", "Country": "BR"}'}
+      - {name: notes, label: Notes, type: textarea}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: customer
+      body:
+        DisplayName: "{{fields.name}}"
+        GivenName: "{{fields.given_name}}"
+        FamilyName: "{{fields.family_name}}"
+        CompanyName: "{{fields.company}}"
+        PrimaryEmailAddr: {Address: "{{fields.email}}"}
+        PrimaryPhone: {FreeFormNumber: "{{fields.phone}}"}
+        BillAddr: "{{fields.bill_address}}"
+        Notes: "{{fields.notes}}"
+        _merge: "{{fields.extra}}"
+    output: {path: Customer}
+
+  - name: List Customers
+    resource: Customer
+    description: Lists the customers, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where Active = true and DisplayName like 'Acme%'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Customer {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Customer}
+
+  - name: Get Customer
+    resource: Customer
+    description: Reads a customer.
+    fields:
+      - {name: id, label: Customer ID, required: true}
+    request: {method: GET, path: "customer/{{fields.id}}"}
+    output: {path: Customer}
+
+  - name: Update Customer
+    resource: Customer
+    description: Changes a customer. Only the fields given change.
+    fields:
+      - {name: id, label: Customer ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Customer."}
+      - {name: changes, label: Changes, type: json, required: true, description: '{"PrimaryEmailAddr": {"Address": "ana@acme.com"}}'}
+    request:
+      method: POST
+      path: customer
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}", sparse: true, _merge: "{{fields.changes}}"}
+    output: {path: Customer}
+
+  # Invoices
+  - name: Create Invoice
+    resource: Invoice
+    description: Creates an invoice for a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: lines, label: Lines, type: json, required: true, description: 'Like [{"Amount": 100, "DetailType": "SalesItemLineDetail", "SalesItemLineDetail": {"ItemRef": {"value": "1"}, "Qty": 1}}]'}
+      - {name: email, label: Send to email}
+      - {name: txn_date, label: Date, description: "Like 2026-01-31"}
+      - {name: due_date, label: Due date, description: "Like 2026-02-28"}
+      - {name: doc_number, label: Number}
+      - {name: memo, label: Message to the customer, type: textarea}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: invoice
+      body:
+        CustomerRef: {value: "{{fields.customer}}"}
+        Line: "{{fields.lines}}"
+        BillEmail: {Address: "{{fields.email}}"}
+        TxnDate: "{{fields.txn_date}}"
+        DueDate: "{{fields.due_date}}"
+        DocNumber: "{{fields.doc_number}}"
+        CustomerMemo: {value: "{{fields.memo}}"}
+        _merge: "{{fields.extra}}"
+    output: {path: Invoice}
+
+  - name: List Invoices
+    resource: Invoice
+    description: Lists the invoices, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where Balance > '0'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Invoice {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Invoice}
+
+  - name: Get Invoice
+    resource: Invoice
+    description: Reads a invoice.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+    request: {method: GET, path: "invoice/{{fields.id}}"}
+    output: {path: Invoice}
+
+  - name: Update Invoice
+    resource: Invoice
+    description: Changes a invoice. Only the fields given change.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Invoice."}
+      - {name: changes, label: Changes, type: json, required: true, description: '{"DueDate": "2026-03-31"}'}
+    request:
+      method: POST
+      path: invoice
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}", sparse: true, _merge: "{{fields.changes}}"}
+    output: {path: Invoice}
+
+  - name: Delete Invoice
+    resource: Invoice
+    description: Deletes a invoice.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Invoice."}
+    request:
+      method: POST
+      path: invoice
+      query: {operation: delete}
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}"}
+    output: {path: Invoice}
+
+  - name: Send Invoice
+    resource: Invoice
+    description: Emails an invoice, to its billing email or another.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+      - {name: email, label: To}
+    request:
+      method: POST
+      path: "invoice/{{fields.id}}/send"
+      query: {sendTo: "{{fields.email}}"}
+      headers: {Content-Type: application/octet-stream}
+    output: {path: Invoice}
+
+  - name: Void Invoice
+    resource: Invoice
+    description: Voids an invoice, keeping it with a zero amount.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+      - {name: sync_token, label: Sync token, required: true}
+    request:
+      method: POST
+      path: invoice
+      query: {operation: void}
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}"}
+    output: {path: Invoice}
+
+  - name: Download Invoice PDF
+    resource: Invoice
+    description: Downloads an invoice as a PDF.
+    fields:
+      - {name: id, label: Invoice ID, required: true}
+    request:
+      method: GET
+      path: "invoice/{{fields.id}}/pdf"
+      headers: {Accept: application/pdf}
+    output:
+      file: {name: "invoice-{{fields.id}}.pdf"}
+
+  # Payments
+  - name: Create Payment
+    resource: Payment
+    description: Records a customer's payment, against some invoices or as credit.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: amount, label: Amount, type: number, required: true}
+      - {name: invoice, label: Invoice ID, description: "Applies the whole amount to this invoice."}
+      - {name: txn_date, label: Date}
+      - {name: extra, label: More fields, type: json, description: 'Like {"Line": [...]} for several invoices.'}
+    request:
+      method: POST
+      path: payment
+      body:
+        CustomerRef: {value: "{{fields.customer}}"}
+        TotalAmt: "{{fields.amount}}"
+        Line: [{Amount: "{{fields.amount}}", LinkedTxn: [{TxnId: "{{fields.invoice}}", TxnType: Invoice}], _if: "{{fields.invoice}}"}]
+        TxnDate: "{{fields.txn_date}}"
+        _merge: "{{fields.extra}}"
+    output: {path: Payment}
+
+  - name: List Payments
+    resource: Payment
+    description: Lists the payments, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where TotalAmt > '100'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Payment {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Payment}
+
+  - name: Get Payment
+    resource: Payment
+    description: Reads a payment.
+    fields:
+      - {name: id, label: Payment ID, required: true}
+    request: {method: GET, path: "payment/{{fields.id}}"}
+    output: {path: Payment}
+
+  - name: Delete Payment
+    resource: Payment
+    description: Deletes a payment.
+    fields:
+      - {name: id, label: Payment ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Payment."}
+    request:
+      method: POST
+      path: payment
+      query: {operation: delete}
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}"}
+    output: {path: Payment}
+
+  # Estimates
+  - name: Create Estimate
+    resource: Estimate
+    description: Creates an estimate for a customer.
+    fields:
+      - {name: customer, label: Customer ID, required: true}
+      - {name: lines, label: Lines, type: json, required: true, description: "Like an invoice's lines."}
+      - {name: email, label: Send to email}
+      - {name: expiration, label: Expires, description: "Like 2026-02-28"}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: estimate
+      body:
+        CustomerRef: {value: "{{fields.customer}}"}
+        Line: "{{fields.lines}}"
+        BillEmail: {Address: "{{fields.email}}"}
+        ExpirationDate: "{{fields.expiration}}"
+        _merge: "{{fields.extra}}"
+    output: {path: Estimate}
+
+  - name: List Estimates
+    resource: Estimate
+    description: Lists the estimates, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where TxnStatus = 'Pending'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Estimate {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Estimate}
+
+  - name: Get Estimate
+    resource: Estimate
+    description: Reads a estimate.
+    fields:
+      - {name: id, label: Estimate ID, required: true}
+    request: {method: GET, path: "estimate/{{fields.id}}"}
+    output: {path: Estimate}
+
+  - name: Update Estimate
+    resource: Estimate
+    description: Changes a estimate. Only the fields given change.
+    fields:
+      - {name: id, label: Estimate ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Estimate."}
+      - {name: changes, label: Changes, type: json, required: true, description: '{"TxnStatus": "Accepted"}'}
+    request:
+      method: POST
+      path: estimate
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}", sparse: true, _merge: "{{fields.changes}}"}
+    output: {path: Estimate}
+
+  - name: Delete Estimate
+    resource: Estimate
+    description: Deletes a estimate.
+    fields:
+      - {name: id, label: Estimate ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Estimate."}
+    request:
+      method: POST
+      path: estimate
+      query: {operation: delete}
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}"}
+    output: {path: Estimate}
+
+  # Bills and vendors
+  - name: Create Bill
+    resource: Bill
+    description: Records a bill from a vendor.
+    fields:
+      - {name: vendor, label: Vendor ID, required: true}
+      - {name: lines, label: Lines, type: json, required: true, description: 'Like [{"Amount": 200, "DetailType": "AccountBasedExpenseLineDetail", "AccountBasedExpenseLineDetail": {"AccountRef": {"value": "7"}}}]'}
+      - {name: due_date, label: Due date}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: bill
+      body: {VendorRef: {value: "{{fields.vendor}}"}, Line: "{{fields.lines}}", DueDate: "{{fields.due_date}}", _merge: "{{fields.extra}}"}
+    output: {path: Bill}
+
+  - name: List Bills
+    resource: Bill
+    description: Lists the bills, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where Balance > '0'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Bill {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Bill}
+
+  - name: Get Bill
+    resource: Bill
+    description: Reads a bill.
+    fields:
+      - {name: id, label: Bill ID, required: true}
+    request: {method: GET, path: "bill/{{fields.id}}"}
+    output: {path: Bill}
+
+  - name: Delete Bill
+    resource: Bill
+    description: Deletes a bill.
+    fields:
+      - {name: id, label: Bill ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Bill."}
+    request:
+      method: POST
+      path: bill
+      query: {operation: delete}
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}"}
+    output: {path: Bill}
+
+  - name: Create Vendor
+    resource: Vendor
+    description: Creates a vendor.
+    fields:
+      - {name: name, label: Display name, required: true}
+      - {name: company, label: Company}
+      - {name: email, label: Email}
+      - {name: phone, label: Phone}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: vendor
+      body: {DisplayName: "{{fields.name}}", CompanyName: "{{fields.company}}", PrimaryEmailAddr: {Address: "{{fields.email}}"}, PrimaryPhone: {FreeFormNumber: "{{fields.phone}}"}, _merge: "{{fields.extra}}"}
+    output: {path: Vendor}
+
+  - name: List Vendors
+    resource: Vendor
+    description: Lists the vendors, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where Active = true"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Vendor {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Vendor}
+
+  - name: Get Vendor
+    resource: Vendor
+    description: Reads a vendor.
+    fields:
+      - {name: id, label: Vendor ID, required: true}
+    request: {method: GET, path: "vendor/{{fields.id}}"}
+    output: {path: Vendor}
+
+  - name: Update Vendor
+    resource: Vendor
+    description: Changes a vendor. Only the fields given change.
+    fields:
+      - {name: id, label: Vendor ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Vendor."}
+      - {name: changes, label: Changes, type: json, required: true, description: '{"CompanyName": "Acme"}'}
+    request:
+      method: POST
+      path: vendor
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}", sparse: true, _merge: "{{fields.changes}}"}
+    output: {path: Vendor}
+
+  # Items and accounts
+  - name: Create Item
+    resource: Item
+    description: Creates a product or service.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: type, label: Kind, type: select, default: Service, options: [{label: Service, value: Service}, {label: Non-inventory, value: NonInventory}, {label: Inventory, value: Inventory}]}
+      - {name: price, label: Price, type: number}
+      - {name: income_account, label: Income account ID, required: true}
+      - {name: extra, label: More fields, type: json, description: "Inventory items also need QtyOnHand, InvStartDate and the asset and expense accounts."}
+    request:
+      method: POST
+      path: item
+      body: {Name: "{{fields.name}}", Type: "{{fields.type}}", UnitPrice: "{{fields.price}}", IncomeAccountRef: {value: "{{fields.income_account}}"}, _merge: "{{fields.extra}}"}
+    output: {path: Item}
+
+  - name: List Items
+    resource: Item
+    description: Lists the items, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where Type = 'Inventory'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Item {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Item}
+
+  - name: Get Item
+    resource: Item
+    description: Reads a item.
+    fields:
+      - {name: id, label: Item ID, required: true}
+    request: {method: GET, path: "item/{{fields.id}}"}
+    output: {path: Item}
+
+  - name: Update Item
+    resource: Item
+    description: Changes a item. Only the fields given change.
+    fields:
+      - {name: id, label: Item ID, required: true}
+      - {name: sync_token, label: Sync token, required: true, description: "SyncToken, from Get Item."}
+      - {name: changes, label: Changes, type: json, required: true, description: '{"UnitPrice": 49.9}'}
+    request:
+      method: POST
+      path: item
+      body: {Id: "{{fields.id}}", SyncToken: "{{fields.sync_token}}", sparse: true, _merge: "{{fields.changes}}"}
+    output: {path: Item}
+
+  - name: List Accounts
+    resource: Account
+    description: Lists the accounts, newest first.
+    fields:
+      - {name: where, label: Filter, description: "In QuickBooks' query language, starting with where, like where AccountType = 'Bank'"}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: query
+      query: {query: "select * from Account {{fields.where}} orderby MetaData.CreateTime desc maxresults {{fields.limit}}"}
+    output: {path: QueryResponse.Account}
+
+  - name: Get Account
+    resource: Account
+    description: Reads a account.
+    fields:
+      - {name: id, label: Account ID, required: true}
+    request: {method: GET, path: "account/{{fields.id}}"}
+    output: {path: Account}
+
+  # Reports and company
+  - name: Run Report
+    resource: Report
+    description: Runs a report, like profit and loss or the balance sheet, for a period.
+    fields:
+      - {name: report, label: Report, type: select, required: true, default: ProfitAndLoss, options: [{label: Profit and loss, value: ProfitAndLoss}, {label: Balance sheet, value: BalanceSheet}, {label: Cash flow, value: CashFlow}, {label: Aged receivables, value: AgedReceivables}, {label: Aged payables, value: AgedPayables}, {label: Sales by customer, value: CustomerSales}, {label: Sales by item, value: ItemSales}, {label: General ledger, value: GeneralLedger}]}
+      - {name: start_date, label: From, description: "Like 2026-01-01"}
+      - {name: end_date, label: To}
+      - {name: macro, label: Or a period, type: select, options: [{label: This month, value: This Month}, {label: Last month, value: Last Month}, {label: This year, value: This Fiscal Year}, {label: Last year, value: Last Fiscal Year}]}
+    request:
+      method: GET
+      path: "reports/{{fields.report}}"
+      query: {start_date: "{{fields.start_date}}", end_date: "{{fields.end_date}}", date_macro: "{{fields.macro}}"}
+
+  - name: Get Company Info
+    resource: Report
+    description: Reads the company's name, address and settings.
+    request: {method: GET, path: "companyinfo/{{credential.account}}"}
+    output: {path: CompanyInfo}
+
+i18n:
+  pt-BR:
+    description: "Clientes, faturas, pagamentos, orçamentos, contas a pagar e itens no QuickBooks Online."
+    triggers:
+      New Invoice: {name: "Nova fatura", description: "Inicia o fluxo para cada fatura nova, olhando a cada 5 minutos."}
+      New Customer: {name: "Novo cliente", description: "Inicia o fluxo para cada cliente novo, olhando a cada 5 minutos."}
+      New Payment: {name: "Novo pagamento", description: "Inicia o fluxo para cada pagamento novo, olhando a cada 5 minutos."}
+      New Estimate: {name: "Novo orçamento", description: "Inicia o fluxo para cada orçamento novo, olhando a cada 5 minutos."}
+    actions:
+      Create Customer: {name: "Criar cliente", description: "Cria um cliente.", fields: {name: "Nome de exibição", given_name: "Nome", family_name: "Sobrenome", company: "Empresa", email: "E-mail", phone: "Telefone", bill_address: "Endereço de cobrança", notes: "Observações", extra: "Mais campos"}}
+      List Customers: {name: "Listar clientes", description: "Lista os clientes, dos mais novos.", fields: {where: "Filtro", limit: "Até"}}
+      Get Customer: {name: "Ler cliente", description: "Lê um cliente.", fields: {id: "ID"}}
+      Update Customer: {name: "Atualizar cliente", description: "Altera um cliente. Só os campos dados mudam.", fields: {id: "ID", sync_token: "Sync token", changes: "Alterações"}}
+      Create Invoice: {name: "Criar fatura", description: "Cria uma fatura.", fields: {customer: "ID do cliente", lines: "Linhas", email: "Enviar para o e-mail", txn_date: "Data", due_date: "Vencimento", doc_number: "Número", memo: "Mensagem ao cliente", extra: "Mais campos"}}
+      List Invoices: {name: "Listar faturas", description: "Lista as faturas, das mais novas.", fields: {where: "Filtro", limit: "Até"}}
+      Get Invoice: {name: "Ler fatura", description: "Lê uma fatura.", fields: {id: "ID"}}
+      Update Invoice: {name: "Atualizar fatura", description: "Altera uma fatura. Só os campos dados mudam.", fields: {id: "ID", sync_token: "Sync token", changes: "Alterações"}}
+      Delete Invoice: {name: "Excluir fatura", description: "Exclui uma fatura.", fields: {id: "ID", sync_token: "Sync token"}}
+      Send Invoice: {name: "Enviar fatura", description: "Envia uma fatura por e-mail, para o e-mail de cobrança ou outro.", fields: {id: "ID", email: "Para"}}
+      Void Invoice: {name: "Anular fatura", description: "Anula uma fatura, mantendo-a com valor zero.", fields: {id: "ID", sync_token: "Sync token"}}
+      Download Invoice PDF: {name: "Baixar PDF da fatura", description: "Baixa uma fatura em PDF.", fields: {id: "ID"}}
+      Create Payment: {name: "Registrar pagamento", description: "Registra o pagamento de um cliente, em faturas ou como crédito.", fields: {customer: "ID do cliente", amount: "Valor", invoice: "ID da fatura", txn_date: "Data", extra: "Mais campos"}}
+      List Payments: {name: "Listar pagamentos", description: "Lista os pagamentos, dos mais novos.", fields: {where: "Filtro", limit: "Até"}}
+      Get Payment: {name: "Ler pagamento", description: "Lê um pagamento.", fields: {id: "ID"}}
+      Delete Payment: {name: "Excluir pagamento", description: "Exclui um pagamento.", fields: {id: "ID", sync_token: "Sync token"}}
+      Create Estimate: {name: "Criar orçamento", description: "Cria um orçamento.", fields: {customer: "ID do cliente", lines: "Linhas", email: "Enviar para o e-mail", expiration: "Expira em", extra: "Mais campos"}}
+      List Estimates: {name: "Listar orçamentos", description: "Lista os orçamentos, dos mais novos.", fields: {where: "Filtro", limit: "Até"}}
+      Get Estimate: {name: "Ler orçamento", description: "Lê um orçamento.", fields: {id: "ID"}}
+      Update Estimate: {name: "Atualizar orçamento", description: "Altera um orçamento. Só os campos dados mudam.", fields: {id: "ID", sync_token: "Sync token", changes: "Alterações"}}
+      Delete Estimate: {name: "Excluir orçamento", description: "Exclui um orçamento.", fields: {id: "ID", sync_token: "Sync token"}}
+      Create Bill: {name: "Registrar conta a pagar", description: "Registra uma conta de um fornecedor.", fields: {vendor: "ID do fornecedor", lines: "Linhas", due_date: "Vencimento", extra: "Mais campos"}}
+      List Bills: {name: "Listar contas a pagar", description: "Lista as contas a pagar, das mais novas.", fields: {where: "Filtro", limit: "Até"}}
+      Get Bill: {name: "Ler conta a pagar", description: "Lê uma conta a pagar.", fields: {id: "ID"}}
+      Delete Bill: {name: "Excluir conta a pagar", description: "Exclui uma conta a pagar.", fields: {id: "ID", sync_token: "Sync token"}}
+      Create Vendor: {name: "Criar fornecedor", description: "Cria um fornecedor.", fields: {name: "Nome de exibição", company: "Empresa", email: "E-mail", phone: "Telefone", extra: "Mais campos"}}
+      List Vendors: {name: "Listar fornecedores", description: "Lista os fornecedores, dos mais novos.", fields: {where: "Filtro", limit: "Até"}}
+      Get Vendor: {name: "Ler fornecedor", description: "Lê um fornecedor.", fields: {id: "ID"}}
+      Update Vendor: {name: "Atualizar fornecedor", description: "Altera um fornecedor. Só os campos dados mudam.", fields: {id: "ID", sync_token: "Sync token", changes: "Alterações"}}
+      Create Item: {name: "Criar item", description: "Cria um produto ou serviço.", fields: {name: "Nome", type: "Tipo", price: "Preço", income_account: "ID da conta de receita", extra: "Mais campos"}}
+      List Items: {name: "Listar itens", description: "Lista os itens, dos mais novos.", fields: {where: "Filtro", limit: "Até"}}
+      Get Item: {name: "Ler item", description: "Lê um item.", fields: {id: "ID"}}
+      Update Item: {name: "Atualizar item", description: "Altera um item. Só os campos dados mudam.", fields: {id: "ID", sync_token: "Sync token", changes: "Alterações"}}
+      List Accounts: {name: "Listar contas contábeis", description: "Lista as contas contábeis, das mais novas.", fields: {where: "Filtro", limit: "Até"}}
+      Get Account: {name: "Ler conta contábil", description: "Lê uma conta contábil.", fields: {id: "ID"}}
+      Run Report: {name: "Gerar relatório", description: "Gera um relatório, como DRE ou balanço, de um período.", fields: {report: "Relatório", start_date: "De", end_date: "Até", macro: "Ou um período"}}
+      Get Company Info: {name: "Ler dados da empresa", description: "Lê o nome, o endereço e os ajustes da empresa."}
