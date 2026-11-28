@@ -1,0 +1,365 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# YouTube Data API v3 with Google OAuth. Each call spends quota (10,000 units a day by
+# default): reads cost 1, writes 50, a search 100 and an upload 1,600, so the triggers
+# read activities and comment threads, not search.
+id: youtube
+name: YouTube
+version: 1.0.0
+homepage: https://developers.google.com/youtube/v3/docs
+description: Upload and update YouTube videos, manage playlists and comments, search videos and follow channel activity.
+icon: hero-play
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></svg>
+category: social
+base_url: https://www.googleapis.com/
+
+credential:
+  label: YouTube
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://www.googleapis.com/auth/youtube, https://www.googleapis.com/auth/youtube.force-ssl, https://www.googleapis.com/auth/youtube.upload]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Channel Activity
+    description: Starts the flow for each new upload or other public activity of a channel, checking every 15 minutes.
+    fields:
+      - {name: channel_id, label: Channel ID, required: true, description: "Starts with UC; it is in the channel's address or in Get Channel."}
+    request:
+      method: GET
+      path: youtube/v3/activities
+      query: {part: "snippet,contentDetails", channelId: "{{fields.channel_id}}", publishedAfter: "{{time.day_ago}}", maxResults: 50}
+    output: {path: items}
+    poll: {every: 15, id: id}
+
+  - name: New Comment
+    description: Starts the flow for each new comment on a video, checking every 15 minutes.
+    fields:
+      - {name: video_id, label: Video ID, required: true, description: "From the address: youtube.com/watch?v=<ID>."}
+    request:
+      method: GET
+      path: youtube/v3/commentThreads
+      query: {part: snippet, videoId: "{{fields.video_id}}", order: time, maxResults: 100}
+    output: {path: items}
+    poll: {every: 15, id: id}
+
+actions:
+  - name: Get My Channel
+    resource: Channel
+    description: Reads the channel of the connected account, with its statistics and uploads playlist.
+    request:
+      method: GET
+      path: youtube/v3/channels
+      query: {part: "snippet,contentDetails,statistics,brandingSettings", mine: true}
+    output: {path: items.0}
+
+  - name: Get Channel
+    resource: Channel
+    description: Reads a public channel, with its statistics and uploads playlist.
+    fields:
+      - {name: channel_id, label: Channel ID, description: "Starts with UC; fill this or the handle."}
+      - {name: handle, label: Handle, description: "Like @heddle."}
+    request:
+      method: GET
+      path: youtube/v3/channels
+      query: {part: "snippet,contentDetails,statistics", id: "{{fields.channel_id}}", forHandle: "{{fields.handle}}"}
+    output: {path: items.0}
+
+  - name: Search Videos
+    resource: Video
+    description: Searches public videos; each search spends 100 units of quota.
+    fields:
+      - {name: query, label: Search}
+      - {name: channel_id, label: Only from channel ID}
+      - {name: order, label: Order, type: select, default: relevance, options: [{label: Relevance, value: relevance}, {label: Newest, value: date}, {label: Most viewed, value: viewCount}, {label: Best rated, value: rating}, {label: Title, value: title}]}
+      - {name: published_after, label: Published after, type: datetime}
+      - {name: region, label: Region, description: "Two-letter country code, like BR."}
+      - {name: limit, label: Limit, type: number, default: 25, description: Up to 50.}
+    request:
+      method: GET
+      path: youtube/v3/search
+      query: {part: snippet, type: video, q: "{{fields.query}}", channelId: "{{fields.channel_id}}", order: "{{fields.order}}", publishedAfter: "{{fields.published_after}}", regionCode: "{{fields.region}}", maxResults: "{{fields.limit}}"}
+    output: {path: items}
+
+  - name: List My Videos
+    resource: Video
+    description: Lists the videos of the connected account, newest first.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 25, description: Up to 50.}
+    request:
+      method: GET
+      path: youtube/v3/search
+      query: {part: snippet, type: video, forMine: true, order: date, maxResults: "{{fields.limit}}"}
+    output: {path: items}
+
+  - name: Get Video
+    resource: Video
+    description: Reads a video, with its details, statistics and status.
+    fields:
+      - {name: video_id, label: Video ID, required: true, description: "From the address: youtube.com/watch?v=<ID>."}
+    request:
+      method: GET
+      path: youtube/v3/videos
+      query: {part: "snippet,contentDetails,statistics,status", id: "{{fields.video_id}}"}
+    output: {path: items.0}
+
+  - name: Upload Video
+    resource: Video
+    description: Uploads a video to the connected channel; it spends 1,600 units of quota.
+    fields:
+      - {name: file, label: Video, type: file, required: true, default: "{{result}}"}
+      - {name: title, label: Title, required: true, description: Up to 100 characters.}
+      - {name: description, label: Description, type: textarea}
+      - {name: tags, label: Tags, description: "Separated by commas."}
+      - {name: category_id, label: Category, type: select, default: "22", options_from: {request: {method: GET, path: youtube/v3/videoCategories, query: {part: snippet, regionCode: US}}, path: items, label: snippet.title, value: id}}
+      - {name: privacy, label: Visibility, type: select, default: private, options: [{label: Private, value: private}, {label: Unlisted, value: unlisted}, {label: Public, value: public}]}
+      - {name: publish_at, label: Publish at, type: datetime, description: "Needs Private; the video goes public at this time."}
+      - {name: made_for_kids, label: Made for kids, type: boolean, default: false}
+    request:
+      method: POST
+      path: upload/youtube/v3/videos
+      query: {uploadType: multipart, part: "snippet,status"}
+      body_type: related
+      body:
+        metadata:
+          snippet: {title: "{{fields.title}}", description: "{{fields.description}}", tags: {_each: "{{fields.tags}}", _value: "{{item}}"}, categoryId: "{{fields.category_id}}"}
+          status: {privacyStatus: "{{fields.privacy}}", publishAt: "{{fields.publish_at}}", selfDeclaredMadeForKids: "{{fields.made_for_kids}}"}
+        media: "{{fields.file}}"
+
+  - name: Update Video
+    resource: Video
+    description: Replaces the title, description, tags and category of a video.
+    fields:
+      - {name: video_id, label: Video ID, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea, description: "Empty clears it."}
+      - {name: tags, label: Tags, description: "Separated by commas; empty clears them."}
+      - {name: category_id, label: Category, type: select, required: true, default: "22", options_from: {request: {method: GET, path: youtube/v3/videoCategories, query: {part: snippet, regionCode: US}}, path: items, label: snippet.title, value: id}}
+    request:
+      method: PUT
+      path: youtube/v3/videos
+      query: {part: snippet}
+      body: {id: "{{fields.video_id}}", snippet: {title: "{{fields.title}}", description: "{{fields.description}}", tags: {_each: "{{fields.tags}}", _value: "{{item}}"}, categoryId: "{{fields.category_id}}"}}
+
+  - name: Set Video Visibility
+    resource: Video
+    description: Makes a video private, unlisted or public.
+    fields:
+      - {name: video_id, label: Video ID, required: true}
+      - {name: privacy, label: Visibility, type: select, required: true, options: [{label: Private, value: private}, {label: Unlisted, value: unlisted}, {label: Public, value: public}]}
+      - {name: made_for_kids, label: Made for kids, type: boolean, default: false}
+    request:
+      method: PUT
+      path: youtube/v3/videos
+      query: {part: status}
+      body: {id: "{{fields.video_id}}", status: {privacyStatus: "{{fields.privacy}}", selfDeclaredMadeForKids: "{{fields.made_for_kids}}"}}
+
+  - name: Rate Video
+    resource: Video
+    description: Likes or dislikes a video, or takes the rating back.
+    fields:
+      - {name: video_id, label: Video ID, required: true}
+      - {name: rating, label: Rating, type: select, required: true, default: like, options: [{label: Like, value: like}, {label: Dislike, value: dislike}, {label: None, value: none}]}
+    request:
+      method: POST
+      path: youtube/v3/videos/rate
+      query: {id: "{{fields.video_id}}", rating: "{{fields.rating}}"}
+
+  - name: Delete Video
+    resource: Video
+    description: Deletes a video of the connected channel.
+    fields:
+      - {name: video_id, label: Video ID, required: true}
+    request:
+      method: DELETE
+      path: youtube/v3/videos
+      query: {id: "{{fields.video_id}}"}
+
+  - name: List Video Categories
+    resource: Video
+    description: Lists the video categories of a region.
+    fields:
+      - {name: region, label: Region, default: BR, description: "Two-letter country code."}
+    request:
+      method: GET
+      path: youtube/v3/videoCategories
+      query: {part: snippet, regionCode: "{{fields.region}}"}
+    output: {path: items}
+
+  - name: List My Playlists
+    resource: Playlist
+    description: Lists the playlists of the connected channel.
+    fields:
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 50.}
+    request:
+      method: GET
+      path: youtube/v3/playlists
+      query: {part: "snippet,status,contentDetails", mine: true, maxResults: "{{fields.limit}}"}
+    output: {path: items}
+
+  - name: Get Playlist
+    resource: Playlist
+    description: Reads a playlist.
+    fields:
+      - {name: playlist_id, label: Playlist ID, required: true, description: "From the address: youtube.com/playlist?list=<ID>."}
+    request:
+      method: GET
+      path: youtube/v3/playlists
+      query: {part: "snippet,status,contentDetails", id: "{{fields.playlist_id}}"}
+    output: {path: items.0}
+
+  - name: Create Playlist
+    resource: Playlist
+    description: Creates a playlist in the connected channel.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea}
+      - {name: privacy, label: Visibility, type: select, default: private, options: [{label: Private, value: private}, {label: Unlisted, value: unlisted}, {label: Public, value: public}]}
+    request:
+      method: POST
+      path: youtube/v3/playlists
+      query: {part: "snippet,status"}
+      body: {snippet: {title: "{{fields.title}}", description: "{{fields.description}}"}, status: {privacyStatus: "{{fields.privacy}}"}}
+
+  - name: Update Playlist
+    resource: Playlist
+    description: Replaces the title, description and visibility of a playlist.
+    fields:
+      - {name: playlist_id, label: Playlist ID, required: true}
+      - {name: title, label: Title, required: true}
+      - {name: description, label: Description, type: textarea, description: "Empty clears it."}
+      - {name: privacy, label: Visibility, type: select, required: true, default: private, options: [{label: Private, value: private}, {label: Unlisted, value: unlisted}, {label: Public, value: public}]}
+    request:
+      method: PUT
+      path: youtube/v3/playlists
+      query: {part: "snippet,status"}
+      body: {id: "{{fields.playlist_id}}", snippet: {title: "{{fields.title}}", description: "{{fields.description}}"}, status: {privacyStatus: "{{fields.privacy}}"}}
+
+  - name: Delete Playlist
+    resource: Playlist
+    description: Deletes a playlist; its videos stay.
+    fields:
+      - {name: playlist_id, label: Playlist ID, required: true}
+    request:
+      method: DELETE
+      path: youtube/v3/playlists
+      query: {id: "{{fields.playlist_id}}"}
+
+  - name: List Playlist Videos
+    resource: Playlist Item
+    description: Lists the videos of a playlist, in order.
+    fields:
+      - {name: playlist_id, label: Playlist ID, required: true, description: "The uploads of a channel are in the playlist that Get Channel shows in contentDetails."}
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 50.}
+    request:
+      method: GET
+      path: youtube/v3/playlistItems
+      query: {part: "snippet,contentDetails,status", playlistId: "{{fields.playlist_id}}", maxResults: "{{fields.limit}}"}
+    output: {path: items}
+
+  - name: Add Video to Playlist
+    resource: Playlist Item
+    description: Adds a video to a playlist.
+    fields:
+      - {name: playlist_id, label: Playlist, type: select, required: true, options_from: {request: {method: GET, path: youtube/v3/playlists, query: {part: snippet, mine: true, maxResults: 50}}, path: items, label: snippet.title, value: id}}
+      - {name: video_id, label: Video ID, required: true}
+      - {name: position, label: Position, type: number, description: "0 is the first; empty adds it at the end."}
+    request:
+      method: POST
+      path: youtube/v3/playlistItems
+      query: {part: snippet}
+      body: {snippet: {playlistId: "{{fields.playlist_id}}", position: "{{fields.position}}", resourceId: {kind: "youtube#video", videoId: "{{fields.video_id}}"}}}
+
+  - name: Remove from Playlist
+    resource: Playlist Item
+    description: Removes an item from a playlist, by the item's ID from List Playlist Videos.
+    fields:
+      - {name: item_id, label: Playlist item ID, required: true}
+    request:
+      method: DELETE
+      path: youtube/v3/playlistItems
+      query: {id: "{{fields.item_id}}"}
+
+  - name: List Comments
+    resource: Comment
+    description: Lists the comment threads of a video, newest first.
+    fields:
+      - {name: video_id, label: Video ID, required: true}
+      - {name: search, label: Search}
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 100.}
+    request:
+      method: GET
+      path: youtube/v3/commentThreads
+      query: {part: "snippet,replies", videoId: "{{fields.video_id}}", searchTerms: "{{fields.search}}", order: time, maxResults: "{{fields.limit}}"}
+    output: {path: items}
+
+  - name: Post Comment
+    resource: Comment
+    description: Posts a comment on a video.
+    fields:
+      - {name: video_id, label: Video ID, required: true}
+      - {name: text, label: Comment, type: textarea, required: true}
+    request:
+      method: POST
+      path: youtube/v3/commentThreads
+      query: {part: snippet}
+      body: {snippet: {videoId: "{{fields.video_id}}", topLevelComment: {snippet: {textOriginal: "{{fields.text}}"}}}}
+
+  - name: Reply to Comment
+    resource: Comment
+    description: Replies to a comment.
+    fields:
+      - {name: comment_id, label: Comment ID, required: true, description: "The id of the comment thread, or of its top comment."}
+      - {name: text, label: Reply, type: textarea, required: true}
+    request:
+      method: POST
+      path: youtube/v3/comments
+      query: {part: snippet}
+      body: {snippet: {parentId: "{{fields.comment_id}}", textOriginal: "{{fields.text}}"}}
+
+  - name: Delete Comment
+    resource: Comment
+    description: Deletes a comment of the connected channel.
+    fields:
+      - {name: comment_id, label: Comment ID, required: true}
+    request:
+      method: DELETE
+      path: youtube/v3/comments
+      query: {id: "{{fields.comment_id}}"}
+
+i18n:
+  pt-BR:
+    description: "Envie e atualize vídeos do YouTube, gerencie playlists e comentários, busque vídeos e acompanhe a atividade de canais."
+    triggers:
+      New Channel Activity: {name: "Nova atividade do canal", description: "Inicia o fluxo a cada novo envio ou outra atividade pública de um canal, verificando a cada 15 minutos.", fields: {channel_id: "ID do canal"}}
+      New Comment: {name: "Novo comentário", description: "Inicia o fluxo a cada novo comentário num vídeo, verificando a cada 15 minutos.", fields: {video_id: "ID do vídeo"}}
+    actions:
+      Get My Channel: {name: "Ler meu canal", description: "Lê o canal da conta conectada, com estatísticas e a playlist de envios."}
+      Get Channel: {name: "Ler canal", description: "Lê um canal público, com estatísticas e a playlist de envios.", fields: {channel_id: "ID do canal", handle: "Identificador"}}
+      Search Videos: {name: "Buscar vídeos", description: "Busca vídeos públicos; cada busca gasta 100 unidades da cota.", fields: {query: "Busca", channel_id: "Só do canal (ID)", order: "Ordem", published_after: "Publicado depois de", region: "Região", limit: "Limite"}}
+      List My Videos: {name: "Listar meus vídeos", description: "Lista os vídeos da conta conectada, os mais novos primeiro.", fields: {limit: "Limite"}}
+      Get Video: {name: "Ler vídeo", description: "Lê um vídeo, com detalhes, estatísticas e status.", fields: {video_id: "ID do vídeo"}}
+      Upload Video: {name: "Enviar vídeo", description: "Envia um vídeo para o canal conectado; gasta 1.600 unidades da cota.", fields: {file: "Vídeo", title: "Título", description: "Descrição", tags: "Tags", category_id: "Categoria", privacy: "Visibilidade", publish_at: "Publicar em", made_for_kids: "Feito para crianças"}}
+      Update Video: {name: "Atualizar vídeo", description: "Substitui título, descrição, tags e categoria de um vídeo.", fields: {video_id: "ID do vídeo", title: "Título", description: "Descrição", tags: "Tags", category_id: "Categoria"}}
+      Set Video Visibility: {name: "Visibilidade do vídeo", description: "Deixa um vídeo privado, não listado ou público.", fields: {video_id: "ID do vídeo", privacy: "Visibilidade", made_for_kids: "Feito para crianças"}}
+      Rate Video: {name: "Avaliar vídeo", description: "Dá like ou dislike num vídeo, ou desfaz a avaliação.", fields: {video_id: "ID do vídeo", rating: "Avaliação"}}
+      Delete Video: {name: "Apagar vídeo", description: "Apaga um vídeo do canal conectado.", fields: {video_id: "ID do vídeo"}}
+      List Video Categories: {name: "Listar categorias", description: "Lista as categorias de vídeo de uma região.", fields: {region: "Região"}}
+      List My Playlists: {name: "Listar minhas playlists", description: "Lista as playlists do canal conectado.", fields: {limit: "Limite"}}
+      Get Playlist: {name: "Ler playlist", description: "Lê uma playlist.", fields: {playlist_id: "ID da playlist"}}
+      Create Playlist: {name: "Criar playlist", description: "Cria uma playlist no canal conectado.", fields: {title: "Título", description: "Descrição", privacy: "Visibilidade"}}
+      Update Playlist: {name: "Atualizar playlist", description: "Substitui título, descrição e visibilidade de uma playlist.", fields: {playlist_id: "ID da playlist", title: "Título", description: "Descrição", privacy: "Visibilidade"}}
+      Delete Playlist: {name: "Apagar playlist", description: "Apaga uma playlist; os vídeos continuam.", fields: {playlist_id: "ID da playlist"}}
+      List Playlist Videos: {name: "Listar vídeos da playlist", description: "Lista os vídeos de uma playlist, em ordem.", fields: {playlist_id: "ID da playlist", limit: "Limite"}}
+      Add Video to Playlist: {name: "Adicionar vídeo à playlist", description: "Adiciona um vídeo a uma playlist.", fields: {playlist_id: "Playlist", video_id: "ID do vídeo", position: "Posição"}}
+      Remove from Playlist: {name: "Remover da playlist", description: "Remove um item de uma playlist, pelo ID do item em Listar vídeos da playlist.", fields: {item_id: "ID do item da playlist"}}
+      List Comments: {name: "Listar comentários", description: "Lista as conversas de comentários de um vídeo, as mais novas primeiro.", fields: {video_id: "ID do vídeo", search: "Busca", limit: "Limite"}}
+      Post Comment: {name: "Comentar", description: "Publica um comentário num vídeo.", fields: {video_id: "ID do vídeo", text: "Comentário"}}
+      Reply to Comment: {name: "Responder comentário", description: "Responde a um comentário.", fields: {comment_id: "ID do comentário", text: "Resposta"}}
+      Delete Comment: {name: "Apagar comentário", description: "Apaga um comentário do canal conectado.", fields: {comment_id: "ID do comentário"}}

@@ -1,0 +1,406 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Gmail API v1 with Google OAuth. Emails are sent as MIME text to the media upload
+# endpoint (message/rfc822), so no Base64 is needed; lists return IDs, read each with
+# Get Message.
+id: gmail
+name: Gmail
+version: 1.0.0
+homepage: https://developers.google.com/workspace/gmail/api/reference/rest
+description: Send and read Gmail emails, manage drafts, conversations and labels, and start flows on new emails.
+icon: hero-envelope
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="5.25" width="18.00" height="13.50" viewBox="52 42 88 66"><path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/><path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/><path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/><path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/><path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/></svg></svg>
+category: email
+base_url: https://gmail.googleapis.com/
+
+credential:
+  label: Gmail
+  auth:
+    type: oauth2
+    authorize_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    scopes: [https://mail.google.com/]
+    authorize_params: {access_type: offline, prompt: consent}
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: New Email
+    description: Starts the flow for each new email that matches a search, checking every 5 minutes; read it with Get Message.
+    fields:
+      - {name: query, label: Search, default: in:inbox, description: "Gmail search, like from:ana@example.com has:attachment."}
+    request:
+      method: GET
+      path: gmail/v1/users/me/messages
+      query: {q: "{{fields.query}} newer_than:1d", maxResults: 100}
+    output: {path: messages}
+    poll: {every: 5, id: id}
+
+  - name: New Email With Label
+    description: Starts the flow for each new email that gets a label, checking every 5 minutes; read it with Get Message.
+    fields:
+      - {name: label_id, label: Label, type: select, required: true, default: INBOX, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: GET
+      path: gmail/v1/users/me/messages
+      query: {labelIds: "{{fields.label_id}}", q: "newer_than:1d", maxResults: 100}
+    output: {path: messages}
+    poll: {every: 5, id: id}
+
+actions:
+  - name: Send Email
+    resource: Message
+    description: Sends an email from the connected account.
+    fields:
+      - {name: to, label: To, required: true, description: "Addresses separated by commas."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: subject, label: Subject, required: true}
+      - {name: format, label: Format, type: select, default: text/plain, options: [{label: Text, value: text/plain}, {label: HTML, value: text/html}]}
+      - {name: body, label: Message, type: textarea, required: true}
+    request:
+      method: POST
+      path: upload/gmail/v1/users/me/messages/send
+      query: {uploadType: media}
+      headers: {Content-Type: message/rfc822}
+      body_type: binary
+      body: |-
+        To: {{fields.to}}
+        Cc: {{fields.cc}}
+        Bcc: {{fields.bcc}}
+        Subject: {{fields.subject}}
+        MIME-Version: 1.0
+        Content-Type: {{fields.format}}; charset=UTF-8
+        Content-Transfer-Encoding: 8bit
+
+        {{fields.body}}
+
+  - name: Get Message
+    resource: Message
+    description: Reads an email, with its headers, text and the IDs of its attachments.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+      - {name: format, label: Format, type: select, default: full, options: [{label: Full, value: full}, {label: Headers only, value: metadata}, {label: IDs and labels, value: minimal}, {label: Raw, value: raw}]}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}"
+      query: {format: "{{fields.format}}"}
+
+  - name: List Messages
+    resource: Message
+    description: Lists the IDs of the emails that match a search, newest first.
+    fields:
+      - {name: query, label: Search, description: "Gmail search, like from:ana@example.com is:unread newer_than:7d."}
+      - {name: label_ids, label: Label, type: select, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+      - {name: include_spam_trash, label: Include spam and trash, type: boolean, default: false}
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 500.}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/messages"
+      query: {q: "{{fields.query}}", labelIds: "{{fields.label_ids}}", includeSpamTrash: "{{fields.include_spam_trash}}", maxResults: "{{fields.limit}}"}
+    output: {path: messages}
+
+  - name: Add Labels
+    resource: Message
+    description: Adds labels to an email.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+      - {name: labels, label: Labels, type: multiselect, required: true, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/modify"
+      body: {addLabelIds: "{{fields.labels}}"}
+
+  - name: Remove Labels
+    resource: Message
+    description: Removes labels from an email.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+      - {name: labels, label: Labels, type: multiselect, required: true, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/modify"
+      body: {removeLabelIds: "{{fields.labels}}"}
+
+  - name: Mark as Read
+    resource: Message
+    description: Marks an email as read.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/modify"
+      body: {removeLabelIds: [UNREAD]}
+
+  - name: Mark as Unread
+    resource: Message
+    description: Marks an email as unread.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/modify"
+      body: {addLabelIds: [UNREAD]}
+
+  - name: Trash Message
+    resource: Message
+    description: Moves an email to the trash, where it stays 30 days.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/trash"
+
+  - name: Untrash Message
+    resource: Message
+    description: Takes an email out of the trash.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/untrash"
+
+  - name: Delete Message
+    resource: Message
+    description: Deletes an email for good, skipping the trash.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+    request:
+      method: DELETE
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}"
+
+  - name: Get Attachment
+    resource: Message
+    description: Reads an attachment of an email, its content in URL-safe Base64 under data.
+    fields:
+      - {name: message_id, label: Message ID, required: true}
+      - {name: attachment_id, label: Attachment ID, required: true, description: "From Get Message: payload.parts[].body.attachmentId."}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/messages/{{fields.message_id}}/attachments/{{fields.attachment_id}}"
+
+  - name: Create Draft
+    resource: Draft
+    description: Saves an email as a draft, to send later.
+    fields:
+      - {name: to, label: To, description: "Addresses separated by commas."}
+      - {name: cc, label: Cc}
+      - {name: bcc, label: Bcc}
+      - {name: subject, label: Subject}
+      - {name: format, label: Format, type: select, default: text/plain, options: [{label: Text, value: text/plain}, {label: HTML, value: text/html}]}
+      - {name: body, label: Message, type: textarea}
+    request:
+      method: POST
+      path: upload/gmail/v1/users/me/drafts
+      query: {uploadType: media}
+      headers: {Content-Type: message/rfc822}
+      body_type: binary
+      body: |-
+        To: {{fields.to}}
+        Cc: {{fields.cc}}
+        Bcc: {{fields.bcc}}
+        Subject: {{fields.subject}}
+        MIME-Version: 1.0
+        Content-Type: {{fields.format}}; charset=UTF-8
+        Content-Transfer-Encoding: 8bit
+
+        {{fields.body}}
+
+  - name: Get Draft
+    resource: Draft
+    description: Reads a draft.
+    fields:
+      - {name: draft_id, label: Draft ID, required: true}
+      - {name: format, label: Format, type: select, default: full, options: [{label: Full, value: full}, {label: Headers only, value: metadata}, {label: Raw, value: raw}]}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/drafts/{{fields.draft_id}}"
+      query: {format: "{{fields.format}}"}
+
+  - name: List Drafts
+    resource: Draft
+    description: Lists the drafts, newest first.
+    fields:
+      - {name: query, label: Search, description: Gmail search syntax.}
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 500.}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/drafts"
+      query: {q: "{{fields.query}}", maxResults: "{{fields.limit}}"}
+    output: {path: drafts}
+
+  - name: Send Draft
+    resource: Draft
+    description: Sends a draft as it is.
+    fields:
+      - {name: draft_id, label: Draft ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/drafts/send"
+      body: {id: "{{fields.draft_id}}"}
+
+  - name: Delete Draft
+    resource: Draft
+    description: Deletes a draft for good.
+    fields:
+      - {name: draft_id, label: Draft ID, required: true}
+    request:
+      method: DELETE
+      path: "gmail/v1/users/me/drafts/{{fields.draft_id}}"
+
+  - name: Get Thread
+    resource: Thread
+    description: Reads a conversation, with all its emails.
+    fields:
+      - {name: thread_id, label: Thread ID, required: true}
+      - {name: format, label: Format, type: select, default: full, options: [{label: Full, value: full}, {label: Headers only, value: metadata}, {label: IDs and labels, value: minimal}]}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/threads/{{fields.thread_id}}"
+      query: {format: "{{fields.format}}"}
+
+  - name: List Threads
+    resource: Thread
+    description: Lists the conversations that match a search, newest first.
+    fields:
+      - {name: query, label: Search, description: "Gmail search, like label:clients is:unread."}
+      - {name: label_ids, label: Label, type: select, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+      - {name: include_spam_trash, label: Include spam and trash, type: boolean, default: false}
+      - {name: limit, label: Limit, type: number, default: 50, description: Up to 500.}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/threads"
+      query: {q: "{{fields.query}}", labelIds: "{{fields.label_ids}}", includeSpamTrash: "{{fields.include_spam_trash}}", maxResults: "{{fields.limit}}"}
+    output: {path: threads}
+
+  - name: Add Labels to Thread
+    resource: Thread
+    description: Adds labels to every email of a conversation.
+    fields:
+      - {name: thread_id, label: Thread ID, required: true}
+      - {name: labels, label: Labels, type: multiselect, required: true, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/threads/{{fields.thread_id}}/modify"
+      body: {addLabelIds: "{{fields.labels}}"}
+
+  - name: Remove Labels from Thread
+    resource: Thread
+    description: Removes labels from every email of a conversation.
+    fields:
+      - {name: thread_id, label: Thread ID, required: true}
+      - {name: labels, label: Labels, type: multiselect, required: true, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/threads/{{fields.thread_id}}/modify"
+      body: {removeLabelIds: "{{fields.labels}}"}
+
+  - name: Trash Thread
+    resource: Thread
+    description: Moves a conversation to the trash.
+    fields:
+      - {name: thread_id, label: Thread ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/threads/{{fields.thread_id}}/trash"
+
+  - name: Untrash Thread
+    resource: Thread
+    description: Takes a conversation out of the trash.
+    fields:
+      - {name: thread_id, label: Thread ID, required: true}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/threads/{{fields.thread_id}}/untrash"
+
+  - name: Delete Thread
+    resource: Thread
+    description: Deletes a conversation for good, skipping the trash.
+    fields:
+      - {name: thread_id, label: Thread ID, required: true}
+    request:
+      method: DELETE
+      path: "gmail/v1/users/me/threads/{{fields.thread_id}}"
+
+  - name: List Labels
+    resource: Label
+    description: Lists the labels, the system ones and yours.
+    request:
+      method: GET
+      path: "gmail/v1/users/me/labels"
+    output: {path: labels}
+
+  - name: Get Label
+    resource: Label
+    description: Reads a label, with how many emails and unread ones it has.
+    fields:
+      - {name: label_id, label: Label, type: select, required: true, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: GET
+      path: "gmail/v1/users/me/labels/{{fields.label_id}}"
+
+  - name: Create Label
+    resource: Label
+    description: Creates a label; use / in the name to nest it, like Clients/Acme.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: list_visibility, label: In the label list, type: select, default: labelShow, options: [{label: Show, value: labelShow}, {label: Show if unread, value: labelShowIfUnread}, {label: Hide, value: labelHide}]}
+      - {name: message_visibility, label: On emails, type: select, default: show, options: [{label: Show, value: show}, {label: Hide, value: hide}]}
+    request:
+      method: POST
+      path: "gmail/v1/users/me/labels"
+      body: {name: "{{fields.name}}", labelListVisibility: "{{fields.list_visibility}}", messageListVisibility: "{{fields.message_visibility}}"}
+
+  - name: Delete Label
+    resource: Label
+    description: Deletes a label, taking it off its emails.
+    fields:
+      - {name: label_id, label: Label, type: select, required: true, options_from: {request: {method: GET, path: gmail/v1/users/me/labels}, path: labels, label: name, value: id}}
+    request:
+      method: DELETE
+      path: "gmail/v1/users/me/labels/{{fields.label_id}}"
+
+  - name: Get Profile
+    resource: Account
+    description: Reads the address of the account and how many emails and conversations it has.
+    request:
+      method: GET
+      path: "gmail/v1/users/me/profile"
+
+i18n:
+  pt-BR:
+    description: "Envie e leia e-mails do Gmail, gerencie rascunhos, conversas e marcadores e inicie fluxos com e-mails novos."
+    triggers:
+      New Email: {name: "Novo e-mail", description: "Inicia o fluxo a cada e-mail novo que atende a uma busca, verificando a cada 5 minutos; leia-o com Ler e-mail.", fields: {query: "Busca"}}
+      New Email With Label: {name: "Novo e-mail com marcador", description: "Inicia o fluxo a cada e-mail novo com um marcador, verificando a cada 5 minutos; leia-o com Ler e-mail.", fields: {label_id: "Marcador"}}
+    actions:
+      Send Email: {name: "Enviar e-mail", description: "Envia um e-mail pela conta conectada.", fields: {to: "Para", cc: "Cc", bcc: "Cco", subject: "Assunto", format: "Formato", body: "Mensagem"}}
+      Get Message: {name: "Ler e-mail", description: "Lê um e-mail, com cabeçalhos, texto e os IDs dos anexos.", fields: {message_id: "ID do e-mail", format: "Formato"}}
+      List Messages: {name: "Listar e-mails", description: "Lista os IDs dos e-mails que atendem a uma busca, os mais novos primeiro.", fields: {query: "Busca", label_ids: "Marcador", include_spam_trash: "Incluir spam e lixeira", limit: "Limite"}}
+      Add Labels: {name: "Adicionar marcadores", description: "Adiciona marcadores a um e-mail.", fields: {message_id: "ID do e-mail", labels: "Marcadores"}}
+      Remove Labels: {name: "Remover marcadores", description: "Remove marcadores de um e-mail.", fields: {message_id: "ID do e-mail", labels: "Marcadores"}}
+      Mark as Read: {name: "Marcar como lido", description: "Marca um e-mail como lido.", fields: {message_id: "ID do e-mail"}}
+      Mark as Unread: {name: "Marcar como não lido", description: "Marca um e-mail como não lido.", fields: {message_id: "ID do e-mail"}}
+      Trash Message: {name: "Mover para a lixeira", description: "Move um e-mail para a lixeira, onde fica 30 dias.", fields: {message_id: "ID do e-mail"}}
+      Untrash Message: {name: "Tirar da lixeira", description: "Tira um e-mail da lixeira.", fields: {message_id: "ID do e-mail"}}
+      Delete Message: {name: "Apagar e-mail", description: "Apaga um e-mail de vez, sem passar pela lixeira.", fields: {message_id: "ID do e-mail"}}
+      Get Attachment: {name: "Ler anexo", description: "Lê um anexo de um e-mail, com o conteúdo em Base64 de URL em data.", fields: {message_id: "ID do e-mail", attachment_id: "ID do anexo"}}
+      Create Draft: {name: "Criar rascunho", description: "Salva um e-mail como rascunho, para enviar depois.", fields: {to: "Para", cc: "Cc", bcc: "Cco", subject: "Assunto", format: "Formato", body: "Mensagem"}}
+      Get Draft: {name: "Ler rascunho", description: "Lê um rascunho.", fields: {draft_id: "ID do rascunho", format: "Formato"}}
+      List Drafts: {name: "Listar rascunhos", description: "Lista os rascunhos, os mais novos primeiro.", fields: {query: "Busca", limit: "Limite"}}
+      Send Draft: {name: "Enviar rascunho", description: "Envia um rascunho como está.", fields: {draft_id: "ID do rascunho"}}
+      Delete Draft: {name: "Apagar rascunho", description: "Apaga um rascunho de vez.", fields: {draft_id: "ID do rascunho"}}
+      Get Thread: {name: "Ler conversa", description: "Lê uma conversa, com todos os e-mails.", fields: {thread_id: "ID da conversa", format: "Formato"}}
+      List Threads: {name: "Listar conversas", description: "Lista as conversas que atendem a uma busca, as mais novas primeiro.", fields: {query: "Busca", label_ids: "Marcador", include_spam_trash: "Incluir spam e lixeira", limit: "Limite"}}
+      Add Labels to Thread: {name: "Adicionar marcadores à conversa", description: "Adiciona marcadores a todos os e-mails de uma conversa.", fields: {thread_id: "ID da conversa", labels: "Marcadores"}}
+      Remove Labels from Thread: {name: "Remover marcadores da conversa", description: "Remove marcadores de todos os e-mails de uma conversa.", fields: {thread_id: "ID da conversa", labels: "Marcadores"}}
+      Trash Thread: {name: "Mover conversa para a lixeira", description: "Move uma conversa para a lixeira.", fields: {thread_id: "ID da conversa"}}
+      Untrash Thread: {name: "Tirar conversa da lixeira", description: "Tira uma conversa da lixeira.", fields: {thread_id: "ID da conversa"}}
+      Delete Thread: {name: "Apagar conversa", description: "Apaga uma conversa de vez, sem passar pela lixeira.", fields: {thread_id: "ID da conversa"}}
+      List Labels: {name: "Listar marcadores", description: "Lista os marcadores, os do sistema e os seus."}
+      Get Label: {name: "Ler marcador", description: "Lê um marcador, com quantos e-mails e quantos não lidos ele tem.", fields: {label_id: "Marcador"}}
+      Create Label: {name: "Criar marcador", description: "Cria um marcador; use / no nome para aninhar, como Clientes/Acme.", fields: {name: "Nome", list_visibility: "Na lista de marcadores", message_visibility: "Nos e-mails"}}
+      Delete Label: {name: "Apagar marcador", description: "Apaga um marcador e o tira dos e-mails.", fields: {label_id: "Marcador"}}
+      Get Profile: {name: "Ler perfil", description: "Lê o endereço da conta e quantos e-mails e conversas ela tem."}
