@@ -1,0 +1,288 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Focus NFe, through the API v2. Connect with the company's token from Focus NFe's
+# panel, the production or the homologation one with its address. Each invoice is
+# named by a reference of yours, like pedido-123, used to read, cancel or email it.
+# Issuing is asynchronous: read the invoice, or use the trigger, to see it authorized.
+id: focus_nfe
+name: Focus NFe
+version: 1.0.0
+description: Issue, read, cancel and email NF-e, NFC-e and NFS-e through Focus NFe, and look up CNPJ, CEP and NCM.
+icon: hero-document-text
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="9.97" width="18.00" height="4.06" viewBox="0 0 1889.8 425.95"><defs><linearGradient id="a" x2="1" gradientTransform="matrix(239.59,-239.59,-239.59,-239.59,39.932,279.53)" gradientUnits="userSpaceOnUse"><stop stop-color="#f2521b" offset="0"/><stop stop-color="#f2521b" offset=".15"/><stop stop-color="#f57c1d" offset=".85"/><stop stop-color="#f57c1d" offset="1"/></linearGradient><clipPath id="b"><path d="m239.59 239.59v-137.79c0-12.118-9.824-21.943-21.942-21.943h-137.79v-79.864h146.1c8.729 0 17.101 3.468 23.274 9.6398l60.584 60.584c6.172 6.1719 9.64 14.545 9.64 23.274v146.1zm-119.8-119.8h79.865v79.865h-79.865zm-39.932 97.855v-137.79h-79.865v146.1c0 8.73 3.468 17.101 9.6402 23.274l60.584 60.584c6.1727 6.172 14.544 9.64 23.273 9.64h146.1v-79.864h-137.79c-12.118 0-21.942-9.824-21.942-21.943z"/></clipPath></defs><path transform="matrix(1.3333,0,0,-1.3333,0,425.95)" d="m239.59 239.59v-137.79c0-12.118-9.824-21.943-21.942-21.943h-137.79v-79.864h146.1c8.729 0 17.101 3.468 23.274 9.6398l60.584 60.584c6.172 6.1719 9.64 14.545 9.64 23.274v146.1zm-119.8-119.8h79.865v79.865h-79.865zm-39.932 97.855v-137.79h-79.865v146.1c0 8.73 3.468 17.101 9.6402 23.274l60.584 60.584c6.1727 6.172 14.544 9.64 23.273 9.64h146.1v-79.864h-137.79c-12.118 0-21.942-9.824-21.942-21.943" clip-path="url(#b)" fill="url(#a)"/><path d="m1317.4 181.22c21.006 0 34.406 10.392 34.406 17.545h36.052c0-29.951-30.946-53.412-70.458-53.412-39.514 0-70.464 23.461-70.464 53.412 0 44.508 46.035 50.421 68.154 53.261 36.715 4.7186 36.715 11.02 36.715 17.693 0 7.1518-13.4 17.545-34.406 17.545-21.007 0-34.408-10.393-34.408-17.545h-36.055c0 29.951 30.95 53.412 70.464 53.412 39.512 0 70.458-23.461 70.458-53.412 0-44.506-46.026-50.421-68.148-53.267-36.719-4.7132-36.719-11.016-36.719-17.688 0-7.1532 13.401-17.545 34.408-17.545zm254.85 118.48-119.77-151.45h-13.386v171.21h12.706v-151.44l119.78 151.44h13.373v-171.21h-12.706zm50.319 19.768h12.706v-77.187h80.211v-12.173h-80.211v-69.674h102.93v-12.18h-115.64zm253.87-89.596c-6.7332-28.401-32.066-49.532-62.358-49.532-30.292 0-55.612 21.137-62.372 49.532zm13.386 12.293h-139.81c-0.04 0.92531-0.1333 1.8346-0.1333 2.7693 0 35.674 28.746 64.593 64.198 64.593 21.573 0 40.612-10.735 52.252-27.145l10.88 4.8986c-13.613 20.491-36.799 33.996-63.132 33.996-41.906 0-75.878-34.18-75.878-76.343 0-42.163 33.972-76.342 75.878-76.342 40.986 0 74.292 32.705 75.745 73.573zm-1314.7-93.911h105.49v-41.532h-148.1v212.55h42.623v-69.886h81.45v-41.532h-81.45zm246.07 85.986c0-28.555-23.149-51.704-51.704-51.704-28.555 0-51.704 23.149-51.704 51.704 0 28.555 23.149 51.704 51.704 51.704 28.555 0 51.704-23.149 51.704-51.704zm37.186 0c0 49.092-39.798 88.89-88.89 88.89-49.092 0-88.89-39.798-88.89-88.89 0-49.092 39.798-88.888 88.89-88.888 49.092 0 88.89 39.796 88.89 88.888zm113.13-51.704c18.118 0 34.032 9.3358 43.266 23.441l29.457-22.753c-16.081-22.882-42.631-37.872-72.722-37.872-49.092 0-88.89 39.796-88.89 88.888 0 49.092 39.798 88.89 88.89 88.89 30.091 0 56.641-14.992 72.722-37.872l-29.457-22.754c-9.2331 14.105-25.147 23.441-43.266 23.441-28.557 0-51.703-23.149-51.703-51.704 0-28.555 23.146-51.704 51.703-51.704zm212.46-33.859h36.25v98.919c0 41.716-33.819 75.534-75.534 75.534-41.716 0-75.534-33.818-75.534-75.534v-98.919h36.248v98.542c0 21.695 17.589 39.284 39.286 39.284 21.695 0 39.284-17.589 39.284-39.284v-98.542" fill="#1e2324" stroke-width="1.3333"/></svg></svg>
+category: fiscal
+author: Heddle
+homepage: https://focusnfe.com.br/doc/
+base_url: "{{credential.url}}/v2/"
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Focus NFe
+  fields:
+    - {name: token, label: Token, secret: true, required: true}
+    - {name: url, label: API address, default: "https://api.focusnfe.com.br", description: "https://homologacao.focusnfe.com.br for homologation."}
+  auth:
+    type: basic
+    username: "{{credential.token}}"
+    password: ""
+
+errors:
+  message_path: mensagem
+
+triggers:
+  - name: Invoice Event
+    description: Starts the flow when an invoice of a company is authorized, denied or canceled.
+    fields:
+      - {name: cnpj, label: Company CNPJ, required: true, description: Only digits.}
+      - name: event
+        label: Invoice type
+        type: select
+        required: true
+        default: nfe
+        options:
+          - {label: NF-e, value: nfe}
+          - {label: NFC-e, value: nfce}
+          - {label: NFS-e, value: nfse}
+          - {label: NFS-e Nacional, value: nfsen}
+          - {label: CT-e, value: cte}
+          - {label: MDF-e, value: mdfe}
+          - {label: NF-e received, value: nfe_recebida}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: hooks
+          body: {cnpj: "{{fields.cnpj}}", event: "{{fields.event}}", url: "{{webhook.url}}", authorization: "{{webhook.secret}}", authorization_header: X-Heddle-Token}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "hooks/{{webhook.id}}"}
+      signature: {header: X-Heddle-Token, token: "{{webhook.secret}}"}
+
+actions:
+  # NF-e
+  - name: Issue NF-e
+    resource: NF-e
+    description: Sends an NF-e for authorization, in Focus NFe's format.
+    fields:
+      - {name: ref, label: Your reference, required: true, description: "Like pedido-123"}
+      - {name: nfe, label: Invoice, type: json, required: true, description: 'Like {"natureza_operacao": "Venda", "cnpj_emitente": "...", "nome_destinatario": "...", "items": [...]}'}
+    request:
+      method: POST
+      path: nfe
+      query: {ref: "{{fields.ref}}"}
+      body: {_merge: "{{fields.nfe}}"}
+
+  - name: Get NF-e
+    resource: NF-e
+    description: Reads an NF-e, with its status, key and links to the XML and DANFE.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: completa, label: With the whole invoice, type: boolean, default: false}
+    request:
+      method: GET
+      path: "nfe/{{fields.ref}}"
+      query: {completa: "{{fields.completa}}"}
+
+  - name: Cancel NF-e
+    resource: NF-e
+    description: Cancels an authorized NF-e, within the deadline.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: justificativa, label: Reason, required: true, description: 15 to 255 characters.}
+    request:
+      method: DELETE
+      path: "nfe/{{fields.ref}}"
+      body: {justificativa: "{{fields.justificativa}}"}
+
+  - name: Correct NF-e
+    resource: NF-e
+    description: Sends a correction letter (CC-e) for an NF-e.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: correcao, label: Correction, type: textarea, required: true, description: 15 to 1000 characters.}
+    request:
+      method: POST
+      path: "nfe/{{fields.ref}}/carta_correcao"
+      body: {correcao: "{{fields.correcao}}"}
+
+  - name: Email NF-e
+    resource: NF-e
+    description: Emails an NF-e's XML and DANFE.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: emails, label: Emails, type: json, required: true, description: 'Like ["ana@x.com"]'}
+    request:
+      method: POST
+      path: "nfe/{{fields.ref}}/email"
+      body: {emails: "{{fields.emails}}"}
+
+  - name: Void Numbers
+    resource: NF-e
+    description: Voids (inutiliza) a range of NF-e numbers that weren't used.
+    fields:
+      - {name: cnpj, label: Company CNPJ, required: true}
+      - {name: serie, label: Series, required: true}
+      - {name: numero_inicial, label: From number, required: true}
+      - {name: numero_final, label: To number, required: true}
+      - {name: justificativa, label: Reason, required: true}
+    request:
+      method: POST
+      path: nfe/inutilizacao
+      body: {cnpj: "{{fields.cnpj}}", serie: "{{fields.serie}}", numero_inicial: "{{fields.numero_inicial}}", numero_final: "{{fields.numero_final}}", justificativa: "{{fields.justificativa}}"}
+
+  # NFC-e
+  - name: Issue NFC-e
+    resource: NFC-e
+    description: Issues a consumer invoice (NFC-e), in Focus NFe's format. It's authorized right away.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: nfce, label: Invoice, type: json, required: true}
+    request:
+      method: POST
+      path: nfce
+      query: {ref: "{{fields.ref}}"}
+      body: {_merge: "{{fields.nfce}}"}
+
+  - name: Get NFC-e
+    resource: NFC-e
+    description: Reads an NFC-e.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+    request: {method: GET, path: "nfce/{{fields.ref}}"}
+
+  - name: Cancel NFC-e
+    resource: NFC-e
+    description: Cancels an NFC-e.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: justificativa, label: Reason, required: true}
+    request:
+      method: DELETE
+      path: "nfce/{{fields.ref}}"
+      body: {justificativa: "{{fields.justificativa}}"}
+
+  # NFS-e
+  - name: Issue NFS-e
+    resource: NFS-e
+    description: Sends a service invoice (NFS-e) to the city hall, in Focus NFe's format.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: nfse, label: Invoice, type: json, required: true, description: 'Like {"data_emissao": "...", "prestador": {...}, "tomador": {...}, "servico": {...}}'}
+    request:
+      method: POST
+      path: nfse
+      query: {ref: "{{fields.ref}}"}
+      body: {_merge: "{{fields.nfse}}"}
+
+  - name: Get NFS-e
+    resource: NFS-e
+    description: Reads an NFS-e, with its status and links.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+    request: {method: GET, path: "nfse/{{fields.ref}}"}
+
+  - name: Cancel NFS-e
+    resource: NFS-e
+    description: Cancels an NFS-e.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: justificativa, label: Reason, required: true}
+    request:
+      method: DELETE
+      path: "nfse/{{fields.ref}}"
+      body: {justificativa: "{{fields.justificativa}}"}
+
+  - name: Email NFS-e
+    resource: NFS-e
+    description: Emails an NFS-e.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: emails, label: Emails, type: json, required: true}
+    request:
+      method: POST
+      path: "nfse/{{fields.ref}}/email"
+      body: {emails: "{{fields.emails}}"}
+
+  - name: Issue NFS-e Nacional
+    resource: NFS-e
+    description: Sends a service invoice through the national standard (NFS-e Nacional).
+    fields:
+      - {name: ref, label: Your reference, required: true}
+      - {name: nfsen, label: Invoice, type: json, required: true}
+    request:
+      method: POST
+      path: nfsen
+      query: {ref: "{{fields.ref}}"}
+      body: {_merge: "{{fields.nfsen}}"}
+
+  - name: Get NFS-e Nacional
+    resource: NFS-e
+    description: Reads an NFS-e Nacional.
+    fields:
+      - {name: ref, label: Your reference, required: true}
+    request: {method: GET, path: "nfsen/{{fields.ref}}"}
+
+  # Lookups
+  - name: Look Up CNPJ
+    resource: Lookup
+    description: Reads a company's registration by CNPJ.
+    fields:
+      - {name: cnpj, label: CNPJ, required: true, description: Only digits.}
+    request: {method: GET, path: "cnpjs/{{fields.cnpj}}"}
+
+  - name: Look Up CEP
+    resource: Lookup
+    description: Reads an address by CEP.
+    fields:
+      - {name: cep, label: CEP, required: true, description: Only digits.}
+    request: {method: GET, path: "ceps/{{fields.cep}}"}
+
+  - name: Look Up NCM
+    resource: Lookup
+    description: Finds NCM codes by code or description.
+    fields:
+      - {name: codigo, label: Code}
+      - {name: descricao, label: Description}
+    request:
+      method: GET
+      path: ncms
+      query: {codigo: "{{fields.codigo}}", descricao: "{{fields.descricao}}"}
+
+  - name: Look Up CFOP
+    resource: Lookup
+    description: Finds CFOP codes by code or description.
+    fields:
+      - {name: codigo, label: Code}
+      - {name: descricao, label: Description}
+    request:
+      method: GET
+      path: cfops
+      query: {codigo: "{{fields.codigo}}", descricao: "{{fields.descricao}}"}
+
+i18n:
+  pt-BR:
+    description: "Emita, consulte, cancele e envie por e-mail NF-e, NFC-e e NFS-e pela Focus NFe, e consulte CNPJ, CEP e NCM."
+    triggers:
+      Invoice Event: {name: "Evento de nota", description: "Inicia o fluxo quando uma nota de uma empresa é autorizada, negada ou cancelada.", fields: {cnpj: "CNPJ da empresa", event: "Tipo de nota"}}
+    actions:
+      Issue NF-e: {name: "Emitir NF-e", description: "Envia uma NF-e para autorização, no formato da Focus NFe.", fields: {ref: "Sua referência", nfe: "Nota"}}
+      Get NF-e: {name: "Consultar NF-e", description: "Lê uma NF-e, com status, chave e links do XML e da DANFE.", fields: {ref: "Sua referência", completa: "Com a nota inteira"}}
+      Cancel NF-e: {name: "Cancelar NF-e", description: "Cancela uma NF-e autorizada, dentro do prazo.", fields: {ref: "Sua referência", justificativa: "Justificativa"}}
+      Correct NF-e: {name: "Carta de correção", description: "Envia uma carta de correção (CC-e) para uma NF-e.", fields: {ref: "Sua referência", correcao: "Correção"}}
+      Email NF-e: {name: "Enviar NF-e por e-mail", description: "Envia por e-mail o XML e a DANFE de uma NF-e.", fields: {ref: "Sua referência", emails: "E-mails"}}
+      Void Numbers: {name: "Inutilizar numeração", description: "Inutiliza uma faixa de números de NF-e não usados.", fields: {cnpj: "CNPJ da empresa", serie: "Série", numero_inicial: "Do número", numero_final: "Até o número", justificativa: "Justificativa"}}
+      Issue NFC-e: {name: "Emitir NFC-e", description: "Emite uma nota de consumidor (NFC-e), no formato da Focus NFe. É autorizada na hora.", fields: {ref: "Sua referência", nfce: "Nota"}}
+      Get NFC-e: {name: "Consultar NFC-e", description: "Lê uma NFC-e.", fields: {ref: "Sua referência"}}
+      Cancel NFC-e: {name: "Cancelar NFC-e", description: "Cancela uma NFC-e.", fields: {ref: "Sua referência", justificativa: "Justificativa"}}
+      Issue NFS-e: {name: "Emitir NFS-e", description: "Envia uma nota de serviço (NFS-e) à prefeitura, no formato da Focus NFe.", fields: {ref: "Sua referência", nfse: "Nota"}}
+      Get NFS-e: {name: "Consultar NFS-e", description: "Lê uma NFS-e, com status e links.", fields: {ref: "Sua referência"}}
+      Cancel NFS-e: {name: "Cancelar NFS-e", description: "Cancela uma NFS-e.", fields: {ref: "Sua referência", justificativa: "Justificativa"}}
+      Email NFS-e: {name: "Enviar NFS-e por e-mail", description: "Envia uma NFS-e por e-mail.", fields: {ref: "Sua referência", emails: "E-mails"}}
+      Issue NFS-e Nacional: {name: "Emitir NFS-e Nacional", description: "Envia uma nota de serviço pelo padrão nacional (NFS-e Nacional).", fields: {ref: "Sua referência", nfsen: "Nota"}}
+      Get NFS-e Nacional: {name: "Consultar NFS-e Nacional", description: "Lê uma NFS-e Nacional.", fields: {ref: "Sua referência"}}
+      Look Up CNPJ: {name: "Consultar CNPJ", description: "Lê o cadastro de uma empresa pelo CNPJ.", fields: {cnpj: "CNPJ"}}
+      Look Up CEP: {name: "Consultar CEP", description: "Lê um endereço pelo CEP.", fields: {cep: "CEP"}}
+      Look Up NCM: {name: "Consultar NCM", description: "Busca códigos NCM por código ou descrição.", fields: {codigo: "Código", descricao: "Descrição"}}
+      Look Up CFOP: {name: "Consultar CFOP", description: "Busca códigos CFOP por código ou descrição.", fields: {codigo: "Código", descricao: "Descrição"}}

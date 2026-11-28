@@ -112,7 +112,7 @@ integrations:
   - {id: enotas, name: eNotas, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
   - {id: erede, name: e.Rede, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
   - {id: evolution_api, name: Evolution API, category: messaging, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: planned}
-  - {id: focus_nfe, name: Focus NFe, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: planned}
+  - {id: focus_nfe, name: Focus NFe, category: fiscal, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
   - {id: frenet, name: Frenet, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: getnet, name: Getnet, category: payments, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
   - {id: gupy, name: Gupy, category: hr, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
@@ -145,7 +145,7 @@ integrations:
   - {id: pipefy, name: Pipefy, category: project, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: piperun, name: PipeRun, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: ploomes, name: Ploomes, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
-  - {id: plugnotas, name: PlugNotas (TecnoSpeed), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: plugnotas, name: PlugNotas (TecnoSpeed), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: rd_station_crm, name: RD Station CRM, category: crm, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
   - {id: rd_station_marketing, name: RD Station Marketing, category: marketing, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: receitaws, name: ReceitaWS, category: data, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
