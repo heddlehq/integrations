@@ -45,8 +45,11 @@ credential = Map.new(integration.credential.fields, &{&1.name, cred_sample.(&1)}
 
 plug = fn conn ->
   {:ok, body, conn} = Plug.Conn.read_body(conn)
-  send(self(), {:req, conn.method, conn.request_path, conn.query_string, body})
-  conn |> Plug.Conn.put_resp_content_type("application/json") |> Plug.Conn.send_resp(200, "{}")
+  unless conn.request_path =~ ~r/token|login|auth/ and conn.method == "POST" and conn.host =~ ~r/sec|auth|login|oauth|identity/,
+    do: send(self(), {:req, conn.method, conn.request_path, conn.query_string, body})
+  # Logins and client credentials get a token back, so the action after them runs.
+  reply = if conn.request_path =~ ~r/token|login|auth/, do: ~s({"access_token": "tok", "token": "tok", "expires_in": 3600}), else: "{}"
+  conn |> Plug.Conn.put_resp_content_type("application/json") |> Plug.Conn.send_resp(200, reply)
 end
 
 problems =
