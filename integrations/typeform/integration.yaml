@@ -1,0 +1,206 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Typeform, through the Create, Responses and Webhooks APIs. Connect with a personal
+# access token from Typeform's Account › Personal tokens, with the scopes forms,
+# responses, webhooks, workspaces and accounts. Accounts in the EU data center use
+# https://api.eu.typeform.com.
+id: typeform
+name: Typeform
+version: 1.0.0
+description: Forms and their answers in Typeform.
+icon: hero-clipboard-document-list
+logo: |
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#262627" d="M15.502 13.035c-.5 0-.756-.411-.756-.917c0-.505.252-.894.756-.894c.513 0 .756.407.756.894c-.004.515-.261.917-.756.917m-4.888-1.81c.292 0 .414.17.414.317c0 .357-.365.514-1.126.536c0-.442.253-.854.712-.854Zm-3.241 1.81c-.473 0-.67-.384-.67-.917c0-.527.202-.894.67-.894c.477 0 .702.38.702.894c0 .537-.234.917-.702.917m-3.997-2.334h-.738l1.224 2.808c-.234.519-.36.648-.522.648c-.171 0-.333-.138-.45-.259l-.324.43c.22.232.522.366.832.366c.387 0 .685-.224.856-.626l1.413-3.371h-.725l-.738 2.012zm19.553.523c.36 0 .432.246.432.823v1.516H24v-1.914c0-.689-.473-.988-.91-.988c-.386 0-.742.241-.94.688a.9.9 0 0 0-.891-.688c-.365 0-.73.232-.927.666v-.626h-.64v2.857h.64v-1.22c0-.617.324-1.114.765-1.114c.36 0 .427.246.427.823v1.516h.64l-.005-1.225c0-.617.329-1.114.77-1.114m-5.1-.523h-.324v2.857h.639v-1.095c0-.693.306-1.163.76-1.163c.118 0 .217.005.325.05l.099-.676c-.081-.009-.153-.018-.225-.018c-.45 0-.774.309-.964.707V10.7h-.31Zm-2.327-.045c-.846 0-1.418.644-1.418 1.458c0 .845.58 1.475 1.418 1.475c.85 0 1.431-.648 1.431-1.475c-.004-.818-.594-1.458-1.431-1.458m-4.852 2.38c-.333 0-.581-.17-.685-.515c.847-.036 1.675-.242 1.675-.988c0-.43-.423-.872-1.03-.872c-.82 0-1.374.666-1.374 1.457c0 .828.545 1.476 1.36 1.476c.567 0 .927-.228 1.21-.559l-.31-.42c-.329.335-.531.42-.846.42Zm-3.151-2.38c-.324 0-.648.188-.774.483v-.438h-.64v3.98h.64v-1.422c.135.205.445.34.72.34c.85 0 1.3-.631 1.3-1.48c-.004-.841-.445-1.463-1.246-1.463m-4.483-1.1H0v.622h1.18v3.38h.67v-3.38h1.166zm9.502 1.145h-.383v.572h.383v2.285h.639v-2.285h.621v-.572h-.621v-.447c0-.286.117-.385.382-.385c.1 0 .19.027.311.068l.144-.537c-.117-.067-.351-.094-.504-.094c-.612 0-.972.367-.972 1.002z"/></svg>
+category: forms
+author: Heddle
+homepage: https://www.typeform.com/developers/
+base_url: "{{credential.url}}/"
+
+credential:
+  label: Typeform
+  fields:
+    - {name: token, label: Personal access token, secret: true, required: true}
+    - {name: url, label: API address, default: "https://api.typeform.com", description: "https://api.eu.typeform.com for accounts in the EU."}
+  auth:
+    type: bearer
+    token: "{{credential.token}}"
+
+errors:
+  message_path: description
+
+triggers:
+  - name: New Response
+    description: Starts the flow each time someone submits a form.
+    fields:
+      - name: form
+        label: Form
+        type: select
+        required: true
+        options_from: {request: {method: GET, path: forms, query: {page_size: 200}}, path: items, label: title, value: id}
+    webhook:
+      register:
+        request:
+          method: PUT
+          path: "forms/{{fields.form}}/webhooks/heddle-{{webhook.url | name}}"
+          body: {url: "{{webhook.url}}", enabled: true, secret: "{{webhook.secret}}", verify_ssl: true}
+        id_path: tag
+      unregister:
+        request: {method: DELETE, path: "forms/{{fields.form}}/webhooks/{{webhook.id}}"}
+      signature:
+        header: Typeform-Signature
+        prefix: "sha256="
+        encoding: base64
+        secret: "{{webhook.secret}}"
+      output:
+        path: form_response
+
+actions:
+  # Forms
+  - name: List Forms
+    resource: Form
+    description: Lists the forms, optionally of one workspace or with some text in the title.
+    fields:
+      - {name: search, label: Title has}
+      - {name: workspace, label: Workspace ID}
+    request:
+      method: GET
+      path: forms
+      query: {search: "{{fields.search}}", workspace_id: "{{fields.workspace}}"}
+    pagination: {type: page, items_path: items, page_param: page, limit_param: page_size, page_size: 200}
+
+  - name: Get Form
+    resource: Form
+    description: Reads a form, with its questions, logic and settings.
+    fields:
+      - {name: form, label: Form ID, required: true}
+    request: {method: GET, path: "forms/{{fields.form}}"}
+
+  - name: Create Form
+    resource: Form
+    description: Creates a form from its definition in Typeform's JSON.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: fields, label: Questions, type: json, description: 'A list like [{"title": "Your name?", "type": "short_text"}]'}
+      - {name: workspace, label: Workspace URL, description: "Like https://api.typeform.com/workspaces/abc"}
+      - {name: extra, label: More settings, type: json, description: "Any other key of a form, like settings or logic."}
+    request:
+      method: POST
+      path: forms
+      body:
+        title: "{{fields.title}}"
+        fields: "{{fields.fields}}"
+        workspace: {href: "{{fields.workspace}}"}
+        _merge: "{{fields.extra}}"
+
+  - name: Update Form
+    resource: Form
+    description: Replaces a form with a new definition. Questions left out are removed.
+    fields:
+      - {name: form, label: Form ID, required: true}
+      - {name: definition, label: Definition, type: json, required: true, description: "The whole form, as Get Form returns it."}
+    request:
+      method: PUT
+      path: "forms/{{fields.form}}"
+      body: "{{fields.definition}}"
+
+  - name: Delete Form
+    resource: Form
+    description: Deletes a form and all its responses.
+    fields:
+      - {name: form, label: Form ID, required: true}
+    request: {method: DELETE, path: "forms/{{fields.form}}"}
+    output:
+      value: {id: "{{fields.form}}", deleted: true}
+
+  # Responses
+  - name: List Responses
+    resource: Response
+    description: Lists the responses of a form, newest first, up to 1,000.
+    fields:
+      - {name: form, label: Form ID, required: true}
+      - {name: since, label: Since, type: datetime}
+      - {name: until, label: Until, type: datetime}
+      - {name: query, label: Answers have}
+      - {name: completed, label: Which, type: select, options: [{label: Submitted, value: "true"}, {label: Started but not submitted, value: "false"}]}
+      - {name: limit, label: Up to, type: number, default: 1000}
+    request:
+      method: GET
+      path: "forms/{{fields.form}}/responses"
+      query:
+        since: "{{fields.since}}"
+        until: "{{fields.until}}"
+        query: "{{fields.query}}"
+        completed: "{{fields.completed}}"
+        page_size: "{{fields.limit}}"
+    output: {path: items}
+
+  - name: Delete Responses
+    resource: Response
+    description: Deletes some responses of a form.
+    fields:
+      - {name: form, label: Form ID, required: true}
+      - {name: ids, label: Response IDs, required: true, description: "Like abc123, def456"}
+    request:
+      method: DELETE
+      path: "forms/{{fields.form}}/responses"
+      query: {included_response_ids: "{{fields.ids}}"}
+    output:
+      value: {deleted: true}
+
+  - name: Get Insights
+    resource: Response
+    description: Reads how a form performs, with views, starts and completion rate.
+    fields:
+      - {name: form, label: Form ID, required: true}
+    request: {method: GET, path: "insights/{{fields.form}}/summary"}
+
+  # Workspaces
+  - name: List Workspaces
+    resource: Workspace
+    description: Lists the workspaces.
+    request: {method: GET, path: workspaces}
+    pagination: {type: page, items_path: items, page_param: page, limit_param: page_size, page_size: 200}
+
+  - name: Create Workspace
+    resource: Workspace
+    description: Creates a workspace.
+    fields:
+      - {name: name, label: Name, required: true}
+    request:
+      method: POST
+      path: workspaces
+      body: {name: "{{fields.name}}"}
+
+  - name: Delete Workspace
+    resource: Workspace
+    description: Deletes a workspace and its forms.
+    fields:
+      - {name: workspace, label: Workspace ID, required: true}
+    request: {method: DELETE, path: "workspaces/{{fields.workspace}}"}
+    output:
+      value: {id: "{{fields.workspace}}", deleted: true}
+
+  # Account
+  - name: Get Account
+    resource: Account
+    description: Reads the connected account.
+    request: {method: GET, path: me}
+
+i18n:
+  pt-BR:
+    description: Formulários e respostas no Typeform.
+    triggers:
+      New Response: {name: Nova resposta, description: Inicia o fluxo toda vez que alguém envia um formulário., fields: {form: Formulário}}
+    actions:
+      List Forms: {name: Listar formulários, description: "Lista os formulários, de um workspace ou com um texto no título.", fields: {search: Título contém, workspace: ID do workspace}}
+      Get Form: {name: Ler formulário, description: "Lê um formulário, com as perguntas, a lógica e os ajustes.", fields: {form: ID do formulário}}
+      Create Form: {name: Criar formulário, description: Cria um formulário a partir da definição em JSON do Typeform., fields: {title: Título, fields: Perguntas, workspace: URL do workspace, extra: Mais ajustes}}
+      Update Form: {name: Atualizar formulário, description: Troca um formulário por uma nova definição. Perguntas que ficarem de fora são removidas., fields: {form: ID do formulário, definition: Definição}}
+      Delete Form: {name: Excluir formulário, description: Exclui um formulário e todas as respostas., fields: {form: ID do formulário}}
+      List Responses: {name: Listar respostas, description: "Lista as respostas de um formulário, das mais novas, até 1.000.", fields: {form: ID do formulário, since: Desde, until: Até, query: Respostas contêm, completed: Quais, limit: Até}}
+      Delete Responses: {name: Excluir respostas, description: Exclui respostas de um formulário., fields: {form: ID do formulário, ids: IDs das respostas}}
+      Get Insights: {name: Ler desempenho, description: "Lê como um formulário vai, com visualizações, inícios e taxa de conclusão.", fields: {form: ID do formulário}}
+      List Workspaces: {name: Listar workspaces, description: Lista os workspaces.}
+      Create Workspace: {name: Criar workspace, description: Cria um workspace., fields: {name: Nome}}
+      Delete Workspace: {name: Excluir workspace, description: Exclui um workspace e os formulários dele., fields: {workspace: ID do workspace}}
+      Get Account: {name: Ler conta, description: Lê a conta conectada.}
