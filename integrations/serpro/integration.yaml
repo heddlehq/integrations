@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Serpro's APIs on its gateway, with the Consumer Key and Consumer Secret of the
+# contract in Área do Cliente; the token comes by client credentials. Each query is
+# billed by Serpro. CPF and CNPJ go as digits only.
+id: serpro
+name: Serpro
+version: 1.0.0
+homepage: https://apicenter.estaleiro.serpro.gov.br/documentacao/
+description: Query the Receita Federal's CPF and CNPJ records and NF-e invoices through Serpro's official APIs.
+icon: hero-identification
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.06" width="18.00" height="17.89" viewBox="0 0 160 159"><defs> <linearGradient id="serpro_b" x1="63.5516" x2="88.239" y1="34.6256" y2="120.2024" gradientUnits="userSpaceOnUse"> <stop stop-color="#003da5" offset="0"/> <stop stop-color="#0440a6" stop-opacity=".98" offset=".1"/> <stop stop-color="#134bab" stop-opacity=".92" offset=".23"/> <stop stop-color="#2b5eb4" stop-opacity=".83" offset=".36"/> <stop stop-color="#4c77bf" stop-opacity=".69" offset=".5"/> <stop stop-color="#7898cf" stop-opacity=".53" offset=".65"/> <stop stop-color="#acc0e1" stop-opacity=".32" offset=".8"/> <stop stop-color="#e9eef6" stop-opacity=".08" offset=".95"/> <stop stop-color="#fefefe" stop-opacity="0" offset="1"/> </linearGradient> <linearGradient id="serpro_a" x1="94.8466" x2="70.1678" y1="124.3776" y2="38.7922" gradientUnits="userSpaceOnUse"> <stop stop-color="#003da5" offset="0"/> <stop stop-color="#0440a6" stop-opacity=".98" offset=".1"/> <stop stop-color="#134bab" stop-opacity=".92" offset=".23"/> <stop stop-color="#2b5eb4" stop-opacity=".83" offset=".36"/> <stop stop-color="#4c77bf" stop-opacity=".69" offset=".5"/> <stop stop-color="#7898cf" stop-opacity=".53" offset=".65"/> <stop stop-color="#acc0e1" stop-opacity=".32" offset=".8"/> <stop stop-color="#e9eef6" stop-opacity=".08" offset=".95"/> <stop stop-color="#fefefe" stop-opacity="0" offset="1"/> </linearGradient> </defs> <path d="m216.09 118.12c17.793 0 27.992-9.4392 27.992-22.784 0-13.344-10.416-18.553-25.93-22.024-11.826-2.712-17.36-4.8829-17.36-10.958 0-5.2075 5.0993-9.7648 12.586-9.7648s14.863 3.1467 21.373 8.7881l7.3775-9.9812c-7.4866-6.4007-16.382-10.415-28.209-10.415-15.732 0-26.799 9.5474-26.799 22.567 0 13.997 10.742 18.445 26.148 22.024 11.935 2.8211 17.251 4.8819 17.251 11.067 0 5.3157-4.7728 9.8721-13.996 9.8721-9.7639 0-17.684-3.9061-24.52-10.089l-7.8113 9.6556c8.2451 7.7031 19.095 12.043 31.897 12.043m60.08-11.61c-8.0287 0-13.887-5.4249-15.515-13.128h42.312c0-20.723-10.089-33.85-27.448-33.85-15.949 0-28.534 12.369-28.534 29.185 0 16.817 13.236 29.511 29.294 29.511 8.1369 0 17.902-3.4714 22.784-8.6798l-8.3543-8.6798c-3.1467 3.2549-9.331 5.6423-14.538 5.6423zm-0.10821-35.26c7.9204 0 12.693 4.9911 14.213 12.043h-29.511c1.9526-7.3775 7.9204-12.043 15.298-12.043zm44.557 0.4338v-10.849h-13.236v56.091h13.236v-28.317c0-10.632 8.0287-17.793 20.072-17.793v-11.284c-9.2228 0-16.491 4.6655-20.072 12.151zm56.836-12.151c-8.3542 0-15.081 3.797-19.529 10.199v-8.8963h-13.236v74.753h13.236v-27.557c4.4481 6.4017 11.174 10.199 19.529 10.199 14.864 0 25.713-12.151 25.713-29.402 0-17.251-10.849-29.294-25.713-29.294zm-3.5805 47.412c-9.331 0-15.84-7.5949-15.84-18.118 0-10.523 6.5099-18.01 15.84-18.01s16.166 7.4866 16.166 18.01c0 10.523-6.7273 18.118-16.166 18.118zm46.586-35.26v-10.849h-13.236v56.091h13.236v-28.317c0-10.632 8.0287-17.793 20.072-17.793v-11.284c-9.2228 0-16.491 4.6655-20.072 12.151zm49.491 46.544c16.275 0 30.053-13.454 30.053-29.402 0-15.948-13.778-29.294-30.053-29.294s-30.052 13.344-30.052 29.294c0 15.949 13.778 29.402 30.052 29.402zm0-11.284c-9.331 0-17.142-8.246-17.142-18.118 0-9.8721 7.8113-18.01 17.142-18.01s17.034 8.2451 17.034 18.01c0 9.7648-7.8122 18.118-17.034 18.118z" fill="#0033a0"/> <path d="m97.537 118.81c-16.814-2.2514-32.163-12.76-39.864-29.275-7.7012-16.515-5.8855-35.028 3.1965-49.356 5.0859-8.0229 12.451-14.734 21.7-19.046 24.008-11.196 52.236-2.2753 65.693 19.84 0.0479 0.07852 0.13599 0.0316 0.10438-0.04118-20.011-35.977-64.737-50.875-102.63-33.205-39.636 18.483-56.785 65.598-38.302 105.23 12.014 25.764 42.639 36.911 68.403 24.897 9.2477-4.3131 16.613-11.023 21.699-19.047" fill="url(#serpro_b)"/> <path d="m60.868 40.188c16.813 2.2514 32.162 12.76 39.864 29.275 7.7012 16.516 5.8855 35.028-3.1975 49.356-5.0859 8.0239-12.451 14.734-21.7 19.046-24.008 11.196-52.236 2.2753-65.693-19.841-0.04788-0.0785-0.13598-0.0316-0.10342 0.0412 20.011 35.977 64.736 50.875 102.63 33.205 39.636-18.483 56.785-65.598 38.302-105.23-12.013-25.764-42.639-36.911-68.403-24.896-9.2477 4.3122-16.613 11.023-21.699 19.046" fill="url(#serpro_a)"/></svg></svg>
+category: data
+base_url: https://gateway.apiserpro.serpro.gov.br/
+
+credential:
+  label: Serpro
+  fields:
+    - {name: consumer_key, label: Consumer Key, required: true, description: "From cliente.serpro.gov.br, in the contract's credentials."}
+    - {name: consumer_secret, label: Consumer Secret, secret: true, required: true}
+  auth:
+    type: client_credentials
+    token_url: https://gateway.apiserpro.serpro.gov.br/token
+    client_id: "{{credential.consumer_key}}"
+    client_secret: "{{credential.consumer_secret}}"
+
+errors:
+  message_path: message
+
+actions:
+  - name: Consult CPF
+    resource: CPF
+    description: Reads a person's record at the Receita Federal, with name, status, birth date and death year.
+    fields:
+      - {name: cpf, label: CPF, required: true, description: "11 digits, without dots or dash."}
+    request: {method: GET, path: "consulta-cpf-df/v2/cpf/{{fields.cpf}}"}
+
+  - name: Consult CNPJ
+    resource: CNPJ
+    description: Reads a company's basic record at the Receita Federal, with name, status, address and activities.
+    fields:
+      - {name: cnpj, label: CNPJ, required: true, description: "14 digits, without dots, slash or dash."}
+    request: {method: GET, path: "consulta-cnpj-df/v2/basica/{{fields.cnpj}}"}
+
+  - name: Consult CNPJ With Partners
+    resource: CNPJ
+    description: Reads a company's record with its partners and administrators (QSA), their CPFs masked.
+    fields:
+      - {name: cnpj, label: CNPJ, required: true, description: "14 digits."}
+    request: {method: GET, path: "consulta-cnpj-df/v2/qsa/{{fields.cnpj}}"}
+
+  - name: Consult Company
+    resource: CNPJ
+    description: Reads a company's full record, with partners and their CPFs, for contracts that allow it.
+    fields:
+      - {name: cnpj, label: CNPJ, required: true, description: "14 digits."}
+    request: {method: GET, path: "consulta-cnpj-df/v2/empresa/{{fields.cnpj}}"}
+
+  - name: Consult NF-e
+    resource: NF-e
+    description: Reads an NF-e as the Receita Federal keeps it, with issuer, recipient, items, taxes and events.
+    fields:
+      - {name: key, label: Access key, required: true, description: "The 44 digits of the NF-e's key."}
+    request: {method: GET, path: "consulta-nfe-df/api/v1/nfe/{{fields.key}}"}
+
+i18n:
+  pt-BR:
+    description: "Consulte CPF, CNPJ e NF-e na Receita Federal pelas APIs oficiais do Serpro."
+    actions:
+      Consult CPF: {name: "Consultar CPF", description: "Lê o cadastro de uma pessoa na Receita Federal, com nome, situação, data de nascimento e ano de óbito.", fields: {cpf: "CPF"}}
+      Consult CNPJ: {name: "Consultar CNPJ", description: "Lê o cadastro básico de uma empresa na Receita Federal, com razão social, situação, endereço e atividades.", fields: {cnpj: "CNPJ"}}
+      Consult CNPJ With Partners: {name: "Consultar CNPJ com sócios", description: "Lê o cadastro de uma empresa com o quadro de sócios e administradores (QSA), com CPFs mascarados.", fields: {cnpj: "CNPJ"}}
+      Consult Company: {name: "Consultar empresa", description: "Lê o cadastro completo de uma empresa, com sócios e seus CPFs, nos contratos que permitem.", fields: {cnpj: "CNPJ"}}
+      Consult NF-e: {name: "Consultar NF-e", description: "Lê uma NF-e como a Receita Federal guarda, com emitente, destinatário, itens, impostos e eventos.", fields: {key: "Chave de acesso"}}

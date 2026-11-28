@@ -1,0 +1,319 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Banco do Brasil's APIs from developers.bb.com.br: Pix (the Central Bank's standard
+# API, at api-pix) and Cobrança v2 (boletos). The token comes by client credentials and
+# every call carries the app's developer key (gw-dev-app-key). In production the Pix API
+# takes the client certificate of the app (mTLS); Cobrança and the homologation
+# environment take none, so the certificate may stay empty.
+id: banco_do_brasil
+name: Banco do Brasil
+version: 1.0.0
+homepage: https://developers.bb.com.br
+description: Make and read Pix charges, read and refund received Pix, and register, read and write off boletos at Banco do Brasil.
+icon: hero-building-library
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FDE100"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="328.5 464.85 15 15"><path fill="#003882" d="m 329.75202,470.27969 2.59766,1.7334 3.12011,-2.08008 -1.29882,-0.86915 1.68945,-1.12304 3.6377,2.42675 -5.97657,3.98438 1.29883,0.86914 7.41211,-4.9414 -6.24024,-4.16017 z m 12.48047,4.16015 -2.60253,-1.73339 -3.12013,2.08007 1.29883,0.86425 -1.68946,1.12794 -3.63768,-2.42676 5.97656,-3.98438 -1.29884,-0.86913 -7.40722,4.9414 6.24023,4.16016 z m 0,-6.58692 -1.30371,0.86915 -1.29882,-0.86915 2.60253,-1.7334 z m -12.48047,9.01368 1.29882,-0.86914 1.29884,0.86914 -2.59766,1.7334 z"/></svg></svg>
+category: banking
+base_url: "https://api.{{credential.env}}/cobrancas/v2/"
+
+credential:
+  label: Banco do Brasil
+  fields:
+    - {name: client_id, label: Client ID, required: true, description: "From the app at developers.bb.com.br > Credenciais."}
+    - {name: client_secret, label: Client Secret, secret: true, required: true}
+    - {name: app_key, label: Developer application key, secret: true, required: true, description: "The app's gw-dev-app-key."}
+    - {name: env, label: Environment, type: select, required: true, default: bb.com.br, options: [{label: Production, value: bb.com.br}, {label: Homologation, value: hm.bb.com.br}]}
+    - {name: scopes, label: Scopes, required: true, default: "cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.read webhook.write cobrancas.boletos-info cobrancas.boletos-requisicao", description: "The ones the app was given, with a space between them."}
+    - {name: convenio, label: Covenant number, description: "Número do convênio de cobrança, for boletos."}
+    - {name: carteira, label: Portfolio, default: "17", description: "Número da carteira, for boletos."}
+    - {name: variacao, label: Portfolio variation, default: "35", description: "Variação da carteira, for boletos."}
+    - {name: cert, label: Certificate, type: textarea, description: "The app's certificate in PEM, for Pix in production."}
+    - {name: key, label: Private key, type: textarea, secret: true, description: "Its private key in PEM."}
+  tls:
+    cert: "{{credential.cert}}"
+    key: "{{credential.key}}"
+  auth:
+    type: client_credentials
+    token_url: "https://oauth.{{credential.env}}/oauth/token"
+    client_id: "{{credential.client_id}}"
+    client_secret: "{{credential.client_secret}}"
+    scopes: ["{{credential.scopes}}"]
+
+errors:
+  message_path: erros.0.mensagem
+
+triggers:
+  - name: Pix Received
+    description: Starts the flow when a Pix arrives at one of your keys. Takes that key's one webhook.
+    fields:
+      - {name: key, label: Pix key, required: true}
+    webhook:
+      register:
+        request:
+          base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+          method: PUT
+          path: "webhook/{{fields.key}}"
+          query: {"gw-dev-app-key": "{{credential.app_key}}"}
+          body: {webhookUrl: "{{webhook.url}}"}
+      unregister:
+        request:
+          base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+          method: DELETE
+          path: "webhook/{{fields.key}}"
+          query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      output: {path: pix}
+
+actions:
+  - name: Create Pix Charge
+    resource: Pix
+    description: Makes an immediate Pix charge, with a QR code and a copy-and-paste code (pixCopiaECola).
+    fields:
+      - {name: key, label: Pix key, required: true, description: A key of the account at Banco do Brasil.}
+      - {name: amount, label: Amount, required: true, description: "In reais, with two decimals, like 37.00"}
+      - {name: expiration, label: Expires in, type: number, default: 3600, description: Seconds.}
+      - {name: debtor_cpf, label: Debtor CPF}
+      - {name: debtor_cnpj, label: Debtor CNPJ}
+      - {name: debtor_name, label: Debtor name, description: Needed with a CPF or CNPJ.}
+      - {name: message, label: Message to the payer}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: POST
+      path: cob
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body:
+        calendario: {expiracao: "{{fields.expiration}}"}
+        devedor: {_if: "{{fields.debtor_name}}", cpf: "{{fields.debtor_cpf}}", cnpj: "{{fields.debtor_cnpj}}", nome: "{{fields.debtor_name}}"}
+        valor: {original: "{{fields.amount}}"}
+        chave: "{{fields.key}}"
+        solicitacaoPagador: "{{fields.message}}"
+
+  - name: Get Pix Charge
+    resource: Pix
+    description: Reads an immediate Pix charge, with its status and the Pix that paid it.
+    fields:
+      - {name: txid, label: TXID, required: true}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: GET
+      path: "cob/{{fields.txid}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+
+  - name: List Pix Charges
+    resource: Pix
+    description: Lists the immediate Pix charges made between two moments.
+    fields:
+      - {name: start, label: From, type: datetime, required: true}
+      - {name: end, label: To, type: datetime, required: true}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: ATIVA}, {label: Paid, value: CONCLUIDA}, {label: Removed by you, value: REMOVIDA_PELO_USUARIO_RECEBEDOR}, {label: Removed by the PSP, value: REMOVIDA_PELO_PSP}]}
+      - {name: page, label: Page, type: number, default: 0}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: GET
+      path: cob
+      query: {"gw-dev-app-key": "{{credential.app_key}}", inicio: "{{fields.start}}", fim: "{{fields.end}}", status: "{{fields.status}}", "paginacao.paginaAtual": "{{fields.page}}"}
+    output: {path: cobs}
+
+  - name: Update Pix Charge
+    resource: Pix
+    description: Changes the amount or the message of an active Pix charge, or removes it.
+    fields:
+      - {name: txid, label: TXID, required: true}
+      - {name: amount, label: Amount, description: "In reais, like 37.00"}
+      - {name: message, label: Message to the payer}
+      - {name: status, label: Status, type: select, description: Empty to keep it active., options: [{label: Remove, value: REMOVIDA_PELO_USUARIO_RECEBEDOR}]}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: PATCH
+      path: "cob/{{fields.txid}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body:
+        valor: {_if: "{{fields.amount}}", original: "{{fields.amount}}"}
+        solicitacaoPagador: "{{fields.message}}"
+        status: "{{fields.status}}"
+
+  - name: Create Due Pix Charge
+    resource: Pix
+    description: Makes a Pix charge with a due date, fine and interest, under a TXID you choose.
+    fields:
+      - {name: txid, label: TXID, required: true, description: 26 to 35 letters and digits.}
+      - {name: key, label: Pix key, required: true}
+      - {name: amount, label: Amount, required: true, description: "In reais, like 123.45"}
+      - {name: due_date, label: Due date, required: true, description: "YYYY-MM-DD"}
+      - {name: days_after_due, label: Days to pay after due, type: number, default: 30}
+      - {name: debtor_cpf, label: Debtor CPF}
+      - {name: debtor_cnpj, label: Debtor CNPJ}
+      - {name: debtor_name, label: Debtor name, required: true}
+      - {name: message, label: Message to the payer}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: PUT
+      path: "cobv/{{fields.txid}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body:
+        calendario: {dataDeVencimento: "{{fields.due_date}}", validadeAposVencimento: "{{fields.days_after_due}}"}
+        devedor: {cpf: "{{fields.debtor_cpf}}", cnpj: "{{fields.debtor_cnpj}}", nome: "{{fields.debtor_name}}"}
+        valor: {original: "{{fields.amount}}"}
+        chave: "{{fields.key}}"
+        solicitacaoPagador: "{{fields.message}}"
+
+  - name: Get Due Pix Charge
+    resource: Pix
+    description: Reads a Pix charge with a due date.
+    fields:
+      - {name: txid, label: TXID, required: true}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: GET
+      path: "cobv/{{fields.txid}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+
+  - name: List Received Pix
+    resource: Pix
+    description: Lists the Pix received between two moments.
+    fields:
+      - {name: start, label: From, type: datetime, required: true}
+      - {name: end, label: To, type: datetime, required: true}
+      - {name: txid, label: TXID}
+      - {name: page, label: Page, type: number, default: 0}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: GET
+      path: pix
+      query: {"gw-dev-app-key": "{{credential.app_key}}", inicio: "{{fields.start}}", fim: "{{fields.end}}", txid: "{{fields.txid}}", "paginacao.paginaAtual": "{{fields.page}}"}
+    output: {path: pix}
+
+  - name: Get Received Pix
+    resource: Pix
+    description: Reads a received Pix by its end-to-end ID.
+    fields:
+      - {name: e2e_id, label: End-to-end ID, required: true}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: GET
+      path: "pix/{{fields.e2e_id}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+
+  - name: Refund Pix
+    resource: Pix
+    description: Returns all or part of a received Pix.
+    fields:
+      - {name: e2e_id, label: End-to-end ID, required: true}
+      - {name: refund_id, label: Refund ID, required: true, description: "Your ID for this refund, letters and digits."}
+      - {name: amount, label: Amount, required: true, description: "In reais, like 7.89"}
+    request:
+      base_url: "https://api-pix.{{credential.env}}/pix/v2/"
+      method: PUT
+      path: "pix/{{fields.e2e_id}}/devolucao/{{fields.refund_id}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body: {valor: "{{fields.amount}}"}
+
+  # Boletos (Cobrança v2)
+  - name: Register Boleto
+    resource: Boleto
+    description: Registers a boleto under the covenant of the credential, with a Pix QR code if you want.
+    fields:
+      - {name: our_number, label: Our number, required: true, description: "numeroTituloCliente: 000, the 7 digits of the covenant and 10 digits of your own, 20 in all."}
+      - {name: amount, label: Amount, type: number, required: true, description: "In reais, like 123.45."}
+      - {name: issue_date, label: Issue date, required: true, description: "DD.MM.YYYY, like 31.01.2026."}
+      - {name: due_date, label: Due date, required: true, description: "DD.MM.YYYY."}
+      - {name: your_number, label: Your number, description: "numeroTituloBeneficiario, up to 15 characters, printed on the boleto."}
+      - {name: payer_type, label: Payer is, type: select, required: true, default: 1, options: [{label: Person (CPF), value: 1}, {label: Company (CNPJ), value: 2}]}
+      - {name: payer_document, label: Payer CPF or CNPJ, required: true, description: Digits only.}
+      - {name: payer_name, label: Payer name, required: true}
+      - {name: payer_address, label: Payer address, required: true}
+      - {name: payer_district, label: Payer district, required: true}
+      - {name: payer_city, label: Payer city, required: true}
+      - {name: payer_state, label: Payer state, required: true, description: "Two letters, like SP."}
+      - {name: payer_zip, label: Payer CEP, required: true, description: Digits only.}
+      - {name: payer_phone, label: Payer phone}
+      - {name: pix, label: With Pix QR code, type: select, default: S, options: [{label: "Yes", value: S}, {label: "No", value: N}]}
+      - {name: message, label: Message on the boleto}
+    request:
+      method: POST
+      path: boletos
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body:
+        numeroConvenio: "{{credential.convenio}}"
+        numeroCarteira: "{{credential.carteira}}"
+        numeroVariacaoCarteira: "{{credential.variacao}}"
+        codigoModalidade: 1
+        dataEmissao: "{{fields.issue_date}}"
+        dataVencimento: "{{fields.due_date}}"
+        valorOriginal: "{{fields.amount}}"
+        codigoAceite: "N"
+        codigoTipoTitulo: 2
+        indicadorPermissaoRecebimentoParcial: "N"
+        numeroTituloBeneficiario: "{{fields.your_number}}"
+        numeroTituloCliente: "{{fields.our_number}}"
+        mensagemBloquetoOcorrencia: "{{fields.message}}"
+        pagador: {tipoInscricao: "{{fields.payer_type}}", numeroInscricao: "{{fields.payer_document}}", nome: "{{fields.payer_name}}", endereco: "{{fields.payer_address}}", bairro: "{{fields.payer_district}}", cidade: "{{fields.payer_city}}", uf: "{{fields.payer_state}}", cep: "{{fields.payer_zip}}", telefone: "{{fields.payer_phone}}"}
+        indicadorPix: "{{fields.pix}}"
+
+  - name: Get Boleto
+    resource: Boleto
+    description: Reads a boleto, with its status, amounts paid and Pix code.
+    fields:
+      - {name: id, label: Our number, required: true, description: The 20 digits of numeroTituloCliente.}
+    request:
+      method: GET
+      path: "boletos/{{fields.id}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}", numeroConvenio: "{{credential.convenio}}"}
+
+  - name: List Boletos
+    resource: Boleto
+    description: Lists the boletos of an account, open or written off and paid.
+    fields:
+      - {name: situation, label: Situation, type: select, required: true, default: A, options: [{label: Open, value: A}, {label: Written off or paid, value: B}]}
+      - {name: agency, label: Agency, required: true, description: Without the check digit.}
+      - {name: account, label: Account, required: true, description: Without the check digit.}
+      - {name: due_from, label: Due from, description: "DD.MM.YYYY."}
+      - {name: due_to, label: Due to, description: "DD.MM.YYYY."}
+      - {name: index, label: Start at, type: number, default: 0, description: "The indiceContinuidade of the last answer, for the next page."}
+    request:
+      method: GET
+      path: boletos
+      query: {"gw-dev-app-key": "{{credential.app_key}}", indicadorSituacao: "{{fields.situation}}", agenciaBeneficiario: "{{fields.agency}}", contaBeneficiario: "{{fields.account}}", dataInicioVencimento: "{{fields.due_from}}", dataFimVencimento: "{{fields.due_to}}", indice: "{{fields.index}}"}
+
+  - name: Change Due Date
+    resource: Boleto
+    description: Moves the due date of an open boleto.
+    fields:
+      - {name: id, label: Our number, required: true}
+      - {name: due_date, label: New due date, required: true, description: "DD.MM.YYYY."}
+    request:
+      method: PATCH
+      path: "boletos/{{fields.id}}"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body: {numeroConvenio: "{{credential.convenio}}", indicadorNovaDataVencimento: "S", alteracaoData: {novaDataVencimento: "{{fields.due_date}}"}}
+
+  - name: Write Off Boleto
+    resource: Boleto
+    description: Writes off an open boleto, so it can no longer be paid.
+    fields:
+      - {name: id, label: Our number, required: true}
+    request:
+      method: POST
+      path: "boletos/{{fields.id}}/baixar"
+      query: {"gw-dev-app-key": "{{credential.app_key}}"}
+      body: {numeroConvenio: "{{credential.convenio}}"}
+
+i18n:
+  pt-BR:
+    description: "Crie e consulte cobranças Pix, leia e devolva Pix recebidos e registre, consulte e baixe boletos no Banco do Brasil."
+    triggers:
+      Pix Received: {name: "Pix recebido", description: "Inicia o fluxo quando um Pix chega numa das suas chaves. Ocupa o único webhook dessa chave.", fields: {key: "Chave Pix"}}
+    actions:
+      Create Pix Charge: {name: "Criar cobrança Pix", description: "Gera uma cobrança Pix imediata, com QR code e código copia e cola (pixCopiaECola).", fields: {key: "Chave Pix", amount: "Valor", expiration: "Expira em", debtor_cpf: "CPF do devedor", debtor_cnpj: "CNPJ do devedor", debtor_name: "Nome do devedor", message: "Mensagem ao pagador"}}
+      Get Pix Charge: {name: "Ler cobrança Pix", description: "Lê uma cobrança Pix imediata, com o status e o Pix que a pagou.", fields: {txid: "TXID"}}
+      List Pix Charges: {name: "Listar cobranças Pix", description: "Lista as cobranças Pix imediatas criadas entre dois momentos.", fields: {start: "De", end: "Até", status: "Status", page: "Página"}}
+      Update Pix Charge: {name: "Alterar cobrança Pix", description: "Altera o valor ou a mensagem de uma cobrança Pix ativa, ou a remove.", fields: {txid: "TXID", amount: "Valor", message: "Mensagem ao pagador", status: "Status"}}
+      Create Due Pix Charge: {name: "Criar cobrança Pix com vencimento", description: "Gera uma cobrança Pix com vencimento, multa e juros, com um TXID que você escolhe.", fields: {txid: "TXID", key: "Chave Pix", amount: "Valor", due_date: "Vencimento", days_after_due: "Dias para pagar após o vencimento", debtor_cpf: "CPF do devedor", debtor_cnpj: "CNPJ do devedor", debtor_name: "Nome do devedor", message: "Mensagem ao pagador"}}
+      Get Due Pix Charge: {name: "Ler cobrança Pix com vencimento", description: "Lê uma cobrança Pix com vencimento.", fields: {txid: "TXID"}}
+      List Received Pix: {name: "Listar Pix recebidos", description: "Lista os Pix recebidos entre dois momentos.", fields: {start: "De", end: "Até", txid: "TXID", page: "Página"}}
+      Get Received Pix: {name: "Ler Pix recebido", description: "Lê um Pix recebido pelo ID fim a fim.", fields: {e2e_id: "ID fim a fim"}}
+      Refund Pix: {name: "Devolver Pix", description: "Devolve todo ou parte de um Pix recebido.", fields: {e2e_id: "ID fim a fim", refund_id: "ID da devolução", amount: "Valor"}}
+      Register Boleto: {name: "Registrar boleto", description: "Registra um boleto no convênio da credencial, com QR code Pix se quiser.", fields: {our_number: "Nosso número", amount: "Valor", issue_date: "Data de emissão", due_date: "Vencimento", your_number: "Seu número", payer_type: "Pagador é", payer_document: "CPF ou CNPJ do pagador", payer_name: "Nome do pagador", payer_address: "Endereço do pagador", payer_district: "Bairro do pagador", payer_city: "Cidade do pagador", payer_state: "UF do pagador", payer_zip: "CEP do pagador", payer_phone: "Telefone do pagador", pix: "Com QR code Pix", message: "Mensagem no boleto"}}
+      Get Boleto: {name: "Ler boleto", description: "Lê um boleto, com situação, valores pagos e código Pix.", fields: {id: "Nosso número"}}
+      List Boletos: {name: "Listar boletos", description: "Lista os boletos de uma conta, em aberto ou baixados e liquidados.", fields: {situation: "Situação", agency: "Agência", account: "Conta", due_from: "Vencimento de", due_to: "Vencimento até", index: "Começar em"}}
+      Change Due Date: {name: "Alterar vencimento", description: "Muda o vencimento de um boleto em aberto.", fields: {id: "Nosso número", due_date: "Novo vencimento"}}
+      Write Off Boleto: {name: "Baixar boleto", description: "Baixa um boleto em aberto, que não pode mais ser pago.", fields: {id: "Nosso número"}}
