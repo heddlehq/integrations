@@ -54,7 +54,7 @@ integrations:
   - {id: nocodb, name: NocoDB, category: database, phase: 1, origin: n8n, auth: header, n8n: NocoDB, host: true, kind: manifest, status: draft}
   - {id: notion, name: Notion, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Notion, kind: manifest, status: official}
   - {id: odoo, name: Odoo, category: erp, phase: 1, origin: n8n, auth: bearer, n8n: Odoo, host: true, kind: manifest, status: draft}
-  - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: package, lib: {name: paypal, version: 0.3.1, released: 2026-09-28}, status: planned}
+  - {id: paypal, name: PayPal, category: payments, phase: 1, origin: n8n, auth: oauth2_cc, n8n: PayPal, kind: manifest, status: draft}
   - {id: pipedrive, name: Pipedrive, category: crm, phase: 1, origin: n8n, auth: header, n8n: Pipedrive, kind: manifest, status: draft}
   - {id: postmark, name: Postmark, category: email, phase: 1, origin: n8n, auth: header, n8n: Postmark, kind: manifest, status: draft}
   - {id: quickbooks, name: QuickBooks Online, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: QuickBooks, kind: manifest, status: draft}
@@ -67,14 +67,14 @@ integrations:
   - {id: slack, name: Slack, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Slack, kind: package, lib: {name: slack_elixir, version: 1.2.2, released: 2026-09-14}, status: official}
   - {id: sql, name: "SQL (Postgres, MySQL, SQL Server, SQLite, Oracle)", category: database, phase: 1, origin: n8n, auth: basic, n8n: Postgres, kind: package, lib: {name: exqlite, version: 0.43.0, released: 2026-10-20}, status: official}
   - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: package, lib: {name: stripity_stripe, version: 3.3.3, released: 2026-10-29}, status: planned}
-  - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: package, lib: {name: supabase_potion, version: 1.0.0, released: 2026-07-17}, status: planned}
+  - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: manifest, status: draft}
   - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: manifest, status: draft}
   - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
   - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: draft}
   - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: draft}
   - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: bearer, n8n: Typeform, kind: manifest, status: draft}
   - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: bearer, n8n: Webflow, kind: manifest, status: draft}
-  - {id: whatsapp, name: WhatsApp Business Cloud, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: WhatsApp, kind: package, lib: {name: whatsapp_elixir, version: 0.1.10, released: 2026-11-12}, status: planned}
+  - {id: whatsapp, name: WhatsApp Business Cloud, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: WhatsApp, kind: manifest, status: draft}
   - {id: woocommerce, name: WooCommerce, category: ecommerce, phase: 1, origin: n8n, auth: basic, n8n: WooCommerce, host: true, kind: manifest, status: draft}
   - {id: wordpress, name: WordPress, category: cms, phase: 1, origin: n8n, auth: basic, n8n: Wordpress, host: true, kind: manifest, status: draft}
   - {id: x, name: X (Twitter), category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Twitter, kind: manifest, status: draft}

@@ -1,0 +1,260 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Supabase with the project's secret (service role) key, which skips row level
+# security. Tables go through PostgREST (/rest/v1), files through Storage
+# (/storage/v1) and users through the Auth admin API (/auth/v1). Filters take
+# PostgREST's form, column: operator.value, like {"status": "eq.active"}.
+id: supabase
+name: Supabase
+version: 1.0.0
+homepage: https://supabase.com/docs/guides/api
+description: Read, insert, update and delete Supabase table rows, call database functions, store files and manage users.
+icon: hero-circle-stack
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.32" y="3.00" width="17.36" height="18.00" viewBox="0 0 109 113"><path fill="url(#supabase_a)" d="M63.708 110.284c-2.86 3.601-8.658 1.628-8.727-2.97l-1.007-67.251h45.22c8.19 0 12.758 9.46 7.665 15.874z"/><path fill="url(#supabase_b)" fill-opacity=".2" d="M63.708 110.284c-2.86 3.601-8.658 1.628-8.727-2.97l-1.007-67.251h45.22c8.19 0 12.758 9.46 7.665 15.874z"/><path fill="#3ecf8e" d="M45.317 2.071c2.86-3.601 8.657-1.628 8.726 2.97l.442 67.251H9.83c-8.19 0-12.759-9.46-7.665-15.875z"/><defs><linearGradient id="supabase_a" x1="53.974" x2="94.163" y1="54.974" y2="71.829" gradientUnits="userSpaceOnUse"><stop stop-color="#249361"/><stop offset="1" stop-color="#3ecf8e"/></linearGradient><linearGradient id="supabase_b" x1="36.156" x2="54.484" y1="30.578" y2="65.081" gradientUnits="userSpaceOnUse"><stop/><stop offset="1" stop-opacity="0"/></linearGradient></defs></svg></svg>
+category: database
+base_url: "{{credential.url}}/"
+
+credential:
+  label: Supabase
+  fields:
+    - {name: url, label: Project URL, required: true, description: "Like https://abcdefgh.supabase.co, without a slash at the end."}
+    - {name: key, label: Secret key, secret: true, required: true, description: "Settings > API Keys: the secret key (sb_secret_...) or the legacy service_role key."}
+  auth:
+    type: header
+    name: apikey
+    value: "{{credential.key}}"
+
+errors:
+  message_path: message
+
+actions:
+  # Rows
+  - name: List Rows
+    resource: Row
+    description: Lists the rows of a table that match the filters.
+    fields:
+      - {name: table, label: Table, required: true}
+      - {name: filters, label: Filters, type: json, description: "Like {\"status\": \"eq.active\", \"age\": \"gte.18\"}; empty lists all."}
+      - {name: select, label: Columns, default: "*", description: "Separated by commas; can embed related tables, like id,name,orders(total)."}
+      - {name: order, label: Order, description: "Like created_at.desc."}
+      - {name: limit, label: Limit, type: number, default: 100}
+      - {name: offset, label: Skip, type: number}
+    request:
+      method: GET
+      path: "rest/v1/{{fields.table}}"
+      query: {select: "{{fields.select}}", order: "{{fields.order}}", limit: "{{fields.limit}}", offset: "{{fields.offset}}", _merge: "{{fields.filters}}"}
+
+  - name: Get Row
+    resource: Row
+    description: Reads the first row that matches the filters.
+    fields:
+      - {name: table, label: Table, required: true}
+      - {name: filters, label: Filters, type: json, required: true, description: "Like {\"id\": \"eq.42\"}."}
+      - {name: select, label: Columns, default: "*"}
+    request:
+      method: GET
+      path: "rest/v1/{{fields.table}}"
+      query: {select: "{{fields.select}}", limit: 1, _merge: "{{fields.filters}}"}
+    output: {path: "0"}
+
+  - name: Create Row
+    resource: Row
+    description: Inserts a row, or a list of rows, and returns them as saved.
+    fields:
+      - {name: table, label: Table, required: true}
+      - {name: row, label: Row, type: json, required: true, default: "{{result}}", description: "An object with the columns, like {\"name\": \"Ana\"}, or a list of them."}
+    request:
+      method: POST
+      path: "rest/v1/{{fields.table}}"
+      headers: {Prefer: return=representation}
+      body: "{{fields.row}}"
+
+  - name: Upsert Row
+    resource: Row
+    description: Inserts a row, or updates it when one with the same key exists.
+    fields:
+      - {name: table, label: Table, required: true}
+      - {name: row, label: Row, type: json, required: true, default: "{{result}}"}
+      - {name: on_conflict, label: Key columns, description: "A unique column, or several separated by commas; empty uses the primary key."}
+    request:
+      method: POST
+      path: "rest/v1/{{fields.table}}"
+      query: {on_conflict: "{{fields.on_conflict}}"}
+      headers: {Prefer: "resolution=merge-duplicates,return=representation"}
+      body: "{{fields.row}}"
+
+  - name: Update Rows
+    resource: Row
+    description: Changes the given columns of every row that matches the filters.
+    fields:
+      - {name: table, label: Table, required: true}
+      - {name: filters, label: Filters, type: json, required: true, description: "Like {\"id\": \"eq.42\"}."}
+      - {name: values, label: New values, type: json, required: true, description: "Like {\"status\": \"done\"}."}
+    request:
+      method: PATCH
+      path: "rest/v1/{{fields.table}}"
+      query: {_merge: "{{fields.filters}}"}
+      headers: {Prefer: return=representation}
+      body: "{{fields.values}}"
+
+  - name: Delete Rows
+    resource: Row
+    description: Deletes every row that matches the filters and returns them.
+    fields:
+      - {name: table, label: Table, required: true}
+      - {name: filters, label: Filters, type: json, required: true, description: "Like {\"id\": \"eq.42\"}."}
+    request:
+      method: DELETE
+      path: "rest/v1/{{fields.table}}"
+      query: {_merge: "{{fields.filters}}"}
+      headers: {Prefer: return=representation}
+
+  - name: Call Function
+    resource: Function
+    description: Calls a Postgres function by RPC, with its arguments by name.
+    fields:
+      - {name: function, label: Function, required: true}
+      - {name: args, label: Arguments, type: json, description: "Like {\"user_id\": 42}."}
+    request:
+      method: POST
+      path: "rest/v1/rpc/{{fields.function}}"
+      body: {_merge: "{{fields.args}}"}
+
+  # Storage
+  - name: List Buckets
+    resource: Storage
+    description: Lists the storage buckets.
+    request: {method: GET, path: storage/v1/bucket}
+
+  - name: List Files
+    resource: Storage
+    description: Lists the files and folders in a folder of a bucket.
+    fields:
+      - {name: bucket, label: Bucket, type: select, required: true, options_from: {request: {method: GET, path: storage/v1/bucket}, label: name, value: id}}
+      - {name: prefix, label: Folder, description: "Like invoices/2026; empty is the top."}
+      - {name: search, label: Search}
+      - {name: limit, label: Limit, type: number, default: 100}
+    request:
+      method: POST
+      path: "storage/v1/object/list/{{fields.bucket}}"
+      body: {prefix: "{{fields.prefix | keep}}", search: "{{fields.search}}", limit: "{{fields.limit}}", sortBy: {column: name, order: asc}}
+
+  - name: Upload File
+    resource: Storage
+    description: Uploads a file to a bucket, replacing one at the same path if you choose.
+    fields:
+      - {name: bucket, label: Bucket, type: select, required: true, options_from: {request: {method: GET, path: storage/v1/bucket}, label: name, value: id}}
+      - {name: path, label: Path, required: true, description: "Like invoices/2026/42.pdf."}
+      - {name: file, label: File, type: file, required: true, default: "{{result}}"}
+      - {name: upsert, label: Replace if it exists, type: select, default: "false", options: [{label: "No", value: "false"}, {label: "Yes", value: "true"}]}
+    request:
+      method: POST
+      path: "storage/v1/object/{{fields.bucket}}/{{fields.path | path}}"
+      headers: {x-upsert: "{{fields.upsert}}"}
+      body_type: binary
+      body: "{{fields.file}}"
+
+  - name: Download File
+    resource: Storage
+    description: Downloads a file from a bucket.
+    fields:
+      - {name: bucket, label: Bucket, type: select, required: true, options_from: {request: {method: GET, path: storage/v1/bucket}, label: name, value: id}}
+      - {name: path, label: Path, required: true}
+    request: {method: GET, path: "storage/v1/object/{{fields.bucket}}/{{fields.path | path}}"}
+    output: {file: true}
+
+  - name: Create Signed URL
+    resource: Storage
+    description: Makes a temporary link to a private file.
+    fields:
+      - {name: bucket, label: Bucket, type: select, required: true, options_from: {request: {method: GET, path: storage/v1/bucket}, label: name, value: id}}
+      - {name: path, label: Path, required: true}
+      - {name: expires_in, label: Valid for (seconds), type: number, default: 3600}
+    request:
+      method: POST
+      path: "storage/v1/object/sign/{{fields.bucket}}/{{fields.path | path}}"
+      body: {expiresIn: "{{fields.expires_in}}"}
+
+  - name: Delete Files
+    resource: Storage
+    description: Deletes files from a bucket.
+    fields:
+      - {name: bucket, label: Bucket, type: select, required: true, options_from: {request: {method: GET, path: storage/v1/bucket}, label: name, value: id}}
+      - {name: paths, label: Paths, required: true, description: "Separated by commas."}
+    request:
+      method: DELETE
+      path: "storage/v1/object/{{fields.bucket}}"
+      body: {prefixes: {_each: "{{fields.paths}}", _value: "{{item}}"}}
+
+  # Users
+  - name: List Users
+    resource: User
+    description: Lists the users of the project's Auth.
+    fields:
+      - {name: page, label: Page, type: number, default: 1}
+      - {name: per_page, label: Per page, type: number, default: 50}
+    request: {method: GET, path: auth/v1/admin/users, query: {page: "{{fields.page}}", per_page: "{{fields.per_page}}"}}
+    output: {path: users}
+
+  - name: Get User
+    resource: User
+    description: Reads a user by ID.
+    fields:
+      - {name: user_id, label: User ID, required: true}
+    request: {method: GET, path: "auth/v1/admin/users/{{fields.user_id}}"}
+
+  - name: Create User
+    resource: User
+    description: Creates a user with an email and, if you want, a password.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: password, label: Password}
+      - {name: email_confirm, label: Email already confirmed, type: boolean, default: true}
+      - {name: user_metadata, label: User data, type: json}
+    request:
+      method: POST
+      path: auth/v1/admin/users
+      body: {email: "{{fields.email}}", password: "{{fields.password}}", email_confirm: "{{fields.email_confirm}}", user_metadata: "{{fields.user_metadata}}"}
+
+  - name: Invite User
+    resource: User
+    description: Emails an invitation to sign up.
+    fields:
+      - {name: email, label: Email, required: true}
+      - {name: redirect_to, label: Redirect to, description: "Where the link leads after accepting; must be in the allowed URLs."}
+    request:
+      method: POST
+      path: auth/v1/invite
+      query: {redirect_to: "{{fields.redirect_to}}"}
+      body: {email: "{{fields.email}}"}
+
+  - name: Delete User
+    resource: User
+    description: Deletes a user.
+    fields:
+      - {name: user_id, label: User ID, required: true}
+    request: {method: DELETE, path: "auth/v1/admin/users/{{fields.user_id}}"}
+
+i18n:
+  pt-BR:
+    description: "Leia, insira, atualize e apague linhas de tabelas do Supabase, chame funções do banco, guarde arquivos e gerencie usuários."
+    actions:
+      List Rows: {name: "Listar linhas", description: "Lista as linhas de uma tabela que atendem aos filtros.", fields: {table: "Tabela", filters: "Filtros", select: "Colunas", order: "Ordem", limit: "Limite", offset: "Pular"}}
+      Get Row: {name: "Ler linha", description: "Lê a primeira linha que atende aos filtros.", fields: {table: "Tabela", filters: "Filtros", select: "Colunas"}}
+      Create Row: {name: "Criar linha", description: "Insere uma linha, ou uma lista delas, e devolve como ficaram salvas.", fields: {table: "Tabela", row: "Linha"}}
+      Upsert Row: {name: "Inserir ou atualizar linha", description: "Insere uma linha, ou atualiza quando já existe uma com a mesma chave.", fields: {table: "Tabela", row: "Linha", on_conflict: "Colunas-chave"}}
+      Update Rows: {name: "Atualizar linhas", description: "Altera as colunas informadas de todas as linhas que atendem aos filtros.", fields: {table: "Tabela", filters: "Filtros", values: "Novos valores"}}
+      Delete Rows: {name: "Apagar linhas", description: "Apaga todas as linhas que atendem aos filtros e as devolve.", fields: {table: "Tabela", filters: "Filtros"}}
+      Call Function: {name: "Chamar função", description: "Chama uma função do Postgres por RPC, com os argumentos pelo nome.", fields: {function: "Função", args: "Argumentos"}}
+      List Buckets: {name: "Listar buckets", description: "Lista os buckets de armazenamento."}
+      List Files: {name: "Listar arquivos", description: "Lista os arquivos e pastas de uma pasta de um bucket.", fields: {bucket: "Bucket", prefix: "Pasta", search: "Busca", limit: "Limite"}}
+      Upload File: {name: "Enviar arquivo", description: "Envia um arquivo para um bucket, substituindo um no mesmo caminho se você escolher.", fields: {bucket: "Bucket", path: "Caminho", file: "Arquivo", upsert: "Substituir se existir"}}
+      Download File: {name: "Baixar arquivo", description: "Baixa um arquivo de um bucket.", fields: {bucket: "Bucket", path: "Caminho"}}
+      Create Signed URL: {name: "Criar URL assinada", description: "Gera um link temporário para um arquivo privado.", fields: {bucket: "Bucket", path: "Caminho", expires_in: "Válido por (segundos)"}}
+      Delete Files: {name: "Apagar arquivos", description: "Apaga arquivos de um bucket.", fields: {bucket: "Bucket", paths: "Caminhos"}}
+      List Users: {name: "Listar usuários", description: "Lista os usuários do Auth do projeto.", fields: {page: "Página", per_page: "Por página"}}
+      Get User: {name: "Ler usuário", description: "Lê um usuário pelo ID.", fields: {user_id: "ID do usuário"}}
+      Create User: {name: "Criar usuário", description: "Cria um usuário com e-mail e, se quiser, senha.", fields: {email: "E-mail", password: "Senha", email_confirm: "E-mail já confirmado", user_metadata: "Dados do usuário"}}
+      Invite User: {name: "Convidar usuário", description: "Envia por e-mail um convite para se cadastrar.", fields: {email: "E-mail", redirect_to: "Redirecionar para"}}
+      Delete User: {name: "Apagar usuário", description: "Apaga um usuário.", fields: {user_id: "ID do usuário"}}
