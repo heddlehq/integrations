@@ -4,6 +4,18 @@ defmodule HeddleIntegrations.AgentsTest do
   alias Bobbin.TestHost
   alias HeddleIntegrations.Nodes.Agents.{Agent, Ask, Reply, SendMessage, SetState, Think}
 
+  alias HeddleIntegrations.Nodes.Agents.{
+    CancelSchedule,
+    EndInstance,
+    Event,
+    ListInstances,
+    Pause,
+    PublishEvent,
+    ReadAgent,
+    ResetInstance,
+    Schedule
+  }
+
   defmodule Model do
     @moduledoc "Stands in for ReqLLM: a test scripts the model's answers."
     def generate_text(model, context, options) do
@@ -279,7 +291,8 @@ defmodule HeddleIntegrations.AgentsTest do
       assert request.data == %{
                "message" => "Invoice F-7 is late",
                "key" => "c-42",
-               "from" => %{"type" => "flow", "flow_id" => 9, "run_id" => "run-9"}
+               "from" => %{"type" => "flow", "flow_id" => 9, "run_id" => "run-9"},
+               "depth" => 1
              }
     end
 
@@ -351,6 +364,436 @@ defmodule HeddleIntegrations.AgentsTest do
 
       assert {:ok, %{"result" => %{"answered" => false}}, "success"} =
                Reply.handler(Map.put(context, "message", "Ok"), nil)
+    end
+  end
+
+  defp resume(context, resumed, tools \\ [], call \\ nil) do
+    call = call || fn _name, _args -> {:error, "no tools"} end
+    {:with_tools, fun} = Think.handler(Map.put(context, "resumed", resumed), nil)
+    fun.(tools, call)
+  end
+
+  @refund %{
+    name: "refund",
+    description: "Refunds an order",
+    parameters: %{"type" => "object", "properties" => %{"order" => %{"type" => "string"}}}
+  }
+
+  describe "Agent: Think, waiting" do
+    test "a tool that needs approval waits, and runs once a person approves" do
+      test = self()
+
+      script(fn context, _options ->
+        cond do
+          Enum.any?(context.messages, &(text_of(&1) =~ "approved refund")) -> answer("Refunded!")
+          Enum.any?(context.messages, &(&1.role == :tool)) -> answer("Waiting for approval.")
+          true -> call_tool("refund", %{"order" => "A-1"})
+        end
+      end)
+
+      call = fn name, args ->
+        send(test, {:ran, name, args})
+        {:ok, ~s({"refunded":true})}
+      end
+
+      context = start(%{"message" => "Refund A-1"})
+      context = Map.put(context, "approval", "refund")
+
+      assert {:wait, wait} = think(context, "{{agent.message}}", [@refund], call)
+      assert wait["approval"]["title"] == "Ana: refund?"
+      assert wait["again"] == true
+
+      assert wait["data"] == %{
+               "kind" => "approval",
+               "tool" => "refund",
+               "arguments" => %{"order" => "A-1"}
+             }
+
+      refute_received {:ran, _name, _args}
+
+      resumed = %{
+        "by" => "call",
+        "request" => %{"decision" => "approved", "by" => "bia@x.com"},
+        "wait" => wait
+      }
+
+      assert {:ok, %{"reply" => "Refunded!"}} = resume(context, resumed, [@refund], call)
+      assert_received {:ran, "refund", %{"order" => "A-1"}}
+
+      {:ok, %{value: instance}} = TestHost.store_get(1, "agents", "Ana/main")
+      assert Enum.map(instance["transcript"], & &1["text"]) == ["Refund A-1", "Refunded!"]
+    end
+
+    test "a rejected tool doesn't run" do
+      script(fn context, _options ->
+        cond do
+          Enum.any?(context.messages, &(text_of(&1) =~ "rejected refund")) ->
+            answer("Ok, no refund.")
+
+          Enum.any?(context.messages, &(&1.role == :tool)) ->
+            answer("Waiting.")
+
+          true ->
+            call_tool("refund", %{"order" => "A-1"})
+        end
+      end)
+
+      call = fn _name, _args -> flunk("the tool ran") end
+      context = start(%{"message" => "Refund A-1"}) |> Map.put("approval", "refund")
+      {:wait, wait} = think(context, "{{agent.message}}", [@refund], call)
+
+      resumed = %{"by" => "call", "request" => %{"decision" => "rejected"}, "wait" => wait}
+      assert {:ok, %{"reply" => "Ok, no refund."}} = resume(context, resumed, [@refund], call)
+    end
+
+    test "asks another agent, waits for its reply, and goes on with it" do
+      script(fn context, _options ->
+        cond do
+          Enum.any?(context.messages, &(text_of(&1) =~ "Bob replied: 42")) ->
+            answer("Bob says 42.")
+
+          Enum.any?(context.messages, &(&1.role == :tool)) ->
+            answer("Waiting for Bob.")
+
+          true ->
+            call_tool("ask_agent", %{"agent" => "Bob", "question" => "How many?"})
+        end
+      end)
+
+      context = start(%{"message" => "Ask Bob"}) |> Map.put("agents", "Bob")
+
+      assert {:wait, %{"call" => true, "key" => key, "again" => true} = wait} = think(context)
+      assert [request] = TestHost.runs()
+      assert request.match == %{"name" => "Bob"}
+      assert request.data["message"] == "How many?"
+      assert request.data["reply_to"] == %{"run_id" => "run-1", "key" => key}
+      assert request.data["waiting"] == ["Ana/main"]
+
+      resumed = %{"by" => "call", "request" => %{"reply" => "42"}, "wait" => wait}
+      assert {:ok, %{"reply" => "Bob says 42."}} = resume(context, resumed)
+    end
+
+    test "can't ask back an agent that waits for it" do
+      context =
+        start(%{"message" => "Hi", "waiting" => ["Bob/main"]})
+        |> Map.merge(%{"to" => "Bob", "message" => "Hi"})
+
+      assert {:ok, %{"result" => %{"error" => "Bob is waiting for an answer" <> _}}, "error"} =
+               Ask.handler(context, nil)
+    end
+
+    test "remembers a field of its state, with its type" do
+      script(fn context, _options ->
+        if Enum.any?(context.messages, &(&1.role == :tool)),
+          do: answer("Noted."),
+          else: call_tool("remember", %{"field" => "attempts", "value" => "3"})
+      end)
+
+      assert {:ok, %{"reply" => "Noted."}} = think(start(%{"message" => "I tried 3 times"}))
+      assert start(%{})["agent"]["state"] == %{"stage" => "new", "attempts" => 3}
+    end
+
+    test "a long conversation becomes a summary, and the latest messages stay" do
+      script(fn context, _options ->
+        system = context.messages |> List.first() |> text_of()
+
+        cond do
+          system =~ "You summarize a conversation" -> answer("Bia owes F-7.")
+          true -> answer("ok")
+        end
+      end)
+
+      for n <- 1..16, do: {:ok, _reply} = think(start(%{"message" => "message #{n}"}))
+
+      {:ok, %{value: instance}} = TestHost.store_get(1, "agents", "Ana/main")
+      assert instance["summary"] == "Bia owes F-7."
+      assert length(instance["transcript"]) <= 30
+      assert instance["messages"] == 16
+
+      script(fn _context, _options -> answer("ok") end)
+      {:ok, _reply} = think(start(%{"message" => "and now?"}))
+      assert_received {:model, _pid, _model, _request, _options}
+      flush_models()
+    end
+  end
+
+  defp flush_models do
+    receive do
+      {:model, _pid, _model, _request, _options} -> flush_models()
+    after
+      0 -> :ok
+    end
+  end
+
+  defp text_of(%{content: content}) when is_list(content),
+    do: Enum.map_join(content, &(&1.text || ""))
+
+  defp text_of(_message), do: ""
+
+  describe "limits" do
+    test "an instance takes so many messages an hour" do
+      trigger = Map.put(@trigger, "max_messages", "2")
+
+      context =
+        Map.merge(trigger, %{"workspace_id" => 1, "run_id" => "r", "result" => %{"key" => "k"}})
+
+      assert {:ok, _context, "exec"} = Agent.handler(context, nil)
+      assert {:ok, _context, "exec"} = Agent.handler(context, nil)
+      assert {:error, "Ana got 2 messages for k this hour" <> _} = Agent.handler(context, nil)
+    end
+
+    test "an instance spends so much a day" do
+      trigger = Map.put(@trigger, "max_cost", "0.5")
+      context = Map.merge(trigger, %{"workspace_id" => 1, "run_id" => "r", "result" => %{}})
+
+      :ok = HeddleIntegrations.Services.Agents.spend_cost(1, "Ana", "main", 0.6)
+      assert {:error, "Ana spent its $0.5 for main today" <> _} = Agent.handler(context, nil)
+    end
+
+    test "Think counts what the model cost" do
+      script(fn _context, _options ->
+        answer("Hi", %{input_tokens: 1, output_tokens: 1, total_cost: 0.25})
+      end)
+
+      {:ok, _reply} = think(start(%{"message" => "Hi"}))
+      assert HeddleIntegrations.Services.Agents.budget(1, "Ana", "main")["cost"] == 0.25
+    end
+
+    test "only who it allows may message it" do
+      trigger = Map.put(@trigger, "allowed", "chat, Bob")
+      base = Map.merge(trigger, %{"workspace_id" => 1, "run_id" => "r"})
+
+      ok = fn from -> Agent.handler(Map.put(base, "result", %{"from" => from}), nil) end
+
+      assert {:ok, _context, "exec"} = ok.(%{"type" => "chat"})
+      assert {:ok, _context, "exec"} = ok.(%{"type" => "agent", "agent" => "bob"})
+      assert {:ok, _context, "exec"} = ok.(%{"type" => "schedule"})
+
+      assert {:error, "Ana doesn't take messages from the flow 3." <> _} =
+               ok.(%{"type" => "flow", "flow_id" => 3})
+    end
+
+    test "a chain of agents stops five messages deep" do
+      context =
+        start(%{"message" => "Hi", "depth" => 5})
+        |> Map.merge(%{"to" => "Bob", "message" => "Hi"})
+
+      assert {:ok, %{"result" => %{"error" => "Agents messaged each other 5 times" <> _}},
+              "error"} =
+               SendMessage.handler(context, nil)
+    end
+
+    test "a paused agent takes no messages, until resumed" do
+      flow = %{
+        "workspace_id" => 1,
+        "run_id" => "r",
+        "to" => "Ana",
+        "key" => "",
+        "action" => "pause"
+      }
+
+      assert {:ok, %{"result" => %{"paused" => true}}, "success"} = Pause.handler(flow, nil)
+
+      assert {:ok, %{"result" => %{"error" => "The agent Ana is paused." <> _}}, "error"} =
+               SendMessage.handler(Map.merge(flow, %{"message" => "Hi"}), nil)
+
+      context = Map.merge(@trigger, %{"workspace_id" => 1, "result" => %{}})
+      assert {:error, "The agent Ana is paused" <> _} = Agent.handler(context, nil)
+
+      {:ok, _context, "success"} = Pause.handler(Map.put(flow, "action", "resume"), nil)
+
+      assert {:ok, _context, "success"} =
+               SendMessage.handler(Map.merge(flow, %{"message" => "Hi"}), nil)
+    end
+  end
+
+  describe "schedules" do
+    test "a message for later, shown in the instance, and called off" do
+      context =
+        start(%{"key" => "c-1"})
+        |> Map.merge(%{
+          "message" => "Paid yet?",
+          "in" => "3",
+          "unit" => "days",
+          "at" => "",
+          "key" => ""
+        })
+
+      assert {:ok, %{"result" => %{"id" => id, "at" => at, "key" => "c-1"}}, "success"} =
+               Schedule.handler(context, nil)
+
+      [request] = TestHost.runs()
+      assert request.lane == "agents:Ana/c-1"
+      assert request.data["schedule"] == id
+      assert request.data["depth"] == 0
+      assert request.data["from"] == %{"type" => "schedule"}
+      assert DateTime.diff(request.at, DateTime.utc_now()) in (3 * 86_400 - 5)..(3 * 86_400)
+      {:ok, _at, _offset} = DateTime.from_iso8601(at)
+
+      [%{"id" => ^id}] =
+        start(%{"key" => "c-1"})["agent"]
+        |> then(fn _ ->
+          HeddleIntegrations.Services.Agents.instance(%{"workspace_id" => 1}, "Ana", "c-1")[
+            "schedules"
+          ]
+        end)
+
+      assert {:ok, %{"result" => %{"cancelled" => [^id]}}, "success"} =
+               CancelSchedule.handler(Map.put(start(%{"key" => "c-1"}), "id", ""), nil)
+
+      assert TestHost.runs() == []
+    end
+
+    test "the message that comes is no longer scheduled" do
+      context =
+        start(%{"key" => "c-1"})
+        |> Map.merge(%{
+          "message" => "Later",
+          "in" => "1",
+          "unit" => "hours",
+          "at" => "",
+          "key" => ""
+        })
+
+      {:ok, %{"result" => %{"id" => id}}, "success"} = Schedule.handler(context, nil)
+
+      start(%{"key" => "c-1", "schedule" => id, "from" => %{"type" => "schedule"}})
+
+      assert HeddleIntegrations.Services.Agents.instance(%{"workspace_id" => 1}, "Ana", "c-1")[
+               "schedules"
+             ] == []
+    end
+
+    test "a new message moves the follow-up, and a follow-up doesn't schedule another" do
+      fields = %{
+        "message" => "Follow up",
+        "in" => "3",
+        "unit" => "days",
+        "at" => "",
+        "key" => "",
+        "replace" => "true",
+        "not_scheduled" => "true"
+      }
+
+      {:ok, %{"result" => %{"id" => first}}, "success"} =
+        Schedule.handler(Map.merge(start(%{"key" => "l-1"}), fields), nil)
+
+      {:ok, %{"result" => %{"id" => second}}, "success"} =
+        Schedule.handler(Map.merge(start(%{"key" => "l-1"}), fields), nil)
+
+      assert [%{"id" => ^second}] =
+               HeddleIntegrations.Services.Agents.instance(%{"workspace_id" => 1}, "Ana", "l-1")[
+                 "schedules"
+               ]
+
+      assert first != second
+      assert [%{data: %{"schedule" => ^second}}] = TestHost.runs()
+
+      follow_up =
+        start(%{"key" => "l-1", "schedule" => second, "from" => %{"type" => "schedule"}})
+
+      assert {:ok, %{"result" => %{"skipped" => true}}, "success"} =
+               Schedule.handler(Map.merge(follow_up, fields), nil)
+    end
+
+    test "says when the time is wrong" do
+      context =
+        start(%{}) |> Map.merge(%{"message" => "x", "in" => "0", "unit" => "days", "at" => ""})
+
+      assert {:ok, %{"result" => %{"error" => "In must be a number" <> _}}, "error"} =
+               Schedule.handler(context, nil)
+
+      context = Map.put(context, "at", "2001-01-01T00:00:00Z")
+
+      assert {:ok, %{"result" => %{"error" => "At is in the past" <> _}}, "error"} =
+               Schedule.handler(context, nil)
+    end
+  end
+
+  describe "events" do
+    test "publishing starts the flows that wait for it, and for any event" do
+      context =
+        start(%{"key" => "c-1"})
+        |> Map.merge(%{"event" => "deal.won", "data" => ~s({"value": 10})})
+
+      assert {:ok, %{"result" => %{"event" => "deal.won"}}, "success"} =
+               PublishEvent.handler(context, nil)
+
+      assert [named, any] = TestHost.runs()
+      assert named.node_type == "Agent Event"
+      assert named.match == %{"event" => "deal.won"}
+      assert any.match == %{"event" => ""}
+      assert named.data["agent"] == "Ana"
+      assert named.data["key"] == "c-1"
+      assert named.data["data"] == %{"value" => 10}
+    end
+
+    test "the event trigger gives what was published, and how deep the chain is" do
+      context = %{
+        "event" => "",
+        "result" => %{"event" => "deal.won", "data" => %{}, "agent" => "Ana", "depth" => 2}
+      }
+
+      assert {:ok, context, "exec"} = Event.handler(context, nil)
+      assert context["result"]["agent"] == "Ana"
+      assert context["agent_depth"] == 2
+    end
+  end
+
+  describe "instances" do
+    setup do
+      {:ok, _} =
+        TestHost.store_put(
+          1,
+          "agents",
+          "Ana/a",
+          %{"state" => %{"stage" => "won"}, "messages" => 2},
+          []
+        )
+
+      {:ok, _} =
+        TestHost.store_put(
+          1,
+          "agents",
+          "Ana/b",
+          %{"state" => %{"stage" => "new"}, "messages" => 1},
+          []
+        )
+
+      {:ok, _} = TestHost.store_put(1, "agents", "Anabel/x", %{"state" => %{}}, [])
+      :ok
+    end
+
+    test "reads an instance" do
+      context = %{"workspace_id" => 1, "to" => "Ana", "key" => "a"}
+
+      assert {:ok,
+              %{"result" => %{"exists" => true, "state" => %{"stage" => "won"}, "messages" => 2}},
+              "success"} =
+               ReadAgent.handler(context, nil)
+
+      assert {:ok, %{"result" => %{"exists" => false}}, "success"} =
+               ReadAgent.handler(%{context | "key" => "zzz"}, nil)
+    end
+
+    test "lists an agent's instances only" do
+      context = %{"workspace_id" => 1, "to" => "Ana", "prefix" => "", "limit" => ""}
+
+      assert {:ok,
+              %{"result" => %{"count" => 2, "instances" => [%{"key" => "a"}, %{"key" => "b"}]}},
+              "success"} =
+               ListInstances.handler(context, nil)
+    end
+
+    test "reset and end forget an instance" do
+      assert {:ok, %{"result" => %{"existed" => true}}, "success"} =
+               ResetInstance.handler(%{"workspace_id" => 1, "to" => "Ana", "key" => "a"}, nil)
+
+      assert {:error, :not_found} = TestHost.store_get(1, "agents", "Ana/a", [])
+
+      context = start(%{"key" => "b"})
+      assert {:ok, %{"result" => %{"key" => "b"}}, "success"} = EndInstance.handler(context, nil)
+      assert {:error, :not_found} = TestHost.store_get(1, "agents", "Ana/b", [])
     end
   end
 end

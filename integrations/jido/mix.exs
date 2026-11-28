@@ -23,7 +23,16 @@ defmodule HeddleIntegrations.Jido.MixProject do
           HeddleIntegrations.Nodes.Agents.Reply,
           HeddleIntegrations.Nodes.Agents.SetState,
           HeddleIntegrations.Nodes.Agents.SendMessage,
-          HeddleIntegrations.Nodes.Agents.Ask
+          HeddleIntegrations.Nodes.Agents.Ask,
+          HeddleIntegrations.Nodes.Agents.Schedule,
+          HeddleIntegrations.Nodes.Agents.CancelSchedule,
+          HeddleIntegrations.Nodes.Agents.PublishEvent,
+          HeddleIntegrations.Nodes.Agents.EndInstance,
+          HeddleIntegrations.Nodes.Agents.ReadAgent,
+          HeddleIntegrations.Nodes.Agents.ListInstances,
+          HeddleIntegrations.Nodes.Agents.Pause,
+          HeddleIntegrations.Nodes.Agents.ResetInstance,
+          HeddleIntegrations.Nodes.Agents.Event
         ]
       ]
     ]

@@ -31,19 +31,45 @@ defmodule HeddleIntegrations.Nodes.Agents.Ask do
   def handler(context, _input) do
     name = Agents.text(context, "to")
     key = Agents.key(Agents.text(context, "key"))
-    reply_to = %{"run_id" => context["run_id"], "key" => "agents:" <> unique()}
+    reply_to = %{"run_id" => context["run_id"], "key" => reply_key()}
 
     with :ok <- check(context, name, key),
-         {:ok, _runs} <-
-           Agents.deliver(context, name, key, %{
-             "message" => SendMessage.message(context),
-             "reply_to" => reply_to
-           }) do
+         {:ok, _runs} <- ask(context, name, key, SendMessage.message(context), reply_to) do
       Bobbin.Node.wait_for_call(reply_to["key"], timeout: timeout(context))
     else
       {:error, message} -> Service.failure(context, message)
     end
   end
+
+  @doc """
+  Sends `message` to the instance `key` of `name`, to reply to `reply_to`. An agent
+  waiting for an answer can't be asked back by who it waits for: its runs wait in its
+  lane, so neither would answer.
+  """
+  def ask(context, name, key, message, reply_to) do
+    waiting =
+      case context["agent"] do
+        %{"name" => own, "key" => own_key} = agent ->
+          List.wrap(agent["waiting"]) ++ ["#{own}/#{own_key}"]
+
+        _flow ->
+          []
+      end
+
+    if "#{name}/#{key}" in waiting do
+      {:error,
+       "#{name} is waiting for an answer from this agent, so it can't be asked now. Use Agent: Send Message."}
+    else
+      Agents.deliver(context, name, key, %{
+        "message" => message,
+        "reply_to" => reply_to,
+        "waiting" => waiting
+      })
+    end
+  end
+
+  @doc "A key no other question has, to wait for its answer."
+  def reply_key, do: "agents:" <> unique()
 
   defp check(_context, "", _key), do: {:error, "Name the agent to ask."}
 
