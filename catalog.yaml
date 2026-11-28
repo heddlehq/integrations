@@ -161,7 +161,7 @@ integrations:
   - {id: tiny, name: Tiny ERP, category: erp, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
   - {id: totvs_protheus, name: TOTVS Protheus, category: erp, phase: 2, origin: br, auth: basic, host: true, kind: manifest, status: planned}
   - {id: tray, name: Tray, category: ecommerce, phase: 2, origin: br, auth: oauth2, host: true, kind: manifest, status: planned}
-  - {id: vhsys, name: VHSYS, category: erp, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: vhsys, name: VHSYS, category: erp, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: viacep, name: ViaCEP, category: data, phase: 2, origin: br, auth: none, kind: manifest, status: planned}
   - {id: vindi, name: Vindi, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
   - {id: vtex, name: VTEX, category: ecommerce, phase: 2, origin: br, auth: header, host: true, kind: manifest, status: draft}
