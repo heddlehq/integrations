@@ -12,7 +12,7 @@ integrations:
   - {id: baserow, name: Baserow, category: database, phase: 1, origin: n8n, auth: header, n8n: Baserow, host: true, kind: manifest, status: draft}
   - {id: box, name: Box, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Box, kind: manifest, status: draft}
   - {id: brevo, name: Brevo, category: marketing, phase: 1, origin: n8n, auth: header, n8n: Brevo, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
-  - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: oauth2, n8n: Calendly, kind: manifest, status: planned}
+  - {id: calendly, name: Calendly, category: scheduling, phase: 1, origin: n8n, auth: bearer, n8n: Calendly, kind: manifest, status: draft}
   - {id: clickup, name: ClickUp, category: project, phase: 1, origin: n8n, auth: header, n8n: ClickUp, kind: manifest, status: draft}
   - {id: confluence, name: Confluence, category: productivity, phase: 1, origin: n8n, auth: basic, n8n: Confluence, host: true, kind: manifest, status: draft}
   - {id: discord, name: Discord, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: Discord, kind: package, lib: {name: nostrum, version: 0.10.4, released: 2025-03-02}, status: planned}
@@ -41,7 +41,7 @@ integrations:
   - {id: jira, name: Jira Software, category: project, phase: 1, origin: n8n, auth: basic, n8n: Jira, host: true, kind: manifest, status: draft}
   - {id: linear, name: Linear, category: project, phase: 1, origin: n8n, auth: header, n8n: Linear, kind: manifest, status: draft}
   - {id: linkedin, name: LinkedIn, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: LinkedIn, kind: manifest, status: planned}
-  - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: oauth2, n8n: Mailchimp, kind: manifest, status: planned}
+  - {id: mailchimp, name: Mailchimp, category: marketing, phase: 1, origin: n8n, auth: basic, n8n: Mailchimp, kind: manifest, status: draft}
   - {id: mailgun, name: Mailgun, category: email, phase: 1, origin: n8n, auth: basic, n8n: Mailgun, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
   - {id: microsoft_excel, name: Microsoft Excel 365, category: productivity, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/Excel, kind: manifest, status: draft}
   - {id: microsoft_onedrive, name: Microsoft OneDrive, category: files, phase: 1, origin: n8n, auth: oauth2, n8n: Microsoft/OneDrive, kind: manifest, status: draft}
@@ -63,7 +63,7 @@ integrations:
   - {id: s3, name: Amazon S3, category: files, phase: 1, origin: n8n, auth: aws, n8n: Aws/S3, kind: package, lib: {name: ex_aws_s3, version: 2.5.9, released: 2025-12-09}, status: official}
   - {id: salesforce, name: Salesforce, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Salesforce, host: true, kind: manifest, status: planned}
   - {id: sendgrid, name: SendGrid, category: email, phase: 1, origin: n8n, auth: bearer, n8n: SendGrid, kind: package, lib: {name: swoosh, version: 1.30.0, released: 2026-11-18}, status: planned}
-  - {id: shopify, name: Shopify, category: ecommerce, phase: 1, origin: n8n, auth: header, n8n: Shopify, host: true, kind: manifest, status: planned}
+  - {id: shopify, name: Shopify, category: ecommerce, phase: 1, origin: n8n, auth: header, n8n: Shopify, host: true, kind: manifest, status: draft}
   - {id: slack, name: Slack, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Slack, kind: package, lib: {name: slack_elixir, version: 1.2.2, released: 2026-09-14}, status: official}
   - {id: sql, name: "SQL (Postgres, MySQL, SQL Server, SQLite, Oracle)", category: database, phase: 1, origin: n8n, auth: basic, n8n: Postgres, kind: package, lib: {name: exqlite, version: 0.43.0, released: 2026-10-20}, status: official}
   - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: package, lib: {name: stripity_stripe, version: 3.3.3, released: 2026-10-29}, status: planned}
@@ -72,17 +72,17 @@ integrations:
   - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
   - {id: trello, name: Trello, category: project, phase: 1, origin: n8n, auth: query, n8n: Trello, kind: manifest, status: draft}
   - {id: twilio, name: Twilio, category: messaging, phase: 1, origin: n8n, auth: basic, n8n: Twilio, kind: manifest, status: draft}
-  - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: oauth2, n8n: Typeform, kind: manifest, status: planned}
-  - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: oauth2, n8n: Webflow, kind: manifest, status: planned}
+  - {id: typeform, name: Typeform, category: forms, phase: 1, origin: n8n, auth: bearer, n8n: Typeform, kind: manifest, status: draft}
+  - {id: webflow, name: Webflow, category: cms, phase: 1, origin: n8n, auth: bearer, n8n: Webflow, kind: manifest, status: draft}
   - {id: whatsapp, name: WhatsApp Business Cloud, category: messaging, phase: 1, origin: n8n, auth: bearer, n8n: WhatsApp, kind: package, lib: {name: whatsapp_elixir, version: 0.1.10, released: 2026-11-12}, status: planned}
-  - {id: woocommerce, name: WooCommerce, category: ecommerce, phase: 1, origin: n8n, auth: basic, n8n: WooCommerce, host: true, kind: manifest, status: planned}
-  - {id: wordpress, name: WordPress, category: cms, phase: 1, origin: n8n, auth: basic, n8n: Wordpress, host: true, kind: manifest, status: planned}
+  - {id: woocommerce, name: WooCommerce, category: ecommerce, phase: 1, origin: n8n, auth: basic, n8n: WooCommerce, host: true, kind: manifest, status: draft}
+  - {id: wordpress, name: WordPress, category: cms, phase: 1, origin: n8n, auth: basic, n8n: Wordpress, host: true, kind: manifest, status: draft}
   - {id: x, name: X (Twitter), category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Twitter, kind: manifest, status: planned}
-  - {id: xero, name: Xero, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: Xero, kind: manifest, status: planned}
+  - {id: xero, name: Xero, category: accounting, phase: 1, origin: n8n, auth: oauth2, n8n: Xero, kind: manifest, status: draft}
   - {id: youtube, name: YouTube, category: social, phase: 1, origin: n8n, auth: oauth2, n8n: Google/YouTube, kind: package, lib: {name: google_api_you_tube, version: 0.54.0, released: 2025-04-15}, status: planned}
   - {id: zendesk, name: Zendesk, category: support, phase: 1, origin: n8n, auth: basic, n8n: Zendesk, host: true, kind: manifest, status: draft}
   - {id: zoho_crm, name: Zoho CRM, category: crm, phase: 1, origin: n8n, auth: oauth2, n8n: Zoho, host: true, kind: manifest, status: planned}
-  - {id: zoom, name: Zoom, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Zoom, kind: manifest, status: planned}
+  - {id: zoom, name: Zoom, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Zoom, kind: manifest, status: draft}
 
   # Phase 2: Brazil
   - {id: abacatepay, name: AbacatePay, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
