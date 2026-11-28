@@ -51,6 +51,7 @@ defmodule HeddleIntegrations.Nodes.Agents.Agent do
     from = data["from"] || %{"type" => "flow"}
 
     with :ok <- check_name(name),
+         :ok <- check_message(context, data),
          {:ok, declared} <- Agents.declared_state(context["state"]),
          :ok <- check_sender(context, name, from),
          :ok <- check_paused(context, name, key),
@@ -85,6 +86,15 @@ defmodule HeddleIntegrations.Nodes.Agents.Agent do
   defp check_name(name) do
     if String.contains?(name, "/"),
       do: {:error, "An agent's name can't have a /."},
+      else: :ok
+  end
+
+  # A run started by hand, from the editor, brings no message.
+  defp check_message(context, data) do
+    if context["trigger"] in ["manual", "test"] and message(data["message"]) == "",
+      do:
+        {:error,
+         "An agent runs when it gets a message. To try it, publish the flow and press Chat in this node's drawer, or send it one with Agent: Send Message."},
       else: :ok
   end
 

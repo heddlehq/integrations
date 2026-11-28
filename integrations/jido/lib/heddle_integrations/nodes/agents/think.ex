@@ -157,7 +157,7 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
 
       case pending do
         nil -> {:ok, %{"reply" => reply}}
-        pending -> wait(context, agent, pending)
+        pending -> wait(context, agent, pending, reply)
       end
     end
   end
@@ -449,7 +449,20 @@ defmodule HeddleIntegrations.Nodes.Agents.Think do
     end
   end
 
-  defp wait(_context, agent, %{"kind" => "approval"} = pending) do
+  # A person on the chat sees what the agent said while it waits for an approval,
+  # which can take long, like "a person is reviewing your refund".
+  defp wait(context, agent, %{"kind" => "approval"} = pending, reply) do
+    _said =
+      if match?(%{"type" => "chat"}, agent["from"]) and reply not in [nil, ""],
+        do:
+          Agents.chat_append(context["workspace_id"], agent["name"], agent["key"], :agent, reply)
+
+    wait_approval(agent, pending)
+  end
+
+  defp wait(context, agent, pending, _reply), do: wait(context, agent, pending)
+
+  defp wait_approval(agent, pending) do
     details =
       "#{agent["name"]} (#{agent["key"]}) wants to run #{pending["tool"]} with:\n" <>
         Jason.encode!(pending["arguments"], pretty: true)

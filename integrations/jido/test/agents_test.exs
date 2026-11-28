@@ -116,6 +116,13 @@ defmodule HeddleIntegrations.AgentsTest do
       assert start(%{})["agent"]["state"]["attempts"] == 0
     end
 
+    test "a run started by hand says how to try the agent" do
+      context =
+        Map.merge(@trigger, %{"workspace_id" => 1, "trigger" => "manual", "result" => nil})
+
+      assert {:error, "An agent runs when it gets a message." <> _} = Agent.handler(context, nil)
+    end
+
     test "without a key, the message goes to its only instance" do
       assert start(%{"message" => "Hi"})["agent"]["key"] == "main"
     end
@@ -444,6 +451,24 @@ defmodule HeddleIntegrations.AgentsTest do
 
       resumed = %{"by" => "call", "request" => %{"decision" => "rejected"}, "wait" => wait}
       assert {:ok, %{"reply" => "Ok, no refund."}} = resume(context, resumed, [@refund], call)
+    end
+
+    test "the person on the chat sees what it said while it waits for approval" do
+      script(fn context, _options ->
+        if Enum.any?(context.messages, &(&1.role == :tool)),
+          do: answer("Your refund is with our team for approval."),
+          else: call_tool("refund", %{"order" => "A-1"})
+      end)
+
+      {:ok, _runs} = Agent.chat_message(1, %{"name" => "Ana"}, "v9", "Refund A-1")
+      [request] = TestHost.runs()
+      context = start(request.data) |> Map.put("approval", "refund")
+
+      assert {:wait, _wait} =
+               think(context, "{{agent.message}}", [@refund], fn _n, _a -> {:ok, "{}"} end)
+
+      assert [_visitor, %{role: :agent, text: "Your refund is with our team for approval."}] =
+               Agent.chat_history(1, %{"name" => "Ana"}, "v9")
     end
 
     test "asks another agent, waits for its reply, and goes on with it" do
