@@ -66,7 +66,7 @@ integrations:
   - {id: shopify, name: Shopify, category: ecommerce, phase: 1, origin: n8n, auth: header, n8n: Shopify, host: true, kind: manifest, status: draft}
   - {id: slack, name: Slack, category: communication, phase: 1, origin: n8n, auth: oauth2, n8n: Slack, kind: package, lib: {name: slack_elixir, version: 1.2.2, released: 2026-09-14}, status: official}
   - {id: sql, name: "SQL (Postgres, MySQL, SQL Server, SQLite, Oracle)", category: database, phase: 1, origin: n8n, auth: basic, n8n: Postgres, kind: package, lib: {name: exqlite, version: 0.43.0, released: 2026-10-20}, status: official}
-  - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: package, lib: {name: stripity_stripe, version: 3.3.3, released: 2026-10-29}, status: planned}
+  - {id: stripe, name: Stripe, category: payments, phase: 1, origin: n8n, auth: bearer, n8n: Stripe, kind: manifest, status: draft}
   - {id: supabase, name: Supabase, category: database, phase: 1, origin: n8n, auth: header, n8n: Supabase, host: true, kind: manifest, status: draft}
   - {id: telegram, name: Telegram, category: messaging, phase: 1, origin: n8n, auth: path, n8n: Telegram, kind: manifest, status: draft}
   - {id: todoist, name: Todoist, category: productivity, phase: 1, origin: n8n, auth: bearer, n8n: Todoist, kind: manifest, status: draft}
