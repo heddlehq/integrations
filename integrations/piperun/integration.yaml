@@ -1,0 +1,557 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# PipeRun CRM. Connect with the API token from Minha conta › Integrações › Token
+# API. Lists come 100 per page by default, 200 at most; the next page goes by the
+# cursor PipeRun returns in meta. Dates go as 2026-01-31 or 2026-01-31 09:00:00.
+id: piperun
+name: PipeRun
+version: 1.0.0
+description: Create, update and search deals, people, companies, activities and notes, and read pipelines, stages, origins and tags, in PipeRun CRM.
+icon: hero-funnel
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#1A1A3D"/><svg x="3.00" y="8.82" width="18.00" height="6.36" viewBox="0 0 207.153 73.216"><defs><clipPath id="clip-path"><rect id="Ret&#xE2;ngulo_774" data-name="Ret&#xE2;ngulo 774" width="207.153" height="73.216" fill="none"></rect></clipPath></defs><g id="Grupo_367" data-name="Grupo 367" transform="translate(0 0)"><g id="Grupo_366" data-name="Grupo 366" transform="translate(0 0)" clip-path="url(#clip-path)"><path id="Caminho_735" data-name="Caminho 735" d="M.324,0c.5.237,1,.467,1.488.714.956.479,1.91.96,2.858,1.454.9.468,1.779.971,2.684,1.426.541.272,1.126.455,1.67.725.809.4,1.592.851,2.4,1.265.956.493,1.919.973,2.883,1.45a29.339,29.339,0,0,1,2.687,1.343,3.961,3.961,0,0,1,1.086,1.291c.5.8.953,1.644,1.388,2.489.475.925.915,1.869,1.358,2.81.3.647.62,1.292.873,1.959.262.692.447,1.412.679,2.115.27.818.565,1.627.831,2.447.141.434.259.877.357,1.323.129.584.217,1.177.344,1.762.163.752.347,1.5.522,2.249.008.039.026.076.032.114.129.966.282,1.929.38,2.9.128,1.265.21,2.535.319,3.8a2.946,2.946,0,0,0,.156.481c.27-1.047.5-1.946.733-2.841.162-.608.345-1.21.507-1.819.145-.542.286-1.086.406-1.635.111-.51.207-1.023.282-1.54.127-.886.221-1.777.349-2.663.169-1.174.41-2.34.524-3.518.119-1.215.107-2.443.183-3.662.049-.8.152-1.591.242-2.5.673.309,1.3.583,1.912.881q1.452.706,2.89,1.441c1.163.595,2.312,1.22,3.481,1.8.9.445,1.814.847,2.724,1.266A2.323,2.323,0,0,1,41.127,21a17.566,17.566,0,0,0,1.051,2.467c.284.723.495,1.475.731,2.216.283.889.586,1.773.829,2.673.181.67.276,1.361.414,2.042q.257,1.278.52,2.554a1.247,1.247,0,0,1,.034.173c.085,1.464.191,2.927.237,4.393a10.124,10.124,0,0,1-.186,1.447.589.589,0,0,0,.123.378c2.649-4.5,4.94-9.119,5.386-14.566a9.688,9.688,0,0,1,1.126.454c1.268.711,2.543,1.414,3.774,2.186a16.884,16.884,0,0,1,4.4,3.978,9.828,9.828,0,0,1,1.455,2.695,8.565,8.565,0,0,1,.513,3.774c-.071.753-.368,1.483-.5,2.233a6.39,6.39,0,0,1-1.256,2.626A10.836,10.836,0,0,1,56.926,45.5c-.7.449-1.356.958-2.074,1.367-1.045.594-2.131,1.118-3.195,1.682-.275.145-.52.346-.8.486a2.9,2.9,0,0,1-.618.138,23.217,23.217,0,0,0,2.592-9.032c-.43.633-.856,1.269-1.289,1.9-.621.9-1.2,1.845-1.883,2.7-1.055,1.324-2.234,2.551-3.268,3.891a47.365,47.365,0,0,1-5.172,5.134,10.2,10.2,0,0,1-2.668,1.535c-.889.445-1.788.869-2.676,1.316-1.131.57-2.253,1.157-3.383,1.728q-1.874.949-3.757,1.879c-.047.023-.114,0-.282,0a5.056,5.056,0,0,1,.2-.644c.347-.745.715-1.479,1.068-2.22.4-.83.809-1.653,1.166-2.5s.651-1.7.968-2.556c.291-.781.591-1.56.857-2.351.164-.491.268-1,.409-1.5.169-.606.362-1.206.519-1.815.12-.464.206-.938.3-1.409.132-.686.255-1.373.379-2.061.085-.476.183-.953.244-1.433.048-.387.049-.781.07-1.172l-.173-.02c-.244.583-.487,1.167-.733,1.75s-.493,1.181-.75,1.767-.522,1.2-.807,1.79c-.43.884-.867,1.765-1.328,2.634-.445.841-.908,1.675-1.392,2.5-.564.953-1.162,1.886-1.743,2.829-.455.739-.887,1.493-1.368,2.215-.361.543-.78,1.048-1.179,1.565-.6.782-1.176,1.592-1.826,2.333-1.359,1.546-2.758,3.057-4.145,4.58a7.254,7.254,0,0,1-2.817,1.569c-.586.245-1.138.57-1.719.831-.553.248-1.126.454-1.686.69-.593.25-1.181.51-1.769.772q-.846.376-1.685.762c-.63.289-1.251.594-1.886.869-.558.241-1.131.445-1.693.676-.588.241-1.172.493-1.756.743-.62.265-1.242.525-1.856.8-.555.251-1.1.529-1.651.783a6.484,6.484,0,0,1-.67.21c.591-.8,1.076-1.455,1.55-2.112.61-.847,1.244-1.68,1.812-2.554.74-1.136,1.474-2.282,2.121-3.472.694-1.28,1.3-2.609,1.918-3.928C8,59.874,8.6,58.6,9.152,57.3c.28-.662.435-1.376.668-2.058.267-.778.57-1.544.833-2.323.147-.433.261-.878.364-1.323.131-.564.226-1.135.352-1.7.1-.432.234-.855.327-1.287.279-1.3.545-2.61.816-3.915.012-.058.012-.118.02-.176a51.748,51.748,0,0,0,.383-8.164c0-.829.009-1.659-.038-2.485-.1-1.721-.194-3.443-.37-5.157-.133-1.292-.373-2.576-.6-3.858-.17-.967-.354-1.934-.6-2.884q-.55-2.136-1.2-4.244c-.229-.736-.578-1.434-.843-2.16-.241-.658-.426-1.337-.668-2-.2-.532-.425-1.053-.664-1.567-.269-.579-.56-1.15-.853-1.719-.449-.872-.882-1.753-1.367-2.6C5.159,6.7,4.586,5.738,3.964,4.808c-.5-.741-1.061-1.439-1.625-2.131C1.75,1.954,1.123,1.261.517.55A4.4,4.4,0,0,1,.231.128L.324,0" transform="translate(0 0)" fill="#ff265c"></path><path id="Caminho_736" data-name="Caminho 736" d="M273.274,41.511c.551-.5,1.035-.9,1.478-1.34A5.518,5.518,0,0,1,276.964,39a9.31,9.31,0,0,1,4.251-.237,4.332,4.332,0,0,1,3.4,2.243c.9,1.6.6,3.311.529,4.984a15.86,15.86,0,0,1-.567,2.889c-.268,1.143-.588,2.273-.867,3.413-.11.45-.176.91-.257,1.366-.132.745-.3,1.485-.379,2.235a1.7,1.7,0,0,1-1.582,1.519c-.611.006-1.224.015-1.835,0a1.414,1.414,0,0,1-1.32-2.091,8.61,8.61,0,0,0,.423-1.737c.131-.685.2-1.383.336-2.066.152-.75.359-1.49.536-2.235.112-.471.246-.941.315-1.419a27.041,27.041,0,0,0,.353-2.956,2.36,2.36,0,0,0-1.954-2.254,4.718,4.718,0,0,0-3.258.407,4.457,4.457,0,0,0-2.093,2.049,28.975,28.975,0,0,0-1.215,2.843,7.262,7.262,0,0,0-.279,1.24c-.138.724-.25,1.455-.4,2.176s-.343,1.462-.517,2.193c-.018.076-.04.152-.052.23-.124.784-.216,1.576-.38,2.352a1.476,1.476,0,0,1-1.439,1.265c-.651.019-1.3.018-1.954,0A1.352,1.352,0,0,1,265.5,55.5a13.548,13.548,0,0,0,.378-1.642c.108-.489.227-.976.315-1.469.12-.669.183-1.35.329-2.013.265-1.2.574-2.4.863-3.593.018-.076.022-.156.035-.234.219-1.276.422-2.554.661-3.827.168-.889.39-1.767.578-2.652a1.43,1.43,0,0,1,1.34-1.006c.67-.018,1.344-.041,2.012,0,.794.056,1.366.49,1.273,1.347a10.905,10.905,0,0,0-.006,1.093" transform="translate(-78.091 -11.368)" fill="#fff"></path><path id="Caminho_737" data-name="Caminho 737" d="M247.8,55.4a20.026,20.026,0,0,1-1.518,1.353,7.1,7.1,0,0,1-1.5.817,9.34,9.34,0,0,1-4.64.3,4.2,4.2,0,0,1-3.358-2.169,7.09,7.09,0,0,1-.415-5.037c.167-.757.255-1.53.415-2.289.142-.678.33-1.345.5-2.017.019-.076.053-.148.066-.224.215-1.236.408-2.477.65-3.709a17.182,17.182,0,0,1,.608-2.412,1.3,1.3,0,0,1,1.251-.8c.571-.024,1.144-.007,1.716-.006a1.562,1.562,0,0,1,1.53,2.32,15.551,15.551,0,0,0-.521,2.124c-.173.752-.335,1.506-.506,2.258-.133.583-.3,1.16-.405,1.747-.138.742-.241,1.491-.349,2.239a10.636,10.636,0,0,0-.247,2.006,2.115,2.115,0,0,0,1.02,1.88,3.17,3.17,0,0,0,1.636.366,5,5,0,0,0,4.087-2.265,8.989,8.989,0,0,0,1.2-2.515c.263-1,.62-1.971.869-2.971.181-.731.228-1.495.383-2.234.146-.7.368-1.376.531-2.07.124-.526.216-1.059.3-1.592.128-.765.413-1.21,1.14-1.248a5.245,5.245,0,0,1,2.946.222,1.1,1.1,0,0,1,.525.708,7.181,7.181,0,0,1-.5,3.011,1.45,1.45,0,0,0-.058.227c-.215,1.237-.392,2.483-.651,3.712-.246,1.167-.588,2.313-.87,3.474-.118.485-.193.981-.277,1.474-.127.744-.223,1.494-.373,2.234a17.471,17.471,0,0,1-.616,2.517,1.236,1.236,0,0,1-1.193.73c-.631,0-1.263.008-1.894,0a1.378,1.378,0,0,1-1.491-1.563,3.775,3.775,0,0,0,0-.6" transform="translate(-69.474 -11.522)" fill="#fff"></path><path id="Caminho_738" data-name="Caminho 738" d="M166.934,47.049a6.109,6.109,0,0,0-.8-3.472,4.567,4.567,0,0,0-3.853-2.2,12.8,12.8,0,0,0-1.785.19,6.147,6.147,0,0,0-3.03,1.288,8.161,8.161,0,0,0-3.124,4.575,12.5,12.5,0,0,0-.315,3.772,4.692,4.692,0,0,0,4.594,4.558,7.693,7.693,0,0,0,2.721-.253,7.069,7.069,0,0,0,2.675-1.411,8.33,8.33,0,0,0,2.484-4.16,21.163,21.163,0,0,0,.431-2.882M152.872,54.42c-.132.565-.255,1.025-.347,1.491-.144.742-.248,1.491-.405,2.229-.145.676-.337,1.341-.508,2.011-.014.056-.037.112-.047.169-.128.762-.227,1.531-.389,2.286a21.314,21.314,0,0,1-.587,2.17c-.162.492-.668.645-1.431.52a.746.746,0,0,1-.726-.857c.069-.709.169-1.414.283-2.117.078-.476.214-.943.3-1.418.138-.744.238-1.5.4-2.234.14-.656.338-1.3.51-1.95.02-.075.041-.15.054-.226.213-1.217.39-2.442.648-3.65.246-1.146.591-2.271.865-3.412.14-.581.205-1.179.328-1.764.187-.886.41-1.764.589-2.652.133-.663.2-1.341.335-2.005.178-.887.355-1.778.6-2.647a1.08,1.08,0,0,1,1.294-.673.987.987,0,0,1,.941,1.089,7.613,7.613,0,0,1-.083.941c-.054.3-.161.586-.244.879l.134.092a4.347,4.347,0,0,1,.513-.654,21.126,21.126,0,0,1,1.97-1.632,8.425,8.425,0,0,1,5.791-1.227,6.182,6.182,0,0,1,5.382,4.539,9.609,9.609,0,0,1,.491,3.6,15.922,15.922,0,0,1-.773,3.832,10.613,10.613,0,0,1-3.13,4.648A18.145,18.145,0,0,1,163.7,57a9,9,0,0,1-6.113.84,5.3,5.3,0,0,1-4.27-2.882,3.5,3.5,0,0,0-.445-.542" transform="translate(-43.674 -11.509)" fill="#fff"></path><path id="Caminho_739" data-name="Caminho 739" d="M113.13,55.9c.658-.15,1.328-.267,1.973-.459a5.785,5.785,0,0,0,1.822-.711,9.641,9.641,0,0,0,1.919-1.953,6.215,6.215,0,0,0,1.294-2.821c.143-1.013.418-2.009.524-3.023a8,8,0,0,0-.219-1.544,4.714,4.714,0,0,0-.832-2.162,4.556,4.556,0,0,0-3.556-1.851,6.991,6.991,0,0,0-4.053.92,6.6,6.6,0,0,0-2.35,2.07,7.622,7.622,0,0,0-1.542,3.247c-.14.989-.4,1.963-.505,2.954a4.962,4.962,0,0,0,.222,1.376,4.368,4.368,0,0,0,1.165,2.28A6.172,6.172,0,0,0,113.13,55.9m-6.539-1.444c-.2,1.069-.378,2.095-.593,3.113-.139.656-.342,1.3-.5,1.949-.144.582-.287,1.164-.4,1.752-.13.686-.215,1.38-.341,2.066a10.769,10.769,0,0,1-.315,1.346,1.367,1.367,0,0,1-1.994.387,1.441,1.441,0,0,1-.285-1.743,14.4,14.4,0,0,0,.379-1.565c.144-.7.261-1.409.4-2.112.129-.663.263-1.325.407-1.985.172-.79.349-1.579.537-2.366.169-.708.356-1.411.533-2.117.019-.076.031-.154.044-.231.213-1.235.39-2.479.651-3.7.244-1.148.589-2.275.869-3.416.119-.485.2-.981.276-1.474.129-.785.23-1.574.37-2.357a10.54,10.54,0,0,1,.379-1.64,1.293,1.293,0,0,1,1.795-.548,1.587,1.587,0,0,1,.474,1.771,8.051,8.051,0,0,0-.237.913l.167.081c.326-.337.663-.666.975-1.016a7.228,7.228,0,0,1,2.752-1.829,8.884,8.884,0,0,1,4.763-.508,6.1,6.1,0,0,1,4.467,3.01,19.635,19.635,0,0,1,.708,1.911,8.144,8.144,0,0,1,.311,3.424,8.377,8.377,0,0,1-.9,3.965,22.394,22.394,0,0,1-1.268,2.476,9.479,9.479,0,0,1-3.179,2.893,15,15,0,0,1-2.044.72,8.393,8.393,0,0,1-4.527.212,5.294,5.294,0,0,1-4.407-3.285c-.008-.023-.068-.027-.258-.093" transform="translate(-30.012 -11.506)" fill="#fff"></path><path id="Caminho_740" data-name="Caminho 740" d="M186.965,47.112c.343.016.516.031.69.031,3.625,0,7.25-.011,10.876.013.591,0,.772-.281.745-.766a11.467,11.467,0,0,1-.184-1.2,3.015,3.015,0,0,0-.733-1.964,4.52,4.52,0,0,0-3.808-1.888,23.227,23.227,0,0,0-2.659.251,4.919,4.919,0,0,0-2.347,1.157,6.763,6.763,0,0,0-2.018,2.59,15.832,15.832,0,0,0-.561,1.774m6.833,1.962h-6.511c-.7,0-.723.077-.783.78a6.407,6.407,0,0,0,.663,3.316,4.47,4.47,0,0,0,2.85,2.336,8.56,8.56,0,0,0,2.779.254,6.162,6.162,0,0,0,2.7-.812,8.066,8.066,0,0,0,2.018-1.835c.377-.383,1.169-.636,1.553-.325.657.531.8.93.379,1.594a7.4,7.4,0,0,1-3.031,2.63,11.2,11.2,0,0,1-5.146.942,7.3,7.3,0,0,1-3.33-.7,6.747,6.747,0,0,1-3-2.927c-1.133-2.066-.985-4.255-.833-6.435a8.2,8.2,0,0,1,.857-2.536,11.924,11.924,0,0,1,1.259-2.373,8.734,8.734,0,0,1,3.354-2.824,13.363,13.363,0,0,1,2.26-.774,10.74,10.74,0,0,1,3.683-.183,6.641,6.641,0,0,1,5,2.837,5.477,5.477,0,0,1,1.049,2.853c.041.873.214,1.745.184,2.613a2.449,2.449,0,0,1-.565,1.284,1.255,1.255,0,0,1-.87.272c-1.361.028-2.723.014-4.084.016H193.8Z" transform="translate(-54.14 -11.513)" fill="#fff"></path><path id="Caminho_741" data-name="Caminho 741" d="M221.4,42.285a7.09,7.09,0,0,1,2.313-2.362,5.918,5.918,0,0,1,2.624-.894c.89-.061,1.4.368,1.294,1.253a12.87,12.87,0,0,1-.628,2.74c-.164.467-.759.622-1.256.663a5.783,5.783,0,0,0-4.527,2.685,8.208,8.208,0,0,0-1.259,2.653c-.31,1.289-.6,2.584-.895,3.875s-.554,2.592-.92,3.863a1.188,1.188,0,0,1-1.172.762c-.591.022-1.184.008-1.775.006a1.508,1.508,0,0,1-1.61-2.115c.171-.61.384-1.209.518-1.826.164-.756.246-1.529.4-2.287.14-.678.334-1.344.5-2.016.019-.074.047-.147.061-.222.216-1.239.4-2.486.654-3.715.243-1.148.584-2.275.855-3.419.133-.56.184-1.138.314-1.7a1.259,1.259,0,0,1,1.341-1.054c.591-.009,1.184-.013,1.775,0a1.3,1.3,0,0,1,1.294,1.868,5.318,5.318,0,0,0-.092,1.193l.185.048" transform="translate(-62.818 -11.482)" fill="#fff"></path><path id="Caminho_742" data-name="Caminho 742" d="M143.238,41.406c-.219.9-.454,1.79-.651,2.691-.158.72-.253,1.452-.408,2.173s-.343,1.416-.517,2.123c-.019.076-.04.152-.054.229-.213,1.237-.389,2.483-.649,3.71-.246,1.166-.58,2.313-.872,3.469a4.189,4.189,0,0,1-.365,1.36,1.4,1.4,0,0,1-1.093.551c-.572-.081-1.138-.457-1.059-1.107.064-.532.19-1.057.287-1.585.021-.116.028-.234.053-.349.182-.867.372-1.731.548-2.6.139-.684.248-1.374.4-2.057.162-.752.354-1.5.529-2.246.026-.114.033-.233.058-.348.19-.884.392-1.765.569-2.651.141-.7.228-1.417.384-2.116a12.968,12.968,0,0,1,.6-2.2,1.223,1.223,0,0,1,2.059-.109c.186.222.09.682.124,1.033l.062.026" transform="translate(-40.478 -11.723)" fill="#fff"></path><path id="Caminho_743" data-name="Caminho 743" d="M143.6,34.029a1.306,1.306,0,0,1,1.17-1.316,1.46,1.46,0,0,1,1.314,1.3,1.3,1.3,0,0,1-1.3,1.193,1.075,1.075,0,0,1-1.184-1.182" transform="translate(-42.255 -9.626)" fill="#fff"></path></g></g></svg></svg>
+category: crm
+author: Heddle
+homepage: https://developers.pipe.run
+base_url: https://api.pipe.run/v1/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: PipeRun
+  fields:
+    - {name: token, label: API token, secret: true, required: true, description: "From Minha conta › Integrações › Token API."}
+  auth:
+    type: header
+    name: token
+    value: "{{credential.token}}"
+
+errors:
+  message_path: message
+
+triggers:
+  - name: New Deal
+    description: Starts the flow for each new deal, checking every 5 minutes.
+    fields:
+      - {name: pipeline_id, label: Pipeline ID, type: number, description: "Only deals of this pipeline. From List Pipelines."}
+    request:
+      method: GET
+      path: deals
+      query: {sort: DESC, show: 100, pipeline_id: "{{fields.pipeline_id}}"}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+  - name: New Person
+    description: Starts the flow for each new person, checking every 5 minutes.
+    request:
+      method: GET
+      path: persons
+      query: {sort: DESC, show: 100, with: "contactEmails,contactPhones"}
+    output: {path: data}
+    poll: {every: 5, id: id}
+
+actions:
+  # Deals
+  - name: Create Deal
+    resource: Deal
+    description: Creates a deal in a stage of a pipeline.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: pipeline_id, label: Pipeline ID, type: number, required: true, description: "From List Pipelines."}
+      - {name: stage_id, label: Stage ID, type: number, required: true, description: "From List Stages."}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: origin_id, label: Origin ID, type: number, description: "From List Origins."}
+      - {name: value, label: Value, type: number}
+      - {name: value_mrr, label: Recurring value (MRR), type: number}
+      - {name: probability, label: Probability, type: number, description: "0 to 90."}
+      - name: temperature
+        label: Temperature
+        type: select
+        options: [{label: Very hot, value: 1}, {label: Hot, value: 2}, {label: Warm, value: 3}, {label: Cold, value: 4}]
+      - {name: probably_closed_at, label: Expected close, description: "Like 2026-01-31"}
+      - {name: reference, label: Reference, description: "An ID from another system, like the lead's."}
+      - {name: tags, label: Tag IDs, description: "Separated by commas."}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'Like [{"id": 12, "value": "Enterprise"}]'}
+    request:
+      method: POST
+      path: deals
+      body:
+        title: "{{fields.title}}"
+        pipeline_id: "{{fields.pipeline_id}}"
+        stage_id: "{{fields.stage_id}}"
+        owner_id: "{{fields.owner_id}}"
+        person_id: "{{fields.person_id}}"
+        company_id: "{{fields.company_id}}"
+        origin_id: "{{fields.origin_id}}"
+        value: "{{fields.value}}"
+        value_mrr: "{{fields.value_mrr}}"
+        probability: "{{fields.probability}}"
+        temperature: "{{fields.temperature}}"
+        probably_closed_at: "{{fields.probably_closed_at}}"
+        reference: "{{fields.reference}}"
+        tags: {_each: "{{fields.tags}}", id: "{{item}}"}
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Deal
+    resource: Deal
+    description: Reads a deal, with its items, people, companies and custom fields.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+    request: {method: GET, path: "deals/{{fields.deal_id}}", query: {with: "items,persons,companies,customForms,users"}}
+    output: {path: data}
+
+  - name: Search Deals
+    resource: Deal
+    description: Lists deals by pipeline, stage, owner, status, title or dates.
+    fields:
+      - {name: pipeline_id, label: Pipeline ID, type: number}
+      - {name: stage_id, label: Stage ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: company_id, label: Company ID, type: number}
+      - name: status
+        label: Status
+        type: select
+        options: [{label: Open, value: 0}, {label: Won, value: 1}, {label: Lost, value: 3}]
+      - {name: title, label: Title}
+      - {name: created_at_start, label: Created since, description: "Like 2026-01-31"}
+      - {name: created_at_end, label: Created until}
+      - {name: updated_at_start, label: Updated since}
+      - {name: closed_at_start, label: Closed since}
+      - {name: closed_at_end, label: Closed until}
+      - {name: show, label: Per page, type: number, description: "Up to 200."}
+      - {name: cursor, label: Page cursor, description: "From meta of the previous page."}
+    request:
+      method: GET
+      path: deals
+      query:
+        sort: DESC
+        pipeline_id: "{{fields.pipeline_id}}"
+        stage_id: "{{fields.stage_id}}"
+        owner_id: "{{fields.owner_id}}"
+        person_id: "{{fields.person_id}}"
+        company_id: "{{fields.company_id}}"
+        status: "{{fields.status}}"
+        title: "{{fields.title}}"
+        created_at_start: "{{fields.created_at_start}}"
+        created_at_end: "{{fields.created_at_end}}"
+        updated_at_start: "{{fields.updated_at_start}}"
+        closed_at_start: "{{fields.closed_at_start}}"
+        closed_at_end: "{{fields.closed_at_end}}"
+        show: "{{fields.show}}"
+        cursor: "{{fields.cursor}}"
+    output: {path: data}
+
+  - name: Update Deal
+    resource: Deal
+    description: Changes a deal. Fields left empty stay as they are.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: title, label: Title}
+      - {name: pipeline_id, label: Pipeline ID, type: number}
+      - {name: stage_id, label: Stage ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: value, label: Value, type: number}
+      - {name: value_mrr, label: Recurring value (MRR), type: number}
+      - {name: probability, label: Probability, type: number}
+      - {name: probably_closed_at, label: Expected close, description: "Like 2026-01-31"}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'Like [{"id": 12, "value": "Enterprise"}]'}
+    request:
+      method: PUT
+      path: "deals/{{fields.deal_id}}"
+      body:
+        title: "{{fields.title}}"
+        pipeline_id: "{{fields.pipeline_id}}"
+        stage_id: "{{fields.stage_id}}"
+        owner_id: "{{fields.owner_id}}"
+        person_id: "{{fields.person_id}}"
+        company_id: "{{fields.company_id}}"
+        value: "{{fields.value}}"
+        value_mrr: "{{fields.value_mrr}}"
+        probability: "{{fields.probability}}"
+        probably_closed_at: "{{fields.probably_closed_at}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Move Deal
+    resource: Deal
+    description: Moves a deal to another stage, of the same or another pipeline.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: stage_id, label: Stage ID, type: number, required: true}
+      - {name: pipeline_id, label: Pipeline ID, type: number, description: "When the stage is in another pipeline."}
+    request:
+      method: PUT
+      path: "deals/{{fields.deal_id}}"
+      body: {stage_id: "{{fields.stage_id}}", pipeline_id: "{{fields.pipeline_id}}"}
+    output: {path: data}
+
+  - name: Win Deal
+    resource: Deal
+    description: Marks a deal as won.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: closed_at, label: Closed on, description: "Like 2026-01-31. Today when left empty."}
+    request:
+      method: PUT
+      path: "deals/{{fields.deal_id}}"
+      body: {status: 1, closed_at: "{{fields.closed_at}}"}
+    output: {path: data}
+
+  - name: Lose Deal
+    resource: Deal
+    description: Marks a deal as lost, with a reason.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+      - {name: lost_reason_id, label: Lost reason ID, type: number, description: "From List Lost Reasons."}
+      - {name: reason_close, label: Comment}
+      - {name: closed_at, label: Closed on, description: "Like 2026-01-31. Today when left empty."}
+    request:
+      method: PUT
+      path: "deals/{{fields.deal_id}}"
+      body: {status: 3, lost_reason_id: "{{fields.lost_reason_id}}", reason_close: "{{fields.reason_close}}", closed_at: "{{fields.closed_at}}"}
+    output: {path: data}
+
+  - name: Delete Deal
+    resource: Deal
+    description: Deletes a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+    request: {method: DELETE, path: "deals/{{fields.deal_id}}"}
+
+  - name: List Deal Items
+    resource: Deal
+    description: Lists the products and services of a deal.
+    fields:
+      - {name: deal_id, label: Deal ID, required: true}
+    request: {method: GET, path: "deals/{{fields.deal_id}}/product"}
+    output: {path: data}
+
+  # People
+  - name: Create Person
+    resource: Person
+    description: Creates a person, with emails and phones.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: emails, label: Emails, description: "Separated by commas."}
+      - {name: phones, label: Phones, description: "Separated by commas."}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: job_title, label: Job title}
+      - {name: cpf, label: CPF}
+      - {name: birth_day, label: Birthday, description: "Like 1990-05-20"}
+      - {name: observation, label: Notes, type: textarea}
+      - {name: tags, label: Tag IDs, description: "Separated by commas."}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'Like [{"id": 12, "value": "Diretor"}]'}
+    request:
+      method: POST
+      path: persons
+      body:
+        name: "{{fields.name}}"
+        contactEmails: {_each: "{{fields.emails}}", _value: "{{item}}"}
+        contactPhones: {_each: "{{fields.phones}}", _value: "{{item}}"}
+        company_id: "{{fields.company_id}}"
+        job_title: "{{fields.job_title}}"
+        cpf: "{{fields.cpf}}"
+        birth_day: "{{fields.birth_day}}"
+        observation: "{{fields.observation}}"
+        tags: {_each: "{{fields.tags}}", id: "{{item}}"}
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Person
+    resource: Person
+    description: Reads a person, with emails and phones.
+    fields:
+      - {name: person_id, label: Person ID, required: true}
+    request: {method: GET, path: "persons/{{fields.person_id}}", query: {with: "contactEmails,contactPhones"}}
+    output: {path: data}
+
+  - name: Search People
+    resource: Person
+    description: Lists people by name, CPF, company or dates.
+    fields:
+      - {name: name, label: Name}
+      - {name: cpf, label: CPF}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: external_code, label: External code}
+      - {name: created_at_start, label: Created since, description: "Like 2026-01-31"}
+      - {name: updated_at_start, label: Updated since}
+      - {name: show, label: Per page, type: number, description: "Up to 200."}
+      - {name: cursor, label: Page cursor}
+    request:
+      method: GET
+      path: persons
+      query: {sort: DESC, with: "contactEmails,contactPhones", name: "{{fields.name}}", cpf: "{{fields.cpf}}", company_id: "{{fields.company_id}}", external_code: "{{fields.external_code}}", created_at_start: "{{fields.created_at_start}}", updated_at_start: "{{fields.updated_at_start}}", show: "{{fields.show}}", cursor: "{{fields.cursor}}"}
+    output: {path: data}
+
+  - name: Update Person
+    resource: Person
+    description: Changes a person. Fields left empty stay as they are.
+    fields:
+      - {name: person_id, label: Person ID, required: true}
+      - {name: name, label: Name}
+      - {name: emails, label: Emails, description: "Separated by commas. Replace the ones there."}
+      - {name: phones, label: Phones, description: "Separated by commas. Replace the ones there."}
+      - {name: company_id, label: Company ID, type: number}
+      - {name: job_title, label: Job title}
+      - {name: observation, label: Notes, type: textarea}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'Like [{"id": 12, "value": "Diretor"}]'}
+    request:
+      method: PUT
+      path: "persons/{{fields.person_id}}"
+      body:
+        name: "{{fields.name}}"
+        contactEmails: {_each: "{{fields.emails}}", _value: "{{item}}"}
+        contactPhones: {_each: "{{fields.phones}}", _value: "{{item}}"}
+        company_id: "{{fields.company_id}}"
+        job_title: "{{fields.job_title}}"
+        observation: "{{fields.observation}}"
+        custom_fields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  # Companies
+  - name: Create Company
+    resource: Company
+    description: Creates a company.
+    fields:
+      - {name: name, label: Name, required: true}
+      - {name: cnpj, label: CNPJ}
+      - {name: company_name, label: Legal name}
+      - {name: website, label: Website}
+      - {name: emails, label: Emails, description: "Separated by commas."}
+      - {name: phones, label: Phones, description: "Separated by commas."}
+      - {name: address_postal_code, label: CEP}
+      - {name: address, label: Street}
+      - {name: address_number, label: Number}
+      - {name: district, label: District}
+      - {name: observation, label: Notes, type: textarea}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'Like [{"id": 12, "value": "Varejo"}]'}
+    request:
+      method: POST
+      path: companies
+      body:
+        name: "{{fields.name}}"
+        cnpj: "{{fields.cnpj}}"
+        company_name: "{{fields.company_name}}"
+        website: "{{fields.website}}"
+        contactEmails: {_each: "{{fields.emails}}", _value: "{{item}}"}
+        contactPhones: {_each: "{{fields.phones}}", _value: "{{item}}"}
+        address_postal_code: "{{fields.address_postal_code}}"
+        address: "{{fields.address}}"
+        address_number: "{{fields.address_number}}"
+        district: "{{fields.district}}"
+        observation: "{{fields.observation}}"
+        customFields: "{{fields.custom_fields}}"
+    output: {path: data}
+
+  - name: Get Company
+    resource: Company
+    description: Reads a company, with its people.
+    fields:
+      - {name: id, label: Company ID, required: true}
+    request: {method: GET, path: "companies/{{fields.id}}", query: {with: "personsRelated.person"}}
+    output: {path: data}
+
+  - name: Search Companies
+    resource: Company
+    description: Lists companies by name, CNPJ or dates.
+    fields:
+      - {name: name, label: Name}
+      - {name: cnpj, label: CNPJ}
+      - {name: external_code, label: External code}
+      - {name: created_at_start, label: Created since, description: "Like 2026-01-31"}
+      - {name: updated_at_start, label: Updated since}
+      - {name: show, label: Per page, type: number, description: "Up to 200."}
+      - {name: cursor, label: Page cursor}
+    request:
+      method: GET
+      path: companies
+      query: {name: "{{fields.name}}", cnpj: "{{fields.cnpj}}", external_code: "{{fields.external_code}}", created_at_start: "{{fields.created_at_start}}", updated_at_start: "{{fields.updated_at_start}}", show: "{{fields.show}}", cursor: "{{fields.cursor}}"}
+    output: {path: data}
+
+  - name: Update Company
+    resource: Company
+    description: Changes a company. Fields left empty stay as they are.
+    fields:
+      - {name: id, label: Company ID, required: true}
+      - {name: name, label: Name}
+      - {name: cnpj, label: CNPJ}
+      - {name: website, label: Website}
+      - {name: observation, label: Notes, type: textarea}
+      - {name: custom_fields, label: Custom fields, type: json, description: 'Like [{"id": 12, "value": "Varejo"}]'}
+    request:
+      method: PUT
+      path: "companies/{{fields.id}}"
+      body: {name: "{{fields.name}}", cnpj: "{{fields.cnpj}}", website: "{{fields.website}}", observation: "{{fields.observation}}", customFields: "{{fields.custom_fields}}"}
+    output: {path: data}
+
+  # Activities and notes
+  - name: Create Activity
+    resource: Activity
+    description: Schedules an activity, like a call or a meeting, on a deal.
+    fields:
+      - {name: title, label: Title, required: true}
+      - {name: activity_type_id, label: Activity type ID, type: number, required: true, description: "From List Activity Types."}
+      - {name: owner_id, label: Owner ID, type: number, required: true}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: start_at, label: Starts at, description: "Like 2026-01-31 09:00:00"}
+      - {name: end_at, label: Ends at}
+      - {name: duration, label: Duration in minutes, type: number}
+      - {name: description, label: Description, type: textarea}
+    request:
+      method: POST
+      path: activities
+      body: {title: "{{fields.title}}", activity_type_id: "{{fields.activity_type_id}}", owner_id: "{{fields.owner_id}}", deal_id: "{{fields.deal_id}}", start_at: "{{fields.start_at}}", end_at: "{{fields.end_at}}", duration: "{{fields.duration}}", description: "{{fields.description}}", status: 0}
+    output: {path: data}
+
+  - name: Complete Activity
+    resource: Activity
+    description: Marks an activity as done, with a comment.
+    fields:
+      - {name: id, label: Activity ID, required: true}
+      - {name: comment, label: Comment, type: textarea}
+    request:
+      method: PUT
+      path: "activities/{{fields.id}}"
+      body: {status: 2, comment: "{{fields.comment}}"}
+    output: {path: data}
+
+  - name: Search Activities
+    resource: Activity
+    description: Lists activities by deal, owner, type or status.
+    fields:
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: owner_id, label: Owner ID, type: number}
+      - {name: activity_type_id, label: Activity type ID, type: number}
+      - name: status
+        label: Status
+        type: select
+        options: [{label: Open, value: 0}, {label: Done, value: 2}, {label: No-show, value: 4}]
+      - {name: start_at_start, label: Starting since, description: "Like 2026-01-31"}
+      - {name: start_at_end, label: Starting until}
+      - {name: show, label: Per page, type: number, description: "Up to 200."}
+      - {name: cursor, label: Page cursor}
+    request:
+      method: GET
+      path: activities
+      query: {deal_id: "{{fields.deal_id}}", owner_id: "{{fields.owner_id}}", activity_type_id: "{{fields.activity_type_id}}", status: "{{fields.status}}", start_at_start: "{{fields.start_at_start}}", start_at_end: "{{fields.start_at_end}}", show: "{{fields.show}}", cursor: "{{fields.cursor}}"}
+    output: {path: data}
+
+  - name: Create Note
+    resource: Note
+    description: Adds a note to a deal, a person or a company.
+    fields:
+      - {name: text, label: Text, type: textarea, required: true}
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: company_id, label: Company ID, type: number}
+    request:
+      method: POST
+      path: notes
+      body: {text: "{{fields.text}}", deal_id: "{{fields.deal_id}}", person_id: "{{fields.person_id}}", company_id: "{{fields.company_id}}"}
+    output: {path: data}
+
+  - name: List Notes
+    resource: Note
+    description: Lists the notes of a deal, a person or a company.
+    fields:
+      - {name: deal_id, label: Deal ID, type: number}
+      - {name: person_id, label: Person ID, type: number}
+      - {name: company_id, label: Company ID, type: number}
+    request:
+      method: GET
+      path: notes
+      query: {deal_id: "{{fields.deal_id}}", person_id: "{{fields.person_id}}", company_id: "{{fields.company_id}}"}
+    output: {path: data}
+
+  # Settings
+  - name: List Pipelines
+    resource: Settings
+    description: Lists the pipelines.
+    request: {method: GET, path: pipelines, query: {show: 200}}
+    output: {path: data}
+
+  - name: List Stages
+    resource: Settings
+    description: Lists the stages, of every pipeline or of one.
+    fields:
+      - {name: pipeline_id, label: Pipeline ID, type: number}
+    request: {method: GET, path: stages, query: {show: 200, pipeline_id: "{{fields.pipeline_id}}"}}
+    output: {path: data}
+
+  - name: List Origins
+    resource: Settings
+    description: Lists the origins of deals.
+    request: {method: GET, path: origins, query: {show: 200}}
+    output: {path: data}
+
+  - name: List Lost Reasons
+    resource: Settings
+    description: Lists the reasons to lose a deal.
+    request: {method: GET, path: lostReasons, query: {show: 200}}
+    output: {path: data}
+
+  - name: List Tags
+    resource: Settings
+    description: Lists the tags, of deals, people or companies.
+    fields:
+      - name: belongs
+        label: Used on
+        type: select
+        options: [{label: Deals, value: 1}, {label: People, value: 2}, {label: Companies, value: 3}]
+    request: {method: GET, path: tags, query: {show: 200, belongs: "{{fields.belongs}}"}}
+    output: {path: data}
+
+  - name: List Activity Types
+    resource: Settings
+    description: Lists the types of activity.
+    request: {method: GET, path: activityTypes, query: {show: 200}}
+    output: {path: data}
+
+  - name: List Users
+    resource: Settings
+    description: Lists the account's users, to use as owners.
+    request: {method: GET, path: users, query: {show: 200}}
+    output: {path: data}
+
+i18n:
+  pt-BR:
+    description: "Crie, altere e pesquise oportunidades, pessoas, empresas, atividades e notas, e leia funis, etapas, origens e tags no PipeRun CRM."
+    triggers:
+      New Deal: {name: "Nova oportunidade", description: "Inicia o fluxo para cada nova oportunidade, verificando a cada 5 minutos.", fields: {pipeline_id: "ID do funil"}}
+      New Person: {name: "Nova pessoa", description: "Inicia o fluxo para cada nova pessoa, verificando a cada 5 minutos."}
+    actions:
+      Create Deal: {name: "Criar oportunidade", description: "Cria uma oportunidade numa etapa de um funil.", fields: {title: "Título", pipeline_id: "ID do funil", stage_id: "ID da etapa", owner_id: "ID do dono", person_id: "ID da pessoa", company_id: "ID da empresa", origin_id: "ID da origem", value: "Valor", value_mrr: "Valor recorrente (MRR)", probability: "Probabilidade", temperature: "Temperatura", probably_closed_at: "Previsão de fechamento", reference: "Referência", tags: "IDs das tags", custom_fields: "Campos customizados"}}
+      Get Deal: {name: "Obter oportunidade", description: "Lê uma oportunidade, com itens, pessoas, empresas e campos customizados.", fields: {deal_id: "ID da oportunidade"}}
+      Search Deals: {name: "Pesquisar oportunidades", description: "Lista oportunidades por funil, etapa, dono, status, título ou datas.", fields: {pipeline_id: "ID do funil", stage_id: "ID da etapa", owner_id: "ID do dono", person_id: "ID da pessoa", company_id: "ID da empresa", status: "Status", title: "Título", created_at_start: "Criada desde", created_at_end: "Criada até", updated_at_start: "Alterada desde", closed_at_start: "Fechada desde", closed_at_end: "Fechada até", show: "Por página", cursor: "Cursor da página"}}
+      Update Deal: {name: "Alterar oportunidade", description: "Altera uma oportunidade. Campos vazios ficam como estão.", fields: {deal_id: "ID da oportunidade", title: "Título", pipeline_id: "ID do funil", stage_id: "ID da etapa", owner_id: "ID do dono", person_id: "ID da pessoa", company_id: "ID da empresa", value: "Valor", value_mrr: "Valor recorrente (MRR)", probability: "Probabilidade", probably_closed_at: "Previsão de fechamento", custom_fields: "Campos customizados"}}
+      Move Deal: {name: "Mover oportunidade", description: "Move uma oportunidade para outra etapa, do mesmo funil ou de outro.", fields: {deal_id: "ID da oportunidade", stage_id: "ID da etapa", pipeline_id: "ID do funil"}}
+      Win Deal: {name: "Ganhar oportunidade", description: "Marca uma oportunidade como ganha.", fields: {deal_id: "ID da oportunidade", closed_at: "Fechada em"}}
+      Lose Deal: {name: "Perder oportunidade", description: "Marca uma oportunidade como perdida, com motivo.", fields: {deal_id: "ID da oportunidade", lost_reason_id: "ID do motivo de perda", reason_close: "Comentário", closed_at: "Fechada em"}}
+      Delete Deal: {name: "Excluir oportunidade", description: "Exclui uma oportunidade.", fields: {deal_id: "ID da oportunidade"}}
+      List Deal Items: {name: "Listar itens da oportunidade", description: "Lista os produtos e serviços de uma oportunidade.", fields: {deal_id: "ID da oportunidade"}}
+      Create Person: {name: "Criar pessoa", description: "Cria uma pessoa, com e-mails e telefones.", fields: {name: "Nome", emails: "E-mails", phones: "Telefones", company_id: "ID da empresa", job_title: "Cargo", cpf: "CPF", birth_day: "Aniversário", observation: "Observações", tags: "IDs das tags", custom_fields: "Campos customizados"}}
+      Get Person: {name: "Obter pessoa", description: "Lê uma pessoa, com e-mails e telefones.", fields: {person_id: "ID da pessoa"}}
+      Search People: {name: "Pesquisar pessoas", description: "Lista pessoas por nome, CPF, empresa ou datas.", fields: {name: "Nome", cpf: "CPF", company_id: "ID da empresa", external_code: "Código externo", created_at_start: "Criada desde", updated_at_start: "Alterada desde", show: "Por página", cursor: "Cursor da página"}}
+      Update Person: {name: "Alterar pessoa", description: "Altera uma pessoa. Campos vazios ficam como estão.", fields: {person_id: "ID da pessoa", name: "Nome", emails: "E-mails", phones: "Telefones", company_id: "ID da empresa", job_title: "Cargo", observation: "Observações", custom_fields: "Campos customizados"}}
+      Create Company: {name: "Criar empresa", description: "Cria uma empresa.", fields: {name: "Nome", cnpj: "CNPJ", company_name: "Razão social", website: "Site", emails: "E-mails", phones: "Telefones", address_postal_code: "CEP", address: "Rua", address_number: "Número", district: "Bairro", observation: "Observações", custom_fields: "Campos customizados"}}
+      Get Company: {name: "Obter empresa", description: "Lê uma empresa, com suas pessoas.", fields: {id: "ID da empresa"}}
+      Search Companies: {name: "Pesquisar empresas", description: "Lista empresas por nome, CNPJ ou datas.", fields: {name: "Nome", cnpj: "CNPJ", external_code: "Código externo", created_at_start: "Criada desde", updated_at_start: "Alterada desde", show: "Por página", cursor: "Cursor da página"}}
+      Update Company: {name: "Alterar empresa", description: "Altera uma empresa. Campos vazios ficam como estão.", fields: {id: "ID da empresa", name: "Nome", cnpj: "CNPJ", website: "Site", observation: "Observações", custom_fields: "Campos customizados"}}
+      Create Activity: {name: "Criar atividade", description: "Agenda uma atividade, como ligação ou reunião, numa oportunidade.", fields: {title: "Título", activity_type_id: "ID do tipo de atividade", owner_id: "ID do dono", deal_id: "ID da oportunidade", start_at: "Início", end_at: "Fim", duration: "Duração em minutos", description: "Descrição"}}
+      Complete Activity: {name: "Concluir atividade", description: "Marca uma atividade como concluída, com comentário.", fields: {id: "ID", comment: "Comentário"}}
+      Search Activities: {name: "Pesquisar atividades", description: "Lista atividades por oportunidade, dono, tipo ou status.", fields: {deal_id: "ID da oportunidade", owner_id: "ID do dono", activity_type_id: "ID do tipo de atividade", status: "Status", start_at_start: "Início desde", start_at_end: "Início até", show: "Por página", cursor: "Cursor da página"}}
+      Create Note: {name: "Criar nota", description: "Adiciona uma nota a uma oportunidade, pessoa ou empresa.", fields: {text: "Texto", deal_id: "ID da oportunidade", person_id: "ID da pessoa", company_id: "ID da empresa"}}
+      List Notes: {name: "Listar notas", description: "Lista as notas de uma oportunidade, pessoa ou empresa.", fields: {deal_id: "ID da oportunidade", person_id: "ID da pessoa", company_id: "ID da empresa"}}
+      List Pipelines: {name: "Listar funis", description: "Lista os funis."}
+      List Stages: {name: "Listar etapas", description: "Lista as etapas, de todos os funis ou de um.", fields: {pipeline_id: "ID do funil"}}
+      List Origins: {name: "Listar origens", description: "Lista as origens de oportunidades."}
+      List Lost Reasons: {name: "Listar motivos de perda", description: "Lista os motivos de perda de oportunidade."}
+      List Tags: {name: "Listar tags", description: "Lista as tags, de oportunidades, pessoas ou empresas.", fields: {belongs: "Usada em"}}
+      List Activity Types: {name: "Listar tipos de atividade", description: "Lista os tipos de atividade."}
+      List Users: {name: "Listar usuários", description: "Lista os usuários da conta, para usar como donos."}
