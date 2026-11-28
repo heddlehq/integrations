@@ -1,0 +1,402 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# VTEX, the commerce platform. Connect with the store's account name and an
+# application key and token, made in the Admin under Configurações da conta ›
+# Chaves de aplicação, with the roles for what the flows touch (orders, catalog,
+# prices, inventory, Master Data). Prices live on api.vtex.com; everything else on
+# the account's own address. VTEX keeps one order hook per account: the Order
+# Status trigger replaces whatever hook the account had.
+id: vtex
+name: VTEX
+version: 1.0.0
+description: Read, start handling, invoice, track and cancel orders, manage products, SKUs, prices, inventory and Master Data documents, and receive order status changes, in VTEX.
+icon: hero-shopping-bag
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#F71963"/><svg x="3.00" y="8.82" width="18.00" height="6.37" viewBox="0 0 65 23"><path d="M25.582 0H4.93302C3.33192 0 2.30653 1.6559 3.05562 3.03268L5.12076 6.83778H1.37655C0.616237 6.83778 0 7.43789 0 8.17755C0 8.39477 0.0542634 8.60897 0.158425 8.80132L6.80169 21.034C7.15784 21.6875 7.99113 21.9369 8.66288 21.591C8.90676 21.4654 9.10635 21.2712 9.23546 21.034L11.0399 17.7295L13.3034 21.8986C14.0999 23.3652 16.2579 23.3676 17.0576 21.9029L27.4076 2.95562C28.1399 1.61585 27.1419 0 25.582 0ZM16.3066 8.09563L11.8439 16.2671C11.6068 16.7022 11.0517 16.8678 10.6045 16.6372C10.4424 16.5535 10.3101 16.4249 10.2241 16.2671L5.80436 8.13022C5.56735 7.69516 5.73825 7.15573 6.18545 6.92516C6.31706 6.8572 6.46301 6.82201 6.61146 6.8214H15.5188C16.0116 6.8214 16.4108 7.20974 16.4108 7.68909C16.4108 7.83047 16.3752 7.97003 16.3066 8.09563ZM47.5445 8.78979H45.286V16.3205C45.2854 16.4631 45.1669 16.579 45.0197 16.5796H43.2776C43.131 16.579 43.0119 16.4637 43.0113 16.3205V8.78979H40.739C40.5981 8.79525 40.479 8.68846 40.4733 8.55132C40.4733 8.5489 40.4733 8.54647 40.4733 8.54344V7.21156C40.4746 7.07443 40.59 6.96399 40.7316 6.9652C40.7341 6.9652 40.7372 6.9652 40.7397 6.9652H47.5439C47.6904 6.95853 47.8158 7.06836 47.8233 7.21095V8.54344C47.8158 8.68724 47.6911 8.79646 47.5445 8.78979ZM54.7953 16.5256C54.33 16.5899 53.5472 16.6937 52.1108 16.6937C50.3955 16.6937 48.8799 16.2665 48.8799 13.9128V9.61622C48.8799 7.26192 50.4092 6.8481 52.1239 6.8481C53.559 6.8481 54.3293 6.95186 54.7953 7.01618C54.9811 7.04166 55.0616 7.10719 55.0616 7.27527V8.47972C55.061 8.62232 54.9425 8.73821 54.7953 8.73882H51.9916C51.3667 8.73882 51.1409 8.94573 51.1409 9.61865V10.7958H54.6892C54.8358 10.7958 54.9549 10.9117 54.9556 11.0549V12.283C54.9556 12.4256 54.8364 12.5415 54.6892 12.5421H51.1409V13.9134C51.1409 14.5857 51.3667 14.7932 51.9916 14.7932H54.7953C54.9418 14.7939 55.061 14.9091 55.0616 15.0523V16.2556C55.0616 16.4218 54.9817 16.4995 54.7953 16.5256ZM64.8278 16.5772H62.714C62.5413 16.5772 62.4614 16.5232 62.3685 16.3836L60.5354 13.5524L58.8744 16.3211C58.7808 16.4765 58.6885 16.5802 58.5432 16.5802H56.5754C56.4425 16.5802 56.3758 16.5025 56.3758 16.4121C56.3783 16.3806 56.3876 16.3496 56.402 16.3211L59.2823 11.6483L56.372 7.21156C56.3571 7.18789 56.3483 7.1612 56.3458 7.13389C56.3558 7.03499 56.4431 6.96156 56.5448 6.96581H58.6854C58.8314 6.96581 58.938 7.09506 59.0166 7.21156L60.7175 9.82434L62.3641 7.21156C62.4302 7.09506 62.55 6.96581 62.6953 6.96581H64.6632C64.7648 6.96156 64.8528 7.03499 64.8628 7.13389C64.8603 7.1612 64.8509 7.18789 64.8359 7.21156L61.94 11.6762L64.9601 16.3217C64.9838 16.3612 64.9975 16.4055 65 16.451C65.0012 16.5256 64.9345 16.5772 64.8278 16.5772ZM39.176 6.99008C39.1916 6.99008 39.2066 6.9919 39.2215 6.99494C39.3319 7.01982 39.4012 7.12661 39.3756 7.23401C39.3756 7.23401 37.0703 15.1786 37.0329 15.286C36.7173 16.2113 35.9096 16.687 34.984 16.687C34.0122 16.687 33.2488 16.2331 32.9338 15.2835C32.9076 15.2053 30.5505 7.23522 30.5505 7.23522C30.5468 7.22066 30.5456 7.20549 30.5456 7.19032C30.5456 7.07989 30.6372 6.99069 30.7508 6.99008H32.6506C32.7485 6.99008 32.8327 7.05804 32.8515 7.15149L34.7837 14.1027C34.8106 14.2429 34.8499 14.2963 34.9696 14.2963C35.0894 14.2963 35.1293 14.2447 35.1555 14.1027L37.0859 7.15331C37.1046 7.05986 37.1888 6.99251 37.2867 6.9919L39.176 6.99008Z" fill="white"/></svg></svg>
+category: ecommerce
+author: Heddle
+homepage: https://developers.vtex.com/docs/api-reference
+base_url: "https://{{credential.account}}.{{credential.environment}}.com.br/"
+headers:
+  User-Agent: Heddle
+  Accept: application/json
+  X-VTEX-API-AppToken: "{{credential.app_token}}"
+
+credential:
+  label: VTEX
+  fields:
+    - {name: account, label: Account name, required: true, description: "The store's account, like mystore in mystore.myvtex.com."}
+    - {name: app_key, label: App key, required: true}
+    - {name: app_token, label: App token, secret: true, required: true}
+    - {name: environment, label: Environment, default: vtexcommercestable, description: "vtexcommercestable, or vtexcommercebeta for the beta one."}
+  auth:
+    type: header
+    name: X-VTEX-API-AppKey
+    value: "{{credential.app_key}}"
+
+errors:
+  message_path: error.message
+
+triggers:
+  - name: Order Status
+    description: Starts the flow when an order reaches one of the chosen statuses, like ready for handling or invoiced. It replaces the account's order hook.
+    fields:
+      - name: statuses
+        label: Statuses
+        type: multiselect
+        required: true
+        default: [ready-for-handling]
+        options:
+          - {label: Order created, value: order-created}
+          - {label: Payment pending, value: payment-pending}
+          - {label: Payment approved, value: payment-approved}
+          - {label: Ready for handling, value: ready-for-handling}
+          - {label: Handling, value: handling}
+          - {label: Invoiced, value: invoiced}
+          - {label: Cancellation requested, value: request-cancel}
+          - {label: Canceled, value: canceled}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: api/orders/hook/config
+          body:
+            filter: {type: FromWorkflow, status: "{{fields.statuses}}"}
+            hook: {url: "{{webhook.url}}", headers: {X-Heddle-Token: "{{webhook.secret}}"}}
+      unregister:
+        request: {method: DELETE, path: api/orders/hook/config}
+      signature: {header: X-Heddle-Token, token: "{{webhook.secret}}"}
+
+actions:
+  # Orders
+  - name: List Orders
+    resource: Order
+    description: Lists orders, newest first, by status, dates or a search.
+    fields:
+      - name: f_status
+        label: Status
+        type: select
+        options:
+          - {label: Ready for handling, value: ready-for-handling}
+          - {label: Handling, value: handling}
+          - {label: Invoiced, value: invoiced}
+          - {label: Payment pending, value: payment-pending}
+          - {label: Canceled, value: canceled}
+      - {name: q, label: Search, description: "Order ID, client email, name or document."}
+      - {name: f_creationDate, label: Created between, description: "Like creationDate:[2026-01-01T00:00:00.000Z TO 2026-01-31T23:59:59.999Z]"}
+      - {name: per_page, label: Per page, type: number, description: "Up to 100."}
+      - {name: page, label: Page, type: number}
+    request:
+      method: GET
+      path: api/oms/pvt/orders
+      query: {f_status: "{{fields.f_status}}", q: "{{fields.q}}", f_creationDate: "{{fields.f_creationDate}}", orderBy: "creationDate,desc", per_page: "{{fields.per_page}}", page: "{{fields.page}}"}
+    output: {path: list}
+
+  - name: Get Order
+    resource: Order
+    description: Reads an order, with items, client, shipping, payment and invoices.
+    fields:
+      - {name: order_id, label: Order ID, required: true, description: "Like 1234567890123-01"}
+    request: {method: GET, path: "api/oms/pvt/orders/{{fields.order_id}}"}
+
+  - name: Start Handling Order
+    resource: Order
+    description: Moves an order from ready for handling to handling.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+    request: {method: POST, path: "api/oms/pvt/orders/{{fields.order_id}}/start-handling"}
+
+  - name: Invoice Order
+    resource: Order
+    description: Sends an order's invoice, and its tracking if you have it, which moves it to invoiced.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+      - {name: invoiceNumber, label: Invoice number, required: true}
+      - {name: invoiceValue, label: Invoice value in cents, type: number, required: true, description: "Like 15990 for R$ 159,90."}
+      - {name: issuanceDate, label: Issued on, required: true, description: "Like 2026-01-31"}
+      - {name: invoiceKey, label: Invoice key, description: "The NF-e key."}
+      - {name: invoiceUrl, label: Invoice URL}
+      - {name: courier, label: Carrier}
+      - {name: trackingNumber, label: Tracking number}
+      - {name: trackingUrl, label: Tracking URL}
+      - {name: items, label: Items, type: json, description: 'Only for a partial invoice, like [{"id": "123", "quantity": 1, "price": 15990}]'}
+      - name: type
+        label: Type
+        type: select
+        default: Output
+        options: [{label: Sale, value: Output}, {label: Return, value: Input}]
+    request:
+      method: POST
+      path: "api/oms/pvt/orders/{{fields.order_id}}/invoice"
+      body:
+        type: "{{fields.type}}"
+        invoiceNumber: "{{fields.invoiceNumber}}"
+        invoiceValue: "{{fields.invoiceValue}}"
+        issuanceDate: "{{fields.issuanceDate}}"
+        invoiceKey: "{{fields.invoiceKey}}"
+        invoiceUrl: "{{fields.invoiceUrl}}"
+        courier: "{{fields.courier}}"
+        trackingNumber: "{{fields.trackingNumber}}"
+        trackingUrl: "{{fields.trackingUrl}}"
+        items: "{{fields.items}}"
+
+  - name: Update Order Tracking
+    resource: Order
+    description: Adds or changes the tracking of an invoiced order.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+      - {name: invoiceNumber, label: Invoice number, required: true}
+      - {name: courier, label: Carrier, required: true}
+      - {name: trackingNumber, label: Tracking number, required: true}
+      - {name: trackingUrl, label: Tracking URL}
+    request:
+      method: PATCH
+      path: "api/oms/pvt/orders/{{fields.order_id}}/invoice/{{fields.invoiceNumber}}"
+      body: {courier: "{{fields.courier}}", trackingNumber: "{{fields.trackingNumber}}", trackingUrl: "{{fields.trackingUrl}}"}
+
+  - name: Cancel Order
+    resource: Order
+    description: Cancels an order, with a reason the client sees.
+    fields:
+      - {name: order_id, label: Order ID, required: true}
+      - {name: reason, label: Reason}
+    request:
+      method: POST
+      path: "api/oms/pvt/orders/{{fields.order_id}}/cancel"
+      body: {reason: "{{fields.reason}}"}
+
+  # Catalog
+  - name: Search Products
+    resource: Product
+    description: Searches the store's products by text, as the storefront does.
+    fields:
+      - {name: ft, label: Search, required: true}
+      - {name: from, label: From, type: number, default: 0}
+      - {name: to, label: To, type: number, default: 49, description: "At most 50 products at a time."}
+    request:
+      method: GET
+      path: api/catalog_system/pub/products/search
+      query: {ft: "{{fields.ft}}", _from: "{{fields.from}}", _to: "{{fields.to}}"}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product's catalog data.
+    fields:
+      - {name: product_id, label: Product ID, required: true}
+    request: {method: GET, path: "api/catalog/pvt/product/{{fields.product_id}}"}
+
+  - name: Create Product
+    resource: Product
+    description: Creates a product, to add SKUs to next.
+    fields:
+      - {name: Name, label: Name, required: true}
+      - {name: CategoryId, label: Category ID, type: number, required: true, description: "From Get Category Tree."}
+      - {name: BrandId, label: Brand ID, type: number, required: true, description: "From List Brands."}
+      - {name: RefId, label: Reference code}
+      - {name: LinkId, label: URL slug, description: "Like camiseta-basica"}
+      - {name: Description, label: Description, type: textarea}
+      - {name: IsVisible, label: Visible, type: boolean}
+      - {name: IsActive, label: Active, type: boolean}
+      - {name: extra, label: More attributes, type: json, description: 'Any other attribute of a product, like {"Title": "...", "MetaTagDescription": "..."}'}
+    request:
+      method: POST
+      path: api/catalog/pvt/product
+      body:
+        _merge: "{{fields.extra}}"
+        Name: "{{fields.Name}}"
+        CategoryId: "{{fields.CategoryId}}"
+        BrandId: "{{fields.BrandId}}"
+        RefId: "{{fields.RefId}}"
+        LinkId: "{{fields.LinkId}}"
+        Description: "{{fields.Description}}"
+        IsVisible: "{{fields.IsVisible}}"
+        IsActive: "{{fields.IsActive}}"
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. VTEX replaces the product, so send its required attributes too.
+    fields:
+      - {name: product_id, label: Product ID, required: true}
+      - {name: product, label: Product, type: json, required: true, description: 'Like {"Name": "Camiseta", "CategoryId": 1, "BrandId": 2000000, "IsActive": true}'}
+    request: {method: PUT, path: "api/catalog/pvt/product/{{fields.product_id}}", body: "{{fields.product}}"}
+
+  - name: Get SKU
+    resource: Product
+    description: Reads an SKU with its product, images and specifications.
+    fields:
+      - {name: sku_id, label: SKU ID, required: true}
+    request: {method: GET, path: "api/catalog_system/pvt/sku/stockkeepingunitbyid/{{fields.sku_id}}"}
+
+  - name: Create SKU
+    resource: Product
+    description: Creates an SKU of a product.
+    fields:
+      - {name: ProductId, label: Product ID, type: number, required: true}
+      - {name: Name, label: Name, required: true}
+      - {name: RefId, label: Reference code}
+      - {name: Ean, label: EAN}
+      - {name: PackagedHeight, label: Height (cm), type: number, required: true}
+      - {name: PackagedLength, label: Length (cm), type: number, required: true}
+      - {name: PackagedWidth, label: Width (cm), type: number, required: true}
+      - {name: PackagedWeightKg, label: Weight (g), type: number, required: true}
+      - {name: IsActive, label: Active, type: boolean, description: "An SKU can only be active once it has an image."}
+      - {name: extra, label: More attributes, type: json}
+    request:
+      method: POST
+      path: api/catalog/pvt/stockkeepingunit
+      body:
+        _merge: "{{fields.extra}}"
+        ProductId: "{{fields.ProductId}}"
+        Name: "{{fields.Name}}"
+        RefId: "{{fields.RefId}}"
+        Ean: "{{fields.Ean}}"
+        PackagedHeight: "{{fields.PackagedHeight}}"
+        PackagedLength: "{{fields.PackagedLength}}"
+        PackagedWidth: "{{fields.PackagedWidth}}"
+        PackagedWeightKg: "{{fields.PackagedWeightKg}}"
+        IsActive: "{{fields.IsActive}}"
+
+  - name: List Product And SKU IDs
+    resource: Product
+    description: Lists product IDs with their SKU IDs, by category, 250 at a time at most.
+    fields:
+      - {name: categoryId, label: Category ID, type: number}
+      - {name: from, label: From, type: number, default: 1}
+      - {name: to, label: To, type: number, default: 250}
+    request:
+      method: GET
+      path: api/catalog_system/pvt/products/GetProductAndSkuIds
+      query: {categoryId: "{{fields.categoryId}}", _from: "{{fields.from}}", _to: "{{fields.to}}"}
+    output: {path: data}
+
+  - name: List Brands
+    resource: Product
+    description: Lists the store's brands.
+    request: {method: GET, path: api/catalog_system/pvt/brand/list}
+
+  - name: Get Category Tree
+    resource: Product
+    description: Reads the store's categories, down to the depth you ask.
+    fields:
+      - {name: levels, label: Levels, type: number, default: 3}
+    request: {method: GET, path: "api/catalog_system/pub/category/tree/{{fields.levels}}"}
+
+  # Prices and inventory
+  - name: Get Price
+    resource: Price
+    description: Reads an SKU's base price, list price and cost.
+    fields:
+      - {name: sku_id, label: SKU ID, required: true}
+    request:
+      method: GET
+      base_url: "https://api.vtex.com/{{credential.account}}/"
+      path: "pricing/prices/{{fields.sku_id}}"
+
+  - name: Set Price
+    resource: Price
+    description: Sets an SKU's base price, list price and cost.
+    fields:
+      - {name: sku_id, label: SKU ID, required: true}
+      - {name: basePrice, label: Price, type: number, required: true}
+      - {name: listPrice, label: List price, type: number, description: "The crossed-out price."}
+      - {name: costPrice, label: Cost, type: number}
+      - {name: markup, label: Markup, type: number}
+    request:
+      method: PUT
+      base_url: "https://api.vtex.com/{{credential.account}}/"
+      path: "pricing/prices/{{fields.sku_id}}"
+      body: {basePrice: "{{fields.basePrice}}", listPrice: "{{fields.listPrice}}", costPrice: "{{fields.costPrice}}", markup: "{{fields.markup}}"}
+
+  - name: Get Inventory
+    resource: Inventory
+    description: Reads an SKU's stock in each warehouse.
+    fields:
+      - {name: sku_id, label: SKU ID, required: true}
+    request: {method: GET, path: "api/logistics/pvt/inventory/skus/{{fields.sku_id}}"}
+
+  - name: Set Inventory
+    resource: Inventory
+    description: Sets an SKU's stock in a warehouse.
+    fields:
+      - {name: sku_id, label: SKU ID, required: true}
+      - {name: warehouse_id, label: Warehouse ID, required: true, description: "From List Warehouses."}
+      - {name: quantity, label: Quantity, type: number, required: true}
+      - {name: unlimitedQuantity, label: Unlimited, type: boolean}
+    request:
+      method: PUT
+      path: "api/logistics/pvt/inventory/skus/{{fields.sku_id}}/warehouses/{{fields.warehouse_id}}"
+      body: {quantity: "{{fields.quantity}}", unlimitedQuantity: "{{fields.unlimitedQuantity}}"}
+
+  - name: List Warehouses
+    resource: Inventory
+    description: Lists the store's warehouses.
+    request: {method: GET, path: api/logistics/pvt/configuration/warehouses}
+
+  # Master Data
+  - name: Search Documents
+    resource: Master Data
+    description: Searches Master Data documents, like clients (CL) or addresses (AD).
+    fields:
+      - {name: entity, label: Entity, required: true, default: CL, description: "The data entity's acronym, like CL for clients."}
+      - {name: where, label: Filter, description: "Like email=maria@acme.com or isNewsletterOptIn=true"}
+      - {name: fields, label: Attributes, default: "id,email,firstName,lastName,document,phone", description: "Separated by commas, or _all."}
+    request:
+      method: GET
+      path: "api/dataentities/{{fields.entity}}/search"
+      query: {_where: "{{fields.where}}", _fields: "{{fields.fields}}"}
+
+  - name: Get Document
+    resource: Master Data
+    description: Reads a Master Data document with every attribute.
+    fields:
+      - {name: entity, label: Entity, required: true, default: CL}
+      - {name: id, label: Document ID, required: true}
+    request: {method: GET, path: "api/dataentities/{{fields.entity}}/documents/{{fields.id}}", query: {_fields: _all}}
+
+  - name: Create Document
+    resource: Master Data
+    description: Creates a Master Data document, like a client.
+    fields:
+      - {name: entity, label: Entity, required: true, default: CL}
+      - {name: document, label: Document, type: json, required: true, description: 'Like {"email": "maria@acme.com", "firstName": "Maria", "lastName": "Souza", "document": "12345678909"}'}
+    request: {method: POST, path: "api/dataentities/{{fields.entity}}/documents", body: "{{fields.document}}"}
+
+  - name: Update Document
+    resource: Master Data
+    description: Changes some attributes of a Master Data document.
+    fields:
+      - {name: entity, label: Entity, required: true, default: CL}
+      - {name: id, label: Document ID, required: true}
+      - {name: document, label: Attributes, type: json, required: true, description: 'Like {"isNewsletterOptIn": true}'}
+    request: {method: PATCH, path: "api/dataentities/{{fields.entity}}/documents/{{fields.id}}", body: "{{fields.document}}"}
+
+i18n:
+  pt-BR:
+    description: "Leia, comece o manuseio, fature, rastreie e cancele pedidos, gerencie produtos, SKUs, preços, estoque e documentos do Master Data e receba mudanças de status de pedidos na VTEX."
+    triggers:
+      Order Status: {name: "Status do pedido", description: "Inicia o fluxo quando um pedido chega a um dos status escolhidos, como pronto para manuseio ou faturado. Substitui o hook de pedidos da conta.", fields: {statuses: "Status"}}
+    actions:
+      List Orders: {name: "Listar pedidos", description: "Lista pedidos, dos mais novos aos mais antigos, por status, datas ou busca.", fields: {f_status: "Status", q: "Busca", f_creationDate: "Criados entre", per_page: "Por página", page: "Página"}}
+      Get Order: {name: "Obter pedido", description: "Lê um pedido, com itens, cliente, entrega, pagamento e notas.", fields: {order_id: "ID do pedido"}}
+      Start Handling Order: {name: "Iniciar manuseio do pedido", description: "Muda um pedido de pronto para manuseio para em manuseio.", fields: {order_id: "ID do pedido"}}
+      Invoice Order: {name: "Faturar pedido", description: "Envia a nota de um pedido, e o rastreio se tiver, o que o muda para faturado.", fields: {order_id: "ID do pedido", invoiceNumber: "Número da nota", invoiceValue: "Valor da nota em centavos", issuanceDate: "Emitida em", invoiceKey: "Chave da nota", invoiceUrl: "URL da nota", courier: "Transportadora", trackingNumber: "Código de rastreio", trackingUrl: "URL de rastreio", items: "Itens", type: "Tipo"}}
+      Update Order Tracking: {name: "Atualizar rastreio do pedido", description: "Adiciona ou altera o rastreio de um pedido faturado.", fields: {order_id: "ID do pedido", invoiceNumber: "Número da nota", courier: "Transportadora", trackingNumber: "Código de rastreio", trackingUrl: "URL de rastreio"}}
+      Cancel Order: {name: "Cancelar pedido", description: "Cancela um pedido, com um motivo que o cliente vê.", fields: {order_id: "ID do pedido", reason: "Motivo"}}
+      Search Products: {name: "Pesquisar produtos", description: "Pesquisa os produtos da loja por texto, como a vitrine faz.", fields: {ft: "Busca", from: "De", to: "Até"}}
+      Get Product: {name: "Obter produto", description: "Lê os dados de catálogo de um produto.", fields: {product_id: "ID do produto"}}
+      Create Product: {name: "Criar produto", description: "Cria um produto, para depois adicionar SKUs.", fields: {Name: "Nome", CategoryId: "ID da categoria", BrandId: "ID da marca", RefId: "Código de referência", LinkId: "Slug da URL", Description: "Descrição", IsVisible: "Visível", IsActive: "Ativo", extra: "Mais atributos"}}
+      Update Product: {name: "Alterar produto", description: "Altera um produto. A VTEX substitui o produto, então envie também os atributos obrigatórios.", fields: {product_id: "ID do produto", product: "Produto"}}
+      Get SKU: {name: "Obter SKU", description: "Lê um SKU com seu produto, imagens e especificações.", fields: {sku_id: "ID do SKU"}}
+      Create SKU: {name: "Criar SKU", description: "Cria um SKU de um produto.", fields: {ProductId: "ID do produto", Name: "Nome", RefId: "Código de referência", Ean: "EAN", PackagedHeight: "Altura (cm)", PackagedLength: "Comprimento (cm)", PackagedWidth: "Largura (cm)", PackagedWeightKg: "Peso (g)", IsActive: "Ativo", extra: "Mais atributos"}}
+      List Product And SKU IDs: {name: "Listar IDs de produtos e SKUs", description: "Lista IDs de produtos com os IDs dos seus SKUs, por categoria, até 250 por vez.", fields: {categoryId: "ID da categoria", from: "De", to: "Até"}}
+      List Brands: {name: "Listar marcas", description: "Lista as marcas da loja."}
+      Get Category Tree: {name: "Obter árvore de categorias", description: "Lê as categorias da loja, até a profundidade pedida.", fields: {levels: "Níveis"}}
+      Get Price: {name: "Obter preço", description: "Lê o preço base, o preço de lista e o custo de um SKU.", fields: {sku_id: "ID do SKU"}}
+      Set Price: {name: "Definir preço", description: "Define o preço base, o preço de lista e o custo de um SKU.", fields: {sku_id: "ID do SKU", basePrice: "Preço", listPrice: "Preço de lista", costPrice: "Custo", markup: "Markup"}}
+      Get Inventory: {name: "Obter estoque", description: "Lê o estoque de um SKU em cada armazém.", fields: {sku_id: "ID do SKU"}}
+      Set Inventory: {name: "Definir estoque", description: "Define o estoque de um SKU num armazém.", fields: {sku_id: "ID do SKU", warehouse_id: "ID do armazém", quantity: "Quantidade", unlimitedQuantity: "Ilimitado"}}
+      List Warehouses: {name: "Listar armazéns", description: "Lista os armazéns da loja."}
+      Search Documents: {name: "Pesquisar documentos", description: "Pesquisa documentos do Master Data, como clientes (CL) ou endereços (AD).", fields: {entity: "Entidade", where: "Filtro", fields: "Atributos"}}
+      Get Document: {name: "Obter documento", description: "Lê um documento do Master Data com todos os atributos.", fields: {entity: "Entidade", id: "ID do documento"}}
+      Create Document: {name: "Criar documento", description: "Cria um documento do Master Data, como um cliente.", fields: {entity: "Entidade", document: "Documento"}}
+      Update Document: {name: "Alterar documento", description: "Altera alguns atributos de um documento do Master Data.", fields: {entity: "Entidade", id: "ID do documento", document: "Atributos"}}
