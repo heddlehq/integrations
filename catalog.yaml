@@ -123,13 +123,13 @@ integrations:
   - {id: iugu, name: Iugu, category: payments, phase: 2, origin: br, auth: basic, kind: manifest, status: draft}
   - {id: jadlog, name: Jadlog, category: logistics, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: kangu, name: Kangu, category: logistics, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
-  - {id: kiwify, name: Kiwify, category: ecommerce, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
+  - {id: kiwify, name: Kiwify, category: ecommerce, phase: 2, origin: br, auth: login, kind: manifest, status: draft}
   - {id: loggi, name: Loggi, category: logistics, phase: 2, origin: br, auth: oauth2_cc, kind: manifest, status: planned}
-  - {id: loja_integrada, name: Loja Integrada, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
+  - {id: loja_integrada, name: Loja Integrada, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: draft}
   - {id: magalu, name: Magalu Marketplace, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: melhor_envio, name: Melhor Envio, category: logistics, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
   - {id: mercado_livre, name: Mercado Livre, category: ecommerce, phase: 2, origin: br, auth: oauth2, kind: manifest, status: planned}
-  - {id: mercado_pago, name: Mercado Pago, category: payments, phase: 2, origin: br, auth: bearer, kind: package, lib: {name: meli, version: 0.1.0, released: 2026-02-28}, status: planned}
+  - {id: mercado_pago, name: Mercado Pago, category: payments, phase: 2, origin: br, auth: bearer, kind: manifest, status: draft}
   - {id: monetizze, name: Monetizze, category: ecommerce, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: moskit, name: Moskit, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: movidesk, name: Movidesk, category: support, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
@@ -146,7 +146,7 @@ integrations:
   - {id: piperun, name: PipeRun, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: ploomes, name: Ploomes, category: crm, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
   - {id: plugnotas, name: PlugNotas (TecnoSpeed), category: fiscal, phase: 2, origin: br, auth: header, kind: manifest, status: planned}
-  - {id: rd_station_crm, name: RD Station CRM, category: crm, phase: 2, origin: br, auth: query, kind: manifest, status: planned}
+  - {id: rd_station_crm, name: RD Station CRM, category: crm, phase: 2, origin: br, auth: query, kind: manifest, status: draft}
   - {id: rd_station_marketing, name: RD Station Marketing, category: marketing, phase: 2, origin: br, auth: oauth2, kind: manifest, status: draft}
   - {id: receitaws, name: ReceitaWS, category: data, phase: 2, origin: br, auth: bearer, kind: manifest, status: planned}
   - {id: sankhya, name: Sankhya, category: erp, phase: 2, origin: br, auth: login, host: true, kind: manifest, status: planned}

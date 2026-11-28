@@ -1,0 +1,251 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Loja Integrada, through the API v1. Connect with the store's API key, from
+# Configurações › Integrações › API, and the application key Loja Integrada gives
+# partners. Orders go by their number; prices in reais, like 49.90.
+id: loja_integrada
+name: Loja Integrada
+version: 1.0.0
+description: Products, prices, stock, orders, customers and categories in a Loja Integrada store.
+icon: hero-building-storefront
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="10.65" width="18.00" height="2.70" viewBox="0 0 227 34"><path d="M29.7068 11.4274C30.836 11.4274 31.9398 11.0923 32.8787 10.4645C33.8175 9.83667 34.5493 8.94431 34.9814 7.90026C35.4135 6.85622 35.5266 5.70738 35.3063 4.59903C35.086 3.49068 34.5423 2.47259 33.7438 1.67351C32.9454 0.874434 31.9281 0.330255 30.8206 0.10979C29.7131 -0.110675 28.5652 0.00247565 27.522 0.434933C26.4787 0.867391 25.5871 1.59973 24.9597 2.53935C24.3324 3.47896 23.9976 4.58365 23.9976 5.71372C23.9976 7.22909 24.5991 8.6824 25.6698 9.75393C26.7404 10.8255 28.1926 11.4274 29.7068 11.4274Z" fill="#00363A"/> <path d="M23.7589 28.2798C20.823 28.2791 17.9751 27.2767 15.6851 25.4379C13.3952 23.5991 11.8001 21.0339 11.1632 18.1657C10.9595 17.5141 10.8559 16.8354 10.8558 16.1526V8.43074C10.8558 6.99003 10.284 5.60834 9.26602 4.58961C8.24809 3.57088 6.86748 2.99856 5.42791 2.99856C3.98834 2.99856 2.60773 3.57088 1.5898 4.58961C0.571867 5.60834 0 6.99003 0 8.43074L0 15.8841C0 25.7737 8.04755 33.9024 17.9261 33.7055C21.0932 33.6421 24.1842 32.7225 26.8717 31.0443C29.5591 29.366 31.743 26.9915 33.1919 24.1723C31.9865 25.4696 30.5266 26.5039 28.9035 27.2107C27.2803 27.9175 25.529 28.2814 23.7589 28.2798Z" fill="#00363A"/> <path d="M35.1394 15.9327C35.1394 15.5179 34.9748 15.1201 34.6817 14.8269C34.3886 14.5336 33.9912 14.3688 33.5767 14.3688H25.8251C25.4107 14.3688 25.0132 14.5336 24.7201 14.8269C24.4271 15.1201 24.2624 15.5179 24.2624 15.9327V16.1508C24.2612 17.7525 23.6873 19.3008 22.6446 20.5159C21.6019 21.731 20.1592 22.5327 18.5773 22.7758C16.9955 23.019 15.3788 22.6877 14.0198 21.8418C12.6608 20.9959 11.649 19.6913 11.1675 18.1638C11.6762 20.4604 12.8022 22.5742 14.424 24.2768C16.0458 25.9795 18.1016 27.2063 20.3694 27.8246C22.6372 28.443 25.0307 28.4294 27.2913 27.7854C29.552 27.1414 31.5938 25.8914 33.1962 24.1705C34.4765 21.6829 35.1428 18.9245 35.1394 16.1264V15.9327Z" fill="#00363A"/> <path d="M102.004 6.42348C101.029 6.45599 100.269 7.11764 100.269 8.12717C100.269 9.1367 101.026 9.83085 102.004 9.83085C103.011 9.83085 103.768 9.1367 103.768 8.12717C103.768 7.11764 103.011 6.42348 102.004 6.42348Z" fill="#00363A"/> <path d="M114.011 12.5723C111.365 12.5723 109.474 13.9281 108.651 15.5684L108.591 13.3299C108.591 13.265 108.578 13.2007 108.552 13.1411C108.527 13.0815 108.489 13.0278 108.442 12.9834C108.395 12.939 108.339 12.9048 108.278 12.883C108.217 12.8612 108.152 12.8523 108.087 12.8568H107.208C107.145 12.8525 107.081 12.8618 107.022 12.884C106.962 12.9062 106.908 12.9409 106.863 12.9856C106.818 13.0304 106.783 13.0842 106.761 13.1436C106.738 13.203 106.728 13.2665 106.732 13.3299V26.8911C106.728 26.9542 106.738 27.0174 106.761 27.0765C106.783 27.1356 106.818 27.1893 106.862 27.234C106.907 27.2787 106.961 27.3134 107.02 27.3359C107.079 27.3583 107.142 27.3679 107.205 27.3641H108.527C108.59 27.3679 108.653 27.3583 108.712 27.3359C108.772 27.3134 108.825 27.2787 108.87 27.234C108.915 27.1893 108.949 27.1356 108.972 27.0765C108.994 27.0174 109.004 26.9542 109 26.8911V18.7628C109.221 16.7762 110.735 14.6304 113.633 14.6304C116.311 14.5995 118.108 16.5552 118.108 19.6146V26.8992C118.104 26.9623 118.114 27.0255 118.136 27.0846C118.158 27.1437 118.193 27.1974 118.238 27.2421C118.283 27.2868 118.336 27.3215 118.395 27.344C118.454 27.3664 118.517 27.3761 118.58 27.3723H119.88C119.943 27.3761 120.006 27.3664 120.065 27.344C120.124 27.3215 120.178 27.2868 120.223 27.2421C120.267 27.1974 120.302 27.1437 120.324 27.0846C120.347 27.0255 120.356 26.9623 120.353 26.8992V19.3204C120.346 15.253 117.793 12.5723 114.011 12.5723Z" fill="#00363A"/> <path d="M140.717 12.5723C136.367 12.5723 133.407 15.8512 133.407 20.1088C133.407 24.4623 136.622 27.647 141.097 27.647C143.618 27.647 145.226 26.8586 146.36 26.0392C146.411 26.0029 146.454 25.9566 146.487 25.9031C146.519 25.8495 146.541 25.7899 146.55 25.7279C146.558 25.6658 146.554 25.6026 146.538 25.5421C146.522 25.4816 146.493 25.4251 146.454 25.376L145.918 24.5241C145.756 24.2413 145.541 24.2413 145.288 24.4298C144.143 25.2871 142.748 25.744 141.318 25.7304C138.198 25.7304 135.897 23.7113 135.582 20.8095H146.953C147.018 20.8166 147.084 20.8095 147.146 20.7887C147.209 20.7678 147.266 20.7338 147.313 20.6889C147.361 20.6439 147.399 20.5892 147.424 20.5283C147.448 20.4675 147.459 20.402 147.456 20.3364V19.8325C147.46 15.505 144.687 12.5723 140.717 12.5723ZM145.317 18.9741H135.636C136.076 16.2934 138.063 14.4955 140.772 14.4955C143.199 14.4955 145.09 16.23 145.311 18.9107L145.317 18.9741Z" fill="#00363A"/> <path d="M163.395 12.8565H162.387C162.323 12.8527 162.26 12.8624 162.201 12.8849C162.142 12.9074 162.088 12.9423 162.043 12.9872C161.999 13.0321 161.964 13.086 161.942 13.1453C161.919 13.2046 161.91 13.268 161.914 13.3312L161.85 15.4755C160.842 13.8986 158.927 12.5753 156.082 12.5753C152.143 12.5737 149.119 15.7892 149.119 20.1102C149.119 24.4312 152.205 27.6484 156.146 27.6484C158.667 27.6484 160.496 26.5104 161.63 24.9677V26.8242C161.63 29.6625 159.612 31.8377 156.115 31.8377C154.409 31.8565 152.73 31.4067 151.261 30.5372C150.979 30.3746 150.758 30.4104 150.6 30.6997L150.064 31.5824C149.902 31.8669 149.97 32.088 150.226 32.2457C151.526 33.0342 153.347 33.7901 156.245 33.7901C161.193 33.7901 163.879 30.6688 163.879 26.5673V13.3312C163.88 13.268 163.867 13.2054 163.843 13.147C163.818 13.0887 163.783 13.0358 163.737 12.9916C163.692 12.9473 163.639 12.9126 163.58 12.8894C163.521 12.8662 163.458 12.855 163.395 12.8565ZM156.524 25.5984C153.688 25.5984 151.355 23.264 151.355 20.1102C151.355 16.9564 153.688 14.622 156.524 14.622C159.645 14.622 161.756 16.9564 161.756 20.1102C161.756 23.2965 159.645 25.5984 156.524 25.5984Z" fill="#00363A"/> <path d="M208.659 8.12926H207.429C207.366 8.12546 207.303 8.1351 207.244 8.15753C207.185 8.17997 207.131 8.21468 207.087 8.25939C207.042 8.3041 207.007 8.35778 206.985 8.4169C206.963 8.47601 206.953 8.53921 206.957 8.60232V15.474C205.953 13.8483 204.033 12.5738 201.315 12.5738C197.376 12.5738 194.352 15.7893 194.352 20.1103C194.352 24.4313 197.438 27.6485 201.379 27.6485C204.088 27.6485 206.011 26.387 207.114 24.7223L207.178 26.8974C207.174 26.9606 207.184 27.0238 207.206 27.0829C207.228 27.142 207.263 27.1957 207.308 27.2404C207.352 27.2851 207.406 27.3198 207.465 27.3422C207.524 27.3647 207.587 27.3743 207.65 27.3705H208.659C208.722 27.3743 208.785 27.3647 208.844 27.3422C208.903 27.3198 208.957 27.2851 209.002 27.2404C209.046 27.1957 209.081 27.142 209.104 27.0829C209.126 27.0238 209.136 26.9606 209.132 26.8974V8.59907C209.135 8.53622 209.125 8.47338 209.103 8.41466C209.08 8.35594 209.045 8.30266 209.001 8.25831C208.956 8.21397 208.902 8.17955 208.844 8.15731C208.785 8.13507 208.722 8.12551 208.659 8.12926ZM201.754 25.5985C198.918 25.5985 196.585 23.2641 196.585 20.1103C196.585 16.9566 198.918 14.6221 201.754 14.6221C204.874 14.6221 206.984 16.9566 206.984 20.1103C206.988 23.2966 204.878 25.5985 201.754 25.5985Z" fill="#00363A"/> <path d="M225.793 12.8552H224.785C224.722 12.8514 224.658 12.861 224.599 12.8834C224.54 12.9059 224.487 12.9406 224.442 12.9853C224.397 13.03 224.363 13.0837 224.34 13.1428C224.318 13.2019 224.308 13.2651 224.312 13.3282L224.242 15.4725C223.267 13.8793 221.287 12.5723 218.451 12.5723C214.51 12.5723 211.486 15.7878 211.486 20.1088C211.486 24.4298 214.572 27.647 218.513 27.647C221.224 27.647 223.146 26.4164 224.249 24.7452L224.312 26.8894C224.308 26.9526 224.318 27.0158 224.34 27.0749C224.363 27.134 224.397 27.1877 224.442 27.2324C224.487 27.2771 224.54 27.3118 224.599 27.3342C224.658 27.3567 224.722 27.3663 224.785 27.3625H225.793C225.856 27.3663 225.92 27.3567 225.979 27.3342C226.038 27.3118 226.091 27.2771 226.136 27.2324C226.181 27.1877 226.215 27.134 226.238 27.0749C226.26 27.0158 226.27 26.9526 226.266 26.8894V13.3299C226.27 13.2666 226.261 13.2032 226.238 13.1439C226.216 13.0846 226.181 13.0307 226.137 12.9858C226.092 12.9409 226.038 12.9061 225.979 12.8836C225.92 12.861 225.857 12.8513 225.793 12.8552ZM218.891 25.5971C216.055 25.5971 213.724 23.2626 213.724 20.1088C213.724 16.9551 216.055 14.6206 218.891 14.6206C222.012 14.6206 224.123 16.9551 224.123 20.1088C224.117 23.2951 222.005 25.5971 218.885 25.5971H218.891Z" fill="#00363A"/> <path d="M102.692 12.8574H101.399C101.138 12.8574 100.926 13.0692 100.926 13.3305V26.8917C100.926 27.1529 101.138 27.3647 101.399 27.3647H102.692C102.953 27.3647 103.165 27.1529 103.165 26.8917V13.3305C103.165 13.0692 102.953 12.8574 102.692 12.8574Z" fill="#00363A"/> <path d="M191.16 12.8552H190.151C190.088 12.8514 190.025 12.861 189.966 12.8834C189.907 12.9059 189.853 12.9406 189.809 12.9853C189.764 13.03 189.729 13.0837 189.707 13.1428C189.685 13.2019 189.675 13.2651 189.679 13.3282L189.615 15.4416C188.608 13.8647 186.654 12.5723 183.818 12.5723C179.879 12.5723 176.853 15.7878 176.853 20.1088C176.853 24.4298 179.939 27.647 183.88 27.647C186.591 27.647 188.512 26.4164 189.615 24.7452L189.679 26.8894C189.675 26.9526 189.685 27.0158 189.707 27.0749C189.729 27.134 189.764 27.1877 189.809 27.2324C189.853 27.2771 189.907 27.3118 189.966 27.3342C190.025 27.3567 190.088 27.3663 190.151 27.3625H191.16C191.223 27.3663 191.286 27.3567 191.345 27.3342C191.404 27.3118 191.458 27.2771 191.503 27.2324C191.547 27.1877 191.582 27.134 191.605 27.0749C191.627 27.0158 191.637 26.9526 191.633 26.8894V13.3299C191.637 13.2666 191.627 13.2032 191.605 13.1439C191.583 13.0846 191.548 13.0307 191.503 12.9858C191.459 12.9409 191.405 12.9061 191.346 12.8836C191.287 12.861 191.223 12.8513 191.16 12.8552ZM184.258 25.5971C181.422 25.5971 179.091 23.2626 179.091 20.1088C179.091 16.9551 181.422 14.6206 184.258 14.6206C187.379 14.6206 189.49 16.9551 189.49 20.1088C189.49 23.2951 187.379 25.5971 184.258 25.5971Z" fill="#00363A"/> <path d="M176.377 13.3305C175.542 12.8331 174.441 12.6218 173.239 12.7421C171.597 12.9046 170.203 13.7175 169.512 15.4699L169.422 13.3305C169.422 13.2657 169.408 13.2016 169.383 13.1421C169.357 13.0826 169.32 13.029 169.272 12.9846C169.225 12.9403 169.169 12.9061 169.108 12.8842C169.047 12.8624 168.983 12.8533 168.918 12.8575H167.909C167.784 12.8575 167.664 12.9073 167.575 12.996C167.486 13.0848 167.437 13.2051 167.437 13.3305V26.8918C167.437 27.0172 167.486 27.1376 167.575 27.2263C167.664 27.315 167.784 27.3648 167.909 27.3648H169.201C169.326 27.3648 169.446 27.315 169.535 27.2263C169.623 27.1376 169.673 27.0172 169.673 26.8918V18.9261C169.845 16.694 170.901 14.8619 173.221 14.5026C173.978 14.4105 174.745 14.538 175.432 14.87C175.534 14.9241 175.653 14.9387 175.765 14.9111C175.878 14.8836 175.977 14.8158 176.043 14.7205L176.53 14.0101C176.567 13.9562 176.592 13.8952 176.605 13.831C176.617 13.7668 176.616 13.7007 176.602 13.6369C176.587 13.5731 176.56 13.513 176.521 13.4603C176.483 13.4075 176.434 13.3634 176.377 13.3305Z" fill="#00363A"/> <path d="M132.491 25.0356C132.308 24.7446 132.123 24.6439 131.877 24.8422C131.315 25.2957 130.345 25.8387 129.145 25.6144C127.578 25.3218 126.486 23.8749 126.486 22.2785V14.6851H131.293C131.382 14.6856 131.47 14.6604 131.545 14.6126C131.621 14.5648 131.682 14.4963 131.72 14.4152L132.139 13.5325C132.173 13.4604 132.189 13.3807 132.184 13.301C132.179 13.2212 132.154 13.144 132.111 13.0765C132.069 13.009 132.01 12.9534 131.94 12.9149C131.87 12.8763 131.791 12.8562 131.712 12.8562H126.486V8.59864C126.485 8.47374 126.435 8.35425 126.346 8.26623C126.258 8.17822 126.138 8.12882 126.013 8.12883H124.785C124.66 8.12883 124.54 8.17867 124.451 8.26738C124.362 8.3561 124.313 8.47643 124.313 8.60189V12.8562H121.79C121.728 12.8562 121.667 12.8685 121.609 12.8923C121.552 12.9161 121.5 12.9509 121.456 12.9949C121.412 13.0388 121.378 13.091 121.354 13.1484C121.331 13.2058 121.319 13.2673 121.319 13.3293V14.212C121.319 14.3375 121.369 14.4578 121.457 14.5465C121.546 14.6353 121.666 14.6851 121.792 14.6851H124.28V22.6329C124.28 25.8501 126.423 27.6481 129.355 27.6481C131.387 27.6481 132.586 26.7605 132.894 26.4808C132.987 26.411 133.051 26.3092 133.073 26.1951C133.095 26.081 133.074 25.9627 133.014 25.8631C132.894 25.6729 132.81 25.5347 132.491 25.0356Z" fill="#00363A"/> <path d="M96.5989 12.8552H94.0876C93.9263 12.8552 93.7695 12.9086 93.6417 13.0071C93.5139 13.1056 93.4223 13.2437 93.381 13.3998L93.1325 14.3345C92.0685 13.1218 90.7398 12.5723 88.8864 12.5723C84.8612 12.5723 81.8252 15.8074 81.8252 20.0991C81.8252 24.3908 84.8206 27.6259 88.7938 27.6259C89.6401 27.6399 90.4799 27.4759 91.2589 27.1447C92.0379 26.8134 92.7387 26.3221 93.3161 25.7027L93.3794 26.6326C93.3804 26.7329 93.4021 26.832 93.4431 26.9235C93.4842 27.015 93.5438 27.0971 93.6181 27.1644C93.6924 27.2318 93.7799 27.283 93.8749 27.3148C93.97 27.3467 94.0706 27.3585 94.1705 27.3495H96.5989C97.0603 27.3495 97.3591 27.0618 97.3591 26.618V13.5867C97.3591 13.1429 97.0603 12.8552 96.5989 12.8552ZM92.3187 22.8009C91.6527 23.4772 90.7317 23.8348 89.6563 23.8348C87.5658 23.8348 85.9885 22.2287 85.9885 20.0958C85.9885 17.963 87.5658 16.3568 89.6563 16.3568C91.8492 16.3568 93.3226 17.8589 93.3226 20.0958C93.3442 20.591 93.2665 21.0854 93.0941 21.55C92.9217 22.0146 92.658 22.44 92.3187 22.8009Z" fill="#00363A"/> <path d="M64.2569 12.5753C59.9084 12.5753 56.4111 15.8266 56.4111 20.1118C56.4111 24.3971 59.9084 27.6467 64.2569 27.6467C68.6053 27.6467 72.101 24.3954 72.101 20.1118C72.101 15.8282 68.6037 12.5753 64.2569 12.5753ZM64.2569 23.8947C62.176 23.8947 60.5695 22.2236 60.5695 20.1118C60.5695 18.0294 62.176 16.3273 64.2569 16.3273C66.3686 16.3273 67.9426 18.0294 67.9426 20.1118C67.9426 22.2236 66.3669 23.8964 64.2569 23.8964V23.8947Z" fill="#00363A"/> <path d="M78.6332 12.8574H74.1938C74 12.8578 73.8143 12.935 73.6774 13.0721C73.5404 13.2092 73.4632 13.3951 73.4628 13.5889V15.2552C73.4632 15.4491 73.5404 15.6349 73.6774 15.772C73.8143 15.9091 74 15.9864 74.1938 15.9868H75.1684V27.4655C75.1671 28.0279 74.9434 28.567 74.5462 28.9648C74.149 29.3626 73.6105 29.5869 73.0486 29.5886C72.9266 29.5886 72.8097 29.6371 72.7235 29.7234C72.6373 29.8097 72.5889 29.9267 72.5889 30.0487V33.3277C72.5889 33.4494 72.6371 33.5662 72.7229 33.6524C72.8088 33.7386 72.9253 33.7873 73.0469 33.7877C74.7221 33.7873 76.3285 33.121 77.5128 31.9354C78.6972 30.7498 79.3625 29.142 79.3625 27.4655V13.5889C79.3625 13.3952 79.2857 13.2094 79.149 13.0722C79.0123 12.9351 78.8268 12.8578 78.6332 12.8574Z" fill="#00363A"/> <path d="M77.2239 5.66982C75.8041 5.69908 74.7109 6.67448 74.7109 8.12456C74.7109 9.57464 75.8041 10.5793 77.2239 10.5793C78.6712 10.5793 79.7952 9.57302 79.7952 8.12456C79.7952 6.6761 78.6712 5.66982 77.2239 5.66982Z" fill="#00363A"/> <path d="M54.9925 23.7546C54.9419 23.6338 54.8519 23.5336 54.7372 23.4704C54.6225 23.4073 54.4897 23.3848 54.3606 23.4067C54.173 23.4444 53.9818 23.4608 53.7905 23.4555C52.5917 23.358 51.8916 22.5029 51.8916 21.3275V8.85712C51.8907 8.66479 51.8142 8.48053 51.6786 8.34422C51.5431 8.20792 51.3593 8.13053 51.1671 8.12883H48.4317C48.2378 8.12883 48.0519 8.2059 47.9148 8.34309C47.7777 8.48028 47.7007 8.66635 47.7007 8.86037V21.3308C47.7007 25.0259 50.3338 27.6529 54.0179 27.6529C54.5688 27.6493 55.1161 27.5644 55.6423 27.401C55.7401 27.3708 55.8305 27.3205 55.9077 27.2533C55.985 27.186 56.0472 27.1033 56.0905 27.0105C56.1338 26.9177 56.1572 26.8168 56.1592 26.7144C56.1612 26.6119 56.1417 26.5102 56.102 26.4158L54.9925 23.7546Z" fill="#00363A"/></svg></svg>
+category: ecommerce
+author: Heddle
+homepage: https://lojaintegrada.docs.apiary.io
+base_url: https://api.awsli.com.br/v1/
+headers:
+  User-Agent: Heddle
+
+credential:
+  label: Loja Integrada
+  fields:
+    - {name: api_key, label: Store API key, secret: true, required: true}
+    - {name: app_key, label: Application key, secret: true, required: true}
+  auth:
+    type: header
+    name: Authorization
+    value: "chave_api {{credential.api_key}} aplicacao {{credential.app_key}}"
+
+errors:
+  message_path: error_message
+
+triggers:
+  - name: New Order
+    description: Starts the flow for each new order, checking every 5 minutes.
+    request:
+      method: GET
+      path: pedido/search/
+      query: {limit: 50}
+    output: {path: objects}
+    poll: {every: 5, id: numero}
+
+actions:
+  # Orders
+  - name: Get Order
+    resource: Order
+    description: Reads an order, with items, customer, payment and shipping.
+    fields:
+      - {name: numero, label: Order number, required: true}
+    request: {method: GET, path: "pedido/{{fields.numero}}"}
+
+  - name: List Orders
+    resource: Order
+    description: Lists orders, by status or dates.
+    fields:
+      - {name: situacao_id, label: Status ID, description: "From List Order Statuses"}
+      - {name: since_criado, label: Created since, description: "Like 2026-02-10"}
+      - {name: until_criado, label: Created until}
+      - {name: since_atualizado, label: Updated since}
+    request:
+      method: GET
+      path: pedido/search/
+      query: {situacao_id: "{{fields.situacao_id}}", since_criado: "{{fields.since_criado}}", until_criado: "{{fields.until_criado}}", since_atualizado: "{{fields.since_atualizado}}"}
+    pagination: {type: offset, items_path: objects, offset_param: offset, limit_param: limit, page_size: 50}
+
+  - name: Change Order Status
+    resource: Order
+    description: Moves an order to another status, like paid, shipped or canceled.
+    fields:
+      - name: codigo
+        label: Status
+        type: select
+        required: true
+        options:
+          - {label: Waiting payment, value: aguardando_pagamento}
+          - {label: Paid, value: pedido_pago}
+          - {label: In production, value: em_producao}
+          - {label: In separation, value: pedido_em_separacao}
+          - {label: Shipped, value: pedido_enviado}
+          - {label: Delivered, value: pedido_entregue}
+          - {label: Ready for pickup, value: pronto_para_retirada}
+          - {label: Canceled, value: pedido_cancelado}
+      - {name: numero, label: Order number, required: true}
+    request:
+      method: PUT
+      path: "situacao/pedido/{{fields.numero}}"
+      body: {codigo: "{{fields.codigo}}"}
+
+  - name: Set Tracking Code
+    resource: Order
+    description: Sets the tracking code of an order's shipment.
+    fields:
+      - {name: envio_id, label: Shipment ID, required: true, description: "From the order's envios"}
+      - {name: objeto, label: Tracking code, required: true}
+    request:
+      method: PUT
+      path: "pedido_envio/{{fields.envio_id}}"
+      body: {objeto: "{{fields.objeto}}"}
+
+  - name: List Order Statuses
+    resource: Order
+    description: Lists the order statuses, for their IDs.
+    request: {method: GET, path: situacao/}
+    output: {path: objects}
+
+  # Products
+  - name: Create Product
+    resource: Product
+    description: Creates a product. Set its price and stock after.
+    fields:
+      - {name: nome, label: Name, required: true}
+      - {name: sku, label: SKU, required: true}
+      - {name: descricao_completa, label: Description, type: textarea}
+      - {name: tipo, label: Type, type: select, default: normal, options: [{label: Simple, value: normal}, {label: With variations, value: atributo}, {label: Variation, value: atributo_opcao}, {label: Virtual, value: virtual}]}
+      - {name: peso, label: Weight (kg), type: number}
+      - {name: altura, label: Height (cm), type: number}
+      - {name: largura, label: Width (cm), type: number}
+      - {name: profundidade, label: Depth (cm), type: number}
+      - {name: categorias, label: Category IDs, type: json, description: 'Like ["/api/v1/categoria/123"]'}
+      - {name: ativo, label: Active, type: boolean, default: true}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: POST
+      path: produto
+      body: {nome: "{{fields.nome}}", sku: "{{fields.sku}}", descricao_completa: "{{fields.descricao_completa}}", tipo: "{{fields.tipo}}", peso: "{{fields.peso}}", altura: "{{fields.altura}}", largura: "{{fields.largura}}", profundidade: "{{fields.profundidade}}", categorias: "{{fields.categorias}}", ativo: "{{fields.ativo}}", _merge: "{{fields.extra}}"}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: "produto/{{fields.id}}"}
+
+  - name: List Products
+    resource: Product
+    description: Lists products, by SKU if you like.
+    fields:
+      - {name: sku, label: SKU}
+    request:
+      method: GET
+      path: produto/
+      query: {sku: "{{fields.sku}}"}
+    pagination: {type: offset, items_path: objects, offset_param: offset, limit_param: limit, page_size: 50}
+
+  - name: Update Product
+    resource: Product
+    description: Changes a product. Empty fields stay as they are.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: nome, label: Name}
+      - {name: descricao_completa, label: Description, type: textarea}
+      - {name: ativo, label: Active, type: select, options: [{label: "Yes", value: "true"}, {label: "No", value: "false"}]}
+      - {name: extra, label: More fields, type: json}
+    request:
+      method: PUT
+      path: "produto/{{fields.id}}"
+      body: {nome: "{{fields.nome}}", descricao_completa: "{{fields.descricao_completa}}", ativo: "{{fields.ativo}}", _merge: "{{fields.extra}}"}
+
+  - name: Set Price
+    resource: Product
+    description: Sets a product's price, sale price and cost.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: cheio, label: Price, type: number, required: true}
+      - {name: promocional, label: Sale price, type: number}
+      - {name: custo, label: Cost, type: number}
+    request:
+      method: PUT
+      path: "produto_preco/{{fields.id}}"
+      body: {cheio: "{{fields.cheio}}", promocional: "{{fields.promocional}}", custo: "{{fields.custo}}"}
+
+  - name: Set Stock
+    resource: Product
+    description: Sets a product's stock.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: quantidade, label: Quantity, type: number, required: true}
+      - {name: situacao_em_estoque, label: Days to ship when in stock, type: number, default: 0}
+      - {name: situacao_sem_estoque, label: Days to ship when out of stock, type: number, description: "-1 stops selling it"}
+    request:
+      method: PUT
+      path: "produto_estoque/{{fields.id}}"
+      body: {gerenciado: true, quantidade: "{{fields.quantidade}}", situacao_em_estoque: "{{fields.situacao_em_estoque}}", situacao_sem_estoque: "{{fields.situacao_sem_estoque}}"}
+
+  - name: Get Stock
+    resource: Product
+    description: Reads a product's stock.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: "produto_estoque/{{fields.id}}"}
+
+  # Customers and categories
+  - name: Get Customer
+    resource: Customer
+    description: Reads a customer, with their addresses.
+    fields:
+      - {name: id, label: Customer ID, required: true}
+    request: {method: GET, path: "cliente/{{fields.id}}"}
+
+  - name: List Customers
+    resource: Customer
+    description: Lists customers, by email or CPF if you like.
+    fields:
+      - {name: email, label: Email}
+      - {name: cpf, label: CPF}
+    request:
+      method: GET
+      path: cliente/
+      query: {email: "{{fields.email}}", cpf: "{{fields.cpf}}"}
+    pagination: {type: offset, items_path: objects, offset_param: offset, limit_param: limit, page_size: 50}
+
+  - name: List Categories
+    resource: Category
+    description: Lists the categories.
+    request: {method: GET, path: categoria/}
+    pagination: {type: offset, items_path: objects, offset_param: offset, limit_param: limit, page_size: 50}
+
+  - name: Create Category
+    resource: Category
+    description: Creates a category.
+    fields:
+      - {name: nome, label: Name, required: true}
+      - {name: descricao, label: Description}
+      - {name: categoria_pai, label: Parent category, description: 'Like /api/v1/categoria/123'}
+    request:
+      method: POST
+      path: categoria
+      body: {nome: "{{fields.nome}}", descricao: "{{fields.descricao}}", categoria_pai: "{{fields.categoria_pai}}"}
+
+i18n:
+  pt-BR:
+    description: "Produtos, preços, estoque, pedidos, clientes e categorias numa loja da Loja Integrada."
+    triggers:
+      New Order: {name: "Novo pedido", description: "Inicia o fluxo para cada pedido novo, olhando a cada 5 minutos."}
+    actions:
+      Get Order: {name: "Ler pedido", description: "Lê um pedido, com itens, cliente, pagamento e envio.", fields: {numero: "Número do pedido"}}
+      List Orders: {name: "Listar pedidos", description: "Lista pedidos, por situação ou datas.", fields: {situacao_id: "ID da situação", since_criado: "Criado desde", until_criado: "Criado até", since_atualizado: "Atualizado desde"}}
+      Change Order Status: {name: "Mudar situação do pedido", description: "Muda a situação de um pedido, como pago, enviado ou cancelado.", fields: {codigo: "Situação", numero: "Número do pedido"}}
+      Set Tracking Code: {name: "Informar rastreio", description: "Informa o código de rastreio do envio de um pedido.", fields: {envio_id: "ID do envio", objeto: "Código de rastreio"}}
+      List Order Statuses: {name: "Listar situações", description: "Lista as situações de pedido, para pegar os IDs."}
+      Create Product: {name: "Criar produto", description: "Cria um produto. Defina preço e estoque depois.", fields: {nome: "Nome", sku: "SKU", descricao_completa: "Descrição", tipo: "Tipo", peso: "Peso (kg)", altura: "Altura (cm)", largura: "Largura (cm)", profundidade: "Profundidade (cm)", categorias: "IDs das categorias", ativo: "Ativo", extra: "Mais campos"}}
+      Get Product: {name: "Ler produto", description: "Lê um produto.", fields: {id: "ID do produto"}}
+      List Products: {name: "Listar produtos", description: "Lista produtos, por SKU se quiser.", fields: {sku: "SKU"}}
+      Update Product: {name: "Atualizar produto", description: "Altera um produto. Campos vazios ficam como estão.", fields: {id: "ID do produto", nome: "Nome", descricao_completa: "Descrição", ativo: "Ativo", extra: "Mais campos"}}
+      Set Price: {name: "Definir preço", description: "Define preço cheio, promocional e custo de um produto.", fields: {id: "ID do produto", cheio: "Preço", promocional: "Preço promocional", custo: "Custo"}}
+      Set Stock: {name: "Definir estoque", description: "Define o estoque de um produto.", fields: {id: "ID do produto", quantidade: "Quantidade", situacao_em_estoque: "Dias para envio com estoque", situacao_sem_estoque: "Dias para envio sem estoque"}}
+      Get Stock: {name: "Ler estoque", description: "Lê o estoque de um produto.", fields: {id: "ID do produto"}}
+      Get Customer: {name: "Ler cliente", description: "Lê um cliente, com os endereços.", fields: {id: "ID do cliente"}}
+      List Customers: {name: "Listar clientes", description: "Lista clientes, por e-mail ou CPF se quiser.", fields: {email: "E-mail", cpf: "CPF"}}
+      List Categories: {name: "Listar categorias", description: "Lista as categorias."}
+      Create Category: {name: "Criar categoria", description: "Cria uma categoria.", fields: {nome: "Nome", descricao: "Descrição", categoria_pai: "Categoria pai"}}

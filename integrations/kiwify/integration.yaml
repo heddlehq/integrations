@@ -1,0 +1,229 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/heddlehq/Bobbin/main/priv/integration.schema.json
+#
+# Kiwify, through its public API. Connect with the client ID, client secret and
+# account ID of an API key from Kiwify's Apps › API. Dates go like 2026-02-10.
+# Kiwify signs its webhooks in the address's query, which Bobbin doesn't check yet;
+# the address itself is secret.
+id: kiwify
+name: Kiwify
+version: 1.0.0
+description: Sales, refunds, products, affiliates, balance and payouts in Kiwify, and a trigger for purchases.
+icon: hero-shopping-bag
+logo: |-
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#FFFFFF"/><svg x="3.00" y="3.00" width="18.00" height="18.00" viewBox="0 0 512 512"><style type="text/css"> .st0{fill:#2DB56F;}</style><g> <g> <g> <path class="st0" d="M453.9,368.3c-85.5,85.5-224.7,85.5-310.2,0c-85.5-85.5-85.5-224.7,0-310.2L92,6.4 C-22.2,120.6-22.2,305.8,92,420c114.2,114.2,299.4,114.2,413.6,0L453.9,368.3z"></path> <path class="st0" d="M373.5,359.8c10.1-5.2,10-25.7-0.3-46c-10.3-20.2-26.9-32.5-37-27.3c-10.1,5.2-10,25.7,0.3,46 C346.8,352.7,363.4,364.9,373.5,359.8z"></path> <path class="st0" d="M152.3,138.5c-5.2,10.1,7.1,26.7,27.3,37c20.2,10.3,40.8,10.5,46,0.3c5.2-10.1-7.1-26.7-27.3-37 C178,128.5,157.4,128.4,152.3,138.5z"></path> <path class="st0" d="M182.5,329.5c8,8,27.6,1.5,43.6-14.5c16.1-16.1,22.6-35.6,14.5-43.6c-8-8-27.6-1.5-43.6,14.5 C181,301.9,174.5,321.5,182.5,329.5z"></path> <path class="st0" d="M273.1,375.7c11.2,1.8,23.2-15,26.7-37.4c3.6-22.4-2.7-42.1-13.9-43.8c-11.2-1.8-23.2,15-26.7,37.4 C255.7,354.3,261.9,373.9,273.1,375.7z"></path> <path class="st0" d="M136.4,238.9c1.8,11.2,21.4,17.4,43.8,13.9c22.4-3.6,39.2-15.5,37.4-26.7c-1.8-11.2-21.4-17.4-43.8-13.9 C151.3,215.7,134.6,227.7,136.4,238.9z"></path> </g> </g></g></svg></svg>
+category: ecommerce
+author: Heddle
+homepage: https://docs.kiwify.com.br
+base_url: https://public-api.kiwify.com/v1/
+headers:
+  User-Agent: Heddle
+  x-kiwify-account-id: "{{credential.account_id}}"
+
+credential:
+  label: Kiwify
+  fields:
+    - {name: client_id, label: Client ID, required: true}
+    - {name: client_secret, label: Client secret, secret: true, required: true}
+    - {name: account_id, label: Account ID, required: true}
+  auth:
+    type: login
+    request:
+      method: POST
+      path: oauth/token
+      body_type: form
+      body: {client_id: "{{credential.client_id}}", client_secret: "{{credential.client_secret}}"}
+    token_path: access_token
+    expires_path: expires_in
+
+errors:
+  message_path: message
+
+triggers:
+  - name: Kiwify Event
+    description: Starts the flow when a purchase is approved, refused or refunded, a boleto or Pix is made, or a subscription changes.
+    fields:
+      - name: triggers
+        label: Events
+        type: multiselect
+        required: true
+        default: [compra_aprovada]
+        options:
+          - {label: Purchase approved, value: compra_aprovada}
+          - {label: Purchase refused, value: compra_recusada}
+          - {label: Purchase refunded, value: compra_reembolsada}
+          - {label: Chargeback, value: chargeback}
+          - {label: Boleto generated, value: boleto_gerado}
+          - {label: Pix generated, value: pix_gerado}
+          - {label: Cart abandoned, value: carrinho_abandonado}
+          - {label: Subscription canceled, value: subscription_canceled}
+          - {label: Subscription late, value: subscription_late}
+          - {label: Subscription renewed, value: subscription_renewed}
+      - {name: products, label: Product ID, default: all, description: "all for every product"}
+    webhook:
+      register:
+        request:
+          method: POST
+          path: webhooks
+          body: {name: Heddle, url: "{{webhook.url}}", products: "{{fields.products}}", triggers: "{{fields.triggers}}", token: "{{webhook.secret}}"}
+        id_path: id
+      unregister:
+        request: {method: DELETE, path: "webhooks/{{webhook.id}}"}
+
+actions:
+  - name: List Sales
+    resource: Sale
+    description: Lists sales between two dates, up to 90 days apart, by status or product.
+    fields:
+      - {name: start_date, label: From, required: true, description: "Like 2026-02-01"}
+      - {name: end_date, label: To, required: true, description: "Like 2026-02-28"}
+      - name: status
+        label: Status
+        type: select
+        options:
+          - {label: Paid, value: paid}
+          - {label: Waiting payment, value: waiting_payment}
+          - {label: Refused, value: refused}
+          - {label: Refunded, value: refunded}
+          - {label: Chargedback, value: chargedback}
+      - {name: payment_method, label: Paid with, type: select, options: [{label: Card, value: credit_card}, {label: Pix, value: pix}, {label: Boleto, value: boleto}]}
+      - {name: product_id, label: Product ID}
+      - {name: affiliate_id, label: Affiliate ID}
+    request:
+      method: GET
+      path: sales
+      query: {start_date: "{{fields.start_date}}", end_date: "{{fields.end_date}}", status: "{{fields.status}}", payment_method: "{{fields.payment_method}}", product_id: "{{fields.product_id}}", affiliate_id: "{{fields.affiliate_id}}"}
+    pagination: {type: page, items_path: data, page_param: page_number, limit_param: page_size, page_size: 100}
+
+  - name: Get Sale
+    resource: Sale
+    description: Reads a sale, with the buyer, product and commissions.
+    fields:
+      - {name: id, label: Sale ID, required: true}
+    request: {method: GET, path: "sales/{{fields.id}}"}
+
+  - name: Refund Sale
+    resource: Sale
+    description: Refunds a sale. A Pix or boleto sale needs the buyer's Pix key.
+    fields:
+      - {name: id, label: Sale ID, required: true}
+      - {name: pix_key, label: Buyer's Pix key}
+    request:
+      method: POST
+      path: "sales/{{fields.id}}/refund"
+      body: {pixKey: "{{fields.pix_key}}"}
+
+  - name: Get Sales Stats
+    resource: Sale
+    description: Sums up sales, refunds and chargebacks between two dates.
+    fields:
+      - {name: start_date, label: From, required: true}
+      - {name: end_date, label: To, required: true}
+      - {name: product_id, label: Product ID}
+    request:
+      method: GET
+      path: stats
+      query: {start_date: "{{fields.start_date}}", end_date: "{{fields.end_date}}", product_id: "{{fields.product_id}}"}
+
+  - name: List Products
+    resource: Product
+    description: Lists the products.
+    request: {method: GET, path: products}
+    pagination: {type: page, items_path: data, page_param: page_number, limit_param: page_size, page_size: 100}
+
+  - name: Get Product
+    resource: Product
+    description: Reads a product, with its offers.
+    fields:
+      - {name: id, label: Product ID, required: true}
+    request: {method: GET, path: "products/{{fields.id}}"}
+
+  - name: List Event Participants
+    resource: Product
+    description: Lists the participants of an event product, by check-in if you like.
+    fields:
+      - {name: id, label: Product ID, required: true}
+      - {name: checked_in, label: Checked in, type: select, options: [{label: "Yes", value: "true"}, {label: "No", value: "false"}]}
+    request:
+      method: GET
+      path: "events/{{fields.id}}/participants"
+      query: {checked_in: "{{fields.checked_in}}"}
+    pagination: {type: page, items_path: data, page_param: page_number, limit_param: page_size, page_size: 100}
+
+  - name: List Affiliates
+    resource: Affiliate
+    description: Lists the affiliates, by product or status.
+    fields:
+      - {name: product_id, label: Product ID}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: active}, {label: Pending, value: pending}, {label: Blocked, value: blocked}, {label: Refused, value: refused}]}
+      - {name: search, label: Search}
+    request:
+      method: GET
+      path: affiliates
+      query: {product_id: "{{fields.product_id}}", status: "{{fields.status}}", search: "{{fields.search}}"}
+    pagination: {type: page, items_path: data, page_param: page_number, limit_param: page_size, page_size: 100}
+
+  - name: Get Affiliate
+    resource: Affiliate
+    description: Reads an affiliate.
+    fields:
+      - {name: id, label: Affiliate ID, required: true}
+    request: {method: GET, path: "affiliates/{{fields.id}}"}
+
+  - name: Update Affiliate
+    resource: Affiliate
+    description: Changes an affiliate's commission or status.
+    fields:
+      - {name: id, label: Affiliate ID, required: true}
+      - {name: commission, label: Commission (%), type: number}
+      - {name: status, label: Status, type: select, options: [{label: Active, value: active}, {label: Blocked, value: blocked}, {label: Refused, value: refused}]}
+    request:
+      method: PUT
+      path: "affiliates/{{fields.id}}"
+      body: {commission: "{{fields.commission}}", status: "{{fields.status}}"}
+
+  - name: Get Balance
+    resource: Finance
+    description: Reads the available and pending balance.
+    request: {method: GET, path: balance}
+
+  - name: List Payouts
+    resource: Finance
+    description: Lists the withdrawals.
+    request: {method: GET, path: payouts}
+    pagination: {type: page, items_path: data, page_param: page_number, limit_param: page_size, page_size: 100}
+
+  - name: Request Payout
+    resource: Finance
+    description: Withdraws an amount, in cents, from the available balance.
+    fields:
+      - {name: amount, label: Amount in cents, type: number, required: true}
+    request:
+      method: POST
+      path: payouts
+      body: {amount: "{{fields.amount}}"}
+
+  - name: Get Account
+    resource: Finance
+    description: Reads the account's details.
+    request: {method: GET, path: account-details}
+
+i18n:
+  pt-BR:
+    description: "Vendas, reembolsos, produtos, afiliados, saldo e saques na Kiwify, e um gatilho para compras."
+    triggers:
+      Kiwify Event: {name: "Evento da Kiwify", description: "Inicia o fluxo quando uma compra é aprovada, recusada ou reembolsada, um boleto ou Pix é gerado, ou uma assinatura muda.", fields: {triggers: "Eventos", products: "ID do produto"}}
+    actions:
+      List Sales: {name: "Listar vendas", description: "Lista as vendas entre duas datas, até 90 dias, por status ou produto.", fields: {start_date: "De", end_date: "Até", status: "Status", payment_method: "Pago com", product_id: "ID do produto", affiliate_id: "ID do afiliado"}}
+      Get Sale: {name: "Ler venda", description: "Lê uma venda, com comprador, produto e comissões.", fields: {id: "ID da venda"}}
+      Refund Sale: {name: "Reembolsar venda", description: "Reembolsa uma venda. Venda por Pix ou boleto precisa da chave Pix do comprador.", fields: {id: "ID da venda", pix_key: "Chave Pix do comprador"}}
+      Get Sales Stats: {name: "Estatísticas de vendas", description: "Soma vendas, reembolsos e chargebacks entre duas datas.", fields: {start_date: "De", end_date: "Até", product_id: "ID do produto"}}
+      List Products: {name: "Listar produtos", description: "Lista os produtos."}
+      Get Product: {name: "Ler produto", description: "Lê um produto, com as ofertas.", fields: {id: "ID do produto"}}
+      List Event Participants: {name: "Listar participantes", description: "Lista os participantes de um produto de evento, por check-in se quiser.", fields: {id: "ID do produto", checked_in: "Fez check-in"}}
+      List Affiliates: {name: "Listar afiliados", description: "Lista os afiliados, por produto ou status.", fields: {product_id: "ID do produto", status: "Status", search: "Busca"}}
+      Get Affiliate: {name: "Ler afiliado", description: "Lê um afiliado.", fields: {id: "ID do afiliado"}}
+      Update Affiliate: {name: "Atualizar afiliado", description: "Muda a comissão ou o status de um afiliado.", fields: {id: "ID do afiliado", commission: "Comissão (%)", status: "Status"}}
+      Get Balance: {name: "Ler saldo", description: "Lê o saldo disponível e pendente."}
+      List Payouts: {name: "Listar saques", description: "Lista os saques."}
+      Request Payout: {name: "Solicitar saque", description: "Saca um valor, em centavos, do saldo disponível.", fields: {amount: "Valor em centavos"}}
+      Get Account: {name: "Ler conta", description: "Lê os dados da conta."}
